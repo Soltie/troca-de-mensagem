@@ -17,8 +17,16 @@ local log = Logger.new("Client")
 -- A ordem importa: Init e Start são chamados exatamente nesta ordem.
 -- { any }: cada Controller tem campos próprios; o Loader valida Name/Init/Start em runtime.
 local controllers: { any } = {
+	require("./Controllers/SettingsController"),
+	require("./Controllers/AudioController"),
+	require("./Controllers/CharacterController"),
+	require("./Controllers/FlashlightController"),
+	require("./Controllers/RetroFxController"),
+	require("./Controllers/WorldFxController"),
+	require("./Controllers/CreatureVisualController"),
+	require("./Controllers/GameUiController"),
+	require("./Controllers/InteractionController"),
 	require("./Controllers/HudController"),
-	require("./Controllers/PingController"),
 }
 
 local count = Loader.boot(controllers, { label = "Client" })

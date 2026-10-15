@@ -14,7 +14,7 @@
 	para não replicar/renderizar a instância pela metade.
 ]]
 
-local function Create(className: string, props: { [string]: any }?, children: { Instance }?): Instance
+local function Create(className: string, props: { [string]: any }?, children: { any }?): Instance
 	local instance = Instance.new(className)
 	local parent: Instance? = nil
 	if props then

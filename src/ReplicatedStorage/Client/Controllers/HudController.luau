@@ -1,30 +1,38 @@
 --!strict
 --[[
-	HUD de debug construído por código (prova o padrão "UI vive no repositório").
-	Outros controllers escrevem linhas com HudController.setLine(chave, texto).
-	Desligue com Config.Debug.ShowHud = false.
+	Painel de debug construído por código (F3 alterna; padrão em Config.Debug.ShowHud).
+	Mostra FPS médio, fase, estado da criatura e posição. Também expõe métricas para testes
+	(HudController.metrics()).
 ]]
 
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 local Config = require("@game/ReplicatedStorage/Shared/Config")
+local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
 local Create = require("../UI/Create")
+local CreatureVisualController = require("./CreatureVisualController")
 
 local GUI_NAME = "DebugHud"
 
-local lines: { [string]: string } = {}
-local order: { string } = {}
 local label: TextLabel? = nil
+local gui: ScreenGui? = nil
+local frameTimes: { number } = {}
+local frameIndex = 0
+local SAMPLE = 120
+local worstFrame = 0
 
-local function render()
-	if label == nil then
-		return
+local function averageFps(): number
+	local count = #frameTimes
+	if count == 0 then
+		return 0
 	end
-	local parts = {}
-	for _, key in order do
-		table.insert(parts, lines[key])
+	local total = 0
+	for _, dt in frameTimes do
+		total += dt
 	end
-	label.Text = table.concat(parts, "\n")
+	return count / total
 end
 
 local HudController = {
@@ -32,19 +40,13 @@ local HudController = {
 }
 
 function HudController.Init()
-	if not Config.Debug.ShowHud then
-		return
-	end
 	local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
-
 	local screenGui = Create("ScreenGui", {
 		Name = GUI_NAME,
 		ResetOnSpawn = false,
 		DisplayOrder = 100,
-		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
-	})
-
-	-- Topo central: o canto superior esquerdo é do chat e o direito da lista de jogadores.
+		Enabled = Config.Debug.ShowHud,
+	}) :: ScreenGui
 	label = Create("TextLabel", {
 		Name = "Info",
 		AnchorPoint = Vector2.new(0.5, 0),
@@ -56,7 +58,6 @@ function HudController.Init()
 		FontFace = Font.fromEnum(Enum.Font.RobotoMono),
 		TextSize = 14,
 		TextXAlignment = Enum.TextXAlignment.Left,
-		TextYAlignment = Enum.TextYAlignment.Top,
 		Text = "",
 		Parent = screenGui,
 	}, {
@@ -66,23 +67,59 @@ function HudController.Init()
 			PaddingLeft = UDim.new(0, 8),
 			PaddingRight = UDim.new(0, 8),
 		}),
-		Create("UICorner", { CornerRadius = UDim.new(0, 6) }),
 	}) :: TextLabel
-
-	HudController.setLine("title", "DEBUG HUD")
 	screenGui.Parent = playerGui
+	gui = screenGui
 end
 
-function HudController.setLine(key: string, text: string)
-	if lines[key] == nil then
-		table.insert(order, key)
-	end
-	lines[key] = text
-	render()
+function HudController.Start()
+	UserInputService.InputBegan:Connect(function(input: InputObject)
+		if input.KeyCode == Enum.KeyCode.F3 and gui then
+			gui.Enabled = not gui.Enabled
+		end
+	end)
+
+	RunService.RenderStepped:Connect(function(dt: number)
+		frameIndex = frameIndex % SAMPLE + 1
+		frameTimes[frameIndex] = dt
+		worstFrame = math.max(worstFrame * 0.995, dt)
+	end)
+
+	task.spawn(function()
+		while true do
+			task.wait(0.5)
+			if label and gui and gui.Enabled then
+				local ok, snapshot = pcall(GameState.snapshot)
+				local shown, mode, distance = CreatureVisualController.status()
+				local character = Players.LocalPlayer.Character
+				local position = if character then character:GetPivot().Position else Vector3.zero
+				label.Text = string.format(
+					"FPS %.0f (pior %.1f ms)\nfase %s  | fusíveis %s\nvigia %s %s %.0f st\npos %.0f, %.0f, %.0f",
+					averageFps(),
+					worstFrame * 1000,
+					if ok then snapshot.phase else "?",
+					if ok then `{snapshot.fusesCollected}/{snapshot.fusesInserted}` else "?",
+					if shown then "visível" else "oculto",
+					mode,
+					if distance < math.huge then distance else -1,
+					position.X,
+					position.Y,
+					position.Z
+				)
+			end
+		end
+	end)
 end
 
-function HudController.getText(): string
-	return if label then label.Text else ""
+-- Métricas para validação de desempenho via MCP.
+function HudController.metrics(): { [string]: number }
+	local camera = workspace.CurrentCamera
+	return {
+		fps = averageFps(),
+		worstFrameMs = worstFrame * 1000,
+		viewportX = if camera then camera.ViewportSize.X else 0,
+		viewportY = if camera then camera.ViewportSize.Y else 0,
+	}
 end
 
 return HudController
