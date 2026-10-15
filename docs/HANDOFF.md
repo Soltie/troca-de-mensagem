@@ -1,6 +1,8 @@
 # HANDOFF — SUBESTAÇÃO 9 (protótipo de terror)
 
 Atualizado: 2026-10-15. Estado: **protótipo jogável, testado de ponta a ponta no Studio**.
+Atualização do mapa pelo Codex: [MAP_EXPANSION.md](MAP_EXPANSION.md), cinco áreas novas, 84 testes
+Studio passando; coordenação e ressalva de integração paralela em [LEIA_CLAUDE.md](../LEIA_CLAUDE.md).
 Leia também: `CLAUDE.md` (regras), `docs/GAME_SPEC.md` (design), `docs/ARCHITECTURE.md` (como funciona),
 `docs/DECISIONS.md` (D19–D31 são do jogo), `docs/ASSETS.md` (origem dos assets).
 

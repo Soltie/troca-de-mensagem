@@ -1,6 +1,7 @@
 --!strict
 --[[
 	Planta da Subestação 9 — só dados (testados no Lune). O MapBuilder transforma isto em peças.
+	Diagrama abaixo: núcleo original. Alas e circuito completo: docs/MAP_EXPANSION.md.
 
 	Eixos: X = leste(+)/oeste(-); Z = sul(+)/norte(-); piso interno e pátio com topo em y = 0.
 
@@ -68,7 +69,9 @@ Layout.WALL_THICKNESS = 1
 Layout.BAND_HEIGHT = 3.2
 
 Layout.Building = { x0 = -40, x1 = 40, z0 = -50, z1 = 0 } :: Rect
-Layout.Courtyard = { x0 = -40, x1 = 40, z0 = 0, z1 = 44 } :: Rect
+-- Building continua sendo o núcleo original; Compound inclui as alas e o pátio técnico.
+Layout.Compound = { x0 = -68, x1 = 72, z0 = -78, z1 = 44 } :: Rect
+Layout.Courtyard = { x0 = -68, x1 = 72, z0 = 0, z1 = 44 } :: Rect
 
 Layout.Rooms = {
 	{ id = "Lobby", label = "RECEPÇÃO", x0 = -12, x1 = 4, z0 = -18, z1 = 0 },
@@ -77,6 +80,11 @@ Layout.Rooms = {
 	{ id = "Corridor", label = "CORREDOR", x0 = -40, x1 = 40, z0 = -26, z1 = -18 },
 	{ id = "Generator", label = "SALA DO GERADOR", x0 = -40, x1 = -4, z0 = -50, z1 = -26 },
 	{ id = "Storage", label = "DEPÓSITO", x0 = -4, x1 = 40, z0 = -50, z1 = -26 },
+	{ id = "Maintenance", label = "OFICINA", x0 = -68, x1 = -40, z0 = -50, z1 = 0 },
+	{ id = "CableGallery", label = "GALERIA DE CABOS", x0 = -68, x1 = -40, z0 = -78, z1 = -50 },
+	{ id = "Control", label = "SALA DE CONTROLE", x0 = -40, x1 = 4, z0 = -78, z1 = -50 },
+	{ id = "Archive", label = "ARQUIVO TÉCNICO", x0 = 4, x1 = 40, z0 = -78, z1 = -50 },
+	{ id = "Switchyard", label = "PÁTIO DE TRANSFORMADORES", x0 = 40, x1 = 72, z0 = -78, z1 = 0 },
 } :: { Room }
 
 Layout.Walls = {
@@ -89,9 +97,16 @@ Layout.Walls = {
 		exterior = true,
 		openings = { window(-26), door(-4), window(14), window(30) },
 	},
-	{ id = "north", axis = "X", at = -50, from = -40, to = 40, exterior = true, openings = {} },
-	{ id = "west", axis = "Z", at = -40, from = -50, to = 0, exterior = true, openings = {} },
-	{ id = "east", axis = "Z", at = 40, from = -50, to = 0, exterior = true, openings = {} },
+	{ id = "north", axis = "X", at = -50, from = -40, to = 40, exterior = false, openings = { door(-32), door(24) } },
+	{ id = "west", axis = "Z", at = -40, from = -50, to = 0, exterior = false, openings = { door(-22), door(-4) } },
+	{ id = "east", axis = "Z", at = 40, from = -50, to = 0, exterior = true, openings = { door(-22), door(-8) } },
+	{ id = "annexWest", axis = "Z", at = -68, from = -78, to = 0, exterior = true, openings = {} },
+	{ id = "annexSouth", axis = "X", at = 0, from = -68, to = -40, exterior = true, openings = { door(-54) } },
+	{ id = "annexNorth", axis = "X", at = -78, from = -68, to = 40, exterior = true, openings = {} },
+	{ id = "gallerySouth", axis = "X", at = -50, from = -68, to = -40, exterior = false, openings = { door(-54) } },
+	{ id = "controlWest", axis = "Z", at = -40, from = -78, to = -50, exterior = false, openings = { door(-64) } },
+	{ id = "archiveWest", axis = "Z", at = 4, from = -78, to = -50, exterior = false, openings = { door(-64) } },
+	{ id = "archiveEast", axis = "Z", at = 40, from = -78, to = -50, exterior = true, openings = { door(-64) } },
 	{
 		id = "southRow",
 		axis = "X",
@@ -227,6 +242,12 @@ Layout.PatrolNodes = {
 	{ x = 34, y = 0, z = -31 },
 	{ x = -14, y = 0, z = -34 },
 	{ x = -34, y = 0, z = -30 },
+	{ x = -54, y = 0, z = -22 },
+	{ x = -54, y = 0, z = -64 },
+	{ x = -20, y = 0, z = -64 },
+	{ x = 24, y = 0, z = -64 },
+	{ x = 56, y = 0, z = -64 },
+	{ x = 56, y = 0, z = -22 },
 } :: { Point }
 
 -- Onde ele aparece ao acordar (o mais longe do jogador).
@@ -250,6 +271,12 @@ Layout.Lamps = {
 	{ x = 8, y = 10.6, z = -38 },
 	{ x = 28, y = 10.6, z = -38 },
 	{ x = -22, y = 10.6, z = -38 },
+	{ x = -54, y = 10.6, z = -12 },
+	{ x = -54, y = 10.6, z = -38 },
+	{ x = -54, y = 10.6, z = -64 },
+	{ x = -24, y = 10.6, z = -64 },
+	{ x = -4, y = 10.6, z = -64 },
+	{ x = 24, y = 10.6, z = -64 },
 } :: { Point }
 
 -- Luzes de emergência vermelhas (bateria: acesas desde o início, para orientação).
@@ -259,6 +286,10 @@ Layout.EmergencyLights = {
 	{ x = 39.3, y = 8, z = -22 },
 	{ x = -11, y = 7.5, z = -49.3 },
 	{ x = 0, y = 8.5, z = -26.7 },
+	{ x = -67.3, y = 8.5, z = -22 },
+	{ x = -54, y = 8.5, z = -77.3 },
+	{ x = -20, y = 8.5, z = -77.3 },
+	{ x = 24, y = 8.5, z = -77.3 },
 } :: { Point }
 
 function Layout.roomAt(x: number, z: number): Room?
@@ -272,6 +303,11 @@ end
 
 function Layout.inRect(rect: Rect, x: number, z: number): boolean
 	return x >= rect.x0 and x <= rect.x1 and z >= rect.z0 and z <= rect.z1
+end
+
+function Layout.isIndoor(x: number, z: number): boolean
+	local room = Layout.roomAt(x, z)
+	return room ~= nil and room.id ~= "Switchyard"
 end
 
 function Layout.wallById(id: string): Wall?

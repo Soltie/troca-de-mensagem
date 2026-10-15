@@ -1,0 +1,30 @@
+{
+  "scope": "Base commit plus Codex map files; excludes concurrent Claude changes",
+  "files": [
+    {
+      "sha256": "84EB098B4A4E2C260862EAF761E035D60CA6865C788140EA1000EBEAAC05E417",
+      "file": "src/ServerScriptService/Server/World/Layout.luau"
+    },
+    {
+      "sha256": "93BF8146E558BB602540DE221D2C7111FD0A21959BDDDA69CDDEFF5A43345003",
+      "file": "src/ServerScriptService/Server/World/MapBuilder.luau"
+    },
+    {
+      "sha256": "DD929C4223AFDC065704F5676CFC60DA926C43FD16F2CBD85CA8F3A48B603C87",
+      "file": "src/ServerScriptService/Server/World/Expansion.luau"
+    },
+    {
+      "sha256": "5807C4435A7323B581E3DF2F629C4B947C137EE25FBD2F7AFE81DEFE6762C93E",
+      "file": "src/ServerScriptService/Server/Services/WorldService.luau"
+    },
+    {
+      "sha256": "0448ED3328B9E82D97E2DD94E7112065659E868302D7B24983CDA9DC79B27DB5",
+      "file": "src/ServerScriptService/Tests/Specs/Layout.luau"
+    },
+    {
+      "sha256": "A86307245FCCD473FA2C5989C435BE5658DEAE2B80CDECF1FCEE096AE7FA9F4F",
+      "file": "src/ServerScriptService/Tests/Specs/Navigation.luau"
+    }
+  ],
+  "base": "b5a784f1d1d25abd0db9314727c181f0069d6857"
+}

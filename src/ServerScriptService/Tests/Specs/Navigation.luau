@@ -91,6 +91,60 @@ local spec: TestKit.Spec = {
 				error(`broken legs: {table.concat(failed, ", ")}`)
 			end
 		end)
+
+		t.it("player and creature can circle the annexes with the original building blocked", function()
+			-- Bloqueio temporário prova que a rota alternativa não depende de cortar pelo núcleo.
+			local b = Layout.Building
+			local blocker = Instance.new("Part")
+			blocker.Name = "NavigationTest_CoreBlocker"
+			blocker.Anchored = true
+			blocker.Transparency = 1
+			blocker.Size = Vector3.new(b.x1 - b.x0, Layout.CEILING, b.z1 - b.z0)
+			blocker.Position = Vector3.new((b.x0 + b.x1) / 2, Layout.CEILING / 2, (b.z0 + b.z1) / 2)
+			blocker.Parent = workspace
+			local ok, message = pcall(function()
+				task.wait(1)
+				local route = {
+					Vector3.new(-54, 0, 12),
+					Vector3.new(-54, 0, -22),
+					Vector3.new(-54, 0, -64),
+					Vector3.new(-20, 0, -64),
+					Vector3.new(24, 0, -64),
+					Vector3.new(56, 0, -64),
+					Vector3.new(56, 0, -22),
+					Vector3.new(56, 0, 12),
+				}
+				for name, params in agents do
+					for i, from in route do
+						if not reachable(params, from, route[i % #route + 1]) then
+							error(`{name}: annex bypass blocked at leg {i}`)
+						end
+					end
+				end
+			end)
+			blocker:Destroy()
+			if not ok then
+				error(tostring(message))
+			end
+		end)
+
+		t.it("closed gate prevents escape around the expanded perimeter", function()
+			local gate = workspace.Substation9.Exterior.Gate.Mesh :: BasePart
+			local saved = gate.CFrame
+			gate.CFrame = CFrame.new(Layout.Gate.x, Layout.Gate.height / 2, Layout.Gate.z - 0.6)
+			local ok, message = pcall(function()
+				task.wait(1)
+				for _, x in { -54, 0, 56 } do
+					if reachable(agents.player, Vector3.new(x, 0, 12), Vector3.new(0, 0, 56)) then
+						error(`escape bypasses closed gate from x={x}`)
+					end
+				end
+			end)
+			gate.CFrame = saved
+			if not ok then
+				error(tostring(message))
+			end
+		end)
 	end,
 }
 

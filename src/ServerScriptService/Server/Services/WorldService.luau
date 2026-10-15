@@ -295,7 +295,7 @@ function WorldService.openGate(): boolean
 end
 
 function WorldService.isInsideBuilding(position: Vector3): boolean
-	return Layout.inRect(Layout.Building, position.X, position.Z) and position.Y < Layout.CEILING
+	return Layout.isIndoor(position.X, position.Z) and position.Y < Layout.CEILING
 end
 
 function WorldService.isInExitZone(position: Vector3): boolean

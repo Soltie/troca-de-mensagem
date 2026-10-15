@@ -13,6 +13,7 @@ local Config = require("@game/ReplicatedStorage/Shared/Config")
 local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
 local Text = require("@game/ReplicatedStorage/Shared/Game/Text")
 local Build = require("./Build")
+local Expansion = require("./Expansion")
 local Layout = require("./Layout")
 local Palette = require("./Palette")
 local Props = require("./Props")
@@ -706,7 +707,8 @@ local function buildCourtyard(world: World, parent: Instance)
 	while placed < 42 do
 		local x = rng:NextNumber(-110, 110)
 		local z = rng:NextNumber(-100, 130)
-		local insideCompound = x > c.x0 - 5 and x < c.x1 + 5 and z > Layout.Building.z0 - 5 and z < c.z1 + 4
+		local bounds = Layout.Compound
+		local insideCompound = x > bounds.x0 - 5 and x < bounds.x1 + 5 and z > bounds.z0 - 5 and z < bounds.z1 + 4
 		local onRoad = math.abs(x) < 10 and z > c.z1
 		if not insideCompound and not onRoad then
 			Props.tree(parent, V3(x, 0, z), rng:NextNumber(14, 24), rng)
@@ -765,6 +767,7 @@ function MapBuilder.build(parent: Instance): World
 	buildSigns(Build.folder(root, "Signs"))
 	buildPanel(world, root)
 	buildCourtyard(world, Build.folder(root, "Exterior"))
+	Expansion.build(Build.folder(root, "Expansion"))
 	buildPickups(world, Build.folder(root, "Pickups"))
 	return world
 end

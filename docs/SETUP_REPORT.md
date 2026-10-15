@@ -4,6 +4,12 @@ Atualizado: 2026-10-15. Máquina: Windows 11, PowerShell 5.1 / Git Bash. Projeto
 
 ## Estado atual / próximo passo
 
+**Expansão local do mapa (Codex, 15/10/2026):** cinco áreas novas e circulação em anel;
+76 testes Lune e 84 testes Studio passando. Entrada lateral, navegação do Vigia/jogador, perímetro,
+energia, vitória, derrota e reinício verificados. Studio devolvido em Edit. Detalhes, limites do QA
+e evidências: [MAP_EXPANSION.md](MAP_EXPANSION.md). Esses números precedem a integração das
+novas mecânicas que o Claude começou a editar em paralelo; repetir QA conjunto ao concluí-las.
+
 **Estado (2026-10-15):** protótipo jogável **SUBESTAÇÃO 9** implementado e testado no Studio
 (ver `docs/HANDOFF.md`). `scripts/check` verde (73 testes Lune). Studio: 79 testes passando, uma rodada
 completa vencida pelo caminho normal, derrota e reinício validados, console sem warnings ou erros do projeto.

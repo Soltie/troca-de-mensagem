@@ -67,6 +67,53 @@ local spec: TestKit.Spec = {
 			t.expect(count).toBe(3)
 		end)
 
+		t.it("recognizes covered annex entries without treating the technical yard as indoors", function()
+			t.expect(Layout.isIndoor(-54, -4)).toBe(true)
+			t.expect(Layout.isIndoor(-54, -64)).toBe(true)
+			t.expect(Layout.isIndoor(-20, -64)).toBe(true)
+			t.expect(Layout.isIndoor(24, -64)).toBe(true)
+			t.expect(Layout.isIndoor(-4, -9)).toBe(true)
+			t.expect(Layout.isIndoor(56, -22)).toBe(false)
+			t.expect(Layout.isIndoor(14, 34)).toBe(false)
+			t.expect(Layout.isIndoor(-80, -64)).toBe(false)
+		end)
+
+		t.it("keeps all rooms within the compound without overlapping floor areas", function()
+			for i, room in Layout.Rooms do
+				t.expect(room.x1 > room.x0 and room.z1 > room.z0).toBe(true)
+				t.expect(Layout.inRect(Layout.Compound, room.x0, room.z0)).toBe(true)
+				t.expect(Layout.inRect(Layout.Compound, room.x1, room.z1)).toBe(true)
+				for j = i + 1, #Layout.Rooms do
+					local other = Layout.Rooms[j]
+					local overlaps = math.min(room.x1, other.x1) > math.max(room.x0, other.x0)
+						and math.min(room.z1, other.z1) > math.max(room.z0, other.z0)
+					if overlaps then
+						error(`overlapping rooms: {room.id}, {other.id}`)
+					end
+				end
+			end
+		end)
+
+		t.it("gives every expansion area a patrol node and full-height access", function()
+			for _, id in { "Maintenance", "CableGallery", "Control", "Archive", "Switchyard" } do
+				local visited = false
+				for _, p in Layout.PatrolNodes do
+					local room = Layout.roomAt(p.x, p.z)
+					visited = visited or (room ~= nil and room.id == id)
+				end
+				if not visited then
+					error(`no patrol node in {id}`)
+				end
+			end
+			for _, id in { "annexSouth", "gallerySouth", "controlWest", "archiveWest", "archiveEast" } do
+				local wall = Layout.wallById(id) :: Layout.Wall
+				local opening = wall.openings[1]
+				t.expect(opening.bottom).toBe(0)
+				t.expect(opening.top >= Config.Creature.AgentHeight).toBe(true)
+				t.expect(opening.width >= Config.Creature.AgentRadius * 2 + 2).toBe(true)
+			end
+		end)
+
 		t.it("keeps wall openings within the wall", function()
 			for _, wall in Layout.Walls do
 				for _, opening in wall.openings do
