@@ -1,0 +1,16 @@
+{
+	"name": "Game",
+	"emitLegacyScripts": false,
+	"tree": {
+		"$className": "DataModel",
+		"ReplicatedStorage": {
+			"$path": "src/ReplicatedStorage"
+		},
+		"ServerScriptService": {
+			"$path": "src/ServerScriptService"
+		},
+		"Workspace": {
+			"$path": "places/world/Workspace"
+		}
+	}
+}

@@ -1,0 +1,2 @@
+# selene: linter de Luau. "roblox" gera/usa o std a partir da API dump oficial (cache local).
+std = "roblox"

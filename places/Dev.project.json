@@ -1,0 +1,22 @@
+{
+	"name": "Dev",
+	"emitLegacyScripts": false,
+	"tree": {
+		"$className": "DataModel",
+		"Workspace": {
+			"$path": "world/Workspace"
+		},
+		"ReplicatedStorage": {
+			"$className": "ReplicatedStorage"
+		},
+		"ServerScriptService": {
+			"$className": "ServerScriptService"
+		},
+		"StarterPlayer": {
+			"$className": "StarterPlayer",
+			"StarterPlayerScripts": {
+				"$className": "StarterPlayerScripts"
+			}
+		}
+	}
+}
