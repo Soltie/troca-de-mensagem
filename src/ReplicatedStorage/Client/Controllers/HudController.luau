@@ -44,9 +44,11 @@ function HudController.Init()
 		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 	})
 
+	-- Topo central: o canto superior esquerdo é do chat e o direito da lista de jogadores.
 	label = Create("TextLabel", {
 		Name = "Info",
-		Position = UDim2.fromOffset(12, 12),
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 8),
 		AutomaticSize = Enum.AutomaticSize.XY,
 		BackgroundColor3 = Color3.fromRGB(20, 20, 24),
 		BackgroundTransparency = 0.25,
