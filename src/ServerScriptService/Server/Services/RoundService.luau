@@ -151,6 +151,7 @@ local function powerOn(myRound: number)
 	end
 	if Objectives.powerOn(objectives) then
 		WorldService.setPower(true)
+		WorldService.setInteractEnabled("panel", false)
 		awaken()
 		CreatureService.setHunt(true)
 		publish()

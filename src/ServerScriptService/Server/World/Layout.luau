@@ -201,7 +201,7 @@ Layout.Stands = {
 	gate = { x = 0, y = 0, z = 40 },
 	note_order = { x = -8.5, y = 0, z = -7 },
 	note_office = { x = -19.8, y = 0, z = -3.5 },
-	note_storage = { x = 20, y = 0, z = -33 },
+	note_storage = { x = 24, y = 0, z = -33 },
 } :: { [string]: Point }
 
 -- Quadro de força (centro da caixa) na parede norte da sala do gerador.
@@ -211,7 +211,7 @@ Layout.Panel = { x = -16, y = 4.5, z = -49.1 } :: Point
 Layout.Notes = {
 	note_order = { x = -8.5, y = 3.43, z = -3.5 }, -- balcão da recepção
 	note_office = { x = -19.8, y = 3.03, z = -7.4 }, -- segunda mesa
-	note_storage = { x = 20, y = 2.03, z = -30 }, -- caixote perto da porta
+	note_storage = { x = 24, y = 2.03, z = -30 }, -- caixote perto da porta
 } :: { [string]: Point }
 
 -- Rota de patrulha (no chão).

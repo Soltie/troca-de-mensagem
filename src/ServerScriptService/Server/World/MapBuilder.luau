@@ -445,7 +445,7 @@ local function buildRooms(parent: Instance)
 	Props.shelf(parent, V3(15, 0, -38), 0, 8)
 	Props.crate(parent, V3(6, 0, -34), 10, 3)
 	Props.crate(parent, V3(3, 0, -36), -15, 2)
-	Props.crate(parent, V3(20, 0, -30), 0, 2)
+	Props.crate(parent, V3(24, 0, -30), 0, 2) -- longe da porta aberta do depósito
 	Props.locker(parent, V3(-2.3, 0, -42), 90, 3)
 	Props.locker(parent, V3(-2.3, 0, -32), 90, 2)
 	Build.sign(parent, "Graffiti", V3(30, 5, -26.56), -Vector3.zAxis, Vector2.new(10, 2.6), "ELE SEGUE A LUZ", {
