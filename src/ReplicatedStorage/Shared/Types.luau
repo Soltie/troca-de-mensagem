@@ -22,12 +22,12 @@ export type PlayerData = {
 	lastJoin: number,
 }
 
--- Resposta do smoke test "Ping".
-export type PingResponse = {
+-- Resposta do remote "Interact" / "RequestRestart" (dentro do envelope Result).
+-- message = chave de Text.Messages; note = id do bilhete a exibir.
+export type InteractResponse = {
+	accepted: boolean,
 	message: string,
-	serverTime: number,
-	dataMode: DataMode,
-	sessions: number,
+	note: string?,
 }
 
 return {}

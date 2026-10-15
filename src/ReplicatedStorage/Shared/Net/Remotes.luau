@@ -18,8 +18,12 @@ local Config = require("../Config")
 export type RemoteKind = "RemoteEvent" | "RemoteFunction" | "UnreliableRemoteEvent"
 
 local DEFINITIONS: { [string]: RemoteKind } = {
-	-- Smoke test cliente -> servidor (ver PingService / PingController).
-	Ping = "RemoteFunction",
+	-- Cliente pede para interagir com algo (id do interagível). Servidor valida tudo.
+	Interact = "RemoteFunction",
+	-- Cliente avisa se a lanterna está ligada (afeta a visão do Vigia).
+	SetFlashlight = "RemoteEvent",
+	-- Cliente pede nova rodada (só aceito nas telas finais).
+	RequestRestart = "RemoteFunction",
 }
 
 local FOLDER_NAME = Config.Net.RemotesFolderName
