@@ -1,0 +1,86 @@
+--!strict
+local Objectives = require("@game/ServerScriptService/Server/Game/Objectives")
+local TestKit = require("../TestKit")
+
+local spec: TestKit.Spec = {
+	name = "Objectives",
+	run = function(t)
+		t.it("starts at 'enter' and moves to 'fuses' after entering", function()
+			local s = Objectives.new(3)
+			t.expect(Objectives.objectiveKey(s)).toBe("enter")
+			s.enteredBuilding = true
+			t.expect(Objectives.objectiveKey(s)).toBe("fuses")
+		end)
+
+		t.it("collects each fuse only once", function()
+			local s = Objectives.new(3)
+			t.expect((Objectives.collect(s, "a"))).toBe(true)
+			local again, reason = Objectives.collect(s, "a")
+			t.expect(again).toBe(false)
+			t.expect(reason).toBe("not_available")
+			t.expect(Objectives.collectedCount(s)).toBe(1)
+			t.expect(s.held).toBe(1)
+		end)
+
+		t.it("never collects more than the total", function()
+			local s = Objectives.new(2)
+			Objectives.collect(s, "a")
+			Objectives.collect(s, "b")
+			t.expect((Objectives.collect(s, "c"))).toBe(false)
+			t.expect(Objectives.collectedCount(s)).toBe(2)
+		end)
+
+		t.it("panel requires held fuses and inserts all of them", function()
+			local s = Objectives.new(3)
+			local none, reason = Objectives.insert(s)
+			t.expect(none).toBe(0)
+			t.expect(reason).toBe("no_fuses")
+			Objectives.collect(s, "a")
+			Objectives.collect(s, "b")
+			t.expect((Objectives.insert(s))).toBe(2)
+			t.expect(s.held).toBe(0)
+			t.expect(s.inserted).toBe(2)
+			t.expect(Objectives.isPanelComplete(s)).toBe(false)
+		end)
+
+		t.it("power only turns on with a complete panel, once", function()
+			local s = Objectives.new(1)
+			t.expect(Objectives.powerOn(s)).toBe(false)
+			Objectives.collect(s, "a")
+			Objectives.insert(s)
+			t.expect(Objectives.powerOn(s)).toBe(true)
+			t.expect(Objectives.powerOn(s)).toBe(false)
+			t.expect(Objectives.objectiveKey(s)).toBe("escape")
+			local again, reason = Objectives.insert(s)
+			t.expect(again).toBe(0)
+			t.expect(reason).toBe("already_powered")
+		end)
+
+		t.it("gate needs power, opens once, then the round can be won", function()
+			local s = Objectives.new(1)
+			local denied, reason = Objectives.openGate(s)
+			t.expect(denied).toBe(false)
+			t.expect(reason).toBe("no_power")
+			Objectives.collect(s, "a")
+			Objectives.insert(s)
+			Objectives.powerOn(s)
+			t.expect(Objectives.canWin(s)).toBe(false)
+			t.expect((Objectives.openGate(s))).toBe(true)
+			local twice, why = Objectives.openGate(s)
+			t.expect(twice).toBe(false)
+			t.expect(why).toBe("already_open")
+			t.expect(Objectives.canWin(s)).toBe(true)
+			t.expect(Objectives.objectiveKey(s)).toBe("run")
+		end)
+
+		t.it("asks to insert when all fuses are collected", function()
+			local s = Objectives.new(2)
+			s.enteredBuilding = true
+			Objectives.collect(s, "a")
+			Objectives.collect(s, "b")
+			t.expect(Objectives.objectiveKey(s)).toBe("insert")
+		end)
+	end,
+}
+
+return spec

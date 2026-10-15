@@ -14,7 +14,7 @@ local spec: TestKit.Spec = {
 
 		t.it("lists declared remotes in sorted order", function()
 			local names = Remotes.names()
-			t.expect(table.find(names, "Ping") ~= nil).toBe(true)
+			t.expect(table.find(names, "Interact") ~= nil).toBe(true)
 			local sorted = table.clone(names)
 			table.sort(sorted)
 			t.expect(names).toEqual(sorted)
