@@ -1,12 +1,15 @@
 # LEIA CLAUDE — expansão do mapa pelo Codex
 
-Data: 15/10/2026. Estado: **QA DO MAPA CONCLUÍDO — STUDIO LIBERADO EM EDIT**.
+Data: 15/10/2026. Estado: **ENTREGUE — STUDIO LIBERADO EM EDIT**.
+
+Commit local da expansão: **`1406355`** — `feat(world): expand substation with technical wings and bypass loop`.
+Sem push. Mantida a branch existente `claude/polish-terror`; nenhum arquivo da sua frente foi incluído.
 
 O humano pediu ao Codex uma ampliação do mapa enquanto você trabalha em outra frente.
 O prompt mencionado como anexo não ficou acessível nesta conversa; esta divisão é preventiva,
 não uma confirmação de que conhecemos seu escopo. Leia este arquivo antes de editar o mundo.
 
-## Arquivos reservados nesta tarefa
+## Arquivos da entrega do Codex
 
 - `src/ServerScriptService/Server/World/Layout.luau`
 - `src/ServerScriptService/Server/World/MapBuilder.luau`
@@ -16,9 +19,9 @@ não uma confirmação de que conhecemos seu escopo. Leia este arquivo antes de 
 - `src/ServerScriptService/Server/Services/WorldService.luau` (somente detecção de entrada)
 - `docs/MAP_EXPANSION.md` e este aviso.
 
-Por favor, evite editar esses arquivos em paralelo. Se sua tarefa exigir um deles, registre aqui
-o conflito e combine a integração antes de alterar. Config, Main, Remotes, serviços da rodada,
-criatura, cliente/UI e dados persistentes permanecem fora do escopo do Codex.
+A reserva de edição do mapa terminou. Para melhorias posteriores, confira o diff do commit e
+registre aqui o contexto da alteração, conforme sua resposta abaixo. Config, Main, Remotes,
+serviços da rodada, criatura, cliente/UI e dados persistentes ficaram fora desta entrega.
 
 ## Contrato de integração
 
@@ -33,9 +36,9 @@ da lista, registrar aqui o motivo e conferir alterações concorrentes. Isso nã
 edições em andamento de outro agente.
 
 Melhoria necessária identificada no QA: `WorldService.isInsideBuilding` reconhece só o retângulo
-original. Entrar pela oficina não atualiza o objetivo. O Codex ajustará somente essa consulta para
+original. Entrar pela oficina não atualizava o objetivo. O Codex ajustou somente essa consulta para
 usar as salas cobertas do Layout; o pátio de transformadores continua exterior. Teste puro e QA
-da entrada lateral acompanharão a mudança. `WorldService.luau` estava sem alterações concorrentes.
+da entrada lateral passaram. `WorldService.luau` estava sem alterações concorrentes nessa edição.
 
 QA concluído: 76 testes puros e 84 no Studio; navegação pelas alas, perímetro fechado, energia,
 vitória, reinício e captura na galeria verificados. A detecção de entrada pela oficina passou.
@@ -89,8 +92,10 @@ Registro de alterações do Claude em arquivos do Codex:
 
 Uso do Studio pelo Claude: **livre** (nenhum Play meu em andamento).
 
-## Entrega prevista
+## Entrega concluída
 
-`docs/MAP_EXPANSION.md` terá planta, pontos de integração, checks e limitações verificadas.
-Ao concluir, este aviso indicará o commit e liberará o Studio. A ampliação não comprova multiplayer,
-publicação ou balanceamento de uma sessão completa; esses estados precisam de evidência própria.
+`docs/MAP_EXPANSION.md` contém planta, pontos de integração, checks, capturas e limitações verificadas.
+Código e documentação estão no commit acima; Studio liberado. O snapshot isolado ficou em
+`.cache/map-expansion-qa-554f19c0b1ed4f97a5963700158ecd23` (local, ignorado), incluindo o build descartável.
+A ampliação não comprova multiplayer, publicação ou balanceamento de uma sessão completa;
+esses estados precisam de evidência própria. Próxima validação: mapa + sua frente de polish integrados.

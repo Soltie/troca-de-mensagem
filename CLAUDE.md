@@ -1,7 +1,7 @@
 # CLAUDE.md — como trabalhar neste repositório
 
-**Coordenação em andamento:** leia [LEIA_CLAUDE.md](LEIA_CLAUDE.md) antes de editar o mapa
-ou usar o Studio. O Codex está ampliando o cenário; escopo e estado do QA estão nesse aviso.
+**Coordenação do mapa:** leia [LEIA_CLAUDE.md](LEIA_CLAUDE.md) antes de integrar mudanças no mundo
+ou usar o Studio. A expansão do Codex está entregue; escopo, commit e QA estão nesse aviso.
 
 Template de jogo Roblox feito para agentes. **O repositório é a fonte da verdade**: código vive em
 `src/` e chega ao Studio pelo **Script Sync**; o agente testa no Studio pelo **MCP oficial** (`Roblox_Studio`).
