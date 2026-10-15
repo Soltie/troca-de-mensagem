@@ -17,7 +17,10 @@ Remotes.setupServer()
 -- { any }: cada Service tem campos próprios; o Loader valida Name/Init/Start em runtime.
 local services: { any } = {
 	require("./Services/PlayerDataService"),
-	require("./Services/PingService"),
+	require("./Services/WorldService"),
+	require("./Services/CreatureService"),
+	require("./Services/RoundService"),
+	require("./Services/DebugService"), -- só age no Studio
 }
 
 local count = Loader.boot(services, { label = "Server" })
