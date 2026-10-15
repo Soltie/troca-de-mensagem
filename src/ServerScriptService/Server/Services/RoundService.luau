@@ -89,7 +89,7 @@ end
 
 local function spawnPlayer(player: Player)
 	local myRound = roundId
-	player:LoadCharacter()
+	player:LoadCharacterAsync()
 	if myRound ~= roundId then
 		return
 	end
