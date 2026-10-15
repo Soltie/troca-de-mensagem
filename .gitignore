@@ -1,0 +1,26 @@
+# --- Places e builds (gerados; a fonte da verdade é src/ e os *.project.json) ---
+*.rbxl
+*.rbxlx
+*.rbxl.lock
+*.rbxlx.lock
+build/
+
+# --- Gerados por ferramentas ---
+sourcemap.json
+.cache/
+roblox.yml
+Packages/
+ServerPackages/
+DevPackages/
+
+# --- Segredos e configuração local (nunca versionar) ---
+.env
+.env.*
+*.pem
+*.key
+.claude/settings.local.json
+
+# --- Sistema operacional / editores ---
+.DS_Store
+Thumbs.db
+desktop.ini

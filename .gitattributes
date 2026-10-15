@@ -1,0 +1,15 @@
+# Tudo que é texto vai para o repositório com LF (Luau, JSON, TOML, Markdown...).
+* text=auto eol=lf
+
+# Binários / formatos do Roblox que não devem sofrer conversão de fim de linha.
+*.rbxl binary
+*.rbxlx binary
+*.rbxm binary
+*.rbxmx binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ogg binary
+*.mp3 binary
+*.fbx binary
+*.obj binary
