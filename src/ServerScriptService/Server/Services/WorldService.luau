@@ -57,7 +57,7 @@ local function applyLighting(power: boolean)
 		sky.Parent = Lighting
 	end
 	Lighting.ClockTime = 0.3
-	Lighting.Brightness = 0.25
+	Lighting.Brightness = 0.4
 	Lighting.GlobalShadows = false
 	Lighting.EnvironmentDiffuseScale = 0
 	Lighting.EnvironmentSpecularScale = 0
@@ -65,8 +65,8 @@ local function applyLighting(power: boolean)
 	Lighting.Ambient = if power then Palette.AmbientPower else Palette.Ambient
 	Lighting.OutdoorAmbient = Palette.OutdoorAmbient
 	Lighting.FogColor = if power then Palette.FogPower else Palette.Fog
-	Lighting.FogStart = 6
-	Lighting.FogEnd = if power then 120 else 95
+	Lighting.FogStart = 4
+	Lighting.FogEnd = if power then 115 else 90
 end
 
 local function lights(): { BasePart }

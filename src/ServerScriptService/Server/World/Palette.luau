@@ -65,11 +65,13 @@ local Palette = {
 	PanelOn = rgb(70, 255, 120),
 
 	-- Atmosfera
-	Fog = rgb(12, 14, 18),
-	FogPower = rgb(18, 16, 16),
+	-- Névoa um pouco mais clara que os objetos: recorta silhuetas (truque clássico de PS1).
+	Fog = rgb(30, 34, 44),
+	FogPower = rgb(36, 32, 34),
 	Ambient = rgb(16, 16, 20),
 	AmbientPower = rgb(34, 32, 32),
-	OutdoorAmbient = rgb(46, 52, 66),
+	-- Luar: o pátio fica escuro, mas cerca/árvores/fachada leem como silhuetas (orientação).
+	OutdoorAmbient = rgb(64, 72, 92),
 }
 
 return table.freeze(Palette)
