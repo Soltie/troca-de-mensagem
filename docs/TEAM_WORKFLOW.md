@@ -13,6 +13,11 @@ Preparado em 15/10/2026. Fluxo recomendado para este repositório.
 
 Repositório: https://github.com/Soltie/roblox-teste (privado).
 
+Experiência privada: **Roblox Teste - Desenvolvimento**, proprietária **XISPEGE**.
+Universe ID: `10771124828`; Place ID: `108829116970531`.
+Link: https://www.roblox.com/games/108829116970531
+Criada com Team Create ligado e Data Sharing desligado, conforme escolha do responsável.
+
 Cópia local de desenvolvimento: `C:\Users\xpg\Documents\roblox-teste`.
 Cópia dedicada de integração, já clonada e com check verde:
 `C:\Users\xpg\Documents\roblox-teste-integracao`.
@@ -46,9 +51,14 @@ Preencher antes dos convites:
 
 | Pessoa | Roblox | GitHub | Função inicial |
 | --- | --- | --- | --- |
-| Responsável | a preencher | Soltie | Integrador e código |
-| Pessoa 2 | @roupadecama (informado; acesso ainda não verificado) | a preencher | Código ou mapa |
-| Pessoa 3 | a preencher | a preencher | Arte, mapa ou QA |
+| Responsável | @XISPEGE | Soltie | Integrador e código |
+| Colega | @roupadecama | a preencher | A definir |
+| Colega | @BACONstrike67denovo | a preencher | A definir |
+| Colega | @victtxzz | a preencher | A definir |
+
+O pedido inicial era para três pessoas; foram informadas três contas de colegas além da conta
+proprietária. As três receberam Playtest. Nenhuma conta parecida foi usada como substituta.
+As funções e o total efetivo de integrantes ainda serão definidos pelo responsável.
 
 As funções podem mudar. Todos podem programar em paralelo; só a entrada de código na place
 compartilhada tem um responsável por vez. Não compartilhem senhas.
@@ -180,18 +190,30 @@ Os IDs e convites abaixo só devem ser marcados como concluídos depois de verif
 - [x] Código anteriormente commitado enviado à `main`.
 - [x] Cópia dedicada de integração clonada; check `ALL GREEN`, 73 testes puros passando,
   2 specs exclusivos do Studio pulados. Há aviso existente de API obsoleta `LoadCharacter`.
-- [ ] Experiência privada criada e ID confirmado: a preencher.
-- [ ] Contas dos dois colegas recebidas e convites aceitos nas duas plataformas.
+- [x] Experiência privada criada, IDs confirmados e scripts servidor/cliente presentes.
+- [x] Data Sharing desligado antes de enviar o cadastro, por escolha explícita do responsável.
+- [x] Playtest salvo para @roupadecama, @BACONstrike67denovo e @victtxzz; lista reaberta e conferida.
+- [ ] Edit para os colegas: Studio exige amizade aceita com @XISPEGE.
+- [ ] Usuários GitHub recebidos e convites aceitos.
 - [ ] Integrador e pasta de integração definidos e sync único verificado.
 - [ ] Check na máquina de cada integrante.
 - [ ] Team Test com os três humanos concluído.
 
-Preparação no Studio: foi aberta uma segunda instância com `build/Test.rbxlx`, gerada da cópia
-de integração. O formulário `Publish Experience` está preenchido com o nome provisório e
-Team Create ligado; isso ainda NÃO confirma criação. A opção `Data Sharing` apareceu ligada
-por padrão; a escolha do responsável está pendente antes de enviar o formulário. Essa instância
-de build ainda não tem Script Sync configurado. Depois de salvar na nuvem, abrir a experiência
-compartilhada e conectar o sync da cópia dedicada, após conferir o diálogo de diferenças.
+Experiência criada a partir de `build/Test.rbxlx` da cópia de integração, com confirmação visual
+`Successfully published!` / `Private`. Team Create abriu a experiência da nuvem em uma segunda
+instância, preservando a place local de desenvolvimento.
+
+Sync verificado na experiência compartilhada: `ServerScriptService=SyncedAsRoot`, apontando
+para `C:\Users\xpg\Documents\roblox-teste-integracao\src`; `ReplicatedStorage=NotSynced`.
+Falta ligar ReplicatedStorage pelo mesmo procedimento (**Script Sync → Sync to…**, selecionar
+`src` da integração, não `src\ReplicatedStorage`) e verificar ambas as raízes como SyncedAsRoot.
+Não selecionar arquivos de uma branch de desenvolvimento nessa sessão compartilhada.
+
+O Studio exibiu `User must be a friend to edit` ao tentar Edit para @roupadecama; os três
+seletores ficaram restritos a Playtest. Os colegas devem adicionar @XISPEGE e aceitar a amizade.
+Depois, o proprietário abre Collaborate, altera cada permissão para Edit e salva. Até isso
+acontecer, Playtest não equivale a permissão para editar ou participar de Team Create.
+O primeiro Team Test em computadores diferentes ainda precisa ser executado.
 
 Alternativas: trabalhar somente no Studio com Live Scripting/Drafts é possível, mas exigiria
 mudar a regra deste projeto de editar scripts pelo disco. Migrar tudo para Rojo seria outra
