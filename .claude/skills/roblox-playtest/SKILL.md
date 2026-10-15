@@ -18,10 +18,22 @@ Pré-requisito: `lune run scripts/check` verde. Studio aberto com `places/Dev.rb
    ```
    Confira que o trecho bate com o arquivo em disco. Status do sync: ver skill `script-sync`.
 4. **Play**: `start_stop_play` (iniciar). Espere ~3-5 s.
-5. **Console**: `get_console_output`. Esperado, sem erros/warnings inesperados:
-   - `[Server] boot OK (N services)`
-   - `[Client] boot OK (N controllers)`
-   - `[PingController] ping OK: "hello" ...` (smoke test; some se o Ping for removido)
+5. **Console**: prefira o filtro abaixo (economiza contexto) em `execute_luau`, uma vez com
+   `datamodel_type = "Server"` e outra com `"Client"`. `get_console_output` também funciona, mas traz
+   o log inteiro, incluindo stack traces da Roblox.
+   ```lua
+   local out = {}
+   for _, e in game:GetService("LogService"):GetLogHistory() do
+   	if not string.find(e.message, "CorePackages", 1, true) then
+   		table.insert(out, e.messageType.Name .. ": " .. string.sub(e.message, 1, 200))
+   	end
+   end
+   return table.concat(out, "\n")
+   ```
+   Esperado (sem `MessageWarning`/`MessageError` inesperados):
+   - Server: `[Server] boot OK (N services)`, `[PlayerDataService] mode=mock (...)`, `loaded <Nome>`
+   - Client: `[Client] boot OK (N controllers)`, `[PingController] ping OK: "hello" ...` (smoke test)
+   - Ignore `[Roblox][CorePackages...UIBlox] FoundationProvider not found` (CoreScripts da Roblox, não é nosso).
 6. **Testes**: `execute_luau` com `datamodel_type = "Server"`:
    ```lua
    return require(game:GetService("ServerScriptService").Tests.Run)()
@@ -33,6 +45,10 @@ Pré-requisito: `lune run scripts/check` verde. Studio aberto com `places/Dev.rb
 10. Erro? Corrija no ARQUIVO em `src/`, rode o check, volte ao passo 3. Nunca corrija no Studio.
 
 ## Dicas
+
+- Testar a rede como um cliente malicioso: `execute_luau` em `Client` chamando
+  `ReplicatedStorage.Remotes.<Nome>:InvokeServer(...)` com tipos errados, argumentos a mais e flood;
+  o esperado é `invalid_arguments` / `rate_limited` no envelope `Result`.
 
 - Para inspecionar a árvore, filtre por caminho e profundidade (`search_game_tree` com path, ex.
   `ReplicatedStorage/Shared`, depth 2). Ignore CoreGui/CoreScripts.
