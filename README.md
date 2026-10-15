@@ -17,6 +17,9 @@ UI por código, testes, checks e documentação para agentes).
 
 ## Documentação
 
+Para trabalhar em três pessoas, siga [docs/TEAM_WORKFLOW.md](docs/TEAM_WORKFLOW.md): GitHub privado,
+um integrador do Script Sync na place compartilhada e Team Test para jogar juntos.
+
 | Arquivo | Para quê |
 | --- | --- |
 | [CLAUDE.md](CLAUDE.md) | regras e loop de trabalho para agentes |
