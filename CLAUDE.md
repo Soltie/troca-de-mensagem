@@ -27,6 +27,27 @@ default.project.json                layout Rojo SÓ para `rojo sourcemap` e `roj
 scripts/*.luau                      tarefas em Lune (check, test, build, format, sourcemap)
 ```
 
+## Jogo atual: SUBESTAÇÃO 9 (protótipo de terror)
+
+Comece por `docs/HANDOFF.md` (estado, como jogar, problemas conhecidos) e `docs/GAME_SPEC.md`.
+
+```
+Server/World/      Layout (planta, dados puros), MapBuilder/Build/Props/Palette (mundo por código)
+Server/Game/       Objectives, RoundRules, CreatureBrain (regras PURAS, testadas no Lune)
+Server/Services/   WorldService, CreatureService, RoundService, DebugService (+ PlayerDataService)
+Shared/Game/       GameState (atributos replicados), Tags, Text (PT-BR), PixelText, Audio (IDs)
+Client/Controllers Settings, Audio, Character, Flashlight, RetroFx, WorldFx, CreatureVisual, GameUi, Interaction, Hud
+Client/Creature/   Rig + Poses (Vigia em stop-motion), AdemirPortrait/AdemirFaceData (rosto)
+```
+
+- **`execute_luau` roda em outra VM:** `require` de um módulo lá cria uma CÓPIA nova (estado zerado).
+  Leia o estado real por instâncias/atributos (`ReplicatedStorage.GameState`, `Workspace.Vigia.Root`) ou
+  pela ponte `game.ServerStorage.DebugBridge:Invoke("state")` (só no Studio; comandos em `DebugService.luau`).
+- Valores ajustáveis do jogo ficam em `Shared/Config.luau` (`Game`, `Player`, `Creature`, `Visual`, `Effects`).
+- Mudou o mapa? Mantenha `Layout` coerente e rode os testes: `Layout` (Lune) e `Navigation` (Studio:
+  rotas reais para o jogador e para o Vigia). Corredores e portas precisam de folga para o agente.
+- Textos em fonte pixel passam por `PixelText` (a fonte Arcade não tem É/Í/Ó/Ú maiúsculos).
+
 ## Loop de desenvolvimento
 
 1. Editar o arquivo em `src/` (nunca no Studio).
@@ -77,3 +98,5 @@ módulos puros (sem `game`/`task`) com testes em `Tests/Specs`.
 
 Testes no Studio (MCP, `execute_luau`, `datamodel_type = "Server"`, com Play rodando):
 `return require(game:GetService("ServerScriptService").Tests.Run)()`
+
+Estado do jogo no Studio (MCP, Server): `return game.ServerStorage.DebugBridge:Invoke("state")`

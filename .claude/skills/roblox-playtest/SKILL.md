@@ -31,8 +31,9 @@ Pré-requisito: `lune run scripts/check` verde. Studio aberto com `places/Dev.rb
    return table.concat(out, "\n")
    ```
    Esperado (sem `MessageWarning`/`MessageError` inesperados):
-   - Server: `[Server] boot OK (N services)`, `[PlayerDataService] mode=mock (...)`, `loaded <Nome>`
-   - Client: `[Client] boot OK (N controllers)`, `[PingController] ping OK: "hello" ...` (smoke test)
+   - Server: `[WorldService] world built: N parts`, `[Server] boot OK (5 services)`,
+     `[RoundService] phase Loading -> Intro`, depois `Intro -> Playing` (9 s)
+   - Client: `[Client] boot OK (10 controllers)`, `[AdemirPortrait] Local portrait ready`
    - Ignore `[Roblox][CorePackages...UIBlox] FoundationProvider not found` (CoreScripts da Roblox, não é nosso).
 6. **Testes**: `execute_luau` com `datamodel_type = "Server"`:
    ```lua
@@ -41,8 +42,32 @@ Pré-requisito: `lune run scripts/check` verde. Studio aberto com `places/Dev.rb
    Primeira linha deve ser `[Tests] N passed, 0 failed, 0 skipped specs`.
 7. **Visual (UI)**: `screen_capture` e confirme o HUD/UI esperado.
 8. **Simular jogador** (se precisar): `character_navigation`, `user_keyboard_input`, `user_mouse_input`.
+   Receita testada para a SUBESTAÇÃO 9 (seção abaixo).
 9. **Parar**: `start_stop_play` (parar). Sempre pare no fim.
 10. Erro? Corrija no ARQUIVO em `src/`, rode o check, volte ao passo 3. Nunca corrija no Studio.
+
+## Roteiro de rodada (SUBESTAÇÃO 9)
+
+1. Espere `GameState.Phase == "Playing"` (atributo em `ReplicatedStorage.GameState`).
+2. Estado real: `game.ServerStorage.DebugBridge:Invoke("state")` (Server). NÃO use `require` de
+   services no `execute_luau`: ele cria cópias novas, com estado zerado.
+3. Posição dos fusíveis: `workspace.Substation9.Pickups.Fuses`. Onde ficar de pé:
+   `Layout.FuseStands` / `Layout.Stands` (`Server/World/Layout.luau`).
+4. Andar: `character_navigation` em trechos curtos (ex.: recepção `(-4, 3, -9)` → sala). O agente
+   do MCP é mais largo que o jogador e atravessa portas fechadas no planejamento (região
+   PassThrough): se parar diante de uma porta, abra-a com E.
+5. Mirar: `user_mouse_input` NÃO gira a câmera travada (LockCenter). No cliente:
+   `workspace.CurrentCamera.CFrame = CFrame.lookAt(cam.CFrame.Position, alvo)` (a câmera Classic mantém).
+   Confira `PlayerGui.GameUi.Prompt` (texto "[E] ..." e Visible).
+6. Agir: `user_keyboard_input` keyPress `E`; reiniciar nas telas finais: `R`.
+7. Automação lenta é pega pelo Vigia: congele-o só para o percurso (`Invoke("freezeCreature", true)`).
+   A captura/perseguição se testa à parte: `awaken` + `placeCreature` a menos de 7 studs do jogador.
+8. Esperado: fusível some e `FusesHeld` sobe. Um 2º `Interact` no mesmo id volta `not_available`.
+   O portão sem energia volta "SEM ENERGIA". Depois do quadro: `PowerOn` e 17 luzes. Portão + saída: `Won`.
+   R restaura fusíveis, portas, quadro, portão, luzes e criatura.
+9. FPS: `game:GetService("Stats").FrameTime` e o painel F3 (`PlayerGui.DebugHud`). Com o Studio em
+   segundo plano o quadro fica limitado a ~15 FPS (66,7 ms constantes); compare com
+   `RenderCPUFrameTime`/`RenderGPUFrameTime`.
 
 ## Dicas
 
