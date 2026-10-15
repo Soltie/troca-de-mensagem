@@ -103,3 +103,90 @@ READMEs/releases oficiais das ferramentas e docs do Claude Code).
 ## D18. Roblox Studio instalado pelo humano
 - **Contexto:** `winget install Roblox.RobloxStudio` falhou (hash do instalador no manifesto do winget
   desatualizado em relação ao instalador atual da Roblox). Não contornamos a verificação de hash.
+
+---
+
+# Decisões do protótipo SUBESTAÇÃO 9 (2026-10-15)
+
+## D19. Mundo gerado por código no boot do servidor
+- **Alternativas:** construir o mapa na place (Studio) e salvar o `.rbxlx`; modelos `.model.json` via `rojo build`.
+- **Por quê:** a place não é versionada e o Script Sync só leva scripts. Gerar o mapa por código
+  (`Server/World/Layout.luau` → `MapBuilder.luau`) deixa o repositório como fonte da verdade: apagar
+  `Workspace.Substation9` e rodar de novo recria tudo (838 peças em ~10 ms). O `Baseplate`/`SpawnLocation`
+  do template são removidos em runtime (`WorldService`).
+
+## D20. Vigia: corpo invisível cinemático no servidor + visual em stop-motion no cliente
+- **Alternativas:** NPC com Humanoid e animações; visual animado no servidor.
+- **Por quê:** a peça `Root` ancorada e movida por CFrame ao longo dos waypoints do PathfindingService
+  é previsível (sem física, sem travar em quinas) e autoritativa para captura. O cliente monta o corpo
+  low poly e só o atualiza **em passos**: posição a 12 Hz e poses-chave a 3–12 poses/s, sem interpolação.
+  Assim a animação é "travada" de propósito, mas a simulação, a colisão e os controles continuam a 60 Hz.
+  O cérebro (`Server/Game/CreatureBrain.luau`) é puro e testado no Lune.
+
+## D21. Interação "mirar + E" com validação completa no servidor
+- **Alternativas:** `ProximityPrompt`.
+- **Por quê:** fica coerente com o survival horror de PS1 e passa pelo registro central de remotes
+  (`Interact`) + `ServerNet` (Guard + rate limit). O servidor revalida a fase, a existência, o estado
+  habilitado, a distância (com folga de latência), a linha de visão e se a ação é possível
+  (`RoundRules.validateInteraction`, testado).
+
+## D22. Primeira pessoa travada definida no cliente
+- **Alternativas:** só `Player.CameraMode` no servidor.
+- **Por quê:** testado: o valor definido no servidor não chegou ao cliente (continuou Classic/zoom 400).
+  Agora o cliente define `CameraMode`/zoom, e o servidor também ajusta `StarterPlayer`.
+
+## D23. Mecânica central: a lanterna é faca de dois gumes
+- **Por quê:** dá escolhas sem ampliar o escopo. A lanterna ligada aumenta o alcance de visão do Vigia
+  (30 → 55 studs); correr faz barulho (o servidor mede pela velocidade, sem confiar no cliente);
+  pegar e encaixar fusíveis também faz barulho. A partir do 2º fusível ele "fareja" a posição aproximada
+  do jogador; com a energia de volta, caça.
+
+## D24. "Retrô" com o que o Roblox realmente oferece
+- **Validado:** não existe shader nem pixelização da render. `Lighting.Technology` e
+  `MaterialService.Use2022Materials` não são acessíveis por script (testado via MCP).
+- **Escolha:**
+  - Névoa clássica (`Fog*`, sem `Atmosphere`) um pouco **mais clara que os objetos**, para recortar silhuetas.
+  - `GlobalShadows = false` (luz chapada, sem sombras).
+  - Cores sólidas com paleta curta e pisos em xadrez.
+  - Gradação de cor + bloom.
+  - Sobreposição 2D com scanlines, vinheta, granulação a 12 quadros/s e linha de tracking (liga/desliga com V).
+  - Fonte pixel `Arcade`.
+  - Animações em passos: Vigia, portas (4 quadros), portão (6 quadros), luzes piscando a 12 Hz,
+    texto da intro e sprite de 2 quadros no susto.
+
+## D25. Acentos na fonte pixel
+- **Validado:** `Arcade` desenha só Ã e Ç maiúsculos; É/Í/Ó/Ú saem minúsculos.
+- **Escolha:** `PixelText.normalize` remove esses acentos em textos de UI/placas (como em muitos jogos
+  de PS1). Os bilhetes usam `SpecialElite` e mantêm a acentuação completa.
+
+## D26. Regiões de porta "atravessáveis" no grupo de colisão NavOnly
+- **Validado:** `PathfindingModifier.PassThrough` só funciona se a peça da região tiver `CanQuery = true`.
+- **Escolha:** região com `CanQuery = true`, no grupo `NavOnly`, que não colide com `Default`. Assim os
+  raycasts de visão e interação continuam ignorando a peça invisível. O Vigia planeja passar pela porta
+  fechada e a arromba ao chegar.
+
+## D27. Corredor sem obstáculos e agente do Vigia com raio 1,3
+- **Validado pelo teste `Navigation`:** banco, cadeira caída e armários estreitavam o corredor para
+  ~5 studs; com voxels de 4 studs, a rota do agente maior fechava. O corredor (artéria principal) ficou
+  só com decoração sem colisão, e o agente usa raio 1,3 / altura 7,6 (`Config.Creature`).
+
+## D28. Ponte de debug só no Studio (`ServerStorage.DebugBridge`)
+- **Validado:** o `execute_luau` do MCP roda em outra VM; `require` lá cria uma cópia nova dos módulos e
+  não enxerga o estado do jogo. Uma `BindableFunction` (criada só se `RunService:IsStudio()`) dá acesso a
+  `state`, `awaken`, `freezeCreature`, `placeCreature`, `teleport` e `restart`.
+
+## D29. Estado da rodada por atributos (`ReplicatedStorage.GameState`)
+- **Alternativas:** RemoteEvents servidor → cliente.
+- **Por quê:** atributos são sempre o estado atual (sem corrida ao entrar) e a UI só observa. Remotes
+  ficam só para pedidos do cliente (`Interact`, `SetFlashlight`, `RequestRestart`).
+
+## D30. Áudio: bibliotecas licenciadas + filtro "lo-fi"
+- **Por quê:** Pro Sound Effects / APM Music (parceiras da Roblox) evitam uploads de origem incerta.
+  Todos os sons do cliente e do mundo passam por um `SoundGroup` com EQ cortando agudos e reverb de
+  corredor de pedra, para soar como hardware antigo. Detalhes em `docs/ASSETS.md`.
+
+## D31. Rosto do Ademir (outra sessão)
+- **Contexto:** o humano pediu, em outra sessão de agente, para usar uma foto como rosto do Vigia.
+  A integração (`AdemirPortrait.luau`, `EditableImage` local com fallback) foi preservada sem mudanças
+  e versionada separadamente. Antes de publicar, confirmar o consentimento da pessoa e as permissões
+  de `EditableImage`.

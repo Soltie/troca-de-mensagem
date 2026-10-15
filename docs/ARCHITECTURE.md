@@ -82,3 +82,72 @@ Exemplo: `HudController` cria `PlayerGui.DebugHud` (ping, modo de dados). Deslig
 `PingService` (servidor) + `PingController` (cliente): o cliente chama `Ping("hello")`, o servidor valida,
 aplica rate limit, consulta o PlayerData e responde; o cliente loga e mostra latência/modo no HUD.
 É exemplo técnico; remova os dois quando o jogo tiver remotes reais.
+
+---
+
+# Jogo: SUBESTAÇÃO 9
+
+```
+SERVIDOR (autoritativo)                                   CLIENTE (efeitos e UI)
+WorldService  ── constrói o mapa (World/MapBuilder)       CharacterController  1ª pessoa, corrida, balanço
+   luz/energia, portas e portão em passos                 FlashlightController lanterna -> SetFlashlight
+RoundService  ── fases, objetivos (Game/Objectives),       InteractionController mira + E -> Interact
+   remotes Interact/SetFlashlight/RequestRestart          CreatureVisualController corpo do Vigia em stop-motion
+   valida interação (Game/RoundRules)                     AudioController      camadas, stingers, lo-fi
+CreatureService ── Root invisível + pathfinding            WorldFxController    luzes piscando em passos
+   cérebro puro (Game/CreatureBrain)                      RetroFxController    gradação + sobreposição (V)
+DebugService  ── ServerStorage.DebugBridge (só Studio)    GameUiController     objetivo, intro, bilhete, finais
+        │                                                 HudController        debug (F3): FPS, estado
+        └── ReplicatedStorage.GameState (atributos) ──► todos os controllers observam
+```
+
+## Fluxo da rodada
+
+`Loading → Intro (9 s, jogador ancorado) → Playing → Won | Lost → [R] → Intro ...`
+
+1. `RoundService.restart()` sorteia os fusíveis (2 pontos por sala) e restaura portas, portão, quadro,
+   luzes, criatura e atributos. Depois spawna o jogador (`CharacterAutoLoads = false`).
+2. Entrar no prédio → objetivo "fusíveis". O 1º fusível (ou 120 s) acorda o Vigia no ponto mais
+   distante do jogador.
+3. Cada interação passa por `ServerNet` → `RoundRules.validateInteraction` → regra do objeto
+   (`Objectives`). O resultado volta como chave de mensagem (`Text.Messages`).
+4. Com os 3 fusíveis no quadro: `PowerOnDelay` → energia (luzes, zumbido, névoa mais longa), o Vigia
+   passa a caçar e o portão pode abrir.
+5. Vitória: portão aberto + jogador na `ExitZone`. Derrota: o `CreatureBrain` devolve `capture`
+   (perto + linha de visão). As duas saem de `Playing` só uma vez (`endRound`).
+
+## O Vigia
+
+- **Servidor:** `Workspace.Vigia.Root` (invisível, ancorada, sem colisão), atributos `Mode`/`Active`.
+  - Cérebro a cada 0,2 s, com os modos Dormant, Patrol, Investigate, Search, Chase e Capture.
+  - Movimento cinemático no Heartbeat; repath a cada 0,5 s na perseguição.
+  - Arromba portas fechadas no caminho.
+- **Percepção:**
+  - Visão: raycast olho → cabeça, campo de 120°, alcance 30 (55 com a lanterna) e 7 studs mesmo de costas.
+  - Barulho: corrida (velocidade > 13), fusíveis, quadro, portas e portão.
+  - "Faro" a partir do 2º fusível; caça com a energia ligada.
+- **Cliente:** `Client/Creature/Rig.luau` (21 peças, cinemática direta) + `Poses.luau` (poses-chave).
+  - A posição visual acompanha a Root a 12 Hz.
+  - Poses: Walk/Chase/Search/Idle/Capture a 3–12 poses/s.
+  - A cabeça "estala" para olhar o jogador.
+  - Passos com som e tremor.
+
+## Mapa
+
+`Server/World/Layout.luau` (dados puros, testados) define:
+
+- salas, paredes com aberturas, portas e portão;
+- zona de saída e spawn;
+- pontos dos fusíveis e onde ficar de pé para pegá-los;
+- rota de patrulha, luminárias e luzes de emergência.
+
+`MapBuilder` monta tudo com `Build`/`Props`/`Palette`. As regiões de porta ficam no grupo de colisão
+`NavOnly` (ver DECISIONS D26).
+
+## Testes do jogo
+
+- Lune (`lune run scripts/test`): `Objectives`, `RoundRules`, `CreatureBrain`, `Layout`/`WallMath` e
+  `PixelText`, além dos do template.
+- Studio (`Tests.Run`): os mesmos, mais `Remotes` e `Navigation`. O `Navigation` calcula rotas reais com o
+  agente do jogador e do Vigia: spawn → todos os pontos de apoio, salas, quadro e portão, mais a rota de
+  patrulha completa.

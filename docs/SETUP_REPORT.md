@@ -4,12 +4,12 @@ Atualizado: 2026-10-15. Máquina: Windows 11, PowerShell 5.1 / Git Bash. Projeto
 
 ## Estado atual / próximo passo
 
-**Estado:** ambiente **pronto e verificado de ponta a ponta**. Toolchain fixada, template funcionando,
-`scripts/check` verde, MCP e Script Sync verificados no Studio, playtest automatizado verde (43 testes no Studio).
-Nenhuma mecânica de jogo implementada.
+**Estado (2026-10-15):** protótipo jogável **SUBESTAÇÃO 9** implementado e testado no Studio
+(ver `docs/HANDOFF.md`). `scripts/check` verde (73 testes Lune). Studio: 79 testes passando, uma rodada
+completa vencida pelo caminho normal, derrota e reinício validados, console sem warnings ou erros do projeto.
 
-**Próximo passo:** receber a ideia do jogo — preencher `docs/GAME_SPEC.md` (ou descrever ao agente) e
-implementar fase por fase seguindo o loop do `CLAUDE.md`.
+**Próximo passo:** playtest humano para equilibrar o Vigia (`Config.Creature`) e seguir os
+"Próximos passos recomendados" do `docs/HANDOFF.md`.
 
 Para retomar numa sessão nova: *"Leia docs/SETUP_REPORT.md e continue a partir de 'Estado atual / próximo passo'."*
 
@@ -121,3 +121,34 @@ O desligamento (BindToClose) não deixou save pendente. O play foi parado no fim
 
 - 2026-10-14: ambiente e template criados (sessão inicial); checkpoint humano.
 - 2026-10-15: MCP, Script Sync e playtest verificados no Studio; HUD movido para o topo central.
+
+## Protótipo SUBESTAÇÃO 9 — evidências (2026-10-15)
+
+Resumo; detalhes em `docs/HANDOFF.md`.
+
+```
+server: [WorldService] world built: 838 parts in 10 ms  | [Server] boot OK (5 services)
+client: [Client] boot OK (10 controllers)               | [AdemirPortrait] Local portrait ready (128x128)
+Studio Tests.Run: [Tests] 79 passed, 0 failed, 0 skipped specs   (inclui Navigation com rotas reais)
+rodada normal: portão sem energia -> "SEM ENERGIA"; 3 fusíveis (E); porta (E); quadro -> PowerOn (17 luzes);
+               portão (E) -> saída -> phase Playing -> Won (01:54); R -> Intro com tudo restaurado
+servidor: repetir fusível -> not_available; distante -> too_far
+Vigia: Patrol -> Chase (0,2 s) -> Capture (0,4 s) -> Lost; 1 captura no log (sem repetição)
+console do projeto: 0 warnings / 0 erros (servidor e cliente)
+desempenho: render CPU 7,4 ms, GPU 0,3 ms, Heartbeat 0,15 ms; FrameTime limitado a 66,7 ms (Studio em 2º plano)
+```
+
+Problemas encontrados e corrigidos durante a validação:
+
+- **Câmera:** `CameraMode` definido no servidor não chegava ao cliente → agora o cliente define.
+- **Recepção e corredor entulhados:** a rota fechava (agentes do MCP e do Vigia) → props reposicionados;
+  teste `Navigation` criado para evitar regressão.
+- **Portas atravessáveis:** `PathfindingModifier.PassThrough` exige `CanQuery = true` → regiões no grupo `NavOnly`.
+- **Fonte Arcade:** sem É/Í/Ó/Ú maiúsculos → `PixelText`.
+- **Tela final:** tempo 00:00 e contorno borrado no botão → corrigidos.
+- **Quadro:** continuava com prompt depois da energia voltar → desabilitado.
+- **`LoadCharacter` depreciado** → `LoadCharacterAsync`.
+- **Pátio preto fora da lanterna:** névoa mais clara que os objetos e luar.
+
+Observação: outra sessão de agente trabalhou ao mesmo tempo no mesmo Studio e no mesmo repositório
+(rosto do Ademir, `docs/TEAM_WORKFLOW.md`, `.github/`). O trabalho dela foi preservado e versionado por ela.
