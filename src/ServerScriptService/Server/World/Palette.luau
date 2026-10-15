@@ -43,6 +43,11 @@ local Palette = {
 	Red = rgb(140, 32, 28),
 	ExitGreen = rgb(40, 160, 80),
 	FuseGlow = rgb(255, 150, 60),
+	Brass = rgb(176, 140, 64),
+	Uniform = rgb(40, 46, 58), -- farda do vigia
+	UniformDark = rgb(26, 30, 38),
+	Skin = rgb(150, 118, 96),
+	Hair = rgb(54, 50, 46),
 
 	-- Exterior
 	Asphalt = rgb(34, 36, 38),

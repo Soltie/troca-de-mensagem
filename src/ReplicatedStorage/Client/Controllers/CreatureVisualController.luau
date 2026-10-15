@@ -15,8 +15,7 @@ local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
 local Poses = require("../Creature/Poses")
 local Rig = require("../Creature/Rig")
 local AudioController = require("./AudioController")
-local CharacterController = require("./CharacterController")
-local SettingsController = require("./SettingsController")
+local CameraController = require("./CameraController")
 
 local HEIGHT = Config.Creature.Height
 local V = Config.Visual
@@ -145,8 +144,10 @@ local function update(dt: number)
 		local distance = if camera then (root.Position - camera.CFrame.Position).Magnitude else math.huge
 		if pose.step then
 			AudioController.playAt("CreatureStep", r.emitter, 1, 0.42 + rng:NextNumber(-0.04, 0.04))
-			if distance < 16 and SettingsController.get("motion") then
-				CharacterController.shake(0.06 * (16 - distance) / 16, 0.12)
+			-- Tremor dos passos pela distância (o compositor respeita a opção de conforto).
+			if distance < 30 then
+				local k = (30 - distance) / 30
+				CameraController.addTrauma(0.22 * k * k)
 			end
 		end
 		-- Cabeça "estala" para olhar o jogador na perseguição (atualiza só no passo).

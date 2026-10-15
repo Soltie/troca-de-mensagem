@@ -16,6 +16,7 @@ local Config = require("@game/ReplicatedStorage/Shared/Config")
 local Logger = require("@game/ReplicatedStorage/Shared/Logger")
 local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
 local CreatureBrain = require("../Game/CreatureBrain")
+local HideRules = require("../Game/HideRules")
 local Layout = require("../World/Layout")
 local WorldService = require("./WorldService")
 
@@ -45,6 +46,12 @@ local captureCallbacks: { (Player) -> () } = {}
 local pendingNoise: Vector3? = nil
 local lastStalkAt = 0
 local lastSeenFlag = false
+local lastSeenAt = -math.huge
+-- Tempo que ele está perto do armário com o jogador respirando (HideRules.exposure).
+local exposure = 0
+-- Trégua (checkpoint): parado até este instante.
+local holdUntil = 0
+local nextBangAt = 0
 
 -- Movimento
 local waypoints: { Vector3 } = {}
@@ -123,22 +130,88 @@ local function lineOfSight(target: Target): boolean
 	return result == nil
 end
 
+-- Jogador escondido num armário: só é "visto" se o Vigia viu entrar ou o ouviu respirar.
+local function perceiveHidden(target: Target, now: number): CreatureBrain.Perception
+	local player = target.player
+	local origin = feet()
+	local at = player:GetAttribute("HiddenAt")
+	local spot = if typeof(at) == "Vector3" then at else target.root.Position
+	local spotFeet = Vector3.new(spot.X, origin.Y, spot.Z)
+	local distance = (spotFeet - origin).Magnitude
+	-- Lanterna acesa dentro do armário vaza pelas frestas: conta como respirar.
+	local quiet = player:GetAttribute("HoldBreath") == true and player:GetAttribute(Tags.Attr.Flashlight) ~= true
+	exposure = HideRules.exposure(exposure, distance, quiet, C.BrainInterval)
+	local seen = player:GetAttribute("HiddenSeen") == true
+	if
+		not seen
+		and HideRules.found({
+			sawEntry = false,
+			creatureActive = active,
+			distance = distance,
+			holdingBreath = quiet,
+			exposedTime = exposure,
+			captureRange = C.CaptureRange,
+		})
+	then
+		seen = true
+		player:SetAttribute("HiddenSeen", true)
+		getRoot():SetAttribute("Alert", now)
+		log.info("heard %s breathing inside the locker", player.Name)
+	end
+	local noise = pendingNoise
+	pendingNoise = nil
+	if seen then
+		lastSeenAt = now
+		return {
+			now = now,
+			canSee = true,
+			lineOfSight = true,
+			distance = distance,
+			targetPos = spotFeet,
+			noisePos = nil,
+			hunt = hunt,
+			arrived = arrived,
+		}
+	end
+	-- Não sabe onde ele está: segue o último rastro / barulho (o arquejo atrai até o armário).
+	return {
+		now = now,
+		canSee = false,
+		lineOfSight = false,
+		distance = distance,
+		targetPos = nil,
+		noisePos = noise,
+		hunt = hunt,
+		arrived = arrived,
+	}
+end
+
 local function perceive(target: Target?, now: number): CreatureBrain.Perception
 	if target == nil then
 		return { now = now, canSee = false, lineOfSight = false, hunt = false, arrived = arrived }
 	end
+	local hiddenId = target.player:GetAttribute("Hidden")
+	if type(hiddenId) == "string" and hiddenId ~= "" then
+		return perceiveHidden(target, now)
+	end
+	exposure = 0
 	local origin = feet()
 	local toTarget = target.root.Position - (origin + UP * 3)
 	local distance = toTarget.Magnitude
 	local los = distance < 80 and lineOfSight(target)
 
 	local flashlight = target.player:GetAttribute(Tags.Attr.Flashlight) == true
-	local range = if flashlight then C.SightRangeFlashlight else C.SightRange
+	-- Agachado ele enxerga menos (alcance e o "sentido" de perto).
+	local crouch = if target.player:GetAttribute("Stance") == "Crouch" then Config.Player.CrouchSightFactor else 1
+	local range = (if flashlight then C.SightRangeFlashlight else C.SightRange) * crouch
 	local forward = getRoot().CFrame.LookVector
 	local flat = Vector3.new(toTarget.X, 0, toTarget.Z)
 	local inFov = flat.Magnitude < 1e-3
 		or math.deg(math.acos(math.clamp(forward:Dot(flat.Unit), -1, 1))) <= C.SightFov / 2
-	local canSee = los and distance <= range and (inFov or distance <= C.CloseSenseRange)
+	local canSee = los and distance <= range and (inFov or distance <= C.CloseSenseRange * crouch)
+	if canSee then
+		lastSeenAt = now
+	end
 
 	local targetFeet = target.root.Position - UP * 3
 	local noise = pendingNoise
@@ -256,6 +329,10 @@ local function brainTick()
 		return
 	end
 	local now = os.clock()
+	if now < holdUntil then
+		setAttributes("Search")
+		return
+	end
 	local target = findTarget()
 	local perception = perceive(target, now)
 	local command = CreatureBrain.step(brain, perception)
@@ -307,6 +384,17 @@ local function move(dt: number)
 	end
 	local now = os.clock()
 	local r = getRoot()
+	if now < holdUntil then
+		return
+	end
+
+	-- Porta trancada: bate com força e desiste (o pathfinding já contorna).
+	local lockedDoor = WorldService.lockedDoorNear(feet(), C.DoorOpenRange)
+	if lockedDoor and (currentMode == "Chase" or currentMode == "Investigate") and now >= nextBangAt then
+		nextBangAt = now + 5
+		WorldService.bangDoor(lockedDoor)
+		pauseUntil = now + 1.2
+	end
 
 	-- Arromba portas fechadas no caminho.
 	local door = WorldService.closedDoorNear(feet(), C.DoorOpenRange)
@@ -393,6 +481,10 @@ function CreatureService.reset()
 	hunt = false
 	pendingNoise = nil
 	lastSeenFlag = false
+	lastSeenAt = -math.huge
+	exposure = 0
+	holdUntil = 0
+	nextBangAt = 0
 	arrived = true
 	pathBusy = false
 	pauseUntil = 0
@@ -459,6 +551,20 @@ function CreatureService.setFrozen(value: boolean)
 	end
 end
 
+-- Trégua: fica parado olhando em volta por `seconds` (continuar do checkpoint).
+function CreatureService.holdOff(seconds: number)
+	holdUntil = os.clock() + seconds
+end
+
+-- Segundos desde a última vez que viu o jogador (esconderijo: "viu entrar?").
+function CreatureService.secondsSinceSeen(): number
+	return os.clock() - lastSeenAt
+end
+
+function CreatureService.isChasing(): boolean
+	return active and currentMode == "Chase"
+end
+
 function CreatureService.onCapture(callback: (Player) -> ())
 	table.insert(captureCallbacks, callback)
 end
@@ -477,6 +583,9 @@ function CreatureService.state(): { [string]: any }
 		position = feet(),
 		waypoints = #waypoints,
 		seeing = lastSeenFlag,
+		sinceSeen = os.clock() - lastSeenAt,
+		exposure = exposure,
+		holdOff = math.max(0, holdUntil - os.clock()),
 	}
 end
 

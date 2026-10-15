@@ -18,11 +18,15 @@ local Config = require("../Config")
 export type RemoteKind = "RemoteEvent" | "RemoteFunction" | "UnreliableRemoteEvent"
 
 local DEFINITIONS: { [string]: RemoteKind } = {
-	-- Cliente pede para interagir com algo (id do interagível). Servidor valida tudo.
+	-- Cliente pede para interagir com algo: (id, ação opcional "use" | "alt"). Servidor valida tudo.
 	Interact = "RemoteFunction",
-	-- Cliente avisa se a lanterna está ligada (afeta a visão do Vigia).
+	-- Cliente pede lanterna ligada/desligada; o servidor decide pela bateria (afeta a visão do Vigia).
 	SetFlashlight = "RemoteEvent",
-	-- Cliente pede nova rodada (só aceito nas telas finais).
+	-- Cliente pede postura ("Stand" | "Crouch"); o servidor checa o teto e muda o corpo.
+	SetStance = "RemoteEvent",
+	-- Escondido: prender/soltar a respiração.
+	SetHoldBreath = "RemoteEvent",
+	-- Cliente pede nova rodada nas telas finais: "full" (do zero) ou "checkpoint".
 	RequestRestart = "RemoteFunction",
 }
 

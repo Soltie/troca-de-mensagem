@@ -1,32 +1,58 @@
 --!strict
 --[[
-	WorldService: dono do mundo físico. Constrói o mapa no boot (MapBuilder), controla
-	iluminação/energia, portas, portão, quadro e fusíveis, e restaura tudo a cada rodada.
+	WorldService: dono do mundo físico. Constrói o mapa no boot (MapBuilder + FeatureBuilder),
+	controla iluminação/energia, portas (aberta / fresta / fechada / trancada), portão, quadro,
+	disjuntores, fusíveis, chave, pilhas e armários, e restaura tudo a cada rodada ou checkpoint.
 
 	Só o servidor muda o mundo; o cliente lê (tags/atributos) e faz efeitos locais.
+	As REGRAS (o que pode ou não) ficam no RoundService e em Server/Game; aqui só se aplica.
 ]]
 
 local CollectionService = game:GetService("CollectionService")
 local Lighting = game:GetService("Lighting")
 local PhysicsService = game:GetService("PhysicsService")
 
+local Audio = require("@game/ReplicatedStorage/Shared/Game/Audio")
 local Config = require("@game/ReplicatedStorage/Shared/Config")
 local Logger = require("@game/ReplicatedStorage/Shared/Logger")
 local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
 local Text = require("@game/ReplicatedStorage/Shared/Game/Text")
+local Build = require("../World/Build")
+local FeatureBuilder = require("../World/FeatureBuilder")
+local Features = require("../World/Features")
 local Layout = require("../World/Layout")
 local MapBuilder = require("../World/MapBuilder")
 local Palette = require("../World/Palette")
 
+export type DoorState = "open" | "crack" | "closed"
+
+-- Interagível do mapa original ou das novidades (kind como texto: Fuse, Door, Hide, Key...).
+export type Interactable = FeatureBuilder.Interactable
+
 local log = Logger.new("WorldService")
 
 local world: MapBuilder.World? = nil
+local features: FeatureBuilder.Built? = nil
 local fuseFolder: Instance? = nil
 local powered = false
+local doorStates: { [string]: DoorState } = {}
+local doorTokens: { [string]: number } = {}
+local locked: { [string]: boolean } = {}
+local modifiers: { [string]: PathfindingModifier } = {}
+local rattles: { [string]: Sound } = {}
+local latches: { [string]: Sound } = {}
+local bangs: { [string]: Sound } = {}
+local taken: { [string]: boolean } = {}
+local sparkCount = 0
 
 local function getWorld(): MapBuilder.World
 	assert(world, "[WorldService] used before Init")
 	return world
+end
+
+local function getFeatures(): FeatureBuilder.Built
+	assert(features, "[WorldService] used before Init")
+	return features
 end
 
 local function vec(p: Layout.Point): Vector3
@@ -67,6 +93,8 @@ local function applyLighting(power: boolean)
 	Lighting.FogColor = if power then Palette.FogPower else Palette.Fog
 	Lighting.FogStart = 4
 	Lighting.FogEnd = if power then 115 else 90
+	-- Base para a névoa dinâmica do cliente (perigo encurta a névoa localmente).
+	Lighting:SetAttribute("BaseFogEnd", Lighting.FogEnd)
 end
 
 local function lights(): { BasePart }
@@ -95,30 +123,154 @@ local function setLightPart(part: BasePart, on: boolean)
 	end
 end
 
+-- ===================== Portas =====================
+
 local function doorPose(door: MapBuilder.DoorHandle, angle: number): CFrame
 	return door.hinge * CFrame.Angles(0, angle, 0) * (door.hinge:Inverse() * door.closedCFrame)
 end
 
--- Anima a porta em poucos quadros (stop-motion). Estado lógico muda na hora.
-local function animateDoor(door: MapBuilder.DoorHandle, open: boolean, instant: boolean?)
-	door.isOpen = open
-	door.panel:SetAttribute(Tags.Attr.InteractPrompt, if open then Text.Prompts.DoorClose else Text.Prompts.DoorOpen)
-	local target = if open then door.openAngle else 0
+local function angleFor(door: MapBuilder.DoorHandle, state: DoorState): number
+	if state == "open" then
+		return door.openAngle
+	elseif state == "crack" then
+		return door.openAngle * (Config.Doors.CrackAngle / 95)
+	end
+	return 0
+end
+
+local function currentAngle(door: MapBuilder.DoorHandle): number
+	-- Ângulo atual a partir da peça (a animação pode ter sido interrompida).
+	local relative = door.hinge:Inverse() * door.panel.CFrame
+	local closedRelative = door.hinge:Inverse() * door.closedCFrame
+	local a = relative.Position
+	local b = closedRelative.Position
+	local angle = math.atan2(b.Z, b.X) - math.atan2(a.Z, a.X)
+	while angle > math.pi do
+		angle -= 2 * math.pi
+	end
+	while angle < -math.pi do
+		angle += 2 * math.pi
+	end
+	return angle
+end
+
+local function refreshDoorPrompt(door: MapBuilder.DoorHandle)
+	local state = doorStates[door.id] or "closed"
+	local panel = door.panel
+	panel:SetAttribute("DoorState", state)
+	panel:SetAttribute("Locked", locked[door.id] == true)
+	if locked[door.id] then
+		panel:SetAttribute(Tags.Attr.InteractPrompt, Text.Prompts.DoorLocked)
+		panel:SetAttribute("InteractAlt", nil)
+	elseif state == "open" then
+		panel:SetAttribute(Tags.Attr.InteractPrompt, Text.Prompts.DoorClose)
+		panel:SetAttribute("InteractAlt", Text.Prompts.DoorCrack)
+	elseif state == "crack" then
+		panel:SetAttribute(Tags.Attr.InteractPrompt, Text.Prompts.DoorOpen)
+		panel:SetAttribute("InteractAlt", Text.Prompts.DoorShut)
+	else
+		panel:SetAttribute(Tags.Attr.InteractPrompt, Text.Prompts.DoorOpen)
+		panel:SetAttribute("InteractAlt", Text.Prompts.DoorCrack)
+	end
+end
+
+--[[
+	Anima a porta com PESO: começa devagar, acelera e assenta (curva suave), mas sempre em passos
+	de 12 quadros/s (stop-motion). O estado lógico muda na hora.
+]]
+local function animateDoor(door: MapBuilder.DoorHandle, state: DoorState, instant: boolean?)
+	doorStates[door.id] = state
+	door.isOpen = state == "open"
+	refreshDoorPrompt(door)
+	local target = angleFor(door, state)
+	local token = (doorTokens[door.id] or 0) + 1
+	doorTokens[door.id] = token
 	if instant then
 		door.panel.CFrame = doorPose(door, target)
+		door.busy = false
+		return
+	end
+	local from = currentAngle(door)
+	local delta = target - from
+	if math.abs(delta) < 1e-3 then
 		return
 	end
 	door.busy = true
-	door.sound:Play()
+	local closing = state == "closed"
+	local sound = door.sound
+	sound.PlaybackSpeed = if state == "crack" then 1.25 else (if closing then 1.1 else 0.9)
+	sound.Volume = Audio.Door.volume * (if state == "crack" then 0.45 else 1)
+	sound:Play()
+	local frames = math.max(3, math.ceil(math.abs(delta) / math.rad(10)))
 	task.spawn(function()
-		local frames = Config.Visual.DoorFrames
-		local from = if open then 0 else door.openAngle
 		for i = 1, frames do
-			door.panel.CFrame = doorPose(door, from + (target - from) * (i / frames))
-			task.wait(0.09)
+			if doorTokens[door.id] ~= token then
+				return
+			end
+			local t = i / frames
+			local eased = t * t * (3 - 2 * t)
+			door.panel.CFrame = doorPose(door, from + delta * eased)
+			task.wait(1 / 12)
 		end
-		door.busy = false
+		if closing then
+			local latch = latches[door.id]
+			if latch then
+				latch:Play()
+			end
+		end
+		if doorTokens[door.id] == token then
+			door.busy = false
+		end
 	end)
+end
+
+local function setLocked(door: MapBuilder.DoorHandle, value: boolean)
+	locked[door.id] = value
+	local modifier = modifiers[door.id]
+	if modifier then
+		-- Trancada: o pathfinding não atravessa (o Vigia contorna pela ampliação ou desiste).
+		modifier.PassThrough = not value
+	end
+	door.panel:SetAttribute("LockState", if value then "locked" else "unlocked")
+	refreshDoorPrompt(door)
+end
+
+-- Pequeno tranco na folha (tranca chacoalhando / pancada do outro lado).
+local function twitch(door: MapBuilder.DoorHandle, strength: number)
+	if door.busy then
+		return
+	end
+	local base = door.panel.CFrame
+	task.spawn(function()
+		for i = 1, 4 do
+			local offset = (if i % 2 == 1 then 1 else -1) * strength * (1 - i / 5)
+			door.panel.CFrame = doorPose(door, angleFor(door, doorStates[door.id] or "closed") + math.rad(offset))
+			task.wait(1 / 12)
+		end
+		if not door.busy then
+			door.panel.CFrame = base
+		end
+	end)
+end
+
+-- ===================== Novidades (chave, pilhas, armários, disjuntores) =====================
+
+local function setModelShown(model: Model, shown: boolean, home: Instance)
+	model.Parent = if shown then home else nil
+end
+
+local function setFeatureEnabled(id: string, enabled: boolean)
+	local item = getFeatures().interactables[id]
+	if item then
+		item.enabled = enabled
+		item.focus:SetAttribute(Tags.Attr.InteractEnabled, enabled)
+	end
+end
+
+local function pickupsFolder(): Instance
+	local folder = getFeatures().root:FindFirstChild("Pickups")
+	assert(folder, "Pickups folder")
+	return folder
 end
 
 local WorldService = {
@@ -134,8 +286,24 @@ function WorldService.Init()
 	local started = os.clock()
 	world = MapBuilder.build(workspace)
 	local built = getWorld()
+	features = FeatureBuilder.build(built.root)
 	local pickups = built.root:FindFirstChild("Pickups")
 	fuseFolder = if pickups then pickups:FindFirstChild("Fuses") else nil
+
+	local doorsFolder = built.root:FindFirstChild("Doors")
+	for id, door in built.doors do
+		local region = doorsFolder and doorsFolder:FindFirstChild(`{id}_Path`)
+		local modifier = region and region:FindFirstChildOfClass("PathfindingModifier")
+		if modifier then
+			modifiers[id] = modifier
+		end
+		rattles[id] =
+			Build.sound(door.panel, "Rattle", Audio.DoorRattle.id, Audio.DoorRattle.volume, Audio.DoorRattle.speed)
+		latches[id] = Build.sound(door.panel, "Latch", Audio.DoorLatch.id, Audio.DoorLatch.volume * 0.6, 1.1)
+		bangs[id] = Build.sound(door.panel, "Bang", Audio.DoorBang.id, Audio.DoorBang.volume)
+		bangs[id].RollOffMaxDistance = 120
+	end
+
 	applyLighting(false)
 	local count = 0
 	for _, d in built.root:GetDescendants() do
@@ -150,12 +318,25 @@ function WorldService.get(): MapBuilder.World
 	return getWorld()
 end
 
+function WorldService.features(): FeatureBuilder.Built
+	return getFeatures()
+end
+
 function WorldService.spawnCFrame(): CFrame
 	return getWorld().spawnCFrame
 end
 
-function WorldService.interactable(id: string): MapBuilder.Interactable?
-	return getWorld().interactables[id]
+function WorldService.checkpointCFrame(): CFrame
+	local spot = Features.CheckpointSpawn
+	return CFrame.lookAt(vec(spot.position), vec(spot.lookAt))
+end
+
+function WorldService.interactable(id: string): Interactable?
+	local item = getWorld().interactables[id]
+	if item then
+		return item :: any
+	end
+	return getFeatures().interactables[id]
 end
 
 function WorldService.setInteractEnabled(id: string, enabled: boolean)
@@ -163,12 +344,15 @@ function WorldService.setInteractEnabled(id: string, enabled: boolean)
 	if item then
 		item.enabled = enabled
 		item.focus:SetAttribute(Tags.Attr.InteractEnabled, enabled)
+		return
 	end
+	setFeatureEnabled(id, enabled)
 end
 
--- Restaura o mundo para o início de uma rodada. `rng` sorteia a posição dos fusíveis.
+-- Restaura o mundo para o início de uma rodada. `rng` sorteia fusíveis, chave e pilhas.
 function WorldService.resetRound(rng: Random)
 	local w = getWorld()
+	local f = getFeatures()
 	for id, model in w.fuseModels do
 		local spots = Layout.FuseSpots[id]
 		local spot = spots[rng:NextInteger(1, #spots)]
@@ -176,9 +360,12 @@ function WorldService.resetRound(rng: Random)
 		model:PivotTo(CFrame.new(vec(spot)) * CFrame.Angles(0, rng:NextNumber(0, math.pi), 0))
 		WorldService.setInteractEnabled(id, true)
 	end
+	table.clear(taken)
 	for _, door in w.doors do
 		door.busy = false
-		animateDoor(door, door.startsOpen, true)
+		local startsLocked = Features.LockedDoors[door.id] == true
+		setLocked(door, startsLocked)
+		animateDoor(door, if door.startsOpen and not startsLocked then "open" else "closed", true)
 	end
 	w.gate.busy = false
 	w.gate.isOpen = false
@@ -186,8 +373,35 @@ function WorldService.resetRound(rng: Random)
 	WorldService.setInteractEnabled("gate", true)
 	WorldService.setInteractEnabled("panel", true)
 	WorldService.setPanelFuses(0)
+
+	-- Chave: uma posição por rodada.
+	local keySpot = Features.KeySpots[rng:NextInteger(1, #Features.KeySpots)]
+	for id, model in f.keys do
+		local shown = id == keySpot.id
+		setModelShown(model, shown, pickupsFolder())
+		setFeatureEnabled(id, shown)
+	end
+	-- Pilhas: algumas posições por rodada.
+	local chosen = Features.pick(Features.BatterySpots, Config.Battery.PickupsPerRound, function(a, b)
+		return rng:NextInteger(a, b)
+	end)
+	local chosenIds: { [string]: boolean } = {}
+	for _, spot in chosen do
+		chosenIds[spot.id] = true
+	end
+	for id, model in f.batteries do
+		setModelShown(model, chosenIds[id] == true, pickupsFolder())
+		setFeatureEnabled(id, chosenIds[id] == true)
+	end
+	for _, locker in f.lockers do
+		locker.occupant = nil
+		locker.door.CFrame = locker.doorClosed
+	end
+	WorldService.setBreakers({ false, false, false })
 	WorldService.setPower(false)
 end
+
+-- ----- Fusíveis, quadro, energia -----
 
 function WorldService.setFuseCollected(id: string)
 	local model = getWorld().fuseModels[id]
@@ -205,6 +419,7 @@ function WorldService.setPanelFuses(count: number)
 	if count > 0 then
 		panel.switchSound:Play()
 	end
+	panel.focus:SetAttribute("Fuses", count)
 end
 
 function WorldService.setPower(on: boolean)
@@ -237,24 +452,183 @@ function WorldService.isPowered(): boolean
 	return powered
 end
 
+-- ----- Disjuntores -----
+
+-- Posição das alavancas (true = levantada) e lâmpadas (verde quando levantada).
+function WorldService.setBreakers(up: { boolean })
+	local b = getFeatures().breakers
+	for i, lever in b.levers do
+		local isUp = up[i] == true
+		lever.CFrame = if isUp then b.up[i] else b.down[i]
+		local lamp = b.lamps[i]
+		lamp.Color = if isUp then Palette.PanelOn else Palette.LampOff
+		lamp.Material = if isUp then Enum.Material.Neon else Enum.Material.SmoothPlastic
+	end
+end
+
+-- Texto do procedimento na prancheta da parede (ordem da rodada).
+function WorldService.setProcedure(order: string)
+	local b = getFeatures().breakers
+	b.diagram.Text = `RELIGAMENTO\n\n{order}`
+	b.box:SetAttribute("Order", order)
+end
+
+-- Feedback físico: "ok" (clique seco), "wrong" (pancada + faíscas), "solved" (chave geral), "denied".
+function WorldService.breakerFeedback(kind: "ok" | "wrong" | "solved" | "denied")
+	local b = getFeatures().breakers
+	if kind == "ok" then
+		b.toggle.PlaybackSpeed = 0.8
+		b.toggle:Play()
+	elseif kind == "denied" then
+		b.toggle.PlaybackSpeed = 0.55
+		b.toggle:Play()
+	elseif kind == "wrong" then
+		b.toggle.PlaybackSpeed = 0.7
+		b.toggle:Play()
+		b.fail:Play()
+		sparkCount += 1
+		-- O cliente solta faíscas e pisca as lâmpadas em vermelho ao ver o contador mudar.
+		b.box:SetAttribute("Spark", sparkCount)
+		for _, lamp in b.lamps do
+			lamp.Color = Palette.Emergency
+			lamp.Material = Enum.Material.Neon
+		end
+	elseif kind == "solved" then
+		b.solved:Play()
+		b.box:SetAttribute("Solved", os.clock())
+	end
+end
+
+-- ----- Chave e pilhas -----
+
+function WorldService.setTaken(id: string)
+	local f = getFeatures()
+	taken[id] = true
+	local model = f.keys[id] or f.batteries[id]
+	if model then
+		model.Parent = nil
+	end
+	setFeatureEnabled(id, false)
+end
+
+function WorldService.takenSnapshot(): { [string]: boolean }
+	return table.clone(taken)
+end
+
+-- Checkpoint: itens pegos continuam pegos (os outros voltam como estavam na rodada).
+function WorldService.applyTaken(snapshot: { [string]: boolean })
+	for id in snapshot do
+		WorldService.setTaken(id)
+	end
+end
+
+-- ----- Armários -----
+
+function WorldService.locker(id: string): FeatureBuilder.LockerHandle?
+	return getFeatures().lockers[id]
+end
+
+-- Porta do armário abre e fecha (entrada/saída), em passos.
+function WorldService.swingLocker(id: string)
+	local locker = getFeatures().lockers[id]
+	if not locker then
+		return
+	end
+	locker.sound:Play()
+	task.spawn(function()
+		for _, angle in { 35, 70, 70, 30, 0 } do
+			locker.door.CFrame = locker.hinge
+				* CFrame.Angles(0, math.rad(-angle), 0)
+				* (locker.hinge:Inverse() * locker.doorClosed)
+			task.wait(1 / 12)
+		end
+		locker.door.CFrame = locker.doorClosed
+	end)
+end
+
+-- ----- Portas -----
+
 function WorldService.door(id: string): MapBuilder.DoorHandle?
 	return getWorld().doors[id]
 end
 
--- Alterna a porta. Retorna (ok, abriu?).
-function WorldService.toggleDoor(id: string): (boolean, boolean)
-	local door = getWorld().doors[id]
-	if not door or door.busy then
-		return false, false
-	end
-	animateDoor(door, not door.isOpen)
-	return true, door.isOpen
+function WorldService.doorState(id: string): DoorState
+	return doorStates[id] or "closed"
 end
 
--- Porta fechada perto de `position`? Usado pelo Vigia para arrombar.
+function WorldService.isLocked(id: string): boolean
+	return locked[id] == true
+end
+
+-- Ação principal (E). Retorna (ok, estado novo).
+function WorldService.useDoor(id: string): (boolean, DoorState)
+	local door = getWorld().doors[id]
+	if not door or locked[id] then
+		return false, WorldService.doorState(id)
+	end
+	local nextState: DoorState = if doorStates[id] == "open" then "closed" else "open"
+	animateDoor(door, nextState)
+	return true, nextState
+end
+
+-- Ação alternativa (Q): entreabrir ou fechar a fresta.
+function WorldService.altDoor(id: string): (boolean, DoorState)
+	local door = getWorld().doors[id]
+	if not door or locked[id] then
+		return false, WorldService.doorState(id)
+	end
+	local nextState: DoorState = if doorStates[id] == "crack" then "closed" else "crack"
+	animateDoor(door, nextState)
+	return true, nextState
+end
+
+-- Compatível com a API antiga (abre/fecha).
+function WorldService.toggleDoor(id: string): (boolean, boolean)
+	local ok, state = WorldService.useDoor(id)
+	return ok, state == "open"
+end
+
+function WorldService.rattleDoor(id: string)
+	local door = getWorld().doors[id]
+	if not door then
+		return
+	end
+	local sound = rattles[id]
+	if sound and not sound.IsPlaying then
+		sound:Play()
+	end
+	twitch(door, 1.2)
+end
+
+-- Destranca com a chave: insere, gira, clique (UnlockTime s) e deixa entreaberta.
+function WorldService.unlockDoor(id: string, player: Player): boolean
+	local door = getWorld().doors[id]
+	if not door or not locked[id] then
+		return false
+	end
+	door.panel:SetAttribute("LockState", "unlocking")
+	door.panel:SetAttribute("UnlockBy", player.UserId)
+	task.spawn(function()
+		local latch = latches[id]
+		task.wait(0.35)
+		if latch then
+			latch.PlaybackSpeed = 1.6
+			latch:Play()
+		end
+		task.wait(Config.Doors.UnlockTime - 0.35)
+		if latch then
+			latch.PlaybackSpeed = 1.1
+		end
+		setLocked(door, false)
+		animateDoor(door, "crack")
+	end)
+	return true
+end
+
+-- Porta fechada (ou entreaberta) e destrancada perto de `position`: o Vigia empurra.
 function WorldService.closedDoorNear(position: Vector3, range: number): MapBuilder.DoorHandle?
 	for _, door in getWorld().doors do
-		if not door.isOpen and not door.busy then
+		if not door.isOpen and not door.busy and not locked[door.id] then
 			local delta = door.center - position
 			if Vector3.new(delta.X, 0, delta.Z).Magnitude <= range then
 				return door
@@ -264,15 +638,46 @@ function WorldService.closedDoorNear(position: Vector3, range: number): MapBuild
 	return nil
 end
 
+-- Porta trancada perto de `position` (o Vigia bate e desiste).
+function WorldService.lockedDoorNear(position: Vector3, range: number): MapBuilder.DoorHandle?
+	for _, door in getWorld().doors do
+		if locked[door.id] then
+			local delta = door.center - position
+			if Vector3.new(delta.X, 0, delta.Z).Magnitude <= range then
+				return door
+			end
+		end
+	end
+	return nil
+end
+
+function WorldService.bangDoor(door: MapBuilder.DoorHandle)
+	local sound = bangs[door.id]
+	if sound and not sound.IsPlaying then
+		sound:Play()
+	end
+	twitch(door, 2.5)
+end
+
 function WorldService.forceOpenDoor(door: MapBuilder.DoorHandle)
-	if not door.isOpen then
-		animateDoor(door, true)
-		door.sound.PlaybackSpeed = 0.8
-		task.delay(1, function()
-			door.sound.PlaybackSpeed = 1
-		end)
+	if not door.isOpen and not locked[door.id] then
+		animateDoor(door, "open")
+		door.sound.PlaybackSpeed = 0.75
 	end
 end
+
+function WorldService.doorSnapshot(): ({ [string]: DoorState }, { [string]: boolean })
+	return table.clone(doorStates), table.clone(locked)
+end
+
+function WorldService.applyDoors(states: { [string]: DoorState }, lockedStates: { [string]: boolean })
+	for id, door in getWorld().doors do
+		setLocked(door, lockedStates[id] == true)
+		animateDoor(door, states[id] or "closed", true)
+	end
+end
+
+-- ----- Portão -----
 
 function WorldService.openGate(): boolean
 	local gate = getWorld().gate

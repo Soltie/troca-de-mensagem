@@ -18,7 +18,9 @@ Remotes.setupServer()
 local services: { any } = {
 	require("./Services/PlayerDataService"),
 	require("./Services/WorldService"),
+	require("./Services/PlayerStateService"),
 	require("./Services/CreatureService"),
+	require("./Services/PropService"),
 	require("./Services/RoundService"),
 	require("./Services/DebugService"), -- só age no Studio
 }

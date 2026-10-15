@@ -12,6 +12,7 @@
 		bridge:Invoke("freezeCreature", true)
 
 	Comandos: state | awaken | freezeCreature(bool) | placeCreature(Vector3) | teleport(Vector3) | restart
+	          checkpoint | grant("fuses"|"insert"|"breakers"|"key") | setBattery(0..1) | fall(id) | holdOff(s)
 ]]
 
 local HttpService = game:GetService("HttpService")
@@ -21,6 +22,8 @@ local ServerStorage = game:GetService("ServerStorage")
 
 local Logger = require("@game/ReplicatedStorage/Shared/Logger")
 local CreatureService = require("./CreatureService")
+local PlayerStateService = require("./PlayerStateService")
+local PropService = require("./PropService")
 local RoundService = require("./RoundService")
 
 local log = Logger.new("DebugService")
@@ -40,9 +43,14 @@ end
 
 local commands: { [string]: (...any) -> any } = {
 	state = function()
+		local players = {}
+		for _, player in Players:GetPlayers() do
+			players[player.Name] = PlayerStateService.snapshot(player)
+		end
 		return HttpService:JSONEncode(encode({
 			round = RoundService.snapshot(),
 			creature = CreatureService.state(),
+			players = players,
 		}))
 	end,
 	awaken = function()
@@ -62,8 +70,31 @@ local commands: { [string]: (...any) -> any } = {
 			local character = player.Character
 			if character then
 				character:PivotTo(CFrame.new(position))
+				PlayerStateService.markTeleported(player)
 			end
 		end
+		return "ok"
+	end,
+	checkpoint = function()
+		-- RoundService pode ser o runtime da campanha (Codex); estes comandos são do modo solo.
+		(RoundService :: any).continueFromCheckpoint()
+		return "ok"
+	end,
+	grant = function(what: string)
+		(RoundService :: any).debugGrant(what, Players:GetPlayers()[1])
+		return "ok"
+	end,
+	setBattery = function(value: number)
+		for _, player in Players:GetPlayers() do
+			PlayerStateService.addBattery(player, value - PlayerStateService.battery(player))
+		end
+		return "ok"
+	end,
+	fall = function(id: string)
+		return PropService.debugFall(id)
+	end,
+	holdOff = function(seconds: number)
+		CreatureService.holdOff(seconds)
 		return "ok"
 	end,
 	restart = function()

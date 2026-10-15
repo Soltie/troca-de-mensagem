@@ -13,7 +13,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 export type Phase = "Loading" | "Intro" | "Playing" | "Won" | "Lost"
-export type ObjectiveKey = "enter" | "fuses" | "insert" | "escape" | "run"
+export type ObjectiveKey = "enter" | "fuses" | "insert" | "breakers" | "escape" | "run"
 
 export type Snapshot = {
 	phase: Phase,
@@ -28,6 +28,14 @@ export type Snapshot = {
 	creatureActive: boolean,
 	roundStartedAt: number,
 	roundEndedAt: number,
+	hasKey: boolean,
+	breakersOn: boolean,
+	-- Ordem dos disjuntores desta rodada (ex.: "B - C - A"), para o procedimento.
+	breakerOrder: string,
+	-- Há checkpoint para continuar (tela de derrota mostra a opção).
+	checkpointReady: boolean,
+	-- Esta tentativa começou do checkpoint (intro curta).
+	fromCheckpoint: boolean,
 }
 
 local INSTANCE_NAME = "GameState"
@@ -45,6 +53,11 @@ local DEFAULTS: { [string]: any } = {
 	CreatureActive = false,
 	RoundStartedAt = 0,
 	RoundEndedAt = 0,
+	HasKey = false,
+	BreakersOn = false,
+	BreakerOrder = "",
+	CheckpointReady = false,
+	FromCheckpoint = false,
 }
 
 local GameState = {}
@@ -109,6 +122,11 @@ function GameState.snapshotOf(config: Instance): Snapshot
 		creatureActive = attr("CreatureActive"),
 		roundStartedAt = attr("RoundStartedAt"),
 		roundEndedAt = attr("RoundEndedAt"),
+		hasKey = attr("HasKey"),
+		breakersOn = attr("BreakersOn"),
+		breakerOrder = attr("BreakerOrder"),
+		checkpointReady = attr("CheckpointReady"),
+		fromCheckpoint = attr("FromCheckpoint"),
 	}
 end
 

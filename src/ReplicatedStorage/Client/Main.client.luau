@@ -20,6 +20,7 @@ local controllers: { any } = {
 	require("./Controllers/SettingsController"),
 	require("./Controllers/AudioController"),
 	require("./Controllers/CharacterController"),
+	require("./Controllers/CameraController"),
 	require("./Controllers/FlashlightController"),
 	require("./Controllers/RetroFxController"),
 	require("./Controllers/WorldFxController"),

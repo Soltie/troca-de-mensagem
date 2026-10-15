@@ -486,7 +486,7 @@ local function refreshHelp()
 	for i, line in ui.helpLines do
 		local template = Text.Help[i]
 		if string.find(template, "%s", 1, true) then
-			local value = if i == 6 then SettingsController.get("retro") else SettingsController.get("motion")
+			local value = if i == 6 then SettingsController.get("retro") else SettingsController.motionEnabled()
 			line.Text = string.format(template, onOff(value))
 		else
 			line.Text = template
@@ -606,10 +606,7 @@ local function playScareThenFinale(s: GameState.Snapshot)
 	local token = endToken
 	task.spawn(function()
 		ui.scare.Visible = true
-		local motion = SettingsController.get("motion")
-		if motion then
-			CharacterController.shake(0.35, 1.2)
-		end
+		local motion = SettingsController.get("flashes")
 		local frames = 16
 		for i = 1, frames do
 			if token ~= endToken then

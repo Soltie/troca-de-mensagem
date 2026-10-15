@@ -2,10 +2,12 @@
 --[[
 	RoundService: dono da rodada (autoritativo).
 
-	Fases: Loading -> Intro -> Playing -> Won | Lost -> (reiniciar) -> Intro ...
+	Fases: Loading -> Intro -> Playing -> Won | Lost -> (reiniciar tudo | continuar do checkpoint) -> Intro ...
 	- Spawna o jogador em primeira pessoa (CharacterAutoLoads desligado: só nasce quando a rodada manda).
-	- Trata os remotes Interact / SetFlashlight / RequestRestart via ServerNet (Guard + rate limit) e
-	  valida TODA interação aqui: fase, existência, distância, linha de visão e se a ação é possível.
+	- Trata os remotes Interact / RequestRestart via ServerNet (Guard + rate limit) e valida TODA
+	  interação aqui: fase, existência, distância, linha de visão e se a ação é possível.
+	  (SetFlashlight / SetStance / SetHoldBreath ficam no PlayerStateService.)
+	- Objetivo: fusíveis -> quadro -> disjuntores na ordem -> energia (checkpoint) -> portão -> saída.
 	- Publica o estado em ReplicatedStorage.GameState (atributos) para a UI.
 ]]
 
@@ -16,12 +18,15 @@ local Config = require("@game/ReplicatedStorage/Shared/Config")
 local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
 local Guard = require("@game/ReplicatedStorage/Shared/Net/Guard")
 local Logger = require("@game/ReplicatedStorage/Shared/Logger")
-local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
 local Types = require("@game/ReplicatedStorage/Shared/Types")
+local BreakerPuzzle = require("../Game/BreakerPuzzle")
+local Checkpoint = require("../Game/Checkpoint")
+local HideRules = require("../Game/HideRules")
 local Objectives = require("../Game/Objectives")
 local RoundRules = require("../Game/RoundRules")
 local ServerNet = require("../Net/ServerNet")
 local CreatureService = require("./CreatureService")
+local PlayerStateService = require("./PlayerStateService")
 local WorldService = require("./WorldService")
 
 type Response = Types.InteractResponse
@@ -29,11 +34,15 @@ type Response = Types.InteractResponse
 local log = Logger.new("RoundService")
 
 local objectives: Objectives.State = Objectives.new(Config.Game.FusesTotal)
+local breakers: BreakerPuzzle.State = BreakerPuzzle.new({ 1, 2, 3 })
+local checkpoint: Checkpoint.Snapshot? = nil
 local phase: RoundRules.Phase = "Loading"
 local roundId = 0
+local roundSeed = 0
 local playingSince = 0
 local awakened = false
 local started = false
+local lastBreakerErrorAt = -math.huge
 
 local function publish()
 	GameState.set("FusesTotal", objectives.total)
@@ -42,8 +51,11 @@ local function publish()
 	GameState.set("FusesInserted", objectives.inserted)
 	GameState.set("PowerOn", objectives.powerOn)
 	GameState.set("GateOpen", objectives.gateOpen)
+	GameState.set("HasKey", objectives.hasKey)
+	GameState.set("BreakersOn", objectives.breakersOn)
 	GameState.set("Objective", Objectives.objectiveKey(objectives))
 	GameState.set("CreatureActive", CreatureService.isActive())
+	GameState.set("CheckpointReady", Checkpoint.isUsable(checkpoint))
 end
 
 local function setPhase(nextPhase: RoundRules.Phase): boolean
@@ -69,7 +81,7 @@ end
 
 local function setFrozen(player: Player, frozen: boolean)
 	local _, hrp = characterParts(player)
-	if hrp then
+	if hrp and not PlayerStateService.isHidden(player) then
 		hrp.Anchored = frozen
 	end
 end
@@ -87,7 +99,7 @@ local function endRound(player: Player, result: "Won" | "Lost")
 	publish()
 end
 
-local function spawnPlayer(player: Player)
+local function spawnPlayer(player: Player, at: CFrame, battery: number?)
 	local myRound = roundId
 	player:LoadCharacterAsync()
 	if myRound ~= roundId then
@@ -97,7 +109,7 @@ local function spawnPlayer(player: Player)
 	if not character then
 		return
 	end
-	character:PivotTo(WorldService.spawnCFrame())
+	character:PivotTo(at)
 	if humanoid then
 		humanoid.WalkSpeed = Config.Player.WalkSpeed
 		humanoid.UseJumpPower = false
@@ -108,7 +120,8 @@ local function spawnPlayer(player: Player)
 			end
 		end)
 	end
-	player:SetAttribute(Tags.Attr.Flashlight, true)
+	PlayerStateService.resetForSpawn(player, battery)
+	PlayerStateService.markTeleported(player)
 	setFrozen(player, phase ~= "Playing")
 end
 
@@ -126,7 +139,7 @@ local function noise(position: Vector3, radius: number)
 end
 
 -- Linha de visão cabeça -> objeto (aceita acertar o próprio objeto ou algo colado nele).
-local function canReach(character: Model, item: any): boolean
+local function canReach(character: Model, item: WorldService.Interactable): boolean
 	local head = character:FindFirstChild("Head")
 	local origin = if head and head:IsA("BasePart")
 		then head.Position
@@ -145,29 +158,161 @@ local function canReach(character: Model, item: any): boolean
 	return (hit.Position - targetPosition).Magnitude <= 1.5
 end
 
-local function powerOn(myRound: number)
+-- Checkpoint: gravado uma vez por rodada, quando a energia volta.
+local function saveCheckpoint(player: Player?)
+	if checkpoint and Checkpoint.isUsable(checkpoint) then
+		return
+	end
+	local doors, locked = WorldService.doorSnapshot()
+	checkpoint = Checkpoint.capture({
+		objectives = objectives,
+		doors = doors,
+		locked = locked,
+		battery = if player then PlayerStateService.battery(player) else Config.Battery.StartCharge,
+		breakerOrder = breakers.order,
+		taken = WorldService.takenSnapshot(),
+	})
+	log.info("checkpoint saved (round %d)", roundId)
+end
+
+local function powerOn(myRound: number, player: Player?)
 	if myRound ~= roundId or phase ~= "Playing" then
 		return
 	end
 	if Objectives.powerOn(objectives) then
 		WorldService.setPower(true)
 		WorldService.setInteractEnabled("panel", false)
+		for i = 1, Config.Puzzle.Breakers do
+			WorldService.setInteractEnabled(`breaker_{i}`, false)
+		end
 		awaken()
 		CreatureService.setHunt(true)
+		saveCheckpoint(player)
 		publish()
 		log.info("power restored")
 	end
 end
 
-local function interact(player: Player, id: string): Response
+local function breakerMask(): { boolean }
+	local mask = {}
+	for i = 1, Config.Puzzle.Breakers do
+		mask[i] = BreakerPuzzle.isUp(breakers, i)
+	end
+	return mask
+end
+
+local function pressBreaker(player: Player, id: string, position: Vector3): Response
+	local index = tonumber(string.match(id, "%d+"))
+	if not index then
+		return { accepted = false, message = "unknown" }
+	end
+	local can, reason = Objectives.canUseBreakers(objectives)
+	if not can then
+		WorldService.breakerFeedback("denied")
+		return { accepted = false, message = reason or "not_available", kind = "BreakerDenied" }
+	end
+	if os.clock() - lastBreakerErrorAt < Config.Puzzle.ErrorCooldown then
+		return { accepted = false, message = "not_available" }
+	end
+	local result = BreakerPuzzle.press(breakers, index)
+	if result == "already" then
+		return { accepted = false, message = "not_available" }
+	elseif result == "wrong" then
+		lastBreakerErrorAt = os.clock()
+		WorldService.breakerFeedback("wrong")
+		local myRound = roundId
+		task.delay(0.5, function()
+			if myRound == roundId and not objectives.breakersOn then
+				WorldService.setBreakers(breakerMask())
+			end
+		end)
+		noise(position, Config.Puzzle.ErrorNoiseRadius)
+		log.info("breaker wrong order (pressed %d)", index)
+		return { accepted = false, message = "breaker_wrong", kind = "BreakerWrong" }
+	elseif result == "solved" then
+		WorldService.setBreakers(breakerMask())
+		WorldService.breakerFeedback("solved")
+		Objectives.solveBreakers(objectives)
+		noise(position, 30)
+		publish()
+		task.delay(Config.Game.PowerOnDelay, powerOn, roundId, player)
+		return { accepted = true, message = "breakers_done", kind = "BreakerSolved" }
+	end
+	WorldService.setBreakers(breakerMask())
+	WorldService.breakerFeedback("ok")
+	noise(position, 10)
+	return { accepted = true, message = "breaker_ok", kind = "Breaker" }
+end
+
+local function useDoor(player: Player, id: string, action: string, position: Vector3): Response
+	if WorldService.isLocked(id) then
+		if objectives.hasKey and action ~= "alt" and Objectives.useKey(objectives, id) then
+			WorldService.unlockDoor(id, player)
+			noise(position, 8)
+			publish()
+			return { accepted = true, message = "door_unlocking", kind = "Unlock" }
+		end
+		WorldService.rattleDoor(id)
+		noise(position, Config.Doors.RattleNoise)
+		return { accepted = false, message = "door_locked", kind = "DoorLocked" }
+	end
+	if action == "alt" then
+		if not WorldService.altDoor(id) then
+			return { accepted = false, message = "not_available" }
+		end
+		noise(position, Config.Doors.CrackNoise)
+		return { accepted = true, message = "door_cracked", kind = "Door" }
+	end
+	local ok, state = WorldService.useDoor(id)
+	if not ok then
+		return { accepted = false, message = "not_available" }
+	end
+	noise(position, Config.Doors.OpenNoise)
+	return { accepted = true, message = if state == "open" then "door_opened" else "door_closed", kind = "Door" }
+end
+
+local function hide(player: Player, id: string, position: Vector3, alive: boolean): Response
+	local locker = WorldService.locker(id)
+	if not locker then
+		return { accepted = false, message = "unknown" }
+	end
+	if PlayerStateService.hiddenId(player) == id then
+		locker.occupant = nil
+		PlayerStateService.exitHide(player)
+		WorldService.swingLocker(id)
+		noise(position, 8)
+		return { accepted = true, message = "hide_exit", kind = "HideExit" }
+	end
+	local ok, reason = HideRules.canEnter({
+		playing = phase == "Playing",
+		alive = alive,
+		occupied = locker.occupant ~= nil and locker.occupant ~= player,
+		alreadyHidden = PlayerStateService.isHidden(player),
+		sinceExit = PlayerStateService.sinceExit(player),
+	})
+	if not ok then
+		return { accepted = false, message = reason or "not_available" }
+	end
+	local saw = HideRules.sawEntry(CreatureService.secondsSinceSeen(), CreatureService.isChasing())
+	if not PlayerStateService.enterHide(player, id, locker.inside, locker.eye, locker.exit, locker.front, saw) then
+		return { accepted = false, message = "not_available" }
+	end
+	locker.occupant = player
+	WorldService.swingLocker(id)
+	noise(position, 8)
+	return { accepted = true, message = "hide_enter", kind = "Hide" }
+end
+
+local function interact(player: Player, id: string, action: string?): Response
 	local character, hrp, humanoid = characterParts(player)
 	local item = WorldService.interactable(id)
 	local distance = if hrp and item then (hrp.Position - item.focus.Position).Magnitude else math.huge
+	local alive = humanoid ~= nil and humanoid.Health > 0
 	local ok, reason = RoundRules.validateInteraction({
 		phase = phase,
 		exists = item ~= nil,
 		enabled = item ~= nil and item.enabled,
-		alive = humanoid ~= nil and humanoid.Health > 0,
+		alive = alive,
 		distance = distance,
 		maxDistance = if item then item.maxDistance else 0,
 		tolerance = Config.Game.InteractTolerance,
@@ -176,9 +321,14 @@ local function interact(player: Player, id: string): Response
 	if not ok or not item then
 		return { accepted = false, message = reason or "unknown" }
 	end
+	-- Escondido, só dá para sair do armário.
+	if PlayerStateService.isHidden(player) and item.kind ~= "Hide" then
+		return { accepted = false, message = "not_available" }
+	end
 	local position = item.focus.Position
+	local kind = item.kind
 
-	if item.kind == "Fuse" then
+	if kind == "Fuse" then
 		local collected, err = Objectives.collect(objectives, id)
 		if not collected then
 			return { accepted = false, message = err or "not_available" }
@@ -194,29 +344,25 @@ local function interact(player: Player, id: string): Response
 		end
 		noise(position, 45)
 		publish()
-		return { accepted = true, message = "fuse_taken" }
-	elseif item.kind == "Panel" then
+		return { accepted = true, message = "fuse_taken", kind = "Fuse" }
+	elseif kind == "Panel" then
 		local inserted, err = Objectives.insert(objectives)
 		if inserted == 0 then
 			return { accepted = false, message = err or "no_fuses" }
 		end
 		WorldService.setPanelFuses(objectives.inserted)
-		noise(position, 50)
+		noise(position, 30)
 		publish()
-		if Objectives.isPanelComplete(objectives) then
-			local myRound = roundId
-			task.delay(Config.Game.PowerOnDelay, powerOn, myRound)
-			return { accepted = true, message = "power_restored" }
-		end
-		return { accepted = true, message = "fuses_inserted" }
-	elseif item.kind == "Door" then
-		local toggled, nowOpen = WorldService.toggleDoor(id)
-		if not toggled then
-			return { accepted = false, message = "not_available" }
-		end
-		noise(position, 18)
-		return { accepted = true, message = if nowOpen then "door_opened" else "door_closed" }
-	elseif item.kind == "Gate" then
+		return {
+			accepted = true,
+			message = if Objectives.isPanelComplete(objectives) then "panel_ready" else "fuses_inserted",
+			kind = "Panel",
+		}
+	elseif kind == "Breaker" then
+		return pressBreaker(player, id, position)
+	elseif kind == "Door" then
+		return useDoor(player, id, action or "use", position)
+	elseif kind == "Gate" then
 		local opened, err = Objectives.openGate(objectives)
 		if not opened then
 			return { accepted = false, message = err or "not_available" }
@@ -224,9 +370,23 @@ local function interact(player: Player, id: string): Response
 		WorldService.openGate()
 		noise(position, 200)
 		publish()
-		return { accepted = true, message = "gate_opening" }
-	elseif item.kind == "Note" then
-		return { accepted = true, message = "", note = id }
+		return { accepted = true, message = "gate_opening", kind = "Gate" }
+	elseif kind == "Note" then
+		return { accepted = true, message = "", note = id, kind = "Note" }
+	elseif kind == "Key" then
+		local takenKey, err = Objectives.takeKey(objectives)
+		if not takenKey then
+			return { accepted = false, message = err or "not_available" }
+		end
+		WorldService.setTaken(id)
+		publish()
+		return { accepted = true, message = "key_taken", kind = "Key" }
+	elseif kind == "Battery" then
+		WorldService.setTaken(id)
+		PlayerStateService.addBattery(player)
+		return { accepted = true, message = "battery_taken", kind = "Battery" }
+	elseif kind == "Hide" then
+		return hide(player, id, position, alive)
 	end
 	return { accepted = false, message = "unknown" }
 end
@@ -249,6 +409,7 @@ local function tick()
 			end
 			if position.Y < -60 then
 				hrp.CFrame = WorldService.spawnCFrame()
+				PlayerStateService.markTeleported(player)
 			end
 		end
 	end
@@ -257,28 +418,8 @@ local function tick()
 	end
 end
 
--- Começa (ou recomeça) a rodada do zero: mundo, criatura, objetivo, jogadores.
-local function restart()
-	roundId += 1
-	local myRound = roundId
-	objectives = Objectives.new(Config.Game.FusesTotal)
-	awakened = false
-	local seed = Config.Game.FuseSeed or (os.time() + roundId)
-	WorldService.resetRound(Random.new(seed))
-	CreatureService.reset()
-	if phase ~= "Loading" and phase ~= "Won" and phase ~= "Lost" then
-		-- Reinício forçado (depuração): volta por Lost para manter as transições válidas.
-		phase = "Lost"
-	end
-	setPhase("Intro")
-	GameState.set("RoundId", roundId)
-	GameState.set("RoundStartedAt", 0)
-	GameState.set("RoundEndedAt", 0)
-	publish()
-	for _, player in Players:GetPlayers() do
-		task.spawn(spawnPlayer, player)
-	end
-	task.delay(Config.Game.IntroDuration, function()
+local function beginPlaying(myRound: number, delay: number)
+	task.delay(delay, function()
 		if myRound ~= roundId or phase ~= "Intro" then
 			return
 		end
@@ -289,6 +430,101 @@ local function restart()
 			setFrozen(player, false)
 		end
 	end)
+end
+
+-- Fase atual -> Intro (reinício a partir das telas finais ou forçado pela depuração).
+local function enterIntro()
+	if phase ~= "Loading" and phase ~= "Won" and phase ~= "Lost" then
+		-- Reinício forçado (depuração): volta por Lost para manter as transições válidas.
+		phase = "Lost"
+	end
+	setPhase("Intro")
+end
+
+-- Começa (ou recomeça) a rodada do zero: mundo, criatura, objetivo, jogadores. Apaga o checkpoint.
+local function restart()
+	roundId += 1
+	local myRound = roundId
+	objectives = Objectives.new(Config.Game.FusesTotal)
+	checkpoint = nil
+	awakened = false
+	lastBreakerErrorAt = -math.huge
+	roundSeed = Config.Game.FuseSeed or (os.time() + roundId)
+	local rng = Random.new(roundSeed)
+	WorldService.resetRound(rng)
+	breakers = BreakerPuzzle.new(BreakerPuzzle.shuffle(Config.Puzzle.Breakers, function(a: number, b: number): number
+		return rng:NextInteger(a, b)
+	end))
+	local order = BreakerPuzzle.describe(breakers.order)
+	WorldService.setProcedure(order)
+	GameState.set("BreakerOrder", order)
+	CreatureService.reset()
+	enterIntro()
+	GameState.set("FromCheckpoint", false)
+	GameState.set("RoundId", roundId)
+	GameState.set("RoundStartedAt", 0)
+	GameState.set("RoundEndedAt", 0)
+	publish()
+	for _, player in Players:GetPlayers() do
+		task.spawn(spawnPlayer, player, WorldService.spawnCFrame(), nil)
+	end
+	beginPlaying(myRound, Config.Game.IntroDuration)
+end
+
+-- Continua do checkpoint: mesmo sorteio da rodada, progresso/portas/itens do snapshot, Vigia em trégua.
+local function continueFromCheckpoint()
+	local snapshot = checkpoint
+	if not snapshot or not Checkpoint.isUsable(snapshot) then
+		restart()
+		return
+	end
+	local data = Checkpoint.restore(snapshot)
+	roundId += 1
+	local myRound = roundId
+	objectives = data.objectives
+	lastBreakerErrorAt = -math.huge
+	-- Mesmo sorteio da rodada: fusíveis, chave e pilhas nos mesmos lugares.
+	WorldService.resetRound(Random.new(roundSeed))
+	for fuseId in objectives.collected do
+		WorldService.setFuseCollected(fuseId)
+	end
+	WorldService.setPanelFuses(objectives.inserted)
+	WorldService.applyTaken(data.taken)
+	WorldService.applyDoors(data.doors, data.locked)
+	breakers = BreakerPuzzle.new(data.breakerOrder)
+	breakers.progress = #breakers.order
+	breakers.solved = true
+	WorldService.setProcedure(BreakerPuzzle.describe(breakers.order))
+	WorldService.setBreakers(breakerMask())
+	WorldService.setPower(true)
+	WorldService.setInteractEnabled("panel", false)
+	for i = 1, Config.Puzzle.Breakers do
+		WorldService.setInteractEnabled(`breaker_{i}`, false)
+	end
+	CreatureService.reset()
+	CreatureService.setFuses(Objectives.collectedCount(objectives))
+	awakened = false
+	enterIntro()
+	GameState.set("FromCheckpoint", true)
+	GameState.set("RoundId", roundId)
+	GameState.set("RoundStartedAt", 0)
+	GameState.set("RoundEndedAt", 0)
+	publish()
+	for _, player in Players:GetPlayers() do
+		task.spawn(spawnPlayer, player, WorldService.checkpointCFrame(), data.battery)
+	end
+	-- O Vigia acorda longe de quem voltou e espera a trégua antes de caçar.
+	task.delay(0.6, function()
+		if myRound ~= roundId then
+			return
+		end
+		awaken()
+		CreatureService.setHunt(true)
+		CreatureService.holdOff(Config.Checkpoint.GraceTime + Config.Checkpoint.IntroDuration)
+		publish()
+	end)
+	log.info("continuing from checkpoint (round %d)", roundId)
+	beginPlaying(myRound, Config.Checkpoint.IntroDuration)
 end
 
 local RoundService = {
@@ -304,29 +540,30 @@ function RoundService.Init()
 	CreatureService.onCapture(function(player: Player)
 		endRound(player, "Lost")
 	end)
+	PlayerStateService.setNoiseHandler(noise)
 end
 
 function RoundService.Start()
 	ServerNet.onInvoke("Interact", {
-		args = { Guard.string({ maxLength = 32, pattern = "[%w_]+" }) },
+		args = {
+			Guard.string({ maxLength = 32, pattern = "[%w_]+" }),
+			Guard.optional(Guard.literal("use", "alt")),
+		},
 		rateLimit = { capacity = 6, refillPerSecond = 3 },
 	}, interact)
 
-	ServerNet.onEvent("SetFlashlight", {
-		args = { Guard.boolean() },
-		rateLimit = { capacity = 10, refillPerSecond = 5 },
-	}, function(player: Player, on: boolean)
-		player:SetAttribute(Tags.Attr.Flashlight, on)
-	end)
-
 	ServerNet.onInvoke("RequestRestart", {
-		args = {},
+		args = { Guard.optional(Guard.literal("full", "checkpoint")) },
 		rateLimit = { capacity = 2, refillPerSecond = 0.5 },
-	}, function(_player: Player): Response
+	}, function(_player: Player, mode: string?): Response
 		if not RoundRules.canRestart(phase) then
 			return { accepted = false, message = "not_available" }
 		end
-		restart()
+		if mode == "checkpoint" and phase == "Lost" and Checkpoint.isUsable(checkpoint) then
+			continueFromCheckpoint()
+		else
+			restart()
+		end
 		return { accepted = true, message = "" }
 	end)
 
@@ -338,7 +575,7 @@ function RoundService.Start()
 			started = true
 			restart()
 		else
-			task.spawn(spawnPlayer, player)
+			task.spawn(spawnPlayer, player, WorldService.spawnCFrame(), nil)
 		end
 	end
 	Players.PlayerAdded:Connect(onPlayer)
@@ -361,6 +598,10 @@ function RoundService.restart()
 	restart()
 end
 
+function RoundService.continueFromCheckpoint()
+	continueFromCheckpoint()
+end
+
 function RoundService.lose(player: Player)
 	endRound(player, "Lost")
 end
@@ -373,6 +614,31 @@ function RoundService.getPhase(): RoundRules.Phase
 	return phase
 end
 
+-- Depuração: pula etapas (só usado pelo DebugService no Studio).
+function RoundService.debugGrant(what: string, player: Player?)
+	if what == "fuses" then
+		for id in WorldService.get().fuseModels do
+			if Objectives.collect(objectives, id) then
+				WorldService.setFuseCollected(id)
+			end
+		end
+		CreatureService.setFuses(Objectives.collectedCount(objectives))
+	elseif what == "insert" then
+		Objectives.insert(objectives)
+		WorldService.setPanelFuses(objectives.inserted)
+	elseif what == "breakers" then
+		breakers.progress = #breakers.order
+		breakers.solved = true
+		WorldService.setBreakers(breakerMask())
+		if Objectives.solveBreakers(objectives) then
+			powerOn(roundId, player)
+		end
+	elseif what == "key" then
+		Objectives.takeKey(objectives)
+	end
+	publish()
+end
+
 function RoundService.snapshot(): { [string]: any }
 	return {
 		phase = phase,
@@ -380,10 +646,16 @@ function RoundService.snapshot(): { [string]: any }
 		collected = Objectives.collectedCount(objectives),
 		held = objectives.held,
 		inserted = objectives.inserted,
+		breakersOn = objectives.breakersOn,
+		breakerOrder = BreakerPuzzle.describe(breakers.order),
+		breakerProgress = breakers.progress,
 		powerOn = objectives.powerOn,
 		gateOpen = objectives.gateOpen,
+		hasKey = objectives.hasKey,
+		unlocked = objectives.unlocked,
 		entered = objectives.enteredBuilding,
 		awakened = awakened,
+		checkpoint = Checkpoint.isUsable(checkpoint),
 	}
 end
 

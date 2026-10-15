@@ -23,11 +23,13 @@ export type PlayerData = {
 }
 
 -- Resposta do remote "Interact" / "RequestRestart" (dentro do envelope Result).
--- message = chave de Text.Messages; note = id do bilhete a exibir.
+-- message = chave de Text.Messages; note = id do bilhete a exibir;
+-- kind = tipo do objeto (o cliente anima a resposta aprovada: pegar item, chave, disjuntor...).
 export type InteractResponse = {
 	accepted: boolean,
 	message: string,
 	note: string?,
+	kind: string?,
 }
 
 return {}

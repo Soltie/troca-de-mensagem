@@ -60,15 +60,157 @@ local Config = {
 	Player = {
 		WalkSpeed = 10,
 		SprintSpeed = 16,
+		CrouchSpeed = 5.5,
 		JumpHeight = 2.4,
 		FieldOfView = 72,
+		-- Aceleração/frenagem (studs/s por segundo) do WalkSpeed: o corpo tem peso.
+		Acceleration = 26,
+		Deceleration = 40,
 		-- Fôlego em segundos de corrida; recarga por segundo parado/andando.
 		StaminaMax = 5,
 		StaminaRegen = 0.7,
 		StaminaMinToSprint = 1,
+		-- Ao zerar o fôlego: anda mais devagar por ExhaustedTime (s), ofegante.
+		ExhaustedTime = 2.4,
+		ExhaustedSpeed = 7,
 		-- Acima desta velocidade (studs/s) o servidor considera que o jogador está fazendo barulho.
 		NoiseSpeed = 13,
 		NoiseRadius = 28,
+		-- Agachado: quanto o corpo desce (studs) e a margem de teto exigida para levantar.
+		CrouchDrop = 1.7,
+		StandClearance = 0.3,
+		-- Agachado o Vigia enxerga menos (multiplica alcance de visão e "sentido" de perto).
+		CrouchSightFactor = 0.7,
+		-- Validação de velocidade no servidor: tolerância (multiplica o limite) e tempo acima do
+		-- limite antes de corrigir a posição (lag e empurrões não punem).
+		SpeedTolerance = 1.4,
+		SpeedGrace = 1.2,
+		-- Segurar a respiração (só escondido): duração máxima, recarga e raio do barulho do arquejo.
+		HoldBreathMax = 6,
+		HoldBreathCooldown = 3,
+		GaspNoiseRadius = 24,
+	},
+
+	-- Lanterna com bateria (servidor simula; cliente mostra nos LEDs da lanterna).
+	Battery = {
+		StartCharge = 0.85,
+		-- Carga cheia dura 1/DrainPerSecond segundos de luz contínua.
+		DrainPerSecond = 1 / 170,
+		-- Desligada, a pilha "descansa" e recupera devagar até RechargeCap (a missão nunca trava).
+		RechargePerSecond = 1 / 40,
+		RechargeCap = 0.35,
+		MinToTurnOn = 0.04,
+		LowLevel = 0.2,
+		PickupAmount = 0.6,
+		-- Quantas pilhas aparecem por rodada (sorteadas entre os pontos de Features.BatterySpots).
+		PickupsPerRound = 3,
+	},
+
+	-- Medo (só no cliente; não tem barra: dirige efeitos). Ver Shared/Game/FearModel.
+	Fear = {
+		-- Velocidade (1/s) com que o medo sobe/desce até o alvo do momento.
+		RiseRate = 1.6,
+		DecayRate = 0.14,
+		ProximityRange = 42,
+		ProximityWeight = 0.55,
+		VisibleWeight = 0.22,
+		ChaseFloor = 0.75,
+		DarkWeight = 0.16,
+		HiddenNearRange = 14,
+		HiddenNearWeight = 0.25,
+		-- Em lugar seguro (aceso, ameaça longe) o alvo não passa disto.
+		SafeCeiling = 0.12,
+		SpikeMax = 0.6,
+		SpikeDecay = 0.09,
+		-- Níveis com histerese: entra no nível ao passar de `enter`, sai abaixo de `exit`.
+		Levels = {
+			{ enter = 0.3, exit = 0.22 },
+			{ enter = 0.55, exit = 0.45 },
+			{ enter = 0.8, exit = 0.68 },
+		},
+	},
+
+	-- Diretor de tensão (cliente; eventos só de apresentação). Ver Shared/Game/TensionDirector.
+	Tension = {
+		TickInterval = 0.25,
+		-- Distância do Vigia que já conta como "tensão".
+		TensionRange = 34,
+		-- Intervalo mínimo (s) entre eventos em cada estado e chance média de evento por segundo.
+		GapAnticipation = 16,
+		GapTension = 10,
+		ChancePerSecond = 0.12,
+		-- Calmaria depois de uma perseguição (s, sem sustos).
+		RecoveryTime = 16,
+		-- Silêncio antes de certos sustos (s).
+		SilenceBefore = 1.4,
+	},
+
+	Camera = {
+		-- Balanço (amplitude em studs, ciclos por stud andado).
+		BobAmplitude = 0.11,
+		BobSprintAmplitude = 0.2,
+		BobCrouchAmplitude = 0.06,
+		BobFrequency = 0.36,
+		-- Respiração parada (amplitude em studs, ciclos/s).
+		IdleBreathAmplitude = 0.022,
+		IdleBreathRate = 0.24,
+		-- Inclinação lateral ao andar de lado (graus).
+		StrafeTilt = 1.8,
+		-- FOV: + ao correr, - com medo alto, pancada na detecção.
+		SprintFov = 6,
+		FearFovNarrow = 6,
+		PunchFov = 9,
+		-- Tremor (trauma): ângulo máximo (graus) e decaimento por segundo.
+		ShakeMaxAngle = 2.4,
+		TraumaDecay = 1.3,
+		-- Pouso: velocidade de queda (studs/s) mínima para impacto e a que dá impacto máximo.
+		LandingMinSpeed = 16,
+		LandingMaxSpeed = 55,
+		-- Altura do olho agachado (o quanto desce) e velocidade da transição.
+		CrouchEyeDrop = 1.9,
+		CrouchSpeed = 8,
+	},
+
+	-- Esconderijos (armários) e detecção do jogador escondido.
+	Hide = {
+		-- O Vigia "viu entrar" se te enxergou há menos disto (s) quando você entrou.
+		SawEntryWindow = 1.2,
+		-- Perto do armário por NoticeTime (s) sem você prender a respiração = te acha.
+		NoticeRange = 6.5,
+		NoticeTime = 2.6,
+		ExitCooldown = 0.8,
+	},
+
+	Puzzle = {
+		Breakers = 3,
+		ErrorNoiseRadius = 46,
+		ErrorCooldown = 1.2,
+	},
+
+	Doors = {
+		CrackAngle = 18,
+		OpenNoise = 18,
+		CrackNoise = 6,
+		RattleNoise = 14,
+		UnlockTime = 1.3,
+	},
+
+	-- Objetos que caem (barulho que atrai o Vigia), com limites para não virar spam.
+	Fallables = {
+		-- Passar perto (studs) mais rápido que TriggerSpeed derruba; agachado/devagar não.
+		TriggerRadius = 2.8,
+		TriggerSpeed = 8,
+		NoiseRadius = 34,
+		Cooldown = 10,
+		GlobalCooldown = 5,
+		ResetAfter = 6,
+	},
+
+	Checkpoint = {
+		-- Depois de continuar do checkpoint, o Vigia espera isto (s) antes de caçar.
+		GraceTime = 6,
+		-- Cartela curta ao continuar (s).
+		IntroDuration = 3,
 	},
 
 	Creature = {
@@ -122,13 +264,24 @@ local Config = {
 	},
 
 	Effects = {
-		-- Valores iniciais das opções de conforto (V e B alternam em jogo).
-		RetroOverlayDefault = true,
-		CameraMotionDefault = true,
 		ScanlineSpacing = 3,
 		ScanlineTransparency = 0.84,
 		GrainDots = 70,
-		HeadBobAmount = 0.12,
+		-- Desfoque máximo (pânico) e névoa mínima/máxima (studs) conforme o perigo.
+		PanicBlur = 6,
+		DangerFogEnd = 52,
+	},
+
+	-- Valores iniciais das opções de conforto (menu O; V e B são atalhos).
+	Comfort = {
+		retro = true, -- scanlines, granulação, vinheta fixa
+		vhs = true, -- carimbo de hora, linha de tracking, aberração cromática
+		bob = true, -- balanço da câmera ao andar e respiração parada
+		tilt = true, -- inclinação lateral
+		shake = true, -- tremores
+		fov = true, -- FOV dinâmico (corrida, medo, susto)
+		flashes = true, -- clarões e falhas de tela fortes
+		haptics = true, -- vibração do controle
 	},
 }
 
