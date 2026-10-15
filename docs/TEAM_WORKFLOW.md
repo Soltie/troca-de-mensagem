@@ -13,6 +13,11 @@ Preparado em 15/10/2026. Fluxo recomendado para este repositório.
 
 Repositório: https://github.com/Soltie/roblox-teste (privado).
 
+Cópia local de desenvolvimento: `C:\Users\xpg\Documents\roblox-teste`.
+Cópia dedicada de integração, já clonada e com check verde:
+`C:\Users\xpg\Documents\roblox-teste-integracao`.
+Uma cópia separada evita que mudar a branch de desenvolvimento altere a place compartilhada.
+
 Cada pessoa tem sua própria cópia local do repositório. Não coloquem a pasta de trabalho em
 OneDrive/Google Drive/Dropbox para edição simultânea e não compartilhem uma única pasta `.git`.
 Um commit é um ponto de recuperação; o push envia esse ponto para o remoto.
@@ -42,7 +47,7 @@ Preencher antes dos convites:
 | Pessoa | Roblox | GitHub | Função inicial |
 | --- | --- | --- | --- |
 | Responsável | a preencher | Soltie | Integrador e código |
-| Pessoa 2 | a preencher | a preencher | Código ou mapa |
+| Pessoa 2 | @roupadecama (informado; acesso ainda não verificado) | a preencher | Código ou mapa |
 | Pessoa 3 | a preencher | a preencher | Arte, mapa ou QA |
 
 As funções podem mudar. Todos podem programar em paralelo; só a entrada de código na place
@@ -173,11 +178,20 @@ Os IDs e convites abaixo só devem ser marcados como concluídos depois de verif
 
 - [x] Repositório privado criado: https://github.com/Soltie/roblox-teste
 - [x] Código anteriormente commitado enviado à `main`.
+- [x] Cópia dedicada de integração clonada; check `ALL GREEN`, 73 testes puros passando,
+  2 specs exclusivos do Studio pulados. Há aviso existente de API obsoleta `LoadCharacter`.
 - [ ] Experiência privada criada e ID confirmado: a preencher.
 - [ ] Contas dos dois colegas recebidas e convites aceitos nas duas plataformas.
 - [ ] Integrador e pasta de integração definidos e sync único verificado.
 - [ ] Check na máquina de cada integrante.
 - [ ] Team Test com os três humanos concluído.
+
+Preparação no Studio: foi aberta uma segunda instância com `build/Test.rbxlx`, gerada da cópia
+de integração. O formulário `Publish Experience` está preenchido com o nome provisório e
+Team Create ligado; isso ainda NÃO confirma criação. A opção `Data Sharing` apareceu ligada
+por padrão; a escolha do responsável está pendente antes de enviar o formulário. Essa instância
+de build ainda não tem Script Sync configurado. Depois de salvar na nuvem, abrir a experiência
+compartilhada e conectar o sync da cópia dedicada, após conferir o diálogo de diferenças.
 
 Alternativas: trabalhar somente no Studio com Live Scripting/Drafts é possível, mas exigiria
 mudar a regra deste projeto de editar scripts pelo disco. Migrar tudo para Rojo seria outra
