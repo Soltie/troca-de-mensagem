@@ -1,11 +1,18 @@
 --!strict
 --[[
-	Áudio no cliente:
-	- Camadas em loop (ambiência externa/interna, música, batimento) com volume suave por contexto:
-	  dentro/fora do prédio (raycast para o teto), Vigia ativo, distância e perseguição.
-	- Stingers nos eventos da rodada (Vigia acorda, captura, vitória).
-	- Grupo "Lofi": EQ cortando agudos + reverb de corredor = som "PS1". Sons 3D do mundo
-	  (portas, zumbido, gerador) criados pelo servidor também entram no grupo, localmente.
+	Áudio no cliente (mixagem central).
+
+	Grupos:
+	  Lofi  mundo, ambiência, música e corpo: EQ "PS1" (corta agudos) + EQ de abafamento
+	        (escondido / pânico) + compressor (evita saturar quando tudo toca junto).
+	  Ui    interface e stingers: fora do abafamento.
+
+	Camadas em loop com volume suave por contexto:
+	  ambiência externa/interna, vento nas frestas, máquinas (com energia), música por estado
+	  (calma / tensão / perseguição / alívio), batimento (medo + proximidade), sussurros (medo alto).
+	Reverb por sala (zonas criadas pelo servidor em Substation9.Features.Zones).
+	silence(s): corta tudo por alguns segundos antes de certos sustos.
+	Sons 3D do mundo (servidor) entram no grupo Lofi localmente.
 ]]
 
 local Players = game:GetService("Players")
@@ -16,31 +23,64 @@ local Audio = require("@game/ReplicatedStorage/Shared/Game/Audio")
 local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
 local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
 
+export type MusicState = "none" | "calm" | "tension" | "chase" | "relief"
+
 local player = Players.LocalPlayer
 
 local group: SoundGroup? = nil
+local uiGroup: SoundGroup? = nil
+local muffleEq: EqualizerSoundEffect? = nil
 local loops: { [string]: Sound } = {}
 local targets: { [string]: number } = {}
 local speeds: { [string]: number } = {}
 local snapshot: GameState.Snapshot? = nil
 local inside = false
 local lastInsideCheck = 0
+local zone = "Outside"
+local zones: { BasePart } = {}
+local musicState: MusicState = "none"
+local fear = 0
+local silenceUntil = 0
+local muffleOverride = 0
+local nextCreakAt = 0
+local rng = Random.new()
+
+local LOOPS = {
+	"AmbExterior",
+	"AmbInterior",
+	"WindInterior",
+	"Machinery",
+	"Music",
+	"MusicTension",
+	"MusicChase",
+	"MusicRelief",
+	"Heartbeat",
+	"Whisper",
+}
 
 local function getGroup(): SoundGroup
 	assert(group, "[AudioController] used before Init")
 	return group
 end
 
-local function make(name: string, clipName: string, parent: Instance, looped: boolean): Sound
+local function applyClip(sound: Sound, clipName: string)
 	local clip = Audio[clipName]
 	assert(clip, `[AudioController] unknown clip "{clipName}"`)
-	local sound = Instance.new("Sound")
-	sound.Name = name
 	sound.SoundId = clip.id
 	sound.Volume = clip.volume
 	sound.PlaybackSpeed = clip.speed or 1
+	if clip.region then
+		sound.PlaybackRegionsEnabled = true
+		sound.PlaybackRegion = NumberRange.new(clip.region[1], clip.region[2])
+	end
+end
+
+local function make(name: string, clipName: string, parent: Instance, looped: boolean, ui: boolean?): Sound
+	local sound = Instance.new("Sound")
+	sound.Name = name
+	applyClip(sound, clipName)
 	sound.Looped = looped
-	sound.SoundGroup = getGroup()
+	sound.SoundGroup = if ui then uiGroup else getGroup()
 	sound.Parent = parent
 	return sound
 end
@@ -62,13 +102,34 @@ local function checkInside(position: Vector3): boolean
 	return workspace:Raycast(position, Vector3.new(0, 25, 0), params) ~= nil
 end
 
+local function zoneAt(position: Vector3): (string, string)
+	for _, part in zones do
+		local p = part.CFrame:PointToObjectSpace(position)
+		local half = part.Size / 2
+		if math.abs(p.X) <= half.X and math.abs(p.Z) <= half.Z and math.abs(p.Y) <= half.Y + 2 then
+			return (part:GetAttribute("Room") :: string?) or part.Name,
+				(part:GetAttribute("Reverb") :: string?) or "Room"
+		end
+	end
+	return "Outside", "Plain"
+end
+
+local function setReverb(name: string)
+	local ok, value = pcall(function()
+		return (Enum.ReverbType :: any)[name]
+	end)
+	if ok and value and SoundService.AmbientReverb ~= value then
+		SoundService.AmbientReverb = value
+	end
+end
+
 local AudioController = {
 	Name = "AudioController",
 }
 
--- Som 2D de uma vez (UI, stingers). Retorna o Sound (destruído ao terminar).
-function AudioController.play(clipName: string, volumeScale: number?, speed: number?): Sound
-	local sound = make(clipName, clipName, SoundService, false)
+-- Som 2D de uma vez. `ui` = fora do abafamento (interface/stingers).
+function AudioController.play(clipName: string, volumeScale: number?, speed: number?, ui: boolean?): Sound
+	local sound = make(clipName, clipName, SoundService, false, ui)
 	sound.Volume *= volumeScale or 1
 	if speed then
 		sound.PlaybackSpeed = speed
@@ -99,6 +160,41 @@ function AudioController.playAt(clipName: string, parent: Instance, volumeScale:
 	sound.Ended:Once(function()
 		sound:Destroy()
 	end)
+	task.delay(30, function()
+		if sound.Parent then
+			sound:Destroy()
+		end
+	end)
+	return sound
+end
+
+-- Som 3D numa posição do mundo (cria um ponto invisível que some ao terminar).
+function AudioController.playAtPosition(
+	clipName: string,
+	position: Vector3,
+	volumeScale: number?,
+	speed: number?
+): Sound
+	local anchor = Instance.new("Part")
+	anchor.Name = "SoundPoint"
+	anchor.Anchored = true
+	anchor.CanCollide = false
+	anchor.CanQuery = false
+	anchor.CanTouch = false
+	anchor.Transparency = 1
+	anchor.Size = Vector3.new(0.2, 0.2, 0.2)
+	anchor.Position = position
+	anchor.Parent = workspace
+	local sound = AudioController.playAt(clipName, anchor, volumeScale, speed)
+	sound.Destroying:Once(function()
+		-- Destroying ocorre antes de terminar a remoção do filho. Destruir o pai aqui
+		-- reentrava no mesmo Sound e disparava "Parent property is locked".
+		task.defer(function()
+			if anchor.Parent then
+				anchor:Destroy()
+			end
+		end)
+	end)
 	return sound
 end
 
@@ -111,8 +207,57 @@ function AudioController.loopAt(clipName: string, parent: Instance): Sound
 	return sound
 end
 
+-- Aplica o clip (id, volume, velocidade, trecho) a um Sound existente.
+function AudioController.configure(sound: Sound, clipName: string)
+	applyClip(sound, clipName)
+	sound.SoundGroup = getGroup()
+end
+
 function AudioController.isInside(): boolean
 	return inside
+end
+
+-- Sala atual (id do Layout) ou "Outside".
+function AudioController.zone(): string
+	return zone
+end
+
+function AudioController.setMusicState(state: MusicState)
+	musicState = state
+end
+
+function AudioController.musicState(): MusicState
+	return musicState
+end
+
+function AudioController.setFear(value: number)
+	fear = math.clamp(value, 0, 1)
+end
+
+-- Corta a mixagem por `duration` s (silêncio antes de um susto).
+function AudioController.silence(duration: number)
+	silenceUntil = math.max(silenceUntil, os.clock() + duration)
+end
+
+-- Abafamento extra por `duration` s (ex.: depois de um impacto forte).
+function AudioController.muffle(duration: number)
+	muffleOverride = math.max(muffleOverride, os.clock() + duration)
+end
+
+function AudioController.debugState(): { [string]: any }
+	local volumes = {}
+	for name, sound in loops do
+		volumes[name] = math.floor(sound.Volume * 100 + 0.5) / 100
+	end
+	return {
+		zone = zone,
+		inside = inside,
+		music = musicState,
+		reverb = SoundService.AmbientReverb.Name,
+		muffle = if muffleEq then muffleEq.HighGain else 0,
+		silenced = os.clock() < silenceUntil,
+		volumes = volumes,
+	}
 end
 
 function AudioController.Init()
@@ -120,15 +265,38 @@ function AudioController.Init()
 	g.Name = "Lofi"
 	g.Volume = 1
 	local eq = Instance.new("EqualizerSoundEffect")
+	eq.Name = "Lofi"
 	eq.HighGain = -9
 	eq.MidGain = -1
 	eq.LowGain = 1
+	eq.Priority = 1
 	eq.Parent = g
+	local muffle = Instance.new("EqualizerSoundEffect")
+	muffle.Name = "Muffle"
+	muffle.HighGain = 0
+	muffle.MidGain = 0
+	muffle.LowGain = 0
+	muffle.Priority = 2
+	muffle.Parent = g
+	local compressor = Instance.new("CompressorSoundEffect")
+	compressor.Threshold = -14
+	compressor.Ratio = 3
+	compressor.Attack = 0.01
+	compressor.Release = 0.2
+	compressor.Priority = 3
+	compressor.Parent = g
 	g.Parent = SoundService
 	group = g
+	muffleEq = muffle
+
+	local ui = Instance.new("SoundGroup")
+	ui.Name = "Ui"
+	ui.Volume = 1
+	ui.Parent = SoundService
+	uiGroup = ui
 	SoundService.AmbientReverb = Enum.ReverbType.StoneCorridor
 
-	for _, name in { "AmbExterior", "AmbInterior", "Music", "Heartbeat" } do
+	for _, name in LOOPS do
 		local sound = make(name, name, SoundService, true)
 		targets[name] = 0
 		speeds[name] = sound.PlaybackSpeed
@@ -155,6 +323,15 @@ function AudioController.Start()
 				adopt(d)
 			end
 			world.DescendantAdded:Connect(adopt)
+			local zoneFolder = world:WaitForChild("Features", 30)
+			zoneFolder = zoneFolder and zoneFolder:WaitForChild("Zones", 30)
+			if zoneFolder then
+				for _, child in zoneFolder:GetChildren() do
+					if child:IsA("BasePart") then
+						table.insert(zones, child)
+					end
+				end
+			end
 		end
 	end)
 
@@ -165,14 +342,18 @@ function AudioController.Start()
 			return
 		end
 		if next.creatureActive and not previous.creatureActive and next.phase == "Playing" then
-			AudioController.play("StingerAwaken")
+			AudioController.play("StingerAwaken", 1, nil, true)
 		end
 		if next.phase ~= previous.phase then
 			if next.phase == "Lost" then
-				AudioController.play("StingerCapture")
-				AudioController.play("Roar", 1.1, 0.8)
+				AudioController.play("StingerCapture", 1, nil, true)
+				AudioController.play("Roar", 1.1, 0.8, true)
 			elseif next.phase == "Won" then
-				AudioController.play("StingerWin")
+				AudioController.play("StingerWin", 1, nil, true)
+			elseif next.phase == "Intro" then
+				silenceUntil = 0
+				muffleOverride = 0
+				musicState = "none"
 			end
 		end
 	end)
@@ -184,30 +365,82 @@ function AudioController.Start()
 			return
 		end
 		local now = os.clock()
+		local position = camera.CFrame.Position
 		if now - lastInsideCheck > 0.3 then
 			lastInsideCheck = now
-			inside = checkInside(camera.CFrame.Position)
+			inside = checkInside(position)
+			local room, reverb = zoneAt(position)
+			zone = room
+			setReverb(if inside then reverb else "Plain")
 		end
 
 		local playing = s.phase == "Playing" or s.phase == "Intro"
 		local root = creatureRoot()
-		local mode = if root then root:GetAttribute(Tags.Attr.CreatureMode) else nil
-		local chasing = mode == "Chase"
-		local distance = if root and s.creatureActive
-			then (root.Position - camera.CFrame.Position).Magnitude
-			else math.huge
+		local distance = if root and s.creatureActive then (root.Position - position).Magnitude else math.huge
+		local near = math.clamp((32 - distance) / 32, 0, 1)
+		local silenced = now < silenceUntil
+		local hidden = player:GetAttribute("Hidden")
+		local isHidden = type(hidden) == "string" and hidden ~= ""
 
-		targets.AmbExterior = if playing then (if inside then 0.06 else Audio.AmbExterior.volume) else 0.04
+		targets.AmbExterior = if playing then (if inside then 0.05 else Audio.AmbExterior.volume) else 0.03
 		targets.AmbInterior = if playing and inside then Audio.AmbInterior.volume else 0
-		targets.Music = if s.phase == "Playing" and s.creatureActive
-			then Audio.Music.volume * (if chasing then 1.4 else 1)
+		targets.WindInterior = if playing and inside then Audio.WindInterior.volume * (1 + fear * 0.5) else 0
+		targets.Machinery = if playing and s.powerOn then Audio.Machinery.volume else 0
+
+		local music = musicState
+		local inPlay = s.phase == "Playing"
+		targets.Music = if inPlay and music == "calm" then Audio.Music.volume else 0
+		targets.MusicTension = if inPlay and music == "tension"
+			then Audio.MusicTension.volume * (0.7 + near * 0.6)
 			else 0
-		local near = math.clamp((30 - distance) / 30, 0, 1)
-		targets.Heartbeat = if s.phase == "Playing" then near * 0.55 + (if chasing then 0.3 else 0) else 0
-		loops.Heartbeat.PlaybackSpeed = speeds.Heartbeat * (if chasing then 1.35 else 1 + near * 0.2)
+		targets.MusicChase = if inPlay and music == "chase" then Audio.MusicChase.volume else 0
+		targets.MusicRelief = if inPlay and music == "relief" then Audio.MusicRelief.volume else 0
+
+		-- Batimento: medo + proximidade. Sussurros só com medo muito alto.
+		local beat = math.clamp(fear * 0.7 + near * 0.35, 0, 1)
+		targets.Heartbeat = if inPlay then beat * 0.7 else 0
+		loops.Heartbeat.PlaybackSpeed = speeds.Heartbeat * (0.85 + beat * 0.6)
+		targets.Whisper = if inPlay and fear > 0.72 then Audio.Whisper.volume * (fear - 0.72) / 0.28 else 0
 
 		for name, sound in loops do
-			sound.Volume += (targets[name] - sound.Volume) * math.min(1, dt * 1.5)
+			local target = targets[name]
+			if silenced and name ~= "Heartbeat" then
+				target = 0
+			end
+			local rate = if silenced then 6 elseif name == "MusicChase" and target > sound.Volume then 3 else 1.2
+			sound.Volume += (target - sound.Volume) * math.min(1, dt * rate)
+		end
+
+		-- Abafamento: escondido no armário, pânico ou impacto recente.
+		local eq = muffleEq
+		if eq then
+			local amount = 0
+			if isHidden then
+				amount = 1
+			elseif fear > 0.82 then
+				amount = (fear - 0.82) / 0.18 * 0.7
+			end
+			if now < muffleOverride then
+				amount = math.max(amount, 0.8)
+			end
+			eq.HighGain += (-34 * amount - eq.HighGain) * math.min(1, dt * 4)
+			eq.MidGain += (-10 * amount - eq.MidGain) * math.min(1, dt * 4)
+		end
+
+		-- Rangidos ocasionais do prédio (3D, perto do jogador, nunca durante silêncio).
+		if inPlay and inside and now >= nextCreakAt and not silenced then
+			nextCreakAt = now + rng:NextNumber(14, 30)
+			local offset = Vector3.new(rng:NextNumber(-14, 14), rng:NextNumber(3, 8), rng:NextNumber(-14, 14))
+			local clip = if zone == "Office" then "CreakWood" else "CreakMetal"
+			local sound = AudioController.playAtPosition(clip, position + offset, rng:NextNumber(0.5, 0.9))
+			sound.PlaybackSpeed = rng:NextNumber(0.8, 1.1)
+			sound.TimePosition = rng:NextNumber(0, 6)
+			task.delay(rng:NextNumber(1.6, 3), function()
+				if sound.Parent then
+					sound:Stop()
+					sound:Destroy()
+				end
+			end)
 		end
 	end)
 end
