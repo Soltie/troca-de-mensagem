@@ -60,9 +60,30 @@ local House = {
 					"flashlight",
 					"F: lanterna. Luz ajuda a enxergar; depois poderá atrair a criatura."
 				),
-				objective("Living", "Encontrar a chave da sala", "collect", "key_living", nil),
-				objective("Kitchen", "Encontrar a chave da cozinha", "collect", "key_kitchen", nil),
-				objective("Dining", "Encontrar a terceira chave", "collect", "key_dining", nil),
+				objective(
+					"Living",
+					"Encontrar a chave da sala",
+					"collect",
+					"key_living",
+					nil,
+					"A chave tem a mesma marca da porta na fita. A televisão já estava ligada."
+				),
+				objective(
+					"Kitchen",
+					"Encontrar a chave da cozinha",
+					"collect",
+					"key_kitchen",
+					nil,
+					"A mesa está posta. Na poeira, só há marcas recentes de um bastão."
+				),
+				objective(
+					"Dining",
+					"Encontrar a terceira chave",
+					"collect",
+					"key_dining",
+					nil,
+					"Três chaves guardadas para três pessoas que nunca voltaram."
+				),
 				objective("Hall", "Destrancar o corredor com as três chaves", "activate", nil, "corridor"),
 				objective(
 					"Library",
@@ -70,7 +91,7 @@ local House = {
 					"clue",
 					"message",
 					"silhouette",
-					"NÃO ACORDE O DONO. Lá em cima, três pancadas. Uma silhueta atravessa a janela."
+					"Na margem da carta: ELE NÃO É O DONO. TAMBÉM ESTÁ PRESO. Três pancadas vêm do andar de cima."
 				),
 			},
 		},
@@ -105,10 +126,31 @@ local House = {
 			title = "03 · A MALDIÇÃO",
 			subtitle = "Quatro lembranças, uma prisão",
 			objectives = {
-				objective("AtticClock", "Recuperar o relógio amaldiçoado", "collect", "clock", nil),
-				objective("Attic", "Recuperar a máscara", "collect", "mask", nil),
+				objective(
+					"AtticClock",
+					"Recuperar o relógio amaldiçoado",
+					"collect",
+					"clock",
+					nil,
+					"03:12. O mesmo horário gravado em todas as fitas."
+				),
+				objective(
+					"Attic",
+					"Recuperar a máscara",
+					"collect",
+					"mask",
+					nil,
+					"Uma máscara de madeira. Por dentro, alguém escreveu: PARA ELE NÃO ME RECONHECER."
+				),
 				objective("AtticBook", "Ler o livro de símbolos", "clue", "book", nil),
-				objective("AtticPhoto", "Encontrar a fotografia", "collect", "photo", nil),
+				objective(
+					"AtticPhoto",
+					"Encontrar a fotografia",
+					"collect",
+					"photo",
+					nil,
+					"Na fotografia, o vigia está ao lado da família. Antes de virar a criatura, ele tentou protegê-los."
+				),
 				objective(
 					"Office",
 					"Reproduzir os símbolos do livro",
@@ -127,7 +169,14 @@ local House = {
 				objective("Symbols", "Resolver os quatro símbolos", "puzzle", nil, nil),
 				objective("Tunnel", "Encontrar a pista do código do cofre", "clue", "safe_clue", nil),
 				objective("Safe", "Abrir o cofre usando a pista", "puzzle", nil, nil),
-				objective("Safe", "Recuperar o artefato", "collect", "artifact", nil),
+				objective(
+					"Safe",
+					"Recuperar o artefato",
+					"collect",
+					"artifact",
+					nil,
+					"O coração pulsa na sua mão. As pancadas cessaram. Agora a casa sabe onde vocês estão."
+				),
 				objective("Basement", "Destrancar a sala ritualística", "activate", nil, "ritual"),
 			},
 		},

@@ -48,6 +48,7 @@ local controllers: { any } = {
 	require("./Controllers/MainMenuController"),
 	require("./Controllers/ContinueController"),
 	require("./Controllers/StoryController"),
+	require("./Controllers/TelevisionController"),
 	require("./Controllers/TrailerController"), -- só age no Studio (gravação do trailer)
 }
 

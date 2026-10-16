@@ -1,13 +1,8 @@
 --!strict
 --[[
-	Planos de câmera das cenas (abertura, início de etapa, fuga) e a matemática pura deles.
-
-	As cenas mostram só o exterior (estrada, pátio, fachada): o interior muda a cada rodada
-	(docs/MAP_RANDOMIZATION.md), mas o núcleo, o spawn e a saída são referências estáveis.
-	Coordenadas em studs, as mesmas de Server/World/Layout: fachada em z = 0, portão em z = 44,
-	spawn perto de (14, 0, 34), van em (26, 0, 26), guarita em (-28, 0, 37).
-
-	Sem `game`/`task`/CFrame: o CinematicController converte Vec em CFrame.
+	Câmeras da casa e matemática pura. Varanda z=64; portão da floresta z=98.
+	Abertura/lobby/fuga usam o exterior; StoryCatalog enquadra os interiores fixos.
+	Sem game/task/CFrame: CinematicController converte os vetores em câmera.
 ]]
 
 export type Vec = { x: number, y: number, z: number }
@@ -51,161 +46,154 @@ end
 
 local CinematicShots = {}
 
--- Primeira entrada no servidor (lobby da campanha) e cartela da missão solo (~9 s).
--- No solo o controller troca as legendas pelo briefing (Text.Intro).
+-- Câmeras da casa: varanda em z=64, portão em z=98; todas as trajetórias externas.
 CinematicShots.Opening = table.freeze({
 	name = "Opening",
-	title = "SUBESTAÇÃO 9",
-	subtitle = "03:12 · O ÚLTIMO TURNO",
+	title = "A CASA AMALDIÇOADA",
+	subtitle = "03:12 / A FITA NÃO TERMINOU",
 	captions = table.freeze({
-		"03:12. A Subestação 9 parou de responder.",
-		"A equipe anterior entrou pelo portão e não voltou.",
-		"O vigia da noite ainda está no turno.",
+		"Uma televisão acesa. Uma casa vazia há trinta anos.",
+		"Na fita, alguém deixou a porta aberta para vocês.",
+		"Se ouvirem três pancadas, não respondam.",
 	}),
 	shots = table.freeze({
 		shot({
-			label = "ESTRADA DE ACESSO",
-			from = v(3, 5, 70),
-			to = v(1.5, 4.6, 58),
-			lookFrom = v(0, 4, 44),
-			lookTo = v(0, 3.5, 30),
+			label = "FLORESTA / 03:12",
+			from = v(8, 7, 123),
+			to = v(6, 6, 113),
+			lookFrom = v(0, 9, 64),
+			lookTo = v(0, 8, 64),
 			duration = 3.2,
-			fov = 60,
-			ease = "inOut",
-			handheld = 0.35,
-			cut = "static",
-		}),
-		shot({
-			label = "CÂMERA 2 · PÁTIO",
-			from = v(-34, 13, 41),
-			to = v(-34, 13, 41),
-			lookFrom = v(18, 1, 26),
-			lookTo = v(-2, 3, 4),
-			duration = 3,
-			fov = 62,
+			fov = 54,
 			ease = "inOut",
 			handheld = 0,
 			cut = "static",
 		}),
 		shot({
-			label = "RECEPÇÃO",
-			from = v(-1, 4.6, 20),
-			to = v(-3.4, 4.3, 8.5),
-			lookFrom = v(-4, 4, 0),
-			lookTo = v(-4, 3.8, -4),
+			label = "A CASA / FITA ENCONTRADA",
+			from = v(-30, 11, 85),
+			to = v(-22, 10, 81),
+			lookFrom = v(0, 12, 64),
+			lookTo = v(0, 10, 64),
+			duration = 3,
+			fov = 52,
+			ease = "inOut",
+			handheld = 0.12,
+			cut = "hard",
+		}),
+		shot({
+			label = "TRÊS PANCADAS",
+			from = v(7, 5, 80),
+			to = v(4, 5, 74),
+			lookFrom = v(3, 5, 65),
+			lookTo = v(3, 5, 65),
 			duration = 2.8,
-			fov = 62,
-			ease = "in",
-			handheld = 0.5,
-			cut = "static",
+			fov = 48,
+			ease = "inOut",
+			handheld = 0.2,
+			cut = "hard",
 		}),
 	}),
 }) :: Sequence
-
--- Início de cada etapa da campanha: a equipe parada no pátio, vista pelas câmeras (~3,5 s).
 CinematicShots.Stage = table.freeze({
 	name = "Stage",
 	shots = table.freeze({
 		shot({
-			label = "CÂMERA 3 · PÁTIO",
-			from = v(34, 11, 40),
-			to = v(34, 11, 40),
-			lookFrom = v(15, 2.5, 36),
-			lookTo = v(9, 3, 31),
+			label = "VARANDA / RETORNO",
+			from = v(-16, 7, 82),
+			to = v(-12, 6, 78),
+			lookFrom = v(0, 5, 64),
+			lookTo = v(0, 5, 64),
 			duration = 1.8,
+			fov = 54,
+			ease = "inOut",
+			handheld = 0,
+			cut = "hard",
+		}),
+		shot({
+			label = "O MESMO ENDEREÇO",
+			from = v(6, 5, 77),
+			to = v(4, 5, 74),
+			lookFrom = v(0, 5, 65),
+			lookTo = v(0, 5, 65),
+			duration = 1.7,
+			fov = 52,
+			ease = "inOut",
+			handheld = 0.12,
+			cut = "hard",
+		}),
+	}),
+}) :: Sequence
+CinematicShots.Escape = table.freeze({
+	name = "Escape",
+	title = "A ÚLTIMA FITA",
+	subtitle = "FORA DA CASA",
+	captions = table.freeze({
+		"O coração parou. As paredes perderam a voz.",
+		"Na televisão, a fita continua. Agora ela mostra a floresta.",
+	}),
+	shots = table.freeze({
+		shot({
+			label = "FLORESTA / FIM DA FITA",
+			from = v(8, 6, 112),
+			to = v(12, 8, 130),
+			lookFrom = v(0, 8, 66),
+			lookTo = v(0, 10, 64),
+			duration = 6,
+			fov = 56,
+			ease = "inOut",
+			handheld = 0.1,
+			cut = "hard",
+		}),
+	}),
+}) :: Sequence
+CinematicShots.Attract = table.freeze({
+	name = "Attract",
+	shots = table.freeze({
+		shot({
+			label = "CANAL 03 / A CASA",
+			from = v(-24, 12, 89),
+			to = v(-24, 12, 89),
+			lookFrom = v(0, 14, 64),
+			lookTo = v(0, 10, 64),
+			duration = 5,
+			fov = 58,
+			ease = "inOut",
+			handheld = 0,
+			cut = "static",
+		}),
+		shot({
+			label = "CANAL 03 / VARANDA",
+			from = v(12, 7, 82),
+			to = v(12, 7, 82),
+			lookFrom = v(3, 5, 66),
+			lookTo = v(0, 5, 66),
+			duration = 5,
 			fov = 50,
 			ease = "inOut",
 			handheld = 0,
 			cut = "static",
 		}),
 		shot({
-			label = "CÂMERA 1 · FACHADA",
-			from = v(14, 6, 26),
-			to = v(6, 5, 14),
-			lookFrom = v(-4, 4, 0),
-			lookTo = v(-4, 3.5, -2),
-			duration = 1.7,
-			fov = 58,
-			ease = "out",
-			handheld = 0.25,
-			cut = "static",
-		}),
-	}),
-}) :: Sequence
-
--- Vitória: da estrada, olhando a equipe sair pelo portão (~5 s).
-CinematicShots.Escape = table.freeze({
-	name = "Escape",
-	title = "FIM DO TURNO",
-	subtitle = "GRAVAÇÃO RECUPERADA",
-	captions = table.freeze({
-		"O portão ficou para trás.",
-		"Lá dentro, alguém continua cumprindo a ordem.",
-	}),
-	shots = table.freeze({
-		shot({
-			label = "ESTRADA · FIM DA GRAVAÇÃO",
-			from = v(9, 6, 60),
-			to = v(12, 10, 74),
-			lookFrom = v(0, 3, 50),
-			lookTo = v(0, 4, 42),
+			label = "CANAL 03 / PORTÃO",
+			from = v(-18, 9, 119),
+			to = v(-18, 9, 119),
+			lookFrom = v(0, 6, 98),
+			lookTo = v(0, 9, 64),
 			duration = 5,
-			fov = 58,
-			ease = "out",
-			handheld = 0.3,
-			cut = "hard",
-		}),
-	}),
-}) :: Sequence
-
--- Lobby: câmeras de segurança em laço atrás do menu de modo (~20 s por volta, sem tremor).
-CinematicShots.Attract = table.freeze({
-	name = "Attract",
-	shots = table.freeze({
-		shot({
-			label = "CÂMERA 1 · PORTÃO",
-			from = v(-6, 13, 68),
-			to = v(-6, 13, 68),
-			lookFrom = v(3, 1, 36),
-			lookTo = v(6, 1, 28),
-			duration = 5,
-			fov = 62,
+			fov = 60,
 			ease = "inOut",
 			handheld = 0,
 			cut = "static",
 		}),
 		shot({
-			label = "CÂMERA 2 · PÁTIO",
-			from = v(-34, 13, 41),
-			to = v(-34, 13, 41),
-			lookFrom = v(16, 1, 24),
-			lookTo = v(0, 2, 8),
+			label = "CANAL 03 / JANELAS",
+			from = v(-35, 9, 83),
+			to = v(-35, 9, 83),
+			lookFrom = v(-10, 16, 64),
+			lookTo = v(3, 5, 66),
 			duration = 5,
-			fov = 64,
-			ease = "inOut",
-			handheld = 0,
-			cut = "static",
-		}),
-		shot({
-			label = "CÂMERA 3 · VAN",
-			from = v(40, 12, 22),
-			to = v(40, 12, 22),
-			lookFrom = v(14, 1, 30),
-			lookTo = v(2, 2, 38),
-			duration = 5,
-			fov = 64,
-			ease = "inOut",
-			handheld = 0,
-			cut = "static",
-		}),
-		shot({
-			label = "CÂMERA 4 · RECEPÇÃO",
-			from = v(6, 10, 24),
-			to = v(6, 10, 24),
-			lookFrom = v(-6, 3, 0),
-			lookTo = v(-2, 2.5, -2),
-			duration = 5,
-			fov = 62,
+			fov = 55,
 			ease = "inOut",
 			handheld = 0,
 			cut = "static",

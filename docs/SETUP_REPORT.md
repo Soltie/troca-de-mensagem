@@ -1,5 +1,14 @@
 # SETUP_REPORT — estado do ambiente
 
+## Casa: mapa e apresentação — 16/10/2026
+
+Frente `codex/house-map-polish`, baseada na casa `0dd8a27`. Corrige pisos, fechamentos e escadas;
+adiciona acabamentos e televisão; reenquadra abertura/fuga e cenas dos cinco capítulos.
+Fontes isoladas em `.cache/house-map-polish`, sem alterar o checkout principal ou Script Sync compartilhado.
+Check local ALL GREEN: 262 testes puros; três specs exclusivos do Studio são executados no runner físico.
+Entrega, recibos finais e limitações em [HOUSE_MAP_POLISH.md](HOUSE_MAP_POLISH.md) e
+[VALIDATION.md](evidence/house-map-polish/VALIDATION.md). As seções abaixo são histórico de versões anteriores.
+
 Atualizado: 2026-10-15. Máquina: Windows 11, PowerShell 5.1 / Git Bash. Projeto: `C:\Users\xpg\Documents\roblox-teste`.
 
 ## Estado atual / próximo passo

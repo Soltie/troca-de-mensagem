@@ -45,7 +45,7 @@ local function makeCoin(parent: Instance, spec: CoinPlan.Coin): BasePart
 	part.CanQuery = false
 	part.CanTouch = false
 	part.CastShadow = false
-	part.Material = Enum.Material.Neon
+	part.Material = Enum.Material.Metal
 	if spec.gem then
 		part.Shape = Enum.PartType.Ball
 		part.Size = Vector3.new(1.8, 1.8, 1.8)
@@ -53,7 +53,7 @@ local function makeCoin(parent: Instance, spec: CoinPlan.Coin): BasePart
 		local light = Instance.new("PointLight")
 		light.Color = part.Color
 		light.Range = 12
-		light.Brightness = 1.4
+		light.Brightness = 0.35
 		light.Parent = part
 	else
 		part.Shape = Enum.PartType.Cylinder

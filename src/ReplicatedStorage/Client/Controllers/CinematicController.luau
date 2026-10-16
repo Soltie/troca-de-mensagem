@@ -113,14 +113,12 @@ local function updateCameo(current: Shots.Sequence, index: number, dt: number)
 			return
 		end
 		cameoClock += dt
-		-- Vai e volta na varanda (12 s por volta), virando nas pontas.
-		local phase = (cameoClock % 12) / 12
-		local forward = phase < 0.5
-		local t = if forward then phase * 2 else (1 - phase) * 2
-		local x = -5 + t * 14
-		local facing = if forward then -math.pi / 2 else math.pi / 2
-		TungTungRig.place(rig, CFrame.new(x, -0.5, 66.2) * CFrame.Angles(0, facing, 0))
-		TungTungRig.play(rig, "walk", 0.3, 1.8)
+		-- Trajeto oval: desacelera e vira pelo próprio arco, sem inverter 180 graus de uma vez.
+		local angle = cameoClock * math.pi / 8
+		local position = Vector3.new(2 + 7 * math.sin(angle), -0.5, 67 + math.cos(angle))
+		local velocity = Vector3.new(7 * math.cos(angle), 0, -math.sin(angle)) * math.pi / 8
+		TungTungRig.place(rig, CFrame.lookAt(position, position + velocity))
+		TungTungRig.play(rig, "walk", 0.3, math.clamp(velocity.Magnitude / 3.5, 0.35, 1))
 		TungTungRig.step(rig, dt)
 	else
 		dropCameo()

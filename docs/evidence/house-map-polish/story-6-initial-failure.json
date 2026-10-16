@@ -1,0 +1,9 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"ok\":true,\"result\":{\"players\":6,\"success\":false,\"checks\":0,\"phase\":\"Playing\",\"error\":\"ServerScriptService.Tests.CampaignHarness:31: Timeout: chapter 1\",\"stage\":1}}"
+    }
+  ],
+  "isError": false
+}

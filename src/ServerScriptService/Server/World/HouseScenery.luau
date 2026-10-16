@@ -29,11 +29,11 @@ local PATH_HALF_WIDTH = 22
 local EXIT_Z = Vector2.new(60, 135)
 
 local GRASS = rgb(74, 128, 72)
-local WALL = rgb(132, 112, 158)
-local WALL_DARK = rgb(96, 78, 122)
+local WALL = rgb(133, 126, 117)
+local WALL_DARK = rgb(112, 111, 105)
 local ROOF = rgb(70, 44, 96)
 local TRIM = rgb(236, 210, 150)
-local FLOOR = rgb(126, 82, 52)
+local FLOOR = rgb(92, 67, 49)
 local WINDOW = rgb(255, 200, 110)
 
 local WALL_NAMES = {
@@ -117,20 +117,22 @@ local function restyle(root: Instance)
 		end
 		if WALL_NAMES[part.Name] then
 			part.Color = if part.Name == "RoomPartition" then WALL_DARK else WALL
-			part.Material = Enum.Material.WoodPlanks
+			part.Material = if part.Position.Y < 0 then Enum.Material.Brick else Enum.Material.Plaster
 		elseif TRIM_NAMES[part.Name] then
 			part.Color = TRIM
 			part.Material = Enum.Material.Wood
 		elseif FLOOR_NAMES[part.Name] then
 			part.Color = FLOOR
+		elseif part.Name == "RoomCeiling" then
+			part.Material = Enum.Material.Plaster
 		elseif part.Name == "HouseRoof" or part.Name == "StairRoof" then
 			part.Color = ROOF
 			part.Material = Enum.Material.Slate
 		elseif part.Name == "WindowGlass" then
 			-- Janelas acesas por dentro: a casa "chama" o jogador de longe.
 			part.Color = WINDOW
-			part.Material = Enum.Material.Neon
-			part.Transparency = 0.35
+			part.Material = Enum.Material.Glass
+			part.Transparency = 0.3
 		elseif GROUND_NAMES[part.Name] then
 			part.Color = GRASS
 			part.Material = Enum.Material.Grass
@@ -139,11 +141,11 @@ local function restyle(root: Instance)
 		elseif part.Name == "Plaque" then
 			local text = part:FindFirstChildWhichIsA("TextLabel", true)
 			if text then
-				text.Font = Enum.Font.FredokaOne
+				text.Font = Enum.Font.SpecialElite
 				text.TextColor3 = rgb(255, 214, 80)
-				text.BackgroundColor3 = rgb(60, 24, 80)
+				text.BackgroundColor3 = rgb(42, 34, 29)
 			end
-			part.Color = rgb(60, 24, 80)
+			part.Color = rgb(42, 34, 29)
 		elseif part.Name == "TreeTrunk" or part.Name == "TreeCrown" then
 			-- As árvores-caixa antigas dão lugar às árvores novas (mesmo lugar, mesmo tronco).
 			part:Destroy()
@@ -634,7 +636,7 @@ local function interior(parent: Instance)
 		local orb = decor(folder, "NightLight", Vector3.new(1.4, 1.4, 1.4), CFrame.new(hang), color, Enum.Material.Neon)
 		local orbShape = orb :: Part
 		orbShape.Shape = Enum.PartType.Ball
-		glow(orb, color, 26, 0.75)
+		glow(orb, color:Lerp(rgb(235, 216, 188), 0.65), 23, 0.35)
 	end
 end
 

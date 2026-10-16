@@ -201,20 +201,29 @@ local function clearRescues()
 end
 
 local function spawnMember(player: Player)
-	if spawning[player] then
-		task.delay(0.2, spawnMember, player)
+	if not player.Parent or not session.members[player.UserId] then
 		return
 	end
-	if not player.Parent or not session.members[player.UserId] then
+	-- Pedidos de join/restart podem ficar enfileirados enquanto o avatar carrega.
+	-- Um personagem pronto para esta versão já satisfaz todos esses pedidos.
+	local existing = player.Character
+	local existingHumanoid = existing and existing:FindFirstChildOfClass("Humanoid")
+	if spawnedVersion[player] == version and existingHumanoid and existingHumanoid.Health > 0 then
+		return
+	end
+	if spawning[player] then
+		task.delay(0.2, spawnMember, player)
 		return
 	end
 	spawning[player] = true
 	local thisVersion = version
 	local ok, reason = pcall(function(): any
 		player:LoadCharacterAsync()
-		if thisVersion ~= version or not player.Parent then
+		if not player.Parent or not session.members[player.UserId] then
 			return nil
 		end
+		-- O avatar recém-carregado serve ao capítulo vigente, mesmo se ele mudou durante o yield.
+		thisVersion = version
 		local character = player.Character
 		assert(character, "[Campaign] character missing after load")
 		local root = character:WaitForChild("HumanoidRootPart", C.SpawnTimeout)
@@ -223,9 +232,10 @@ local function spawnMember(player: Player)
 			root and root:IsA("BasePart") and humanoid and humanoid:IsA("Humanoid"),
 			"[Campaign] character parts missing"
 		)
-		if thisVersion ~= version or not player.Parent then
+		if not player.Parent or not session.members[player.UserId] then
 			return nil
 		end
+		thisVersion = version
 		root.Anchored = true
 		if character then
 			local index = slotFor(player.UserId)

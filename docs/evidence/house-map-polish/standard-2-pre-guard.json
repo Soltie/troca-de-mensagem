@@ -1,0 +1,14 @@
+{
+  "build": "Casa_POLISH.rbxlx",
+  "mode": "Standard",
+  "note": "Antes da protecao lateral continua das rampas; o argumento mode foi ignorado pelo harness, que seleciona Standard quando storyQA esta ausente.",
+  "response": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"ok\":true,\"result\":{\"players\":2,\"success\":true,\"checks\":64,\"phase\":\"Won\",\"stage\":5}}"
+      }
+    ],
+    "isError": false
+  }
+}

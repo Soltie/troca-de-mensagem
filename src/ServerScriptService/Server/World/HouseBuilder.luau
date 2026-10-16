@@ -7,6 +7,9 @@ local Audio = require("@game/ReplicatedStorage/Shared/Game/Audio")
 local Build = require("./Build")
 local MapBuilder = require("./MapBuilder")
 local FeatureBuilder = require("./FeatureBuilder")
+local Architecture = require("./HouseArchitecture")
+local Layout = require("@game/ReplicatedStorage/Shared/Game/HouseLayout")
+local Television = require("./HouseTelevision")
 local Builder = {}
 local wood = Color3.fromRGB(75, 48, 32)
 local plaster = Color3.fromRGB(104, 94, 76)
@@ -36,15 +39,15 @@ end
 local function sound(parent: Instance, name: string): Sound
 	return Build.sound(parent, name, Audio.Door.id, 0.4)
 end
-local function sign(parent: Instance, text: string, position: Vector3)
+local function sign(parent: Instance, text: string, position: Vector3, facing: Vector3?)
 	Build.sign(
 		parent,
 		"Plaque",
 		position,
-		Vector3.zAxis,
+		facing or Vector3.zAxis,
 		Vector2.new(8, 1.2),
 		text,
-		{ textColor = gold, background = dark, lit = true }
+		{ textColor = gold, background = dark, lit = true, font = Enum.Font.SpecialElite }
 	)
 end
 local function tag(part: BasePart, id: string, prompt: string)
@@ -68,11 +71,20 @@ local function ramp(parent: Instance, name: string, x: number, fromZ: number, to
 	part:SetAttribute("StairRoute", name)
 	-- Corrimões ficam fora do corredor do agente.
 	for _, side in { -1, 1 } do
+		-- Os balaústres são visuais; a proteção contínua impede cair entre eles ao agachar.
+		Build.part(
+			parent,
+			"StairGuard",
+			Vector3.new(0.25, 3.4, direction.Magnitude),
+			part.CFrame * CFrame.new(side * 5.1, 1.6, 0),
+			dark,
+			{ transparency = 1, query = false }
+		)
 		Build.part(
 			parent,
 			"Railing",
-			Vector3.new(0.4, 2, direction.Magnitude),
-			part.CFrame * CFrame.new(side * 5.4, 2, 0),
+			Vector3.new(0.3, 0.3, direction.Magnitude),
+			part.CFrame * CFrame.new(side * 5.1, 3.2, 0),
 			dark
 		)
 	end
@@ -98,34 +110,29 @@ function Builder.build(parent: Instance): (MapBuilder.World, FeatureBuilder.Buil
 	block(structure, "BackGarden", 0, -1, -102, 140, 1, 34, dark)
 	for _, y in { -16, 0, 16, 32 } do
 		block(structure, "CorridorFloor", 0, y - 1, -36, 16, 1, 98, wood)
-		block(structure, "ReturnWalkway", 0, y - 1, 38, 12, 1, 52, wood)
-		block(structure, "SouthLanding", 8, y - 1, 18, 64, 1, 8, wood)
-		block(structure, "NorthLanding", 8, y - 1, 59, 64, 1, 10, wood)
 		for _, side in { -1, 1 } do
-			block(structure, "Facade", side * 44, y, -36, 1, 15, 98, plaster)
+			block(structure, "Facade", side * 44, y, -36, 1, 16, 98, plaster)
 			for row = 1, 3 do
 				local z = 28 - row * 32
 				block(structure, "RoomFloor", side * 26, y - 1, z, 36, 1, 32, wood)
 				-- Abertura de dez studs; lintel em 11,5 deixa o agente alto passar.
 				for _, offset in { -10.5, 10.5 } do
-					block(structure, "DoorWall", side * 8, y, z + offset, 1, 15, 11, plaster)
+					block(structure, "DoorWall", side * 8, y, z + offset, 1, 16, 11, plaster)
 				end
-				block(structure, "DoorLintel", side * 8, y + 11.5, z, 1, 3.5, 10, plaster)
-				block(structure, "RoomPartition", side * 26, y, z - 16, 36, 15, 1, plaster)
+				block(structure, "DoorLintel", side * 8, y + 11.5, z, 1, 4.5, 10, plaster)
+				block(structure, "RoomPartition", side * 26, y, z - 16, 36, 16, 1, plaster)
 				-- Tetos dos quartos; o corredor/escadaria não recebe piso que corte as rampas.
 				block(structure, "RoomCeiling", side * 26, y + 15, z, 36, 0.5, 32, plaster)
 			end
 		end
-		block(structure, "RearWall", 0, y, -85, 89, 15, 1, plaster)
+		block(structure, "RearWall", 0, y, -85, 89, 16, 1, plaster)
 	end
-	ramp(structure, "BasementStairs", -16, 22, 54, -16, 0)
-	ramp(structure, "MainStairs", 16, 22, 54, 0, 16)
-	ramp(structure, "AtticStairs", 32, 54, 22, 16, 32)
-	-- Escadaria recebe cobertura alta, sem cortar a cabeça dos agentes.
-	block(structure, "StairRoof", 10, 46, 32, 68, 1, 58, dark)
-	for _, x in { -24, 45 } do
-		block(structure, "StairFacade", x, 0, 32, 1, 46, 58, plaster)
+	for _, stair in Layout.Stairs do
+		ramp(structure, stair.name, stair.x, stair.z0, stair.z1, stair.y0, stair.y1)
 	end
+	Architecture.build(structure, props)
+	Television.build(props)
+	block(structure, "StairRoof", 10.5, 47, 38, 70, 1, 53, dark)
 	block(structure, "HouseRoof", 0, 48, -36, 94, 1, 106, dark)
 	for _, side in { -1, 1 } do
 		for _, y in { 0, 16, 32 } do
@@ -153,9 +160,9 @@ function Builder.build(parent: Instance): (MapBuilder.World, FeatureBuilder.Buil
 		sign(panel, "PASSAGEM SELADA", panel.Position + Vector3.new(0, 3, 1))
 	end
 	gate("entry", 0, 0, 64, 12, 1)
-	block(structure, "EntrySide", -15, 0, 64, 18, 46, 1, plaster)
-	block(structure, "EntrySide", 25.5, 0, 64, 39, 46, 1, plaster)
-	block(structure, "EntryLintel", 0, 11.5, 64, 12, 34.5, 1, plaster)
+	block(structure, "EntrySide", -15, 0, 64, 18, 47, 1, plaster)
+	block(structure, "EntrySide", 25.5, 0, 64, 39, 47, 1, plaster)
+	block(structure, "EntryLintel", 0, 11.5, 64, 12, 35.5, 1, plaster)
 	gate("corridor", 0, 0, -52, 16, 1)
 	gate("upstairs", 16, 0, 23, 10, 1)
 	gate("basement", -16, -16, 23, 10, 1)
@@ -169,7 +176,12 @@ function Builder.build(parent: Instance): (MapBuilder.World, FeatureBuilder.Buil
 			continue
 		end
 		local center = Vector3.new(room.x, room.y, room.z)
-		sign(props, room.title, Vector3.new(if room.x < 0 then -12 else 12, room.y + 9, room.z + 7))
+		sign(
+			props,
+			room.title,
+			Vector3.new(if room.x < 0 then -7.35 else 7.35, room.y + 9, room.z + 9),
+			if room.x < 0 then Vector3.xAxis else -Vector3.xAxis
+		)
 		local lamp = block(props, "Candle", room.x, room.y + 7, room.z - 12, 0.35, 1, 0.35, gold)
 		Build.light(lamp, "Street", Color3.fromRGB(255, 188, 105), 31, 0.85, true, false)
 		local light = block(props, "PowerLamp", room.x + 3, room.y + 12, room.z, 1, 0.25, 1, gold)

@@ -49,7 +49,7 @@ function Activities.build(parent: Instance, plan: Generator.Plan, distance: numb
 			end
 			local text = if solution
 				then `LUA=1 OLHO=2 CHAMA=3 PORTA=4\nORDEM: {table.concat(solution, " - ")}`
-				else "NÃO ACORDE O DONO.\nO CORAÇÃO ESTÁ SOB A CASA."
+				else "ELE NÃO É O DONO.\nO CORAÇÃO ESTÁ SOB A CASA."
 			Build.sign(
 				model,
 				"Clue",

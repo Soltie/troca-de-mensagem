@@ -45,26 +45,6 @@ function Controller.Start()
 	revelation.AnchorPoint = Vector2.new(0.5, 1)
 	revelation.Position = UDim2.new(0.5, 0, 1, -105)
 	revelation.Size = UDim2.new(0.8, 0, 0, 96)
-	local subtitleGui = Create("ScreenGui", {
-		Name = "StorySubtitles",
-		Parent = player.PlayerGui,
-		ResetOnSpawn = false,
-		IgnoreGuiInset = true,
-		DisplayOrder = 122,
-		Enabled = false,
-	}) :: ScreenGui
-	local subtitle = Create("TextLabel", {
-		Name = "Caption",
-		Parent = subtitleGui,
-		Position = UDim2.fromScale(0.04, 0.89),
-		Size = UDim2.fromScale(0.71, 0.1),
-		BackgroundTransparency = 1,
-		TextColor3 = Color3.fromRGB(230, 216, 180),
-		Font = Enum.Font.Code,
-		TextSize = 18,
-		Text = "",
-		TextWrapped = true,
-	}) :: TextLabel
 	local endingAt = 0
 	local ending = text("Continues", 0, 1)
 	ending.Position, ending.Size = UDim2.fromScale(0, 0), UDim2.fromScale(1, 1)
@@ -73,11 +53,9 @@ function Controller.Start()
 	local previous = ""
 	local lastSolved = 0
 	local revealUntil = 0
-	local lastLine = 0
 	RunService:BindToRenderStep("S9Story", Enum.RenderPriority.Camera.Value - 1, function()
 		local active = state:GetAttribute("Phase") ~= "Lobby"
 		gui.Enabled = active and player:GetAttribute("CinematicActive") ~= true
-		subtitleGui.Enabled = false
 		ending.Visible = false
 		if not active then
 			endingAt = 0
@@ -91,24 +69,12 @@ function Controller.Start()
 		end
 		local now = workspace:GetServerTimeNow()
 		local endsAt = (state:GetAttribute("StorySceneEndsAt") or 0) :: number
-		local start = (state:GetAttribute("StorySceneStartedAt") or 0) :: number
 		local key = `{state:GetAttribute("StorySceneSerial")}:{stage}`
 		if endsAt > now and key ~= previous then
-			previous, lastSolved, lastLine = key, 0, 0
+			previous, lastSolved = key, 0
+			revealUntil = 0
 			Cinema.play(Story.Scenes[stage])
-			Transition.title(
-				string.format("CAPÍTULO %02d", stage),
-				string.match(chapter.title, "·%s*(.+)") or chapter.title
-			)
 			Transition.caption(nil)
-		end
-		if endsAt > now and player:GetAttribute("CinematicActive") == true then
-			subtitleGui.Enabled = true
-			local index = math.clamp(math.floor((now - start) / 4) + 1, 1, 3)
-			if index ~= lastLine then
-				lastLine = index
-				subtitle.Text = Story.SceneLines[stage][index]
-			end
 		end
 		local phase = tostring(state:GetAttribute("Phase"))
 		local solved = (state:GetAttribute("Solved") or 0) :: number
@@ -125,7 +91,7 @@ function Controller.Start()
 			revelation.Text = Story.Ending
 		end
 		revelation.Visible = not ending.Visible
-			and (phase == "Won" or now < revealUntil)
+			and (phase == "Won" or ((phase == "Playing" or phase == "Extracting") and now < revealUntil))
 			and player:GetAttribute("FieldGuideOpen") ~= true
 		if endsAt <= now and phase == "Playing" and string.sub(Cinema.debugState().sequence, 1, 5) == "Story" then
 			Cinema.stop()

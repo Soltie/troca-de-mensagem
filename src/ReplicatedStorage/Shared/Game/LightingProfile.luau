@@ -22,7 +22,7 @@ Profile.World = {
 	diffuse = 0.35,
 	specular = 0.35,
 }
-Profile.Bloom = { intensity = 0.34, size = 18, threshold = 1.25 }
+Profile.Bloom = { intensity = 0.12, size = 12, threshold = 1.8 }
 Profile.Flashlight = { brightness = 3.1, spill = 0.22, angle = 48 }
 Profile.ShadowBudget = 2 -- mais a lanterna própria; colegas nunca ganham sombras
 Profile.ShadowDistance = 60
@@ -31,17 +31,17 @@ Profile.TransitionRate = 1.8
 function Profile.grade(indoor: number, power: number): Grade
 	local inside = math.clamp(indoor, 0, 1)
 	local on = math.clamp(power, 0, 1)
-	-- Cores vivas (saturação positiva); dentro de casa com energia, um toque quente.
+	-- Contraste contido preserva os materiais; com energia, o interior recebe um toque quente.
 	return {
 		tint = { 240 + inside * on * 12, 238 + inside * on * 6, 255 - inside * on * 22 },
 		contrast = 0.06 + inside * 0.03,
-		saturation = 0.12 - inside * 0.04,
+		saturation = -0.02 - inside * 0.04,
 		brightness = 0.02,
 	}
 end
 
 function Profile.exposure(indoor: number, power: number): number
-	return 0.22 + math.clamp(indoor, 0, 1) * (0.14 - 0.08 * math.clamp(power, 0, 1))
+	return 0.08 + math.clamp(indoor, 0, 1) * (0.08 - 0.06 * math.clamp(power, 0, 1))
 end
 
 function Profile.fogEnd(base: number, danger: number): number
