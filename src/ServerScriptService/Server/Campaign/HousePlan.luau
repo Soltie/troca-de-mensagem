@@ -4,11 +4,13 @@ local House = require("@game/ReplicatedStorage/Shared/Game/HouseCatalog")
 local Generator = require("./CampaignGenerator")
 local Layout = require("../World/ProceduralLayout")
 local Random = require("./SeededRandom")
+local Levels = require("./HouseLevelPlan")
 local Plan = {}
 function Plan.create(seed: number, chapter: number, players: number, mode: string): Generator.Plan
 	assert(chapter >= 1 and chapter <= #House.Chapters and chapter % 1 == 0, "Invalid house chapter")
 	assert(players >= 1 and players <= 6 and players % 1 == 0, "Invalid house party")
 	local rng = Random.new(seed + chapter * 7919)
+	local level = Levels.create(seed, chapter, mode)
 	local activities: { Generator.Activity } = {}
 	local roomUses: { [string]: number } = {}
 	for index, objective in House.Chapters[chapter].objectives do
@@ -33,16 +35,18 @@ function Plan.create(seed: number, chapter: number, players: number, mode: strin
 			dx, dz = if room.x < 0 then -11 else 11, 11
 			offset = 0
 		end
+		local spot = Levels.relocate(level, index)
+		local repair = mode == "Standard" and objective.event == "power"
 		table.insert(activities, {
 			id = `task_{index}`,
 			slot = `{objective.room}_{index}`,
-			room = room.id,
-			x = room.x + dx + offset,
-			y = room.y,
-			z = room.z + dz,
-			kind = objective.kind,
-			order = solution,
-			title = objective.title,
+			room = if spot then spot.room else room.id,
+			x = if spot then spot.x else room.x + dx + offset,
+			y = if spot then spot.y else room.y,
+			z = if spot then spot.z else room.z + dz,
+			kind = if repair then "repair" else objective.kind,
+			order = if repair then { 1, 2, 3 } else solution,
+			title = if spot then `{objective.title} / {spot.room}` else objective.title,
 			item = objective.item,
 			event = objective.event,
 			house = true,
@@ -54,7 +58,9 @@ function Plan.create(seed: number, chapter: number, players: number, mode: strin
 		seed = seed,
 		stage = chapter,
 		players = players,
-		title = House.Chapters[chapter].title,
+		title = if level.outdoor
+			then string.format("%02d · %s", chapter, level.theme)
+			else House.Chapters[chapter].title,
 		threat = if chapter < 3 then "watcher" else "echo",
 		activities = activities,
 		closedLinks = {},
@@ -66,15 +72,34 @@ function Plan.validate(plan: Generator.Plan): (boolean, string?)
 		return false, "invalid_house_plan"
 	end
 	local expected = House.Chapters[plan.stage].objectives
+	local level = Levels.create(plan.seed, plan.stage, plan.mode or "Story")
 	if #plan.activities ~= #expected then
 		return false, "missing_objectives"
 	end
 	local ids: { [string]: boolean } = {}
 	for index, activity in plan.activities do
-		if ids[activity.id] or activity.room ~= expected[index].room or activity.kind ~= expected[index].kind then
+		local objective = expected[index]
+		local spot = Levels.relocate(level, index)
+		local repair = plan.mode == "Standard" and objective.event == "power"
+		if
+			ids[activity.id]
+			or activity.room ~= (if spot then spot.room else objective.room)
+			or activity.kind ~= (if repair then "repair" else objective.kind)
+			or activity.item ~= objective.item
+			or activity.event ~= objective.event
+		then
 			return false, "invalid_dependency"
 		end
 		ids[activity.id] = true
+		if spot and (activity.x ~= spot.x or activity.y ~= spot.y or activity.z ~= spot.z) then
+			return false, "invalid_exterior_position"
+		end
+		if
+			repair
+			and (#activity.order ~= 3 or activity.order[1] ~= 1 or activity.order[2] ~= 2 or activity.order[3] ~= 3)
+		then
+			return false, "invalid_repair"
+		end
 		if activity.kind == "puzzle" and #activity.order ~= 4 then
 			return false, "missing_solution"
 		end

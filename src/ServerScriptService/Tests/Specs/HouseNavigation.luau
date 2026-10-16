@@ -44,6 +44,11 @@ return {
 				overlap.FilterDescendantsInstances = { world.root }
 				for seed = 1, 20 do
 					for chapter = 1, 5 do
+						-- Exteriores têm piso/escada próprios, medidos na fixture HouseLevelNavigation.
+						local Levels = require("@game/ServerScriptService/Server/Campaign/HouseLevelPlan")
+						if Levels.create(seed, chapter, "Standard").outdoor then
+							continue
+						end
 						local plan = Plans.create(seed, chapter, 1, "Standard")
 						for _, spec in plan.activities do
 							if spec.kind == "hide" or spec.kind == "breath" or spec.kind == "explore" then

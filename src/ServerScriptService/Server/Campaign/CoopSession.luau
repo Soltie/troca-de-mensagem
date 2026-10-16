@@ -215,7 +215,7 @@ function Session.act(state: State, id: number, taskId: string, button: number, n
 	local kind = activity.spec.kind
 	local result = "progress"
 	if state.house then
-		if kind == "puzzle" then
+		if kind == "puzzle" or kind == "repair" then
 			if activity.spec.order[activity.progress + 1] ~= button then
 				return false, "wrong_sequence"
 			end

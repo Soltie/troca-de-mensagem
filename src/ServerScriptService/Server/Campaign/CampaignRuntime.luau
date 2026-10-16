@@ -302,7 +302,7 @@ local function stage()
 		Random.new(if selectedMode == "Story" then Story.MapSeed else session.seed + session.stage),
 		plan.sector
 	)
-	WorldService.setHouseStage(session.stage)
+	WorldService.setHouseStage(session.stage, session.seed, selectedMode)
 	local world = WorldService.get()
 	-- As trancas da missão solo não podem invalidar o grafo da campanha.
 	local worldAdapter: any = WorldService

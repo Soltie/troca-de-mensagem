@@ -38,7 +38,10 @@ local log = Logger.new("WorldService")
 local HouseBuilder = require("../World/HouseBuilder")
 local HouseScenery = require("../World/HouseScenery")
 local House = require("@game/ReplicatedStorage/Shared/Game/HouseCatalog")
+local HouseLevels = require("../Campaign/HouseLevelPlan")
+local HouseLevelBuilder = require("../World/HouseLevelBuilder")
 local houseStage = 0
+local outdoorPatrol: { Layout.Point } = {}
 local world: MapBuilder.World? = nil
 local features: FeatureBuilder.Built? = nil
 local fuseFolder: Instance? = nil
@@ -358,6 +361,9 @@ end
 function WorldService.patrolNodes(): { Layout.Point }
 	if Config.House.Enabled then
 		local points: { Layout.Point } = {}
+		for _, point in outdoorPatrol do
+			table.insert(points, point)
+		end
 		for _, room in House.Rooms do
 			local accessible = room.y == 0 or (room.y > 0 and houseStage >= 3) or (room.y < 0 and houseStage >= 4)
 			if accessible and room.id ~= "Exterior" then
@@ -808,7 +814,7 @@ function WorldService.isInExitZone(position: Vector3): boolean
 	return Layout.inRect(Layout.ExitZone, position.X, position.Z)
 end
 
-function WorldService.setHouseStage(chapter: number)
+function WorldService.setHouseStage(chapter: number, seed: number?, mode: string?)
 	houseStage = chapter
 	local architecture = getWorld().root:FindFirstChild("Architecture")
 	if architecture then
@@ -841,6 +847,15 @@ function WorldService.setHouseStage(chapter: number)
 	end
 	getWorld().spawnCFrame = CFrame.lookAt(Vector3.new(0, 3, if chapter == 1 then 77 else 2), Vector3.new(0, 3, -20))
 	WorldService.setHouseDestruction(false)
+	local level = HouseLevels.create(seed or 1, chapter, mode or "Story")
+	HouseLevelBuilder.build(getWorld().root, level)
+	outdoorPatrol = {}
+	if level.outdoor then
+		for _, spot in level.spots do
+			table.insert(outdoorPatrol, { x = spot.x, y = spot.y, z = spot.z })
+		end
+		getWorld().spawnCFrame = CFrame.lookAt(Vector3.new(0, 3, 77), Vector3.new(0, 3, 0))
+	end
 end
 function WorldService.upperNoise()
 	local source = Build.part(
@@ -886,6 +901,7 @@ function WorldService.houseEvent(event: string?)
 	end
 end
 function WorldService.houseRuins()
+	HouseLevelBuilder.ruins(getWorld().root)
 	local architecture = getWorld().root:FindFirstChild("Architecture")
 	if architecture then
 		for _, part in architecture:GetChildren() do

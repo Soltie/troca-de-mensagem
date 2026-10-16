@@ -5,7 +5,9 @@ local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
 local Build = require("../World/Build")
 local Plan = require("./HousePlan")
 local Generator = require("./CampaignGenerator")
+local TaskProps = require("../World/HouseTaskProps")
 local Activities = {}
+local repairSteps = { "ISOLAR O CIRCUITO", "ENCAIXAR OS FUSÍVEIS", "TESTAR A ENERGIA" }
 local gold = Color3.fromRGB(219, 171, 80)
 local symbols = { "LUA", "OLHO", "CHAMA", "PORTA" }
 function Activities.build(parent: Instance, plan: Generator.Plan, distance: number): any
@@ -35,6 +37,7 @@ function Activities.build(parent: Instance, plan: Generator.Plan, distance: numb
 		end
 		local base = Build.block(model, "AntiquePedestal", p, Vector3.new(4, 1.7, 2), 0, Color3.fromRGB(53, 35, 29))
 		base.Material = Enum.Material.Wood
+		TaskProps.build(model, p, spec.item, spec.kind)
 		if spec.kind == "clue" then
 			local solution: { number }? = nil
 			if spec.item == "book" then
@@ -71,7 +74,7 @@ function Activities.build(parent: Instance, plan: Generator.Plan, distance: numb
 		elseif spec.item == "flashlight" then
 			Build.light(base, "Street", Color3.fromRGB(255, 210, 139), 18, 0.9, true)
 		end
-		local count = if spec.kind == "puzzle" then 4 else 1
+		local count = if spec.kind == "puzzle" then 4 elseif spec.kind == "repair" then 3 else 1
 		for button = 1, count do
 			local id = `{spec.id}_{button}`
 			local focus = Build.block(
@@ -86,7 +89,10 @@ function Activities.build(parent: Instance, plan: Generator.Plan, distance: numb
 			focus:SetAttribute(Tags.Attr.InteractId, id)
 			focus:SetAttribute(
 				Tags.Attr.InteractPrompt,
-				if spec.kind == "puzzle" then `PRESSIONAR {symbols[button]}` else spec.title
+				if spec.kind == "puzzle"
+					then `PRESSIONAR {symbols[button]}`
+					elseif spec.kind == "repair" then repairSteps[button]
+					else spec.title
 			)
 			focus:SetAttribute(Tags.Attr.InteractDistance, distance)
 			focus:SetAttribute(Tags.Attr.InteractEnabled, index == 1 and spec.kind ~= "hide" and spec.kind ~= "breath")
@@ -99,10 +105,22 @@ function Activities.build(parent: Instance, plan: Generator.Plan, distance: numb
 					focus.Position + Vector3.new(0, 1.5, 0),
 					Vector3.zAxis,
 					Vector2.new(1.7, 0.7),
-					`{button} {symbols[button]}`,
+					if spec.kind == "repair" then `{button} {repairSteps[button]}` else `{button} {symbols[button]}`,
 					{ textColor = gold, lit = true }
 				)
 			end
+		end
+		if spec.kind == "repair" or spec.kind == "puzzle" then
+			local status = Build.sign(
+				model,
+				"TaskProgress",
+				p + Vector3.new(0, 6, 0),
+				Vector3.zAxis,
+				Vector2.new(9, 1.2),
+				"",
+				{ textColor = gold, lit = true }
+			)
+			built.labels[spec.id] = status:FindFirstChildWhichIsA("TextLabel", true)
 		end
 	end
 	return built
@@ -121,12 +139,31 @@ function Activities.refresh(built: any, tasks: any)
 			continue
 		end
 		local spec = state.spec
+		if built.labels[spec.id] then
+			built.labels[spec.id].Text = if state.solved
+				then "CONCLUÍDO"
+				elseif current ~= spec.id then "AGUARDE A PISTA ANTERIOR"
+				elseif spec.kind == "repair" then `{state.progress}/3 · {repairSteps[state.progress + 1]}`
+				else `{state.progress}/4 · CONSULTE A PISTA RECUPERADA`
+		end
 		local enabled = current == target.taskId
 			and spec.kind ~= "hide"
 			and spec.kind ~= "breath"
 			and spec.kind ~= "explore"
 		target.focus:SetAttribute(Tags.Attr.InteractEnabled, enabled)
-		target.focus.Transparency = if state.solved and spec.kind == "collect" then 1 else 0
+		target.focus.Transparency = if spec.kind == "collect" then 1 else 0
+		if spec.kind == "collect" and target.focus.Parent then
+			for _, object in target.focus.Parent:GetDescendants() do
+				if
+					object:IsA("BasePart")
+					and object ~= target.focus
+					and object.Name ~= "Station"
+					and object.Name ~= "AntiquePedestal"
+				then
+					object.Transparency = if state.solved then 1 else 0
+				end
+			end
+		end
 		target.focus.Color = if state.solved then Color3.fromRGB(63, 105, 76) else Color3.fromRGB(219, 171, 80)
 	end
 end

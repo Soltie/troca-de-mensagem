@@ -30,7 +30,7 @@ return {
 						t.expect((Plan.validate(plan))).toBe(true)
 						t.expect((Session.act(s, 1, plan.activities[2].id, 1, 1))).toBe(false)
 						for _, spec in plan.activities do
-							if spec.kind == "puzzle" then
+							if spec.kind == "puzzle" or spec.kind == "repair" then
 								local wrong = spec.order[1] % 4 + 1
 								t.expect((Session.act(s, 1, spec.id, wrong, 1))).toBe(false)
 								for _, button in spec.order do
@@ -65,9 +65,14 @@ return {
 							t.expect(occupied[point]).toBe(nil)
 							occupied[point] = true
 						end
-						t.expect(math.abs(activity.x) <= 40).toBe(true)
-						t.expect(activity.y == -16 or activity.y == 0 or activity.y == 16 or activity.y == 32)
-							.toBe(true)
+						t.expect(math.abs(activity.x) <= 100 and activity.z >= -112 and activity.z <= 80).toBe(true)
+						t.expect(
+							activity.y == -16
+								or activity.y == 0
+								or activity.y == 8
+								or activity.y == 16
+								or activity.y == 32
+						).toBe(true)
 						if activity.kind == "puzzle" then
 							local seen = {}
 							for _, symbol in activity.order do

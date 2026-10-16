@@ -127,7 +127,7 @@ function Harness.run(runtime: any, args: any)
 				elseif spec.kind == "breath" then
 					request(actor, { breath = true })
 				else
-					for _, button in (if spec.kind == "puzzle" then spec.order else { 1 }) do
+					for _, button in (if spec.kind == "puzzle" or spec.kind == "repair" then spec.order else { 1 }) do
 						local model = (World.get().root:FindFirstChild("CampaignActivities") :: Folder):FindFirstChild(
 							spec.id
 						)
