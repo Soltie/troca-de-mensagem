@@ -1,0 +1,2 @@
+[Server] boot OK (15 services)
+[Tests] 263 passed, 0 failed, 0 skipped specs

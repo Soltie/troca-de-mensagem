@@ -40,12 +40,11 @@ function Controller.Start()
 			BorderSizePixel = 0,
 		}) :: TextLabel
 	end
-	local objective = text("NarrativeObjective", 0.17, 0.08)
 	local revelation = text("RecoveredRecording", 0.72, 0.13)
-	objective.Position = UDim2.fromOffset(330, 126)
-	objective.Size = UDim2.new(1, -350, 0, 72)
-	revelation.Position = UDim2.new(0, 460, 0.66, 0)
-	revelation.Size = UDim2.new(1, -480, 0.24, 0)
+	-- Objetivo unificado no CampaignUi; aqui ficam somente gravações e cenas.
+	revelation.AnchorPoint = Vector2.new(0.5, 1)
+	revelation.Position = UDim2.new(0.5, 0, 1, -105)
+	revelation.Size = UDim2.new(0.8, 0, 0, 96)
 	local subtitleGui = Create("ScreenGui", {
 		Name = "StorySubtitles",
 		Parent = player.PlayerGui,
@@ -72,7 +71,7 @@ function Controller.Start()
 	local lastLine = 0
 	RunService:BindToRenderStep("S9Story", Enum.RenderPriority.Camera.Value - 1, function()
 		local active = state:GetAttribute("GameMode") == "Story" and state:GetAttribute("Phase") ~= "Lobby"
-		gui.Enabled = active
+		gui.Enabled = active and player:GetAttribute("CinematicActive") ~= true
 		subtitleGui.Enabled = false
 		if not active then
 			previous, lastSolved = "", 0
@@ -111,18 +110,10 @@ function Controller.Start()
 			revealUntil = now + 10
 		end
 		lastSolved = solved
-		local nextObjective = chapter.objectives[math.min(#chapter.objectives, solved + 1)]
-		objective.Text = if phase == "Won"
-			then "O ÚLTIMO TURNO / CONCLUÍDO"
-			elseif phase == "Lost" then "A GRAVAÇÃO FOI INTERROMPIDA / [R] VOTAR VOLTA AO MENU"
-			elseif phase == "Extracting" then "CIRCUITO ISOLADO / REÚNAM A EQUIPE NO PORTÃO"
-			elseif phase == "Intermission" then "GRAVAÇÃO RECUPERADA / PRÓXIMO CAPÍTULO"
-			else `{chapter.title}\n{nextObjective.title}`
 		if phase == "Won" then
 			revelation.Text = Story.Ending
 		end
-		revelation.Visible = phase == "Won" or now < revealUntil
-		objective.Visible = player:GetAttribute("CinematicActive") ~= true
+		revelation.Visible = (phase == "Won" or now < revealUntil) and player:GetAttribute("FieldGuideOpen") ~= true
 		if endsAt <= now and phase == "Playing" and string.sub(Cinema.debugState().sequence, 1, 5) == "Story" then
 			Cinema.stop()
 		end

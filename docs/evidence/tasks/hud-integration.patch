@@ -1,0 +1,28 @@
+--- a/src/ReplicatedStorage/Client/Controllers/CampaignController.luau
++++ b/src/ReplicatedStorage/Client/Controllers/CampaignController.luau
+@@ -16,10 +16,11 @@
+ local player = Players.LocalPlayer
+ local Controller = { Name = "CampaignController" }
+ local messages: { [string]: string } = {
+-	progress = "ETAPA CONFIRMADA. CONTINUE NESTA ESTAÇÃO.",
++	progress = "ETAPA CONFIRMADA. SIGA O PRÓXIMO BOTÃO NA ESTAÇÃO.",
+ 	solved = "ESTAÇÃO CONCLUÍDA. OBJETIVO ATUALIZADO.",
+ 	need_partner = "CHAME UM COLEGA: ELE PRECISA CONFIRMAR NESTE MESMO RELÉ.",
+-	wrong_sequence = "ORDEM INCORRETA. LEIA A PLACA E RECOMECE DO PRIMEIRO BOTÃO.",
++	wrong_sequence = "BOTÃO INCORRETO. SEUS ACERTOS CONTINUAM SALVOS; SIGA A PLACA.",
++	repair_order = "SIGA O BOTÃO ACESO: ISOLAR, ENCAIXAR FUSÍVEL E TESTAR.",
+ 	story_order = "CONCLUA PRIMEIRO O OBJETIVO INDICADO NO HUD.",
+ 	rescuing = "RESGATANDO... FIQUE PERTO DO COLEGA E MANTENHA VISÃO.",
+ 	rescued = "COLEGA RESGATADO.",
+--- a/src/ReplicatedStorage/Shared/Game/PlayerGuide.luau
++++ b/src/ReplicatedStorage/Shared/Game/PlayerGuide.luau
+@@ -26,7 +26,8 @@
+ 
+ function Guide.instruction(activity: Activity, now: number, activePlayers: number?): string
+ 	if activity.kind == "repair" then
+-		return `Mire no botão e aperte E até completar o reparo. Progresso: {activity.progress}/3.`
++		local actions = { "isolar circuito", "encaixar fusível", "testar energia" }
++		return `Mire no botão {activity.progress + 1} ({actions[activity.progress + 1] or "concluído"}) e aperte E. Progresso: {activity.progress}/3.`
+ 	elseif activity.kind == "sequence" then
+ 		return `Leia a sequência na placa da estação. Mire em cada botão numerado e aperte E na ordem. {activity.progress}/3 confirmados.`
+ 	elseif activity.kind == "relay" then

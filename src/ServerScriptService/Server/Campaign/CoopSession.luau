@@ -21,6 +21,7 @@ export type TaskState = {
 	solved: boolean,
 	relayBy: number?,
 	relayUntil: number,
+	contributors: { [number]: boolean },
 }
 export type Policy = { minPlayers: number, maxPlayers: number, downedSeconds: number, relayWindow: number }
 export type State = {
@@ -115,8 +116,8 @@ end
 function Session.leave(state: State, id: number)
 	state.members[id], state.votes[id] = nil, nil
 	for _, activity in state.tasks do
-		if activity.relayBy == id then
-			activity.relayBy, activity.relayUntil = nil, 0
+		if activity.relayBy == id and not activity.solved then
+			activity.relayBy, activity.relayUntil, activity.progress = nil, 0, 0
 		end
 	end
 	evaluate(state)
@@ -147,7 +148,8 @@ function Session.beginStage(state: State): (boolean, string?)
 	state.stage += 1
 	state.plan, state.tasks, state.votes = plan, {}, {}
 	for _, spec in plan.activities do
-		state.tasks[spec.id] = { spec = spec, progress = 0, solved = false, relayBy = nil, relayUntil = 0 }
+		state.tasks[spec.id] =
+			{ spec = spec, progress = 0, solved = false, relayBy = nil, relayUntil = 0, contributors = {} }
 	end
 	for _, member in state.members do
 		member.status, member.downedUntil = "Active", 0
@@ -194,14 +196,14 @@ function Session.act(state: State, id: number, taskId: string, button: number, n
 	local kind = activity.spec.kind
 	local result = "progress"
 	if kind == "repair" then
-		if button ~= 1 then
-			return false, "invalid_action"
+		if button ~= activity.progress + 1 then
+			return false, "repair_order"
 		end
-		activity.progress = math.min(3, activity.progress + (if member.role == "technician" then 2 else 1))
+		-- O técnico combina isolamento + encaixe; testar a energia continua sendo uma ação explícita.
+		activity.progress += if member.role == "technician" and activity.progress == 0 then 2 else 1
 		activity.solved = activity.progress >= 3
 	elseif kind == "sequence" then
 		if activity.spec.order[activity.progress + 1] ~= button then
-			activity.progress = 0
 			return false, "wrong_sequence"
 		end
 		activity.progress += 1
@@ -210,7 +212,7 @@ function Session.act(state: State, id: number, taskId: string, button: number, n
 		if button ~= 1 then
 			return false, "invalid_action"
 		end
-		if activity.relayBy == nil or activity.relayUntil < now then
+		if activity.relayBy == nil or activity.relayUntil <= now then
 			activity.relayBy = id
 			activity.relayUntil = now + state.policy.relayWindow * (if member.role == "operator" then 1.5 else 1)
 			activity.progress = 1
@@ -223,7 +225,11 @@ function Session.act(state: State, id: number, taskId: string, button: number, n
 	else
 		return false, "unknown_activity"
 	end
-	member.contributions += 1
+	-- Ajudar vale uma contribuição por estação, inclusive para o técnico. Repetir o relé não gera farm.
+	if not activity.contributors[id] then
+		activity.contributors[id] = true
+		member.contributions += 1
+	end
 	if activity.solved then
 		result = "solved"
 	end
@@ -246,8 +252,8 @@ function Session.capture(state: State, id: number, now: number, rising: number?)
 	member.status, member.downedUntil = "Downed", now + state.policy.downedSeconds
 	member.risingUntil = if rising and rising > 0 and finite(rising) then now + rising else nil
 	for _, activity in state.tasks do
-		if activity.relayBy == id then
-			activity.relayBy, activity.relayUntil = nil, 0
+		if activity.relayBy == id and not activity.solved then
+			activity.relayBy, activity.relayUntil, activity.progress = nil, 0, 0
 		end
 	end
 	evaluate(state)
@@ -300,6 +306,11 @@ end
 function Session.tick(state: State, now: number)
 	if not finite(now) then
 		return
+	end
+	for _, activity in state.tasks do
+		if not activity.solved and activity.relayBy and now >= activity.relayUntil then
+			activity.relayBy, activity.relayUntil, activity.progress = nil, 0, 0
+		end
 	end
 	for _, member in state.members do
 		-- Janela da Segunda Chance vencida (jogador saiu, etapa trocou): volta a valer a derrota.

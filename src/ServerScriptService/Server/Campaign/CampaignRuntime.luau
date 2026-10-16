@@ -14,6 +14,7 @@ local Modes = require("@game/ReplicatedStorage/Shared/Game/GameModes")
 local Perks = require("@game/ReplicatedStorage/Shared/Game/Perks")
 local Story = require("@game/ReplicatedStorage/Shared/Game/StoryCatalog")
 local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
+local TaskRewards = require("@game/ReplicatedStorage/Shared/Game/TaskRewards")
 local Guard = require("@game/ReplicatedStorage/Shared/Net/Guard")
 local Logger = require("@game/ReplicatedStorage/Shared/Logger")
 local ServerNet = require("../Net/ServerNet")
@@ -30,6 +31,9 @@ local Session = require("./CoopSession")
 local C = Config.Campaign
 local log = Logger.new("Campaign")
 local session = Session.new(1, C)
+local taskPayments: TaskRewards.Ledger = {}
+local pendingTaskPayments: { [string]: { [number]: boolean } } = {}
+local rewardCampaign = 0
 local replicated: Configuration? = nil
 local built: Builder.Built? = nil
 local version = 0
@@ -135,6 +139,11 @@ local function publish()
 				title = spec.title,
 				solved = state.solved,
 				progress = state.progress,
+				nextButton = if spec.kind == "repair"
+					then state.progress + 1
+					elseif spec.kind == "sequence" then spec.order[state.progress + 1]
+					else 1,
+				relayUntil = state.relayUntil,
 			})
 		end
 	end
@@ -448,6 +457,28 @@ local function capture(player: Player)
 	end)
 end
 
+local function payCompletedTasks()
+	for key, recipients in pendingTaskPayments do
+		for id, contributed in recipients do
+			local player = Players:GetPlayerByUserId(id)
+			if not player then
+				recipients[id] = nil
+			elseif player:GetAttribute("StoreReady") == true then
+				if
+					TaskRewards.claim(taskPayments, key, id, function()
+						return StoreService.awardTask(player, contributed) ~= nil
+					end)
+				then
+					recipients[id] = nil
+				end
+			end
+		end
+		if next(recipients) == nil then
+			pendingTaskPayments[key] = nil
+		end
+	end
+end
+
 local function afterActivity(previous: Session.Phase)
 	if session.phase ~= previous then
 		if session.phase == "Intermission" then
@@ -518,6 +549,33 @@ local function interact(player: Player, id: string, _action: string?): { accepte
 		if ok then
 			CreatureService.makeNoise(focus.Position, 22)
 		end
+		if ok and message == "solved" then
+			local activity = session.tasks[station.taskId]
+			local key = `{rewardCampaign}:{session.stage}:{station.taskId}`
+			local recipients: { [number]: boolean } = {}
+			for _, teammate in Players:GetPlayers() do
+				local participant = session.members[teammate.UserId]
+				if
+					participant
+					and (
+						participant.status == "Active"
+						or participant.status == "Downed"
+						or activity.contributors[teammate.UserId]
+					)
+				then
+					if not (taskPayments[key] and taskPayments[key][teammate.UserId]) then
+						recipients[teammate.UserId] = activity.contributors[teammate.UserId] == true
+					end
+				end
+			end
+			-- Dados ainda carregando? A fila paga assim que o perfil estiver pronto, inclusive após a etapa.
+			local pending = pendingTaskPayments[key] or {}
+			for recipientId, contributed in recipients do
+				pending[recipientId] = pending[recipientId] == true or contributed
+			end
+			pendingTaskPayments[key] = pending
+			payCompletedTasks()
+		end
 		afterActivity(previous)
 		return response(ok, message)
 	end
@@ -562,6 +620,8 @@ local function retryStage(player: Player): (boolean, string?)
 end
 
 local function restartCampaign()
+	rewardCampaign += 1
+	taskPayments = {}
 	version += 1
 	building = false
 	clearRescues()
@@ -586,8 +646,15 @@ local function restartCampaign()
 end
 
 local function tick()
+	payCompletedTasks()
 	local now = workspace:GetServerTimeNow()
 	local before = session.phase .. ":" .. Session.count(session, "Downed")
+	local relayExpired = false
+	for _, activity in session.tasks do
+		if not activity.solved and activity.relayBy and now >= activity.relayUntil then
+			relayExpired = true
+		end
+	end
 	Session.tick(session, now)
 	for helperId, channel in channels do
 		local helper = Players:GetPlayerByUserId(helperId)
@@ -662,6 +729,9 @@ local function tick()
 		end
 	end
 	if session.phase == "Playing" and not building then
+		if built then
+			Builder.refresh(built, session.tasks, now, Session.count(session, "Active"))
+		end
 		if blackoutUntil > 0 and now >= blackoutUntil then
 			WorldService.setPower(true)
 			blackoutUntil = 0
@@ -688,7 +758,7 @@ local function tick()
 			freeze(player, true)
 		end
 	end
-	if before ~= session.phase .. ":" .. Session.count(session, "Downed") then
+	if relayExpired or before ~= session.phase .. ":" .. Session.count(session, "Downed") then
 		publish()
 	end
 end
@@ -790,6 +860,8 @@ function Runtime.Start()
 		modeVotes[player.UserId] = nil
 		Session.leave(session, player.UserId)
 		if Session.count(session) == 0 then
+			rewardCampaign += 1
+			taskPayments = {}
 			version += 1
 			building = false
 			-- Servidor vazio também encerra a partida: a próxima equipe recebe outro mapa.

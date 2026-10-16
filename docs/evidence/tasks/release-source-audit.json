@@ -1,0 +1,83 @@
+{
+  "build_sha256": "1747928d7fc88ab3dc7ac5f740a50f0426c02fcce6e84337c546fa18611a67ee",
+  "checks": [
+    {
+      "path": "ServerScriptService/Server/Campaign/ActivityBuilder",
+      "identical": true,
+      "local_sha256": "45e14e0ed51fbdc069a619e3bc9aa0bdf5dc274c6b269875d950acccd7b17b6d",
+      "built_sha256": "45e14e0ed51fbdc069a619e3bc9aa0bdf5dc274c6b269875d950acccd7b17b6d"
+    },
+    {
+      "path": "ServerScriptService/Server/Campaign/CoopSession",
+      "identical": true,
+      "local_sha256": "2597f4463779868fc2f7b294bc883ed8cdc6ab80bb0bb0880b493d831a10786e",
+      "built_sha256": "2597f4463779868fc2f7b294bc883ed8cdc6ab80bb0bb0880b493d831a10786e"
+    },
+    {
+      "path": "ServerScriptService/Server/Campaign/CampaignRuntime",
+      "identical": true,
+      "local_sha256": "1e18b53e5e3468a447d309a597930a9ddf03dc9fc99bb4b1c7a4f8bced15f5b8",
+      "built_sha256": "1e18b53e5e3468a447d309a597930a9ddf03dc9fc99bb4b1c7a4f8bced15f5b8"
+    },
+    {
+      "path": "ServerScriptService/Server/Services/StoreService",
+      "identical": true,
+      "local_sha256": "9a1186f0a041281368dff6e4d746b7cd61b651fdb4ef94a3ecaa1a57ff4a9d31",
+      "built_sha256": "9a1186f0a041281368dff6e4d746b7cd61b651fdb4ef94a3ecaa1a57ff4a9d31"
+    },
+    {
+      "path": "ReplicatedStorage/Shared/Game/TaskRewards",
+      "identical": true,
+      "local_sha256": "e2b2824b7825e92f9794b5e80b45a7b3f0659340fa93df8c643662040b3d5f7e",
+      "built_sha256": "e2b2824b7825e92f9794b5e80b45a7b3f0659340fa93df8c643662040b3d5f7e"
+    },
+    {
+      "path": "ReplicatedStorage/Client/Controllers/StoreController",
+      "identical": true,
+      "local_sha256": "c6abbb433491ba2058cfc8331ddae741fc34f412a4991a36d81c0b287a110753",
+      "built_sha256": "c6abbb433491ba2058cfc8331ddae741fc34f412a4991a36d81c0b287a110753"
+    },
+    {
+      "path": "ServerScriptService/Tests/CampaignHarness",
+      "identical": true,
+      "local_sha256": "20f15452e0c5b932cb87b565d225695b9263724b7daf5adf32c654e76adf45e3",
+      "built_sha256": "20f15452e0c5b932cb87b565d225695b9263724b7daf5adf32c654e76adf45e3"
+    },
+    {
+      "path": "ServerScriptService/Tests/Specs/CoopSession",
+      "identical": true,
+      "local_sha256": "38c6528e0c0e053d7e2cd38be80525463390dde91bb70b54dedb9c24a3f48f80",
+      "built_sha256": "38c6528e0c0e053d7e2cd38be80525463390dde91bb70b54dedb9c24a3f48f80"
+    },
+    {
+      "path": "ServerScriptService/Tests/Specs/StoryMode",
+      "identical": true,
+      "local_sha256": "702fcd70084082197798254508f9bf2db737dedc6015a1e619c78ca1d1223541",
+      "built_sha256": "702fcd70084082197798254508f9bf2db737dedc6015a1e619c78ca1d1223541"
+    },
+    {
+      "path": "ServerScriptService/Tests/Specs/TaskRewards",
+      "identical": true,
+      "local_sha256": "0ef1718771aec904c4879ca1c106d4243e1f96a89ddfe1d667736518da5b812d",
+      "built_sha256": "0ef1718771aec904c4879ca1c106d4243e1f96a89ddfe1d667736518da5b812d"
+    },
+    {
+      "path": "ServerScriptService/Tests/Specs/TaskStations",
+      "identical": true,
+      "local_sha256": "3a4073a3db1ae7e3e928a4733752f93209dd39846c5fe53f1a396689d5751cd5",
+      "built_sha256": "3a4073a3db1ae7e3e928a4733752f93209dd39846c5fe53f1a396689d5751cd5"
+    },
+    {
+      "path": "ReplicatedStorage/Shared/Game/PlayerGuide",
+      "identical": true,
+      "local_sha256": "0a2714b86937392eaee487d48b49417ee6304ee3f1a462428c340becca5f5720",
+      "built_sha256": "0a2714b86937392eaee487d48b49417ee6304ee3f1a462428c340becca5f5720"
+    },
+    {
+      "path": "ReplicatedStorage/Client/Controllers/CampaignController",
+      "identical": true,
+      "local_sha256": "242e131e291c3dd4d13d0d9d39bac0c9a63b854425d143acdd80ce97c8a01c46",
+      "built_sha256": "242e131e291c3dd4d13d0d9d39bac0c9a63b854425d143acdd80ce97c8a01c46"
+    }
+  ]
+}

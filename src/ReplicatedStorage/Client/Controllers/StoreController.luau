@@ -229,6 +229,9 @@ local function onNotice(payload: { [string]: any })
 	local kind = payload.kind
 	if kind == "run" then
 		table.insert(lines, Text.Rewards.run)
+	elseif kind == "task" then
+		table.insert(lines, "ESTAÇÃO CONCLUÍDA")
+		table.insert(lines, if payload.contributed then "BÔNUS POR AJUDAR A EQUIPE" else "RECOMPENSA DA EQUIPE")
 	elseif kind == "tape" then
 		local tape = StoreCatalog.TapeById[payload.tape or ""]
 		local title = if tape then tape.title else "?"

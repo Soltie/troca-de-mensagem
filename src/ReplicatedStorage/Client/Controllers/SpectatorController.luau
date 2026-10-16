@@ -84,7 +84,11 @@ function Controller.Start()
 		Camera.setSpectator(target)
 		banner.Text = PixelText.normalize(
 			(if target then `ACOMPANHANDO {target.DisplayName} · [← / →] TROCAR` else "AGUARDANDO COLEGAS ATIVOS.")
-				.. "\nVOCÊ RETORNA NO PRÓXIMO ESTÁGIO."
+				.. (
+					if player:GetAttribute("CampaignStatus") == "Downed"
+						then "\nVOCÊ AINDA PODE SER RESGATADO POR UM COLEGA."
+						else "\nVOCÊ RETORNA NO PRÓXIMO ESTÁGIO."
+				)
 		)
 	end)
 end

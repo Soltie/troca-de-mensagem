@@ -1,0 +1,114 @@
+2026-10-16T17:19:26.176Z,8.176282,af94,6,Info [FLog::CreatorOutput] [Server] boot OK (15 services)
+2026-10-16T17:19:43.386Z,25.386181,af94,6,Info [FLog::CreatorOutput] [Campaign] stage=1 seed=1792187016 players=2 tasks=3
+2026-10-16T17:19:46.412Z,28.412535,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS 2 real clients in roster
+2026-10-16T17:19:51.638Z,33.638393,af94,6,Info [FLog::CreatorOutput] [Campaign] stage=1 seed=1792202862 players=2 tasks=3
+2026-10-16T17:19:54.694Z,36.694744,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS new match receives a new seed
+2026-10-16T17:19:54.696Z,36.696751,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS new match changes physical map
+2026-10-16T17:19:54.696Z,36.696751,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS separate spawn 1-2
+2026-10-16T17:19:54.696Z,36.696751,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS capture is individual
+2026-10-16T17:19:59.161Z,41.161434,9008,6,Info [FLog::CreatorOutput] [CampaignQA] PASS teammate rescued by another client
+2026-10-16T17:19:59.544Z,41.544727,9008,6,Info [FLog::CreatorOutput] [CampaignQA] PASS server rejects a valid remote used from too far away
+2026-10-16T17:19:59.544Z,41.544727,9008,6,Info [FLog::CreatorOutput] [CampaignQA] PASS disconnect target is a simulated Studio client
+2026-10-16T17:20:00.577Z,42.577847,9008,6,Info [FLog::CreatorOutput] [CampaignQA] PASS disconnect preserves the remaining team's stage
+2026-10-16T17:20:09.510Z,51.510231,8118,6,Info [FLog::CreatorOutput] [CampaignQA] PASS late join waits without changing current puzzles
+2026-10-16T17:20:09.510Z,51.510231,8118,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 1 scales to party
+2026-10-16T17:20:09.510Z,51.510231,8118,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 1 builds its seeded physical map
+2026-10-16T17:20:09.644Z,51.644196,8118,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 1 creature reaches workshop_south
+2026-10-16T17:20:09.777Z,51.777386,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 1 player reaches workshop_south
+2026-10-16T17:20:09.826Z,51.826820,b754,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 1 creature reaches sector_6
+2026-10-16T17:20:09.927Z,51.927784,8118,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 1 player reaches sector_6
+2026-10-16T17:20:10.010Z,52.010769,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 1 creature reaches sector_2
+2026-10-16T17:20:10.112Z,52.112053,29b0,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 1 player reaches sector_2
+2026-10-16T17:20:13.044Z,55.044434,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 1 task 1 solved through client remote
+2026-10-16T17:20:13.044Z,55.044434,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 1/1 pays Fichas to -2
+2026-10-16T17:20:13.044Z,55.044434,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 1/1 pays XP to -2
+2026-10-16T17:20:13.977Z,55.977585,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 1 rejects duplicate task rewards
+2026-10-16T17:20:16.928Z,58.928307,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 1 task 2 solved through client remote
+2026-10-16T17:20:16.928Z,58.928307,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 1/2 pays Fichas to -2
+2026-10-16T17:20:16.928Z,58.928307,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 1/2 pays XP to -2
+2026-10-16T17:20:19.877Z,61.877636,9008,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 1 task 3 solved through client remote
+2026-10-16T17:20:19.877Z,61.877636,9008,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 1/3 pays Fichas to -2
+2026-10-16T17:20:19.877Z,61.877636,9008,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 1/3 pays XP to -2
+2026-10-16T17:20:19.877Z,61.877636,9008,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 1 completes
+2026-10-16T17:20:25.867Z,67.867332,b754,6,Info [FLog::CreatorOutput] [Campaign] stage=2 seed=1792202862 players=2 tasks=4
+2026-10-16T17:20:28.927Z,70.927895,b754,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 2 scales to party
+2026-10-16T17:20:28.927Z,70.927895,b754,6,Info [FLog::CreatorOutput] [CampaignQA] PASS late join becomes active at the next stage
+2026-10-16T17:20:28.927Z,70.927895,b754,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 2 builds its seeded physical map
+2026-10-16T17:20:28.927Z,70.927895,b754,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 2 destroys the old sector
+2026-10-16T17:20:28.927Z,70.927895,b754,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 2 changes rooms and routes
+2026-10-16T17:20:29.077Z,71.077637,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 2 creature reaches gallery
+2026-10-16T17:20:29.127Z,71.127464,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 2 player reaches gallery
+2026-10-16T17:20:29.227Z,71.227684,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 2 creature reaches sector_3
+2026-10-16T17:20:29.326Z,71.326912,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 2 player reaches sector_3
+2026-10-16T17:20:29.427Z,71.427887,b754,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 2 creature reaches sector_2
+2026-10-16T17:20:29.528Z,71.528526,9008,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 2 player reaches sector_2
+2026-10-16T17:20:29.610Z,71.610977,b754,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 2 creature reaches sector_8
+2026-10-16T17:20:29.727Z,71.727112,9008,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 2 player reaches sector_8
+2026-10-16T17:20:31.709Z,73.709908,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 2 task 1 solved through client remote
+2026-10-16T17:20:31.709Z,73.709908,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 2/1 pays Fichas to -3
+2026-10-16T17:20:31.709Z,73.709908,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 2/1 pays XP to -3
+2026-10-16T17:20:31.709Z,73.709908,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 2/1 pays Fichas to -2
+2026-10-16T17:20:31.709Z,73.709908,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 2/1 pays XP to -2
+2026-10-16T17:20:32.643Z,74.643700,b754,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 2 rejects duplicate task rewards
+2026-10-16T17:20:35.626Z,77.626205,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 2 task 2 solved through client remote
+2026-10-16T17:20:35.626Z,77.626205,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 2/2 pays Fichas to -3
+2026-10-16T17:20:35.626Z,77.626205,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 2/2 pays XP to -3
+2026-10-16T17:20:35.626Z,77.626205,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 2/2 pays Fichas to -2
+2026-10-16T17:20:35.626Z,77.626205,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 2/2 pays XP to -2
+2026-10-16T17:20:38.593Z,80.593544,9008,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 2 task 3 solved through client remote
+2026-10-16T17:20:38.593Z,80.593544,9008,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 2/3 pays Fichas to -3
+2026-10-16T17:20:38.593Z,80.593544,9008,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 2/3 pays XP to -3
+2026-10-16T17:20:38.593Z,80.593544,9008,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 2/3 pays Fichas to -2
+2026-10-16T17:20:38.593Z,80.593544,9008,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 2/3 pays XP to -2
+2026-10-16T17:20:40.576Z,82.576950,8118,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 2 task 4 solved through client remote
+2026-10-16T17:20:40.576Z,82.576950,8118,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 2/4 pays Fichas to -3
+2026-10-16T17:20:40.576Z,82.576950,8118,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 2/4 pays XP to -3
+2026-10-16T17:20:40.576Z,82.576950,8118,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 2/4 pays Fichas to -2
+2026-10-16T17:20:40.576Z,82.576950,8118,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 2/4 pays XP to -2
+2026-10-16T17:20:40.576Z,82.576950,8118,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 2 completes
+2026-10-16T17:20:46.586Z,88.586792,b754,6,Info [FLog::CreatorOutput] [Campaign] stage=3 seed=1792202862 players=2 tasks=5
+2026-10-16T17:20:49.619Z,91.619858,8118,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 3 scales to party
+2026-10-16T17:20:49.620Z,91.620857,8118,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 3 builds its seeded physical map
+2026-10-16T17:20:49.620Z,91.620857,8118,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 3 destroys the old sector
+2026-10-16T17:20:49.620Z,91.620857,8118,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 3 changes rooms and routes
+2026-10-16T17:20:49.760Z,91.760292,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 3 creature reaches yard_north
+2026-10-16T17:20:49.825Z,91.825798,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 3 player reaches yard_north
+2026-10-16T17:20:49.926Z,91.926422,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 3 creature reaches sector_7
+2026-10-16T17:20:50.027Z,92.027008,9008,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 3 player reaches sector_7
+2026-10-16T17:20:50.126Z,92.126755,9008,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 3 creature reaches lobby
+2026-10-16T17:20:50.226Z,92.226974,b754,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 3 player reaches lobby
+2026-10-16T17:20:50.310Z,92.310844,b754,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 3 creature reaches sector_8
+2026-10-16T17:20:50.427Z,92.427559,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 3 player reaches sector_8
+2026-10-16T17:20:50.526Z,92.526138,8118,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 3 creature reaches sector_5
+2026-10-16T17:20:50.627Z,92.627556,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 3 player reaches sector_5
+2026-10-16T17:20:52.577Z,94.577240,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 3 task 1 solved through client remote
+2026-10-16T17:20:52.577Z,94.577240,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 3/1 pays Fichas to -3
+2026-10-16T17:20:52.577Z,94.577240,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 3/1 pays XP to -3
+2026-10-16T17:20:52.578Z,94.578239,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 3/1 pays Fichas to -2
+2026-10-16T17:20:52.578Z,94.578239,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 3/1 pays XP to -2
+2026-10-16T17:20:53.510Z,95.510193,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 3 rejects duplicate task rewards
+2026-10-16T17:20:56.459Z,98.459808,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 3 task 2 solved through client remote
+2026-10-16T17:20:56.459Z,98.459808,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 3/2 pays Fichas to -3
+2026-10-16T17:20:56.459Z,98.459808,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 3/2 pays XP to -3
+2026-10-16T17:20:56.459Z,98.459808,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 3/2 pays Fichas to -2
+2026-10-16T17:20:56.459Z,98.459808,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 3/2 pays XP to -2
+2026-10-16T17:20:59.443Z,101.443924,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 3 task 3 solved through client remote
+2026-10-16T17:20:59.443Z,101.443924,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 3/3 pays Fichas to -3
+2026-10-16T17:20:59.443Z,101.443924,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 3/3 pays XP to -3
+2026-10-16T17:20:59.443Z,101.443924,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 3/3 pays Fichas to -2
+2026-10-16T17:20:59.443Z,101.443924,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 3/3 pays XP to -2
+2026-10-16T17:21:01.425Z,103.425377,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 3 task 4 solved through client remote
+2026-10-16T17:21:01.425Z,103.425377,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 3/4 pays Fichas to -3
+2026-10-16T17:21:01.425Z,103.425377,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 3/4 pays XP to -3
+2026-10-16T17:21:01.425Z,103.425377,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 3/4 pays Fichas to -2
+2026-10-16T17:21:01.425Z,103.425377,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 3/4 pays XP to -2
+2026-10-16T17:21:04.358Z,106.358589,b754,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 3 task 5 solved through client remote
+2026-10-16T17:21:04.358Z,106.358589,b754,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 3/5 pays Fichas to -3
+2026-10-16T17:21:04.358Z,106.358589,b754,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 3/5 pays XP to -3
+2026-10-16T17:21:04.358Z,106.358589,b754,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 3/5 pays Fichas to -2
+2026-10-16T17:21:04.358Z,106.358589,b754,6,Info [FLog::CreatorOutput] [CampaignQA] PASS task 3/5 pays XP to -2
+2026-10-16T17:21:04.358Z,106.358589,b754,6,Info [FLog::CreatorOutput] [CampaignQA] PASS stage 3 completes
+2026-10-16T17:21:04.625Z,106.625793,9008,6,Info [FLog::CreatorOutput] [CampaignQA] PASS first survivor does not end others' game
+2026-10-16T17:21:04.743Z,106.743668,af94,6,Info [FLog::CreatorOutput] [RewardService] round 4 rewards paid (Won)
+2026-10-16T17:21:04.891Z,106.891953,af94,6,Info [FLog::CreatorOutput] [CampaignQA] PASS team wins after all survivors extract
+2026-10-16T17:21:04.891Z,106.891953,af94,6,Info [FLog::CreatorOutput] [CampaignQA] RESULT {"players":2,"checks":["2 real clients in roster","new match receives a new seed","new match changes physical map","separate spawn 1-2","capture is individual","teammate rescued by another client","server rejects a valid remote used from too far away","disconnect target is a simulated Studio client","disconnect preserves the remaining team's stage","late join waits without changing current puzzles","stage 1 scales to party","stage 1 builds its seeded physical map","stage 1 creature reaches workshop_south","stage 1 player reaches workshop_south","stage 1 creature reaches sector_6","stage 1 player reaches sector_6","stage 1 creature reaches sector_2","stage 1 player reaches sector_2","stage 1 task 1 solved through client remote","task 1/1 pays Fichas to -2","task 1/1 pays XP to -2","stage 1 rejects duplicate task rewards","stage 1 task 2 solved through client remote","task 1/2 pays Fichas to -2","task 1/2 pays XP to -2",

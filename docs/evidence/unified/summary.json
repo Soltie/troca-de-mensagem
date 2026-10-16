@@ -1,0 +1,22 @@
+{
+  "artifact": "C:\\Users\\xpg\\Documents\\roblox-teste\\build\\Vigia_UNIFICADO.rbxlx",
+  "sha256": "1747928D7FC88AB3DC7AC5F740A50F0426C02FCCE6E84337C546FA18611A67EE",
+  "localTests": 248,
+  "studioTests": 275,
+  "sourceScripts": 175,
+  "liveSourceMismatches": 0,
+  "standard": {
+    "players": 2,
+    "checks": 107,
+    "stage": 3,
+    "victoryAssertion": true
+  },
+  "story": {
+    "players": 2,
+    "checks": 90,
+    "stage": 3,
+    "victoryAssertion": true,
+    "menuTested": true
+  },
+  "limits": "Studio-only mock profiles; harness freezes creature and teleports setup; human balance and published persistence unverified"
+}

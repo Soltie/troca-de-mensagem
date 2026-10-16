@@ -25,6 +25,7 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local SoundService = game:GetService("SoundService")
 local Lighting = game:GetService("Lighting")
+local StarterGui = game:GetService("StarterGui")
 
 local Audio = require("@game/ReplicatedStorage/Shared/Game/Audio")
 local PixelText = require("@game/ReplicatedStorage/Shared/Game/PixelText")
@@ -56,6 +57,7 @@ local Controller = { Name = "TrailerController" }
 local enabled = false
 local playing = false
 local startedAt = 0
+local armedAt: number? = nil
 local seekTime: number? = nil
 local lastTime = 0
 local lastShot = ""
@@ -69,6 +71,11 @@ local sounds: { [number]: Sound } = {}
 local fired: { [number]: boolean } = {}
 local hitShakeUntil = 0
 local rng = Random.new(9)
+local savedCharacterPivot: CFrame? = nil
+local savedAnchored = false
+local savedAudioVolumes: { [SoundGroup]: number } = {}
+local savedCoreGui: { [Enum.CoreGuiType]: boolean } = {}
+local trailerMix: SoundGroup? = nil
 
 local function v(x: number, y: number, z: number): Vector3
 	return Vector3.new(x, y, z)
@@ -187,6 +194,17 @@ local function buildProps()
 	tint.Enabled = false
 	tint.Parent = Lighting
 	grade = tint
+	local mix = Instance.new("SoundGroup")
+	mix.Name = "TrailerMix"
+	mix.Volume = 0.8
+	local compressor = Instance.new("CompressorSoundEffect")
+	compressor.Threshold = -8
+	compressor.Ratio = 6
+	compressor.Attack = 0.003
+	compressor.Release = 0.18
+	compressor.Parent = mix
+	mix.Parent = SoundService
+	trailerMix = mix
 end
 
 local graffitiLabel: TextLabel? = nil
@@ -366,6 +384,8 @@ local SHOTS: { Shot } = {
 		act = function()
 			fx.moon.Enabled = true
 			fx.gateLamp.Enabled = true
+			fx.cameraLamp.Enabled = true
+			fx.cameraLamp.Brightness = 3
 		end,
 		shake = 0.15,
 	},
@@ -376,6 +396,8 @@ local SHOTS: { Shot } = {
 		camera = dolly(v(-2.5, 4.6, 30), v(-3.2, 4.3, 24.5), v(-4, 3.6, 0), v(-4, 3.4, 0), 56),
 		act = function(alpha)
 			fx.moon.Enabled = true
+			fx.cameraLamp.Enabled = true
+			fx.cameraLamp.Brightness = 3
 			walk(1, v(-4, 0, 21), v(-4, 0, 10), alpha, "walk", -6)
 			walk(2, v(-7.2, 0, 19), v(-7, 0, 8.5), alpha, "walk", -4)
 			walk(3, v(-0.8, 0, 18.5), v(-1.4, 0, 8), alpha, "walk", -8)
@@ -475,6 +497,7 @@ local SHOTS: { Shot } = {
 			local position = v(6, 0, -22):Lerp(v(-8, 0, -22), alpha)
 			creature(position, v(-40, 0, -22), "Chase", dt, 12)
 			fx.cameraLamp.Enabled = true
+			fx.cameraLamp.Brightness = 8
 		end,
 		shake = 0.6,
 	},
@@ -740,7 +763,7 @@ local function buildUi()
 		BackgroundTransparency = 1,
 		FontFace = Theme.Font,
 		TextScaled = true,
-		Text = px("MODO HISTÓRIA · CO-OP DE 3 A 8 JOGADORES"),
+		Text = px("MODO HISTÓRIA · CO-OP DE 2 A 8 JOGADORES"),
 		TextColor3 = Theme.Text,
 		ZIndex = 9,
 		Visible = false,
@@ -775,7 +798,7 @@ end
 local function renderUi(time: number)
 	local now = os.clock()
 	-- Preto.
-	local isBlack = false
+	local isBlack = time >= DURATION
 	for _, span in BLACK do
 		if time >= span[1] and time < span[2] then
 			isBlack = true
@@ -880,6 +903,11 @@ local function playCue(index: number, cue: SoundCue)
 	sound.Volume = cue.volume or clip.volume
 	sound.PlaybackSpeed = cue.speed or clip.speed or 1
 	sound.Looped = cue.stop ~= nil and cue.stop - cue.t > 4
+	sound.SoundGroup = trailerMix
+	if clip.region then
+		sound.PlaybackRegionsEnabled = true
+		sound.PlaybackRegion = NumberRange.new(clip.region[1], clip.region[2])
+	end
 	sound.Parent = SoundService
 	sound:Play()
 	sounds[index] = sound
@@ -900,13 +928,15 @@ local function updateSounds(time: number)
 	end
 end
 
-local function stopSounds()
+local function stopSounds(keepFired: boolean?)
 	for index, sound in sounds do
 		sound:Stop()
 		sound:Destroy()
 		sounds[index] = nil
 	end
-	fired = {}
+	if not keepFired then
+		fired = {}
+	end
 end
 
 -- ===================== Execução =====================
@@ -979,6 +1009,35 @@ local function setActive(on: boolean)
 		grade.Enabled = on
 	end
 	player:SetAttribute("CinematicActive", on)
+	if on then
+		for _, group in SoundService:GetChildren() do
+			if group:IsA("SoundGroup") and group ~= trailerMix then
+				savedAudioVolumes[group] = group.Volume
+				group.Volume = 0
+			end
+		end
+		for _, kind in Enum.CoreGuiType:GetEnumItems() do
+			if kind ~= Enum.CoreGuiType.All then
+				pcall(function()
+					savedCoreGui[kind] = StarterGui:GetCoreGuiEnabled(kind)
+					StarterGui:SetCoreGuiEnabled(kind, false)
+				end)
+			end
+		end
+	else
+		for group, volume in savedAudioVolumes do
+			if group.Parent then
+				group.Volume = volume
+			end
+		end
+		savedAudioVolumes = {}
+		for kind, visible in savedCoreGui do
+			pcall(function()
+				StarterGui:SetCoreGuiEnabled(kind, visible)
+			end)
+		end
+		savedCoreGui = {}
+	end
 	-- Esconde as outras telas durante o trailer.
 	for _, other in player.PlayerGui:GetChildren() do
 		if other:IsA("ScreenGui") and other ~= gui then
@@ -996,10 +1055,16 @@ local function setActive(on: boolean)
 	local root = character and character:FindFirstChild("HumanoidRootPart")
 	if root and root:IsA("BasePart") then
 		if on then
+			savedCharacterPivot = character:GetPivot()
+			savedAnchored = root.Anchored
 			root.Anchored = true
 			character:PivotTo(CFrame.new(-150, 4, 110))
 		else
-			root.Anchored = false
+			if savedCharacterPivot then
+				character:PivotTo(savedCharacterPivot)
+			end
+			root.Anchored = savedAnchored
+			savedCharacterPivot = nil
 		end
 	end
 	if not on then
@@ -1022,21 +1087,33 @@ end
 function Controller.play()
 	Controller.prepare()
 	stopSounds()
+	armedAt = nil
 	playing = true
 	seekTime = nil
 	startedAt = os.clock()
 	lastTime = 0
 end
 
+function Controller.arm(delay: number): number
+	Controller.prepare()
+	stopSounds()
+	playing = false
+	seekTime = 0
+	armedAt = DateTime.now().UnixTimestampMillis + math.clamp(delay, 0, 30) * 1000
+	return armedAt :: number
+end
+
 function Controller.seek(time: number)
 	Controller.prepare()
 	playing = false
+	armedAt = nil
 	stopSounds()
 	seekTime = time
 end
 
 function Controller.stop()
 	playing = false
+	armedAt = nil
 	seekTime = nil
 	stopSounds()
 	setActive(false)
@@ -1052,6 +1129,8 @@ function Controller.Start()
 	bridge.OnInvoke = function(command: string, value: any): any
 		if command == "play" then
 			Controller.play()
+		elseif command == "arm" then
+			return Controller.arm(tonumber(value) or 4)
 		elseif command == "seek" then
 			Controller.seek(tonumber(value) or 0)
 		elseif command == "stop" then
@@ -1059,6 +1138,7 @@ function Controller.Start()
 		end
 		return {
 			playing = playing,
+			armedAt = armedAt,
 			time = if playing then os.clock() - startedAt else seekTime,
 			shot = lastShot,
 			duration = DURATION,
@@ -1070,15 +1150,30 @@ function Controller.Start()
 		if not enabled then
 			return
 		end
+		if armedAt then
+			if DateTime.now().UnixTimestampMillis < armedAt then
+				frame(0, dt)
+				return
+			end
+			Controller.play()
+		end
 		local time = if playing then os.clock() - startedAt else (seekTime or 0)
 		if playing then
 			updateSounds(time)
+			-- Corte de som deliberado após o bote, antes do batimento e do logo final.
+			if time >= 30.2 and lastTime < 30.2 then
+				stopSounds(true)
+			end
+			if trailerMix then
+				trailerMix.Volume = 0.8 * math.clamp((DURATION + 0.5 - time) / 1.2, 0, 1)
+			end
 			if time >= 29.95 and lastTime < 29.95 then
 				hitShakeUntil = time + 0.3
 			end
 			if time >= DURATION + 0.5 then
-				Controller.stop()
-				return
+				playing = false
+				seekTime = DURATION + 0.5
+				stopSounds()
 			end
 		end
 		lastTime = time

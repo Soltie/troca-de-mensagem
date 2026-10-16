@@ -1,0 +1,1949 @@
+{
+  "embeddedCount": 175,
+  "sourceCount": 175,
+  "mismatches": [],
+  "generatedAtUtc": "2026-10-16T17:31:27.2624708+00:00",
+  "worldFiles": [
+    {
+      "path": "places\\world\\Workspace\\Baseplate.model.json",
+      "sha256": "5AF35C4082ABB0E5F6830E42C7566DFA690C83A01C5B47DADBB0B02E4483B23C"
+    },
+    {
+      "path": "places\\world\\Workspace\\SpawnLocation.model.json",
+      "sha256": "F3B8757C609EC6662CB4D3105D6EBEA2E3BF6E856EC2A003499A8D04A06E92E1"
+    }
+  ],
+  "head": "a885224c43e44abaeac22d1d9754eeaf4f6147f8",
+  "lightingProperties": "<Properties><string name=\"Name\">Lighting</string><token name=\"LightingStyle\">0</token><bool name=\"PrioritizeLightingQuality\">true</bool><token name=\"Technology\">4</token></Properties>",
+  "extraScripts": [],
+  "artifact": "C:\\Users\\xpg\\.codex\\worktrees\\vigia-unificado\\roblox-teste\\build\\Vigia_UNIFICADO.rbxlx",
+  "projectSha256": "BB99B493AC0297A5FBDBD18BB0D3B99D3428AA4E57078C0427C57A6BCDB1B43D",
+  "artifactSha256": "1747928D7FC88AB3DC7AC5F740A50F0426C02FCCE6E84337C546FA18611A67EE",
+  "sourceFiles": [
+    {
+      "file": "ReplicatedStorage/Client/Main.client.luau",
+      "sha256": "9F9F5672117DA1E7B5DE99ADBC7E714638F6E92E9BA693050EC1DA23D5EBC781",
+      "signature": {
+        "bytes": 2229,
+        "adler32": 974393509
+      },
+      "path": "ReplicatedStorage/Client/Main",
+      "class": "Script",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Controllers/ArtController.luau",
+      "sha256": "CED968224F6A849EF830607EE7EB953651335A1542C60E3F5FBC5F83258FAD2A",
+      "signature": {
+        "bytes": 9712,
+        "adler32": 952587469
+      },
+      "path": "ReplicatedStorage/Client/Controllers/ArtController",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Controllers/AudioController.luau",
+      "sha256": "0B62C6174F951889D0A7F28B69DC220EA07612DF29CDA892D23068C107BE9646",
+      "signature": {
+        "bytes": 13855,
+        "adler32": 1444867443
+      },
+      "path": "ReplicatedStorage/Client/Controllers/AudioController",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Controllers/BodyAudioController.luau",
+      "sha256": "16E3CF05A5EE23E678E2E9660771FEDD2CF5F4369CE93C2A457DA41048FD325B",
+      "signature": {
+        "bytes": 7537,
+        "adler32": 3065424485
+      },
+      "path": "ReplicatedStorage/Client/Controllers/BodyAudioController",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Controllers/CameraController.luau",
+      "sha256": "48D8035A387C0593F82A29BC1B56834773BE6599EB0B5805CF6837488B561C23",
+      "signature": {
+        "bytes": 14670,
+        "adler32": 676734158
+      },
+      "path": "ReplicatedStorage/Client/Controllers/CameraController",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Controllers/CampaignController.luau",
+      "sha256": "242E131E291C3DD4D13D0D9D39BAC0C9A63B854425D143ACDD80CE97C8A01C46",
+      "signature": {
+        "bytes": 12957,
+        "adler32": 498227688
+      },
+      "path": "ReplicatedStorage/Client/Controllers/CampaignController",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Controllers/CharacterAnimatorController.luau",
+      "sha256": "4C99941AF3C0B624956BF9E8457C0CEBC827949DF2CE8F81EC0FEB5546102D2D",
+      "signature": {
+        "bytes": 12617,
+        "adler32": 1473773239
+      },
+      "path": "ReplicatedStorage/Client/Controllers/CharacterAnimatorController",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Controllers/CharacterController.luau",
+      "sha256": "F53FA9114FBB29E415F8BB958BA2F76C00BB1E6F67E9DD8260FC1AF232915D22",
+      "signature": {
+        "bytes": 11842,
+        "adler32": 2529008763
+      },
+      "path": "ReplicatedStorage/Client/Controllers/CharacterController",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Controllers/CinematicController.luau",
+      "sha256": "2E37F7CAC9976CA771BE219897190721D280A2A9003B416C757C71A02A7276D8",
+      "signature": {
+        "bytes": 15056,
+        "adler32": 824551884
+      },
+      "path": "ReplicatedStorage/Client/Controllers/CinematicController",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Controllers/ContinueController.luau",
+      "sha256": "D04079880227B43C798085B0CB3051ED4BF49AA284EAC8068338A000D6421C0B",
+      "signature": {
+        "bytes": 6891,
+        "adler32": 2690626721
+      },
+      "path": "ReplicatedStorage/Client/Controllers/ContinueController",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Controllers/CosmeticController.luau",
+      "sha256": "8F3CFEFB052A4D002198A7D6810AB96DEFFD193209001CAC35CBFB845A28F138",
+      "signature": {
+        "bytes": 3625,
+        "adler32": 2290603247
+      },
+      "path": "ReplicatedStorage/Client/Controllers/CosmeticController",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Controllers/CreatureVisualController.luau",
+      "sha256": "A4C496BD84AD26878EA9FFC30A4FE09AF3E2CB0F0EE5F5A39D3683C0F1644548",
+      "signature": {
+        "bytes": 7314,
+        "adler32": 1279559329
+      },
+      "path": "ReplicatedStorage/Client/Controllers/CreatureVisualController",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Controllers/FearController.luau",
+      "sha256": "4680A317D10C9B6752062DECBE479F30FCC962B1D0403FFF780180985E9F06A7",
+      "signature": {
+        "bytes": 6820,
+        "adler32": 1857027391
+      },
+      "path": "ReplicatedStorage/Client/Controllers/FearController",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Controllers/FlashlightController.luau",
+      "sha256": "9A81A357FF31B18D1DCD479E14142E83D3135FD2552B7DA991A9E91271D14CAD",
+      "signature": {
+        "bytes": 18542,
+        "adler32": 3050066948
+      },
+      "path": "ReplicatedStorage/Client/Controllers/FlashlightController",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Controllers/GameUiController.luau",
+      "sha256": "2A3340D9F108B819A1518F47CEE33AEBB61F9FEE4BF53A65A50023F3E829A7F2",
+      "signature": {
+        "bytes": 26262,
+        "adler32": 2369688603
+      },
+      "path": "ReplicatedStorage/Client/Controllers/GameUiController",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Controllers/HapticsController.luau",
+      "sha256": "7AD899BABCF406061EEDD645B2D52D8B1D0A655F99EDF87995F9A51B4727015B",
+      "signature": {
+        "bytes": 6222,
+        "adler32": 381950364
+      },
+      "path": "ReplicatedStorage/Client/Controllers/HapticsController",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Controllers/HudController.luau",
+      "sha256": "0DD6BAA933DA8D0DD6DE717969630D659C41ACAFCB721C19369CFB4EEA8B59BA",
+      "signature": {
+        "bytes": 4019,
+        "adler32": 3105622609
+      },
+      "path": "ReplicatedStorage/Client/Controllers/HudController",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Controllers/InteractionController.luau",
+      "sha256": "DD080B040A00DF4E281E5D7FCE39B03470787AA40B307D95BC766026C44A0D25",
+      "signature": {
+        "bytes": 10147,
+        "adler32": 860897443
+      },
+      "path": "ReplicatedStorage/Client/Controllers/InteractionController",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Controllers/LightingController.luau",
+      "sha256": "787793BB7A0C9308ACAF519D07ECE0E48310DCB835DEAD953659756BF51E9082",
+      "signature": {
+        "bytes": 6936,
+        "adler32": 639626346
+      },
+      "path": "ReplicatedStorage/Client/Controllers/LightingController",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Controllers/MainMenuController.luau",
+      "sha256": "4046D8AE5204BF6BF4CC88715DD008624FC173E6D3B1D52D4265489EFE3F9DC5",
+      "signature": {
+        "bytes": 48701,
+        "adler32": 1647316993
+      },
+      "path": "ReplicatedStorage/Client/Controllers/MainMenuController",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Controllers/RetroFxController.luau",
+      "sha256": "0B87E36E56659AC024447749F2D5C3EDDC6C23C04EF42B67076F8A5C24985E01",
+      "signature": {
+        "bytes": 4724,
+        "adler32": 1642397204
+      },
+      "path": "ReplicatedStorage/Client/Controllers/RetroFxController",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Controllers/ScreenFxController.luau",
+      "sha256": "1AC0B96E572C4BB75F2ED8A4541F60F7DDD9933FB5CB117FF1AC26A4B41E79D0",
+      "signature": {
+        "bytes": 7401,
+        "adler32": 1331047985
+      },
+      "path": "ReplicatedStorage/Client/Controllers/ScreenFxController",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Controllers/SettingsController.luau",
+      "sha256": "ED6F47E6F1E040EFC8F89A59712D31597F9FC4281E21600202B1414F4620E76F",
+      "signature": {
+        "bytes": 4992,
+        "adler32": 1353286347
+      },
+      "path": "ReplicatedStorage/Client/Controllers/SettingsController",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Controllers/SpectatorController.luau",
+      "sha256": "CE7E1ACA17E91F517EA9EF38A72F4E10F3BA9762B12ADFF87201ACF913AC8F93",
+      "signature": {
+        "bytes": 3193,
+        "adler32": 3374516583
+      },
+      "path": "ReplicatedStorage/Client/Controllers/SpectatorController",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Controllers/StoreController.luau",
+      "sha256": "C6ABBB433491BA2058CFC8331DDAE741FC34F412A4991A36D81C0B287A110753",
+      "signature": {
+        "bytes": 39589,
+        "adler32": 3908916118
+      },
+      "path": "ReplicatedStorage/Client/Controllers/StoreController",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Controllers/StoryController.luau",
+      "sha256": "CE047CF3A96B42999E8BD993B290AD2EDFF0AE355417C21582746CC90C46DA07",
+      "signature": {
+        "bytes": 4312,
+        "adler32": 3077008090
+      },
+      "path": "ReplicatedStorage/Client/Controllers/StoryController",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Controllers/TensionController.luau",
+      "sha256": "E6063E7C58ECD68090AE84FEC07432C5A1071390EBAEDCE34BCFC710B078A1A7",
+      "signature": {
+        "bytes": 13144,
+        "adler32": 364041279
+      },
+      "path": "ReplicatedStorage/Client/Controllers/TensionController",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Controllers/ThreatFeedbackController.luau",
+      "sha256": "14C2E4557EC15852FF57B538467B1F53A06A8D16CE3B792ED703E737AA7066AB",
+      "signature": {
+        "bytes": 3357,
+        "adler32": 419277
+      },
+      "path": "ReplicatedStorage/Client/Controllers/ThreatFeedbackController",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Controllers/TrailerController.luau",
+      "sha256": "65ED617C6C50D4330C0145CFCA91DBBAEE921BB7E442C52F729CACDCA00937BE",
+      "signature": {
+        "bytes": 35912,
+        "adler32": 4174713099
+      },
+      "path": "ReplicatedStorage/Client/Controllers/TrailerController",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Controllers/TransitionController.luau",
+      "sha256": "BA2E494693F0FD0D894644BFFEA5C678F19A4BF6FDD47C71D02C5932526A04F1",
+      "signature": {
+        "bytes": 16311,
+        "adler32": 418004001
+      },
+      "path": "ReplicatedStorage/Client/Controllers/TransitionController",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Controllers/WorldFxController.luau",
+      "sha256": "E4A33B864866BB00A5826464245FFB5957CB9C2EEBA59E52B8175A3E774E2984",
+      "signature": {
+        "bytes": 5038,
+        "adler32": 2101185669
+      },
+      "path": "ReplicatedStorage/Client/Controllers/WorldFxController",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Creature/AdemirFaceData.luau",
+      "sha256": "33BFA737C285A0746B185A5D4726342EA87C00483C719319D3778C5AFF55B1E4",
+      "signature": {
+        "bytes": 93138,
+        "adler32": 1392734989
+      },
+      "path": "ReplicatedStorage/Client/Creature/AdemirFaceData",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Creature/AdemirPortrait.luau",
+      "sha256": "00E8D58ABAC50BCBB7F873D81CEDA773609304DB84A4D298D6114BD11976BAA2",
+      "signature": {
+        "bytes": 3237,
+        "adler32": 615066121
+      },
+      "path": "ReplicatedStorage/Client/Creature/AdemirPortrait",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Creature/Poses.luau",
+      "sha256": "CEE5B9EE7E9B7A84A26A7C2DD6A488F0E1A2C95A5DBC00B191CA13BDD13A37D7",
+      "signature": {
+        "bytes": 4144,
+        "adler32": 3703990168
+      },
+      "path": "ReplicatedStorage/Client/Creature/Poses",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Creature/Rig.luau",
+      "sha256": "0E79F840A8FD89E4A65EA74738E3061BDB67F1BD9A43665A1CC20EE429794A17",
+      "signature": {
+        "bytes": 6513,
+        "adler32": 1630128956
+      },
+      "path": "ReplicatedStorage/Client/Creature/Rig",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Creature/UniformDetails.luau",
+      "sha256": "C40C9CC4142EE3687DADAF552E37BE6E2ED1D91CA8FA51FBBB1076DED18D4124",
+      "signature": {
+        "bytes": 2674,
+        "adler32": 577029822
+      },
+      "path": "ReplicatedStorage/Client/Creature/UniformDetails",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/Trailer/TrailerActors.luau",
+      "sha256": "0AEAF8D67251E48A886D02D68EC1F686685C097627468239E1AAABB5ABCD55ED",
+      "signature": {
+        "bytes": 9434,
+        "adler32": 3110261285
+      },
+      "path": "ReplicatedStorage/Client/Trailer/TrailerActors",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/UI/Create.luau",
+      "sha256": "32D799A315ABB6DDF5140F8213C8FA97C023BC80DD7B0D8F664DF6D875EFFB8D",
+      "signature": {
+        "bytes": 894,
+        "adler32": 2882675020
+      },
+      "path": "ReplicatedStorage/Client/UI/Create",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/UI/FieldHud.luau",
+      "sha256": "79C6AEBB7079D550D1AA69671F361BA3B6B9103A22432F453AE402F443BBF952",
+      "signature": {
+        "bytes": 5455,
+        "adler32": 3061359135
+      },
+      "path": "ReplicatedStorage/Client/UI/FieldHud",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Client/UI/Theme.luau",
+      "sha256": "FA2B0B9A0F5E0B87103CF352F7D90672D0573E9EC9648D97E181BCB034F7706F",
+      "signature": {
+        "bytes": 699,
+        "adler32": 2441464829
+      },
+      "path": "ReplicatedStorage/Client/UI/Theme",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Config.luau",
+      "sha256": "5038271D7D617B333327330A366959BE333C963870CFADC474F1280068AAC368",
+      "signature": {
+        "bytes": 9749,
+        "adler32": 861877668
+      },
+      "path": "ReplicatedStorage/Shared/Config",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Loader.luau",
+      "sha256": "543432CF9F56CBC79B57FA3F126387B22E09DE36BBA10232FCBE4F58E6C11B0C",
+      "signature": {
+        "bytes": 2229,
+        "adler32": 4258129148
+      },
+      "path": "ReplicatedStorage/Shared/Loader",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Logger.luau",
+      "sha256": "F40E00A48ECD0D2665BAAD902DE2A75DEC18F795DD896F6F7A138EE32B57FAF7",
+      "signature": {
+        "bytes": 2187,
+        "adler32": 2307441478
+      },
+      "path": "ReplicatedStorage/Shared/Logger",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Types.luau",
+      "sha256": "C67C0D7B8A6369FA3BDAB6415A9096CD1CFFF79F667EC05A435DEBCF101C65AC",
+      "signature": {
+        "bytes": 2991,
+        "adler32": 1342181698
+      },
+      "path": "ReplicatedStorage/Shared/Types",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Game/Audio.luau",
+      "sha256": "F45D5FEE9CEA0B3488EBD16CFA36A8557C4AEB1C95A3A2B6C9B8C3457CEB9575",
+      "signature": {
+        "bytes": 6534,
+        "adler32": 3456872280
+      },
+      "path": "ReplicatedStorage/Shared/Game/Audio",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Game/BatteryModel.luau",
+      "sha256": "14031574D9126F213BC16B03C2E171A31BCC61DC151D499C143B5BB14B1CC77E",
+      "signature": {
+        "bytes": 2825,
+        "adler32": 3411522778
+      },
+      "path": "ReplicatedStorage/Shared/Game/BatteryModel",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Game/CampaignCatalog.luau",
+      "sha256": "31BAA503470C8B5609C27A911F14466B9B36203028E8AB085E66E1C875696BA6",
+      "signature": {
+        "bytes": 5014,
+        "adler32": 2099692916
+      },
+      "path": "ReplicatedStorage/Shared/Game/CampaignCatalog",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Game/CharacterPose.luau",
+      "sha256": "B8B5E1CEEEF10A152E1C9694FF832AF9390E2DEA0571267CB6E9A0AAC716BDDE",
+      "signature": {
+        "bytes": 3094,
+        "adler32": 2212371541
+      },
+      "path": "ReplicatedStorage/Shared/Game/CharacterPose",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Game/CinematicShots.luau",
+      "sha256": "9F0B3C17430DAB94A402DF823F76486A1B79A28429EB0CC1997A5F06CB82FAC8",
+      "signature": {
+        "bytes": 8146,
+        "adler32": 3412241294
+      },
+      "path": "ReplicatedStorage/Shared/Game/CinematicShots",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Game/Economy.luau",
+      "sha256": "424B00801CD41CB1167CCE77492EF2FE4D0AE93B36D880FF1F01515722AB5D67",
+      "signature": {
+        "bytes": 15073,
+        "adler32": 2416375649
+      },
+      "path": "ReplicatedStorage/Shared/Game/Economy",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Game/FearModel.luau",
+      "sha256": "35CFCAE1784944B47B8D8D71A81E92316649A6236D9BFEFE0E00F2325EE0D593",
+      "signature": {
+        "bytes": 3320,
+        "adler32": 2900912538
+      },
+      "path": "ReplicatedStorage/Shared/Game/FearModel",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Game/GameModes.luau",
+      "sha256": "411FF3211CACEBEF1FFB7958FB5F61D3539B122D799A96F12340357D18456470",
+      "signature": {
+        "bytes": 717,
+        "adler32": 3725126514
+      },
+      "path": "ReplicatedStorage/Shared/Game/GameModes",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Game/GameState.luau",
+      "sha256": "FC926694C116DCE7C30E1166CC433F621B871E730B2725150D894EC93057B562",
+      "signature": {
+        "bytes": 4397,
+        "adler32": 271960748
+      },
+      "path": "ReplicatedStorage/Shared/Game/GameState",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Game/InteractionPresentation.luau",
+      "sha256": "538C6DD90B7B2B13A03590C5695B7A6AE9DBF978C6126B527F5B2A0CC37650E2",
+      "signature": {
+        "bytes": 619,
+        "adler32": 567398058
+      },
+      "path": "ReplicatedStorage/Shared/Game/InteractionPresentation",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Game/LightingProfile.luau",
+      "sha256": "FDCFB33FF9FD147541A67526AF16E9CED24F024B1E880190D5263A1C5CB0719F",
+      "signature": {
+        "bytes": 2952,
+        "adler32": 3756308911
+      },
+      "path": "ReplicatedStorage/Shared/Game/LightingProfile",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Game/Perks.luau",
+      "sha256": "8493171266D0C8D1C8578068163F4AC8C4D5A053B382FF1EB63FFA6B0231554A",
+      "signature": {
+        "bytes": 8811,
+        "adler32": 3967040710
+      },
+      "path": "ReplicatedStorage/Shared/Game/Perks",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Game/PixelText.luau",
+      "sha256": "C7D8E3A1580BD0495701E3265495BBD3F5D8D627861A8CA3692DC76C5C037486",
+      "signature": {
+        "bytes": 717,
+        "adler32": 896265100
+      },
+      "path": "ReplicatedStorage/Shared/Game/PixelText",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Game/PlayerGuide.luau",
+      "sha256": "0A2714B86937392EAEE487D48B49417EE6304EE3F1A462428C340BECCA5F5720",
+      "signature": {
+        "bytes": 4031,
+        "adler32": 2911737083
+      },
+      "path": "ReplicatedStorage/Shared/Game/PlayerGuide",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Game/Season.luau",
+      "sha256": "E05AD000221F777E21A1EA14B4B84503CB0C48C901E11EC5007EE1744C5976C3",
+      "signature": {
+        "bytes": 5587,
+        "adler32": 3138743106
+      },
+      "path": "ReplicatedStorage/Shared/Game/Season",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Game/SeasonCatalog.luau",
+      "sha256": "250E4E983FBCAA8D4F3BD7076AFFDA30700E2FA4732C71BD92A438B39872002D",
+      "signature": {
+        "bytes": 4403,
+        "adler32": 504523545
+      },
+      "path": "ReplicatedStorage/Shared/Game/SeasonCatalog",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Game/ServerList.luau",
+      "sha256": "B40124BA7475FB2ED440294ADD97473867A6C5A9993C77B86D99AEDEEBF821BD",
+      "signature": {
+        "bytes": 3576,
+        "adler32": 1385342943
+      },
+      "path": "ReplicatedStorage/Shared/Game/ServerList",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Game/SpectatorRules.luau",
+      "sha256": "CAF0120C62CA93C9933683971872B71C6E6EF209FF4A221D346C258ADE8FA635",
+      "signature": {
+        "bytes": 766,
+        "adler32": 1330186558
+      },
+      "path": "ReplicatedStorage/Shared/Game/SpectatorRules",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Game/StoreCatalog.luau",
+      "sha256": "02BB49F7517A08CA5C59737EB09B0278B2C3EC16755FF31B8A3C2F5DB89A75A2",
+      "signature": {
+        "bytes": 23778,
+        "adler32": 1477454438
+      },
+      "path": "ReplicatedStorage/Shared/Game/StoreCatalog",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Game/StoryCatalog.luau",
+      "sha256": "02E9D1403A0FE0D151DA247566D204C769E2E15199B16AD43A1B8FF8B40DFD8A",
+      "signature": {
+        "bytes": 5230,
+        "adler32": 2090936204
+      },
+      "path": "ReplicatedStorage/Shared/Game/StoryCatalog",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Game/StoryRewards.luau",
+      "sha256": "81E57141EBE386107E162ECFEC2D5FD2590B2AEDABBC17711C6A0333A12582E3",
+      "signature": {
+        "bytes": 4106,
+        "adler32": 973962854
+      },
+      "path": "ReplicatedStorage/Shared/Game/StoryRewards",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Game/SurfacePatterns.luau",
+      "sha256": "E43CB6AACC6FD2D7984D89EA263976438934A2E13D2B6602B4F0E2DEE76FEFDC",
+      "signature": {
+        "bytes": 1962,
+        "adler32": 3532401865
+      },
+      "path": "ReplicatedStorage/Shared/Game/SurfacePatterns",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Game/Tags.luau",
+      "sha256": "A8DBED22BC1F10F395DDFFF0E6C787BAD9E3613150289F961C0FB9B076C23274",
+      "signature": {
+        "bytes": 1216,
+        "adler32": 1185781098
+      },
+      "path": "ReplicatedStorage/Shared/Game/Tags",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Game/TaskRewards.luau",
+      "sha256": "E2B2824B7825E92F9794B5E80B45A7B3F0659340FA93DF8C643662040B3D5F7E",
+      "signature": {
+        "bytes": 889,
+        "adler32": 3539548200
+      },
+      "path": "ReplicatedStorage/Shared/Game/TaskRewards",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Game/TensionDirector.luau",
+      "sha256": "E6FDFDD9329F1069AE9AB4FD6E1D085ACFF73CFEE8A4E36F09730AE8F9D00913",
+      "signature": {
+        "bytes": 8757,
+        "adler32": 3567007798
+      },
+      "path": "ReplicatedStorage/Shared/Game/TensionDirector",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Game/Text.luau",
+      "sha256": "1BFFDF03E65D10127A773EFEB6F3B981FFA51D26730BEBCD529BFCCD2BF5A57C",
+      "signature": {
+        "bytes": 11084,
+        "adler32": 3992741705
+      },
+      "path": "ReplicatedStorage/Shared/Game/Text",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Game/ThreatPresentation.luau",
+      "sha256": "B4177C239531E78A2CA83A58DF908DB9A5459392268AD714775781541BD5949B",
+      "signature": {
+        "bytes": 1579,
+        "adler32": 1639978084
+      },
+      "path": "ReplicatedStorage/Shared/Game/ThreatPresentation",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Net/Guard.luau",
+      "sha256": "6778403485AFF7EE5A004B9FF4BC372766EBB138434D7857D42066C0F2D30489",
+      "signature": {
+        "bytes": 5250,
+        "adler32": 2581123135
+      },
+      "path": "ReplicatedStorage/Shared/Net/Guard",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Net/RateLimiter.luau",
+      "sha256": "D3C5F059140F07FE77A45638FA97586EEF70C6CA0AA3734D395297F81F6FADD7",
+      "signature": {
+        "bytes": 1770,
+        "adler32": 1970685756
+      },
+      "path": "ReplicatedStorage/Shared/Net/RateLimiter",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Net/Remotes.luau",
+      "sha256": "95132D39DEA87B11EBF49E5346911CCC92217B98DCB4A38E4604E91DB6CAC64B",
+      "signature": {
+        "bytes": 5326,
+        "adler32": 2048995299
+      },
+      "path": "ReplicatedStorage/Shared/Net/Remotes",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Util/Retry.luau",
+      "sha256": "47BF6FC6C3D2A8C644C4E474D7E2773CE1AC957D69E1506B303952F1F6EA99F4",
+      "signature": {
+        "bytes": 1593,
+        "adler32": 3888911736
+      },
+      "path": "ReplicatedStorage/Shared/Util/Retry",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ReplicatedStorage/Shared/Util/TableUtil.luau",
+      "sha256": "6C058404A2F7FD80CD037748CDBCB91FC8D7D5BBBDF8F8116A3ABBBB78F5F57D",
+      "signature": {
+        "bytes": 1820,
+        "adler32": 850552742
+      },
+      "path": "ReplicatedStorage/Shared/Util/TableUtil",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Main.server.luau",
+      "sha256": "089B78A83FFAB75DCFA3448BA5CEB284FD68A07E5F2BE57B5F4EFA1DE66B9C8A",
+      "signature": {
+        "bytes": 1719,
+        "adler32": 2811318683
+      },
+      "path": "ServerScriptService/Server/Main",
+      "class": "Script",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Campaign/ActivityBuilder.luau",
+      "sha256": "45E14E0ED51FBDC069A619E3BC9AA0BDF5DC274C6B269875D950ACCCD7B17B6D",
+      "signature": {
+        "bytes": 8063,
+        "adler32": 3177901475
+      },
+      "path": "ServerScriptService/Server/Campaign/ActivityBuilder",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Campaign/CampaignGenerator.luau",
+      "sha256": "A0D34D8CB0CC5F8E0656D0E34A3049E67B11D543692FC67E68D1DAA5B42D8BE6",
+      "signature": {
+        "bytes": 4688,
+        "adler32": 3912107850
+      },
+      "path": "ServerScriptService/Server/Campaign/CampaignGenerator",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Campaign/CampaignMode.luau",
+      "sha256": "C3AC759BED30C87A77A77703B4E68331BD04CD540DED9099704FA7B9AADC5B21",
+      "signature": {
+        "bytes": 463,
+        "adler32": 4266433190
+      },
+      "path": "ServerScriptService/Server/Campaign/CampaignMode",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Campaign/CampaignRuntime.luau",
+      "sha256": "1E18B53E5E3468A447D309A597930A9DDF03DC9FC99BB4B1C7A4F8BCED15F5B8",
+      "signature": {
+        "bytes": 31737,
+        "adler32": 4198264517
+      },
+      "path": "ServerScriptService/Server/Campaign/CampaignRuntime",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Campaign/CoopSession.luau",
+      "sha256": "2597F4463779868FC2F7B294BC883ED8CDC6AB80BB0BB0880B493D831A10786E",
+      "signature": {
+        "bytes": 11273,
+        "adler32": 2134040450
+      },
+      "path": "ServerScriptService/Server/Campaign/CoopSession",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Campaign/SeededRandom.luau",
+      "sha256": "1EAE09D0497BE49BDE156ED923AACB9D3735BCF23D5A46CD3869438FD07C0AE5",
+      "signature": {
+        "bytes": 879,
+        "adler32": 293868651
+      },
+      "path": "ServerScriptService/Server/Campaign/SeededRandom",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Campaign/StoryPlan.luau",
+      "sha256": "A79653163C33C0FB4F6CA824E9B4C02E58DD05068D27B70B369045A5F36DA910",
+      "signature": {
+        "bytes": 1966,
+        "adler32": 2941017695
+      },
+      "path": "ServerScriptService/Server/Campaign/StoryPlan",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Data/MockDataStore.luau",
+      "sha256": "60475DCEE4BF8561C4C2F108A85C3E17A1205AAE77DB9B69847E45EABAEC550C",
+      "signature": {
+        "bytes": 1428,
+        "adler32": 804186692
+      },
+      "path": "ServerScriptService/Server/Data/MockDataStore",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Data/PlayerDataSchema.luau",
+      "sha256": "8BB6658BFFF640A039FA9C3FE8594C991C0442D3A3CECB0F0FBB359111DE0FF0",
+      "signature": {
+        "bytes": 4720,
+        "adler32": 700328458
+      },
+      "path": "ServerScriptService/Server/Data/PlayerDataSchema",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Data/SessionLock.luau",
+      "sha256": "62683E59465A6602A7387EC684AD29ED5D61182DA39B23DED63C4B6AAE98A039",
+      "signature": {
+        "bytes": 1339,
+        "adler32": 1301139923
+      },
+      "path": "ServerScriptService/Server/Data/SessionLock",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Game/BreakerPuzzle.luau",
+      "sha256": "4373A3157A771508448124E7140CFF2C0554A76699AC308C5FC233B11A9C9CA0",
+      "signature": {
+        "bytes": 2086,
+        "adler32": 2974988463
+      },
+      "path": "ServerScriptService/Server/Game/BreakerPuzzle",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Game/Checkpoint.luau",
+      "sha256": "6FAECC7EDB9A3FFF2D7E01ED6AC1C4FCD0D8BA2ADF73C55BFFFF1955538ED9B7",
+      "signature": {
+        "bytes": 1518,
+        "adler32": 1896552973
+      },
+      "path": "ServerScriptService/Server/Game/Checkpoint",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Game/CreatureBrain.luau",
+      "sha256": "CDA366CA47C33388B9308E2140E2EE2420B7A88F31611E765A417EE156EDB835",
+      "signature": {
+        "bytes": 4409,
+        "adler32": 2376253329
+      },
+      "path": "ServerScriptService/Server/Game/CreatureBrain",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Game/EconomyEvents.luau",
+      "sha256": "71F66686BD762A96EE5964263FBDD8BEDFD30CAF685D2FF20CEA6CC5B7E8E3F5",
+      "signature": {
+        "bytes": 6181,
+        "adler32": 1627206530
+      },
+      "path": "ServerScriptService/Server/Game/EconomyEvents",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Game/HideRules.luau",
+      "sha256": "F445EE13EB52B299EC9DEB9F71CA856DB6FBA811E6A2CAA745D7BFF01EA1D2F8",
+      "signature": {
+        "bytes": 2251,
+        "adler32": 823923086
+      },
+      "path": "ServerScriptService/Server/Game/HideRules",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Game/Objectives.luau",
+      "sha256": "76A2D003D52203933D941A42EB37C6C0C431F65B6AAD25CA16D1E02EFFC3EF17",
+      "signature": {
+        "bytes": 4134,
+        "adler32": 3987114891
+      },
+      "path": "ServerScriptService/Server/Game/Objectives",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Game/PlayerRules.luau",
+      "sha256": "26D8C0308966262EADF06CEAABE6F3D2F98B539E79261B90D0F93EE40576FF69",
+      "signature": {
+        "bytes": 2841,
+        "adler32": 930799019
+      },
+      "path": "ServerScriptService/Server/Game/PlayerRules",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Game/RoundRules.luau",
+      "sha256": "6CF9A9D980B308DB484735B31DE7B26D57DCE7745B041FC69377FA09F57BDF79",
+      "signature": {
+        "bytes": 1789,
+        "adler32": 17587817
+      },
+      "path": "ServerScriptService/Server/Game/RoundRules",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Game/StoreFunnel.luau",
+      "sha256": "CEC7C87EEA292B6D6171F3A670B39099218195B9CB648DDB73D2F158FA3B3D56",
+      "signature": {
+        "bytes": 2329,
+        "adler32": 3845790944
+      },
+      "path": "ServerScriptService/Server/Game/StoreFunnel",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Net/ServerNet.luau",
+      "sha256": "C1BF63AF85EFE73D456E433CBD5A654435C8F5273925455D1581D5D1D8A658A2",
+      "signature": {
+        "bytes": 3916,
+        "adler32": 2180068889
+      },
+      "path": "ServerScriptService/Server/Net/ServerNet",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Services/CollectibleService.luau",
+      "sha256": "30C28E7DE81BEBB0C926D096463A5073E8B731EB6F568C49340265F88C685DFC",
+      "signature": {
+        "bytes": 8918,
+        "adler32": 1120960542
+      },
+      "path": "ServerScriptService/Server/Services/CollectibleService",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Services/CosmeticService.luau",
+      "sha256": "98FDDD0E8F06A04E4D5DA29BF5493EB77EBD620E9AD5554C78623592648DBE5C",
+      "signature": {
+        "bytes": 7114,
+        "adler32": 1905861435
+      },
+      "path": "ServerScriptService/Server/Services/CosmeticService",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Services/CreatureService.luau",
+      "sha256": "DEADF90AC89A1C5E84D1DF5D9914592AFC54B86E5992E55F55E50CE156C90AEF",
+      "signature": {
+        "bytes": 17737,
+        "adler32": 2024610596
+      },
+      "path": "ServerScriptService/Server/Services/CreatureService",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Services/DebugService.luau",
+      "sha256": "C4FB255DD081B34DE52E0CC57AF2D014F69C22339300AB959A02384A03E0F2F7",
+      "signature": {
+        "bytes": 4922,
+        "adler32": 3098438724
+      },
+      "path": "ServerScriptService/Server/Services/DebugService",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Services/LobbyService.luau",
+      "sha256": "B446E203508EDA1298419E30AB53629E031F6C036B3A6580D36268AC1B9EA74C",
+      "signature": {
+        "bytes": 6553,
+        "adler32": 4112020787
+      },
+      "path": "ServerScriptService/Server/Services/LobbyService",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Services/PerkService.luau",
+      "sha256": "F137CA4D70EC19E70C47232F90E7B1921015C1332F8EFE84210AA8764A18FAA5",
+      "signature": {
+        "bytes": 3958,
+        "adler32": 1109670584
+      },
+      "path": "ServerScriptService/Server/Services/PerkService",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Services/PlayerDataService.luau",
+      "sha256": "CC1984BC8D75DD8F51C936CCAC09DF290FE433E37926B93A747A256FFBE67C4B",
+      "signature": {
+        "bytes": 9245,
+        "adler32": 2397644863
+      },
+      "path": "ServerScriptService/Server/Services/PlayerDataService",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Services/PlayerStateService.luau",
+      "sha256": "D5A33ECE2DC8F444C499BF566D3CD511D299610CF17453B83752F3436051DF20",
+      "signature": {
+        "bytes": 13444,
+        "adler32": 2616454632
+      },
+      "path": "ServerScriptService/Server/Services/PlayerStateService",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Services/PresenceService.luau",
+      "sha256": "FA0BF1CC5FF7B7E419E9260574F5D6B517FBB11E3042C35640E8A9FADC97DF04",
+      "signature": {
+        "bytes": 1400,
+        "adler32": 3684556620
+      },
+      "path": "ServerScriptService/Server/Services/PresenceService",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Services/PropService.luau",
+      "sha256": "59CC6E3FB84D748586F1627D31B920DFCA939230231900C0B8E9219B4532DBCB",
+      "signature": {
+        "bytes": 4448,
+        "adler32": 3815426113
+      },
+      "path": "ServerScriptService/Server/Services/PropService",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Services/RewardService.luau",
+      "sha256": "644A627AB1045B280C091A78127910E6E4AD6CDF217F18C94AE27B4702287EEA",
+      "signature": {
+        "bytes": 5661,
+        "adler32": 1056996097
+      },
+      "path": "ServerScriptService/Server/Services/RewardService",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Services/RoundService.luau",
+      "sha256": "675B4C4C76B1BE7E9EFAEC07FB7F8CA4CBE99D33B30378748C70EE5A86102F8E",
+      "signature": {
+        "bytes": 22354,
+        "adler32": 3844319517
+      },
+      "path": "ServerScriptService/Server/Services/RoundService",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Services/StoreService.luau",
+      "sha256": "9A1186F0A041281368DFF6E4D746B7CD61B651FDB4EF94A3ECAA1A57FF4A9D31",
+      "signature": {
+        "bytes": 32232,
+        "adler32": 4137222819
+      },
+      "path": "ServerScriptService/Server/Services/StoreService",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Services/TelemetryService.luau",
+      "sha256": "8A0C7DDC8DDBBA87986F30AB7F402D5561C367F40B77B2CD5784139F026225C8",
+      "signature": {
+        "bytes": 5061,
+        "adler32": 347120327
+      },
+      "path": "ServerScriptService/Server/Services/TelemetryService",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/Services/WorldService.luau",
+      "sha256": "952E378B470D583DF844252083141CA9978EFF77BCF54E95F4A280401414E372",
+      "signature": {
+        "bytes": 23295,
+        "adler32": 266717948
+      },
+      "path": "ServerScriptService/Server/Services/WorldService",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/World/ArtBuilder.luau",
+      "sha256": "C1D395B0E70BB3D6D622B2A341C240E05DC1C6BD674308F1EC1560E029D87B15",
+      "signature": {
+        "bytes": 6855,
+        "adler32": 2095525346
+      },
+      "path": "ServerScriptService/Server/World/ArtBuilder",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/World/Build.luau",
+      "sha256": "2025F634C85B8287090279DA0B2A25F31042BB13A1135592BEA20D61150C50AF",
+      "signature": {
+        "bytes": 6114,
+        "adler32": 3269333401
+      },
+      "path": "ServerScriptService/Server/World/Build",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/World/Expansion.luau",
+      "sha256": "866001D336215B568AE502B5A775C9E63F415C937D6D4157F867C7B79CE309DC",
+      "signature": {
+        "bytes": 7987,
+        "adler32": 3398703287
+      },
+      "path": "ServerScriptService/Server/World/Expansion",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/World/FeatureBuilder.luau",
+      "sha256": "46E9C30DC3111447CEED647C73FDBD6DC4B3BA0A107CBCA2F8199449EDCB4347",
+      "signature": {
+        "bytes": 20605,
+        "adler32": 2768925077
+      },
+      "path": "ServerScriptService/Server/World/FeatureBuilder",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/World/Features.luau",
+      "sha256": "444C4EA55506450FBFC3933641AAC92E2622ED037D184E35FDC223CAEFBC82ED",
+      "signature": {
+        "bytes": 6127,
+        "adler32": 3504676066
+      },
+      "path": "ServerScriptService/Server/World/Features",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/World/Layout.luau",
+      "sha256": "20C9066CACD5D6EC73305D2626F0BC4381F8885B6682A59B8BC5C366782D433A",
+      "signature": {
+        "bytes": 11032,
+        "adler32": 3883204668
+      },
+      "path": "ServerScriptService/Server/World/Layout",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/World/MapBuilder.luau",
+      "sha256": "2F553194455EE9B80711981D9C78982921669BA4946B9710B98CC1C678AF57E2",
+      "signature": {
+        "bytes": 24896,
+        "adler32": 446389028
+      },
+      "path": "ServerScriptService/Server/World/MapBuilder",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/World/Palette.luau",
+      "sha256": "25807001F5D8DAEF614D67FF7C1ADF4AE94BAD7225EF520254C965505CEB77AB",
+      "signature": {
+        "bytes": 2234,
+        "adler32": 3553518674
+      },
+      "path": "ServerScriptService/Server/World/Palette",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/World/ProceduralLayout.luau",
+      "sha256": "9F382E58CFFBEAB2BF54EB6E7B7DD0DF4FE16CD5EF92DACA3E1E0353CC8EA4FC",
+      "signature": {
+        "bytes": 7859,
+        "adler32": 3450529014
+      },
+      "path": "ServerScriptService/Server/World/ProceduralLayout",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/World/Props.luau",
+      "sha256": "823D0BC596A22482C72D9C12A96C31B092FA1485B538E2398808681F5DFA6E14",
+      "signature": {
+        "bytes": 14921,
+        "adler32": 2100045825
+      },
+      "path": "ServerScriptService/Server/World/Props",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/World/SectorBuilder.luau",
+      "sha256": "ADDE32F4BD8DA7412E64B3976C41CAE5CA66DB20FD150C6A4A62B23F97B88BC6",
+      "signature": {
+        "bytes": 12637,
+        "adler32": 2732058147
+      },
+      "path": "ServerScriptService/Server/World/SectorBuilder",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/World/SectorExterior.luau",
+      "sha256": "DBAFED88EF969EF05A963F510A35E3DD2DE57AA958D08F57DE9546908FF0BD8E",
+      "signature": {
+        "bytes": 4227,
+        "adler32": 3865960311
+      },
+      "path": "ServerScriptService/Server/World/SectorExterior",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Server/World/WallMath.luau",
+      "sha256": "5E69FE60F2B09576E51B46711E77F626DE091462A6CC15A540D1201E997F0367",
+      "signature": {
+        "bytes": 2250,
+        "adler32": 2419318681
+      },
+      "path": "ServerScriptService/Server/World/WallMath",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/CampaignHarness.luau",
+      "sha256": "20F15452E0C5B932CB87B565D225695B9263724B7DAF5ADF32C654E76ADF45E3",
+      "signature": {
+        "bytes": 13156,
+        "adler32": 3698107293
+      },
+      "path": "ServerScriptService/Tests/CampaignHarness",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Run.luau",
+      "sha256": "3C58C70DBED373CC4DD733F604807660747244AE4D340CDA8F611443A658E147",
+      "signature": {
+        "bytes": 1414,
+        "adler32": 1448661695
+      },
+      "path": "ServerScriptService/Tests/Run",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/TestKit.luau",
+      "sha256": "B013F951E34CA1E9CAAAEB65DE6870DBC5B29920F8866A8B7634B7F03580A144",
+      "signature": {
+        "bytes": 4266,
+        "adler32": 3527625891
+      },
+      "path": "ServerScriptService/Tests/TestKit",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/BatteryModel.luau",
+      "sha256": "2D2AA05DCF61AF244E94D9A027AB2FD4224F2312AB1EC5B87C9D25E262B76E58",
+      "signature": {
+        "bytes": 2464,
+        "adler32": 2952201073
+      },
+      "path": "ServerScriptService/Tests/Specs/BatteryModel",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/BreakerPuzzle.luau",
+      "sha256": "2B3A590CE1D9012F6EBB35ACA1A4AE6ACFCCDA934EFA2BEE4B765300D2F8A90C",
+      "signature": {
+        "bytes": 1530,
+        "adler32": 3076251720
+      },
+      "path": "ServerScriptService/Tests/Specs/BreakerPuzzle",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/CampaignGenerator.luau",
+      "sha256": "2D457333C6C0AB47EFEC3816BFDD3BDE64D22049E3C2FA2C89AEE727B0284B13",
+      "signature": {
+        "bytes": 2781,
+        "adler32": 1948412509
+      },
+      "path": "ServerScriptService/Tests/Specs/CampaignGenerator",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/CampaignPerks.luau",
+      "sha256": "76CC8F19569D296D6BA7FD9EB411AA1E6A3DE471E59EB1F7D5D2B92584DBECA7",
+      "signature": {
+        "bytes": 2980,
+        "adler32": 1706471188
+      },
+      "path": "ServerScriptService/Tests/Specs/CampaignPerks",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/CharacterPose.luau",
+      "sha256": "C4198C3D34F614C0CC6ABAE1D1EA10F9C941B8E40ECD26E1F47E0E1E2D52F30B",
+      "signature": {
+        "bytes": 2633,
+        "adler32": 227951129
+      },
+      "path": "ServerScriptService/Tests/Specs/CharacterPose",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/Checkpoint.luau",
+      "sha256": "F4124B12C2E26B91B74A874F567AEF75F99504263D361FD17C93A1A1250AECA3",
+      "signature": {
+        "bytes": 2793,
+        "adler32": 2020645045
+      },
+      "path": "ServerScriptService/Tests/Specs/Checkpoint",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/CinematicShots.luau",
+      "sha256": "21B29E9B7C624FBB178ED3E8261AC13AFDD6242B23FAF6462A23A54AE52FAD84",
+      "signature": {
+        "bytes": 4932,
+        "adler32": 4088009257
+      },
+      "path": "ServerScriptService/Tests/Specs/CinematicShots",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/CoopSession.luau",
+      "sha256": "38C6528E0C0E053D7E2CD38BE80525463390DDE91BB70B54DEDB9C24A3F48F80",
+      "signature": {
+        "bytes": 8264,
+        "adler32": 107413557
+      },
+      "path": "ServerScriptService/Tests/Specs/CoopSession",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/CreatureBrain.luau",
+      "sha256": "022D1DBDFA707B9EEF26760997068C9DD9E5ED43C3E3473ED7326138DAFD61AF",
+      "signature": {
+        "bytes": 4702,
+        "adler32": 2619797909
+      },
+      "path": "ServerScriptService/Tests/Specs/CreatureBrain",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/Economy.luau",
+      "sha256": "9500C3D8BBB87D19EDC5B9FC5245D196AF90FE1A71AF01E927DCB3F51FECEE37",
+      "signature": {
+        "bytes": 8784,
+        "adler32": 795417638
+      },
+      "path": "ServerScriptService/Tests/Specs/Economy",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/EconomyEvents.luau",
+      "sha256": "AC8FC2B211E5FAF86944DA13D18C1518D67BC2D9FC7911D1B020F3BC9F14C185",
+      "signature": {
+        "bytes": 1752,
+        "adler32": 3083809243
+      },
+      "path": "ServerScriptService/Tests/Specs/EconomyEvents",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/FearModel.luau",
+      "sha256": "FB94332B029BC191A65B8DD7645D26E7D80C1E3D6FE02F366BB249092ED57D8E",
+      "signature": {
+        "bytes": 3497,
+        "adler32": 1493453085
+      },
+      "path": "ServerScriptService/Tests/Specs/FearModel",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/Guard.luau",
+      "sha256": "9865FFD4A5E814E8D172BC7A24EA0D185113DBB665E8B2EC08CB1B76675C85E2",
+      "signature": {
+        "bytes": 3870,
+        "adler32": 68335613
+      },
+      "path": "ServerScriptService/Tests/Specs/Guard",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/HideRules.luau",
+      "sha256": "9AF1D04548603AFA18E9DE5D88E3C27EA5A2CB79E1B69097C25F936FE4DAAF2C",
+      "signature": {
+        "bytes": 2714,
+        "adler32": 1259171858
+      },
+      "path": "ServerScriptService/Tests/Specs/HideRules",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/InteractionPresentation.luau",
+      "sha256": "3F526C3187F95873BD3B95D13FD8ACCD73208F715F894CB1832B9BE283A017D9",
+      "signature": {
+        "bytes": 1353,
+        "adler32": 3814305200
+      },
+      "path": "ServerScriptService/Tests/Specs/InteractionPresentation",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/Layout.luau",
+      "sha256": "0448ED3328B9E82D97E2DD94E7112065659E868302D7B24983CDA9DC79B27DB5",
+      "signature": {
+        "bytes": 6262,
+        "adler32": 1483320249
+      },
+      "path": "ServerScriptService/Tests/Specs/Layout",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/LightingProfile.luau",
+      "sha256": "9768E9081E1B5AB7AB7E9FEA8E5C7212EFD258E97908FACC859063F9B324548C",
+      "signature": {
+        "bytes": 2260,
+        "adler32": 3910767597
+      },
+      "path": "ServerScriptService/Tests/Specs/LightingProfile",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/Loader.luau",
+      "sha256": "804FD1459B925D8B9398D5B2D817E7DC359FA5720AB502839CB86C7F60A387FD",
+      "signature": {
+        "bytes": 1895,
+        "adler32": 1125261928
+      },
+      "path": "ServerScriptService/Tests/Specs/Loader",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/Logger.luau",
+      "sha256": "B48D2BEC81664CA54ABE41EE47A190AC95E379AB4759EC61C6D35386734F953A",
+      "signature": {
+        "bytes": 1820,
+        "adler32": 1455967070
+      },
+      "path": "ServerScriptService/Tests/Specs/Logger",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/Navigation.luau",
+      "sha256": "DC3F0D3CE533BBC136CA513C699867D0587C5B56E8BF8BDDD304E2A4542F11F2",
+      "signature": {
+        "bytes": 7733,
+        "adler32": 1118664743
+      },
+      "path": "ServerScriptService/Tests/Specs/Navigation",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/Objectives.luau",
+      "sha256": "D16575D81AAAC0B3E7C36258A59B148F968701ED80D265CFE79CEE681AD17348",
+      "signature": {
+        "bytes": 4371,
+        "adler32": 1021674706
+      },
+      "path": "ServerScriptService/Tests/Specs/Objectives",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/Perks.luau",
+      "sha256": "07080FA5215F77566BC762F44F228E86E35092515E0EF58C19A6CA679E2DB131",
+      "signature": {
+        "bytes": 6567,
+        "adler32": 2165981437
+      },
+      "path": "ServerScriptService/Tests/Specs/Perks",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/PixelText.luau",
+      "sha256": "A8CE1047336D8D31B194643CBED7A81578C214B885B37A90EBF8027A2F1FDBAC",
+      "signature": {
+        "bytes": 775,
+        "adler32": 2652766734
+      },
+      "path": "ServerScriptService/Tests/Specs/PixelText",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/PlayerData.luau",
+      "sha256": "F98402ECB28C65E20922670B2CC21493FBF81E0287D20C27C7D7856F6EFFDEC4",
+      "signature": {
+        "bytes": 2921,
+        "adler32": 3712393286
+      },
+      "path": "ServerScriptService/Tests/Specs/PlayerData",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/PlayerGuide.luau",
+      "sha256": "BA506DFCA0C6858E6164CA3B0504388BA3E91A989519F11E83CA960544D1A1B9",
+      "signature": {
+        "bytes": 2377,
+        "adler32": 2827030410
+      },
+      "path": "ServerScriptService/Tests/Specs/PlayerGuide",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/PlayerRules.luau",
+      "sha256": "D3F76C6474812C488AFC49A2E52A2C06E893BDA4438BB6858E10677BF9237346",
+      "signature": {
+        "bytes": 2292,
+        "adler32": 2131684258
+      },
+      "path": "ServerScriptService/Tests/Specs/PlayerRules",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/ProceduralLayout.luau",
+      "sha256": "1508B61E512553AADF59C962DDFC32343BD0BAB20E12BF24AA389BFFF249D85F",
+      "signature": {
+        "bytes": 6172,
+        "adler32": 3816389426
+      },
+      "path": "ServerScriptService/Tests/Specs/ProceduralLayout",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/ProceduralNavigation.luau",
+      "sha256": "093795AF156F079FE0F2B05347C26D430B66C02216013D5164C48DB8B106AD3D",
+      "signature": {
+        "bytes": 7033,
+        "adler32": 3144692062
+      },
+      "path": "ServerScriptService/Tests/Specs/ProceduralNavigation",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/RateLimiter.luau",
+      "sha256": "10DD216F0B5782793D3B86ED06BA2051536ED75D5101FC0541AD9F90464719C6",
+      "signature": {
+        "bytes": 1572,
+        "adler32": 261026000
+      },
+      "path": "ServerScriptService/Tests/Specs/RateLimiter",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/Remotes.luau",
+      "sha256": "1AFFBAFE904EC5D0CC42536ED0AE1A3F3D28F0C75933E8A917728C0158E8C1F5",
+      "signature": {
+        "bytes": 1495,
+        "adler32": 1458630313
+      },
+      "path": "ServerScriptService/Tests/Specs/Remotes",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/Retry.luau",
+      "sha256": "92B5143E6E312A9971DB0E81BED1DD788DECD358648D18C92E9472F21823B377",
+      "signature": {
+        "bytes": 1659,
+        "adler32": 1353379474
+      },
+      "path": "ServerScriptService/Tests/Specs/Retry",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/RoundRules.luau",
+      "sha256": "E11E03A4779B82A3AF82E0D2AC5EDA3F8E883610BB274B102A27B15C61C3D61A",
+      "signature": {
+        "bytes": 3217,
+        "adler32": 2360153047
+      },
+      "path": "ServerScriptService/Tests/Specs/RoundRules",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/Season.luau",
+      "sha256": "8AC8B4F179484D3B3B89C242ACA3C7C13965130E7AFDDF6B17DC67461B5827ED",
+      "signature": {
+        "bytes": 3366,
+        "adler32": 2440189679
+      },
+      "path": "ServerScriptService/Tests/Specs/Season",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/ServerList.luau",
+      "sha256": "26812E9219A3F94A6E025ACEF7141D59236D08AC8DB7E97ED438E981623643BB",
+      "signature": {
+        "bytes": 2570,
+        "adler32": 1293354768
+      },
+      "path": "ServerScriptService/Tests/Specs/ServerList",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/SessionLock.luau",
+      "sha256": "CD36D540B0ED19EAB6CB8D5DCC29FF5E41D5A01E5C7B39816FF26986D9BD1267",
+      "signature": {
+        "bytes": 1549,
+        "adler32": 1790245232
+      },
+      "path": "ServerScriptService/Tests/Specs/SessionLock",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/SpectatorRules.luau",
+      "sha256": "E35A8E27B054A2A4E3A83F207C6CA134EC21395D642310E9682E9F91D0353C7D",
+      "signature": {
+        "bytes": 1347,
+        "adler32": 1480631413
+      },
+      "path": "ServerScriptService/Tests/Specs/SpectatorRules",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/StoreCatalog.luau",
+      "sha256": "EC1FBC0AFD2D72803590723D8D33916C24C3C51AAAACFD7272978E518B28EBDE",
+      "signature": {
+        "bytes": 2910,
+        "adler32": 2062917313
+      },
+      "path": "ServerScriptService/Tests/Specs/StoreCatalog",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/StoreFunnel.luau",
+      "sha256": "B07F230E176F3344E03D139DAEA2D1B046233367CD1A86709C8F3C5582F009BB",
+      "signature": {
+        "bytes": 873,
+        "adler32": 417273844
+      },
+      "path": "ServerScriptService/Tests/Specs/StoreFunnel",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/StoryMode.luau",
+      "sha256": "702FCD70084082197798254508F9BF2DB737DEDC6015A1E619C78CA1D1223541",
+      "signature": {
+        "bytes": 4455,
+        "adler32": 1491430682
+      },
+      "path": "ServerScriptService/Tests/Specs/StoryMode",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/StoryRewards.luau",
+      "sha256": "708B78663B8CEC6B6B7860EBF2CF91FBB39C41A4C1B47890AD4C354CE151B154",
+      "signature": {
+        "bytes": 3697,
+        "adler32": 2618605546
+      },
+      "path": "ServerScriptService/Tests/Specs/StoryRewards",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/SurfacePatterns.luau",
+      "sha256": "2EE9792C015FA41EBC2D64EF51716D4AEC33E338E663F32E254C3FF86E6E88D2",
+      "signature": {
+        "bytes": 1176,
+        "adler32": 412121149
+      },
+      "path": "ServerScriptService/Tests/Specs/SurfacePatterns",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/TableUtil.luau",
+      "sha256": "A1EDE7B9C94E2693A224F79F8935659FE774BE7FCB26F07BA42191918C535CEC",
+      "signature": {
+        "bytes": 2032,
+        "adler32": 729315676
+      },
+      "path": "ServerScriptService/Tests/Specs/TableUtil",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/TaskRewards.luau",
+      "sha256": "0EF1718771AEC904C4879CA1C106D4243E1F96A89DDFE1D667736518DA5B812D",
+      "signature": {
+        "bytes": 1346,
+        "adler32": 1890167812
+      },
+      "path": "ServerScriptService/Tests/Specs/TaskRewards",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/TaskStations.luau",
+      "sha256": "3A4073A3DB1AE7E3E928A4733752F93209DD39846C5FE53F1A396689D5751CD5",
+      "signature": {
+        "bytes": 3092,
+        "adler32": 4225163607
+      },
+      "path": "ServerScriptService/Tests/Specs/TaskStations",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/TensionDirector.luau",
+      "sha256": "663F5280E1C80DBFFD808C833E20EF325454744858A1B2DC2C773FD74DB0D55A",
+      "signature": {
+        "bytes": 5276,
+        "adler32": 4245528113
+      },
+      "path": "ServerScriptService/Tests/Specs/TensionDirector",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/ThreatPresentation.luau",
+      "sha256": "C7CE5A82C3BBD371C4212DAD5D85F77502E0337D80B438857DE7BC0ADD60720B",
+      "signature": {
+        "bytes": 2645,
+        "adler32": 3962525046
+      },
+      "path": "ServerScriptService/Tests/Specs/ThreatPresentation",
+      "class": "ModuleScript",
+      "matches": true
+    },
+    {
+      "file": "ServerScriptService/Tests/Specs/VisualArt.luau",
+      "sha256": "2FC015E316B309B19BC8766476155B25DC91F85C8067EC21FE608AECF45BBE97",
+      "signature": {
+        "bytes": 2589,
+        "adler32": 3660131034
+      },
+      "path": "ServerScriptService/Tests/Specs/VisualArt",
+      "class": "ModuleScript",
+      "matches": true
+    }
+  ]
+}

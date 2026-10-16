@@ -243,6 +243,15 @@ function Harness.run(runtime: any, args: any)
 			end
 			for index, activity in plan.activities do
 				local owner = players[(index - 1) % #players + 1]
+				local balances: { [number]: { fichas: number, xp: number } } = {}
+				if args.taskQA then
+					for _, player in players do
+						balances[player.UserId] = {
+							fichas = (player:GetAttribute("Fichas") or 0) :: number,
+							xp = (player:GetAttribute("Xp") or 0) :: number,
+						}
+					end
+				end
 				local function press(player: Player, button: number)
 					local before = runtime.snapshot().tasks[activity.id].progress
 					local station = workspace.Substation9.CampaignActivities:FindFirstChild(activity.id)
@@ -266,17 +275,37 @@ function Harness.run(runtime: any, args: any)
 					local helper = players[index % #players + 1]
 					press(helper, 1)
 				else
-					for _ = 1, 3 do
-						if runtime.snapshot().tasks[activity.id].solved then
-							break
-						end
-						press(owner, 1)
+					while not runtime.snapshot().tasks[activity.id].solved do
+						press(owner, runtime.snapshot().tasks[activity.id].progress + 1)
 					end
 				end
 				check(
 					runtime.snapshot().tasks[activity.id].solved,
 					`stage {stageIndex} task {index} solved through client remote`
 				)
+				if args.taskQA then
+					local solved = runtime.snapshot().tasks[activity.id]
+					for _, player in players do
+						local before = balances[player.UserId]
+						local helped = solved.contributors[player.UserId] == true
+						local fichas, xp = if helped then 20 else 12, if helped then 40 else 24
+						check(
+							(player:GetAttribute("Fichas") :: number) >= before.fichas + fichas,
+							`task {stageIndex}/{index} pays Fichas to {player.UserId}`
+						)
+						check(
+							(player:GetAttribute("Xp") :: number) >= before.xp + xp,
+							`task {stageIndex}/{index} pays XP to {player.UserId}`
+						)
+					end
+					if index == 1 then
+						local xp = owner:GetAttribute("Xp")
+						task.wait(Config.Campaign.ActionCooldown + 0.1)
+						request(owner, `{activity.id}_1`)
+						task.wait(0.3)
+						check(owner:GetAttribute("Xp") == xp, `stage {stageIndex} rejects duplicate task rewards`)
+					end
+				end
 			end
 			check(
 				runtime.snapshot().phase == (if stageIndex == 3 then "Extracting" else "Intermission"),

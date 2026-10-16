@@ -45,7 +45,8 @@ local function hiddenId(): string?
 end
 
 local function allowed(): boolean
-	return Rules.allowed(phase, player:GetAttribute("CampaignStatus") :: string?)
+	return player:GetAttribute("FieldGuideOpen") ~= true
+		and Rules.allowed(phase, player:GetAttribute("CampaignStatus") :: string?)
 end
 
 local function clearTarget()

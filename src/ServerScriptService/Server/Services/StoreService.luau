@@ -38,6 +38,7 @@ local RunService = game:GetService("RunService")
 local Economy = require("@game/ReplicatedStorage/Shared/Game/Economy")
 local Perks = require("@game/ReplicatedStorage/Shared/Game/Perks")
 local StoryRewards = require("@game/ReplicatedStorage/Shared/Game/StoryRewards")
+local TaskRewards = require("@game/ReplicatedStorage/Shared/Game/TaskRewards")
 local Guard = require("@game/ReplicatedStorage/Shared/Net/Guard")
 local Logger = require("@game/ReplicatedStorage/Shared/Logger")
 local Remotes = require("@game/ReplicatedStorage/Shared/Net/Remotes")
@@ -685,6 +686,28 @@ end
 	Fim de partida: aplica recompensa e XP de temporada e avisa o cliente (tela de resultado).
 	`sku` = contexto para o analytics (RewardService: modo e resultado, ex. "campaign_won").
 ]]
+-- Conclusão de estação: pagamento imediato, sem contar outra partida nem alterar o formato salvo.
+function StoreService.awardTask(player: Player, contributed: boolean): Economy.Granted?
+	local granted: Economy.Granted? = nil
+	local events: { EconomyEvents.Event } = {}
+	if
+		not PlayerDataService.update(player, function(data)
+			local reward = TaskRewards.reward(contributed)
+			granted = Economy.applyReward(data, { fichas = reward.fichas, xp = reward.xp })
+			events = EconomyEvents.build(
+				data.wallet,
+				{ { transaction = TX.Gameplay, sku = "campaign_task", granted = granted } }
+			)
+		end)
+	then
+		return nil
+	end
+	TelemetryService.economy(player, events)
+	publish(player)
+	notify(player, "task", granted, { contributed = contributed })
+	return granted
+end
+
 function StoreService.awardRun(player: Player, summary: Economy.RunSummary, sku: string?): Economy.Granted?
 	local granted: Economy.Granted? = nil
 	local seasonResult: Season.SeasonGranted? = nil

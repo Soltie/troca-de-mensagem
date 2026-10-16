@@ -165,6 +165,14 @@ local function build(): Refs
 		Visible = false,
 		Parent = gui,
 	})
+	prompt.Font = Enum.Font.Code
+	prompt.TextSize = 17
+	prompt.TextColor3 = Theme.Hazard
+	prompt.BackgroundColor3 = Theme.Panel
+	prompt.BackgroundTransparency = 0.12
+	prompt.TextStrokeTransparency = 1
+	prompt.Size = UDim2.new(0.8, 0, 0, 54)
+	Create("UISizeConstraint", { Parent = prompt, MaxSize = Vector2.new(480, 54) })
 
 	-- Objetivo (canto superior esquerdo)
 	local objectivePanel = frame({
@@ -229,7 +237,7 @@ local function build(): Refs
 		Name = "Caption",
 		AnchorPoint = Vector2.new(0.5, 1),
 		Position = UDim2.new(0.5, 0, 1, -64),
-		Size = UDim2.fromOffset(760, 40),
+		Size = UDim2.new(0.86, 0, 0, 48),
 		Text = "",
 		TextSize = Theme.SizeBody,
 		Visible = false,
@@ -795,6 +803,15 @@ function GameUiController.Init()
 	ui.prompt.Parent = shared
 	ui.caption.Parent = shared
 	ui.note.Parent = shared
+	ui.caption.Font = Enum.Font.Code
+	ui.caption.TextSize = 16
+	ui.caption.BackgroundColor3 = Theme.Panel
+	ui.caption.BackgroundTransparency = 0.12
+	local function visibility()
+		(shared :: ScreenGui).Enabled = player:GetAttribute("CinematicActive") ~= true
+	end
+	player:GetAttributeChangedSignal("CinematicActive"):Connect(visibility)
+	visibility()
 	refreshHelp()
 end
 

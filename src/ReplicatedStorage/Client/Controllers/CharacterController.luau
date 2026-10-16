@@ -357,7 +357,7 @@ function CharacterController.Start()
 end
 
 function CharacterController.getStamina(): (number, number)
-	return stamina, P.StaminaMax
+	return stamina, P.StaminaMax * Perks.factor("folego", tonumber(player:GetAttribute("PerkFolego")) or 0)
 end
 
 function CharacterController.isSprinting(): boolean

@@ -66,8 +66,8 @@ return {
 							Session.act(state, 1, activity.id, 1, 1)
 							Session.act(state, 2, activity.id, 1, 2)
 						else
-							for _ = 1, 3 do
-								Session.act(state, 1, activity.id, 1, 1)
+							while not state.tasks[activity.id].solved do
+								Session.act(state, 1, activity.id, state.tasks[activity.id].progress + 1, 1)
 							end
 						end
 					end
