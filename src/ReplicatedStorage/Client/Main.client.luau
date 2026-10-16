@@ -26,6 +26,7 @@ local controllers: { any } = {
 	require("./Controllers/FearController"),
 	require("./Controllers/RetroFxController"),
 	require("./Controllers/WorldFxController"),
+	require("./Controllers/ArtController"),
 	require("./Controllers/TensionController"),
 	require("./Controllers/ScreenFxController"),
 	require("./Controllers/ThreatFeedbackController"),

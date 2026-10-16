@@ -151,7 +151,11 @@ local function update(dt: number)
 			end
 		end
 		-- Cabeça "estala" para olhar o jogador na perseguição (atualiza só no passo).
-		if camera and (mode == "Chase" or mode == "Capture") and displayBase then
+		if
+			camera
+			and (mode == "Chase" or mode == "Capture" or mode == "Investigate" or mode == "Search")
+			and displayBase
+		then
 			local toCamera = displayBase:PointToObjectSpace(camera.CFrame.Position)
 			headYaw = math.clamp(math.deg(math.atan2(-toCamera.X, -toCamera.Z)), -50, 50)
 		else

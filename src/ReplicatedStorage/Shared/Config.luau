@@ -285,6 +285,14 @@ local Config = {
 		GateFrames = 6,
 	},
 
+	Art = {
+		SurfacePartLimit = 160,
+		TextureLimit = 360,
+		TextureStuds = 5,
+		DustRange = 32,
+		ScreenRange = 55,
+	},
+
 	Effects = {
 		ScanlineSpacing = 3,
 		ScanlineTransparency = 0.84,

@@ -10,6 +10,7 @@ local Palette = require("./Palette")
 local Props = {}
 
 local V3 = Vector3.new
+local DETAIL = { collide = false, query = false, material = Enum.Material.Metal }
 
 -- Converte um offset local (relativo à base girada) em posição de mundo.
 local function at(base: Vector3, yaw: number, offset: Vector3): Vector3
@@ -45,6 +46,33 @@ function Props.desk(parent: Instance, base: Vector3, yaw: number)
 	-- Monitor CRT
 	piece(model, "CRT", base, yaw, V3(-1.2, 3.75, 0.4), V3(1.6, 1.5, 1.4), Palette.VanBody)
 	piece(model, "Screen", base, yaw, V3(-1.2, 3.8, -0.31), V3(1.25, 1.05, 0.05), Palette.Screen, { collide = false })
+	-- Teclado, disquetes e papelada fora dos pontos de coleta sobre as mesas.
+	piece(model, "Keyboard", base, yaw, V3(-1.2, 3.04, -0.85), V3(1.75, 0.12, 0.65), Palette.MetalDark, DETAIL)
+	for i = 1, 3 do
+		piece(
+			model,
+			"Keys",
+			base,
+			yaw,
+			V3(-1.2, 3.11, -1.08 + i * 0.14),
+			V3(1.45, 0.025, 0.045),
+			Palette.VanBody,
+			DETAIL
+		)
+	end
+	for i = 1, 2 do
+		piece(
+			model,
+			"Folder",
+			base,
+			yaw + i * 3,
+			V3(1.5, 3.02 + i * 0.025, 0.65),
+			V3(1.1, 0.025, 0.75),
+			Palette.Paper,
+			DETAIL
+		)
+	end
+	piece(model, "Diskette", base, yaw, V3(0.2, 3.04, 0.9), V3(0.44, 0.06, 0.48), Palette.WallLowerCold, DETAIL)
 	return model
 end
 
@@ -69,6 +97,16 @@ function Props.cabinet(parent: Instance, base: Vector3, yaw: number)
 	for i = 0, 3 do
 		piece(model, "Drawer", base, yaw, V3(0, 0.75 + i * 1.2, -1.01), V3(1.7, 0.08, 0.05), Palette.MetalDark)
 		piece(model, "Handle", base, yaw, V3(0, 1.1 + i * 1.2, -1.05), V3(0.6, 0.12, 0.08), Palette.MetalDark)
+		piece(
+			model,
+			"LabelHolder",
+			base,
+			yaw,
+			V3(0, 1.45 + i * 1.2, -1.025),
+			V3(0.56, 0.18, 0.025),
+			Palette.Paper,
+			DETAIL
+		)
 	end
 	return model
 end
@@ -78,6 +116,28 @@ function Props.crate(parent: Instance, base: Vector3, yaw: number, s: number)
 	local model = Build.model(parent, "Crate")
 	piece(model, "Body", base, yaw, V3(0, s / 2, 0), V3(s, s, s), Palette.Wood)
 	piece(model, "Band", base, yaw, V3(0, s / 2, 0), V3(s + 0.06, s * 0.18, s + 0.06), Palette.WoodDark)
+	for _, sign in { -1, 1 } do
+		piece(
+			model,
+			"Batten",
+			base,
+			yaw,
+			V3(sign * s * 0.32, s / 2, -s / 2 - 0.04),
+			V3(s * 0.12, s, 0.05),
+			Palette.WoodDark,
+			DETAIL
+		)
+	end
+	piece(
+		model,
+		"ShippingLabel",
+		base,
+		yaw,
+		V3(0, s * 0.7, -s / 2 - 0.07),
+		V3(s * 0.28, s * 0.16, 0.02),
+		Palette.Paper,
+		DETAIL
+	)
 	return model
 end
 
@@ -185,6 +245,12 @@ function Props.generator(parent: Instance, base: Vector3, yaw: number)
 	end
 	piece(model, "ControlBox", base, yaw, V3(3.5, 6, 1.5), V3(2, 1.6, 1.2), Palette.Metal)
 	Build.cylinder(model, "Exhaust", at(base, yaw, V3(-3, 8.5, 1.5)), Vector3.yAxis, 5, 0.9, Palette.Rust)
+	for _, x in { -3.2, 3.2 } do
+		for _, z in { -2.3, 2.3 } do
+			piece(model, "Bolt", base, yaw, V3(x, 0.62, z), V3(0.22, 0.1, 0.22), Palette.Brass, DETAIL)
+		end
+	end
+	piece(model, "MakerPlate", base, yaw, V3(3.5, 3.8, -2.65), V3(1.4, 0.65, 0.035), Palette.Paper, DETAIL)
 	return model
 end
 

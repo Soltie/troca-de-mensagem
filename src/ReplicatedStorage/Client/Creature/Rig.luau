@@ -9,6 +9,7 @@
 
 local Poses = require("./Poses")
 local AdemirPortrait = require("./AdemirPortrait")
+local UniformDetails = require("./UniformDetails")
 
 export type Rig = {
 	model: Model,
@@ -89,6 +90,21 @@ function Rig.build(parent: Instance): Rig
 	light.Shadows = false
 	light.Parent = head
 	AdemirPortrait.applyToRig(parts, light)
+	for _, detail in UniformDetails do
+		local part = Instance.new("Part")
+		part.Name = detail.name
+		part.Size = detail.size
+		part.Color = detail.color
+		part.Material = if detail.metal then Enum.Material.Metal else Enum.Material.Fabric
+		part.Anchored = true
+		part.CanCollide = false
+		part.CanQuery = false
+		part.CanTouch = false
+		part.CastShadow = false
+		part.Parent = model
+		parts[detail.name] = part
+		table.insert(order, part)
+	end
 	model.Parent = parent
 	return { model = model, parts = parts, order = order, head = head, emitter = emitter, eyeLight = light }
 end
@@ -138,6 +154,9 @@ function Rig.solve(rig: Rig, base: CFrame, pose: Poses.Pose, extraNeckYaw: numbe
 		cf["Foot" .. side] = knee * CFrame.new(0, -1.9, -0.25) * CFrame.Angles(-rad(hipPitch + kneePitch) * 0.6, 0, 0)
 	end
 
+	for _, detail in UniformDetails do
+		cf[detail.name] = cf[detail.anchor] * detail.offset
+	end
 	local list = table.create(#rig.order)
 	for index, part in rig.order do
 		list[index] = cf[part.Name] or base
