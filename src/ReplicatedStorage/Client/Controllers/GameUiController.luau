@@ -18,8 +18,6 @@ local Text = require("@game/ReplicatedStorage/Shared/Game/Text")
 local Create = require("../UI/Create")
 local Theme = require("../UI/Theme")
 local AdemirPortrait = require("../Creature/AdemirPortrait")
-local CharacterController = require("./CharacterController")
-local FlashlightController = require("./FlashlightController")
 local SettingsController = require("./SettingsController")
 
 local player = Players.LocalPlayer
@@ -32,9 +30,6 @@ type Refs = {
 	objectiveHint: TextLabel,
 	fuseIcons: { Frame },
 	caption: TextLabel,
-	staminaBar: Frame,
-	staminaFill: Frame,
-	flashlight: TextLabel,
 	help: Frame,
 	helpLines: { TextLabel },
 	intro: Frame,
@@ -49,6 +44,8 @@ type Refs = {
 	finaleSubtitle: TextLabel,
 	finaleStats: TextLabel,
 	restart: TextButton,
+	continueButton: TextButton,
+	inventory: TextLabel,
 }
 
 local refs: Refs? = nil
@@ -234,30 +231,18 @@ local function build(): Refs
 		Parent = gui,
 	})
 
-	-- Fôlego + lanterna (baixo, esquerda)
-	local staminaBar = frame({
-		Name = "Stamina",
-		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, -28),
-		Size = UDim2.fromOffset(160, 6),
-		BackgroundTransparency = 0.3,
-		Visible = false,
-		Parent = gui,
-	}, { stroke(Theme.TextDim, 1) })
-	local staminaFill = frame({
-		Name = "Fill",
-		Size = UDim2.fromScale(1, 1),
-		BackgroundColor3 = Theme.Text,
-		Parent = staminaBar,
-	})
-	local flashlight = label({
-		Name = "Flashlight",
+	-- Fôlego e bateria são diegéticos (respiração/postura e LEDs da lanterna).
+	-- Inventário sob demanda (segurar Tab), canto inferior esquerdo.
+	local inventory = label({
+		Name = "Inventory",
 		AnchorPoint = Vector2.new(0, 1),
 		Position = UDim2.new(0, 20, 1, -20),
-		Size = UDim2.fromOffset(220, 16),
+		Size = UDim2.fromOffset(420, 84),
 		Text = "",
 		TextSize = Theme.SizeSmall,
 		TextXAlignment = Enum.TextXAlignment.Left,
+		TextYAlignment = Enum.TextYAlignment.Bottom,
+		Visible = false,
 		Parent = gui,
 	})
 	label({
@@ -447,6 +432,35 @@ local function build(): Refs
 		ZIndex = 6,
 		Parent = finale,
 	}, { stroke(Theme.Text, 2) }) :: TextButton
+	-- Continuar do checkpoint: destaque próprio, para não confundir com "reiniciar tudo".
+	local continueButton = Create("TextButton", {
+		Name = "Continue",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5, 0, 0.36, 150),
+		Size = UDim2.fromOffset(380, 44),
+		BackgroundColor3 = Theme.Hazard,
+		BorderSizePixel = 0,
+		AutoButtonColor = true,
+		FontFace = Theme.Font,
+		Text = Text.Continue,
+		TextSize = Theme.SizeBody,
+		TextColor3 = Theme.Black,
+		Visible = false,
+		ZIndex = 6,
+		Parent = finale,
+	}, { stroke(Theme.Black, 2) }) :: TextButton
+	-- Escala da interface pela altura da tela (base 720 px).
+	local scale = Create("UIScale", { Parent = gui }) :: UIScale
+	local function rescale()
+		local current = workspace.CurrentCamera
+		local height = if current then current.ViewportSize.Y else 720
+		scale.Scale = math.clamp(height / 720, 0.75, 1.5)
+	end
+	rescale()
+	local camera = workspace.CurrentCamera
+	if camera then
+		camera:GetPropertyChangedSignal("ViewportSize"):Connect(rescale)
+	end
 
 	gui.Parent = player:WaitForChild("PlayerGui")
 
@@ -457,9 +471,7 @@ local function build(): Refs
 		objectiveHint = objectiveHint,
 		fuseIcons = fuseIcons,
 		caption = caption,
-		staminaBar = staminaBar,
-		staminaFill = staminaFill,
-		flashlight = flashlight,
+		inventory = inventory,
 		help = help,
 		helpLines = helpLines,
 		intro = intro,
@@ -474,6 +486,7 @@ local function build(): Refs
 		finaleSubtitle = finaleSubtitle,
 		finaleStats = finaleStats,
 		restart = restart,
+		continueButton = continueButton,
 	}
 end
 
@@ -535,7 +548,7 @@ local function typeInto(target: TextLabel, value: string, token: number, current
 	end
 end
 
-local function playIntro()
+local function playIntro(fromCheckpoint: boolean?)
 	local ui = r()
 	introToken += 1
 	local token = introToken
@@ -545,6 +558,8 @@ local function playIntro()
 	for _, line in ui.introLines do
 		line.Text = ""
 	end
+	-- Continuar do checkpoint: cartela curta (uma linha), sem repetir a história.
+	local lines = if fromCheckpoint then { Text.IntroCheckpoint } else Text.Intro
 	task.spawn(function()
 		task.wait(0.4)
 		if token ~= introToken then
@@ -552,11 +567,14 @@ local function playIntro()
 		end
 		ui.introTitle.Visible = true
 		for i, line in ui.introLines do
+			if lines[i] == nil then
+				break
+			end
 			task.wait(0.9)
 			if token ~= introToken then
 				return
 			end
-			typeInto(line, Text.Intro[i], token, function()
+			typeInto(line, lines[i], token, function()
 				return introToken
 			end)
 		end
@@ -597,6 +615,11 @@ local function showFinale(s: GameState.Snapshot)
 		s.fusesCollected,
 		s.fusesTotal
 	)
+	-- Derrota com checkpoint: duas opções distintas. Senão, só "jogar de novo".
+	local canContinue = not won and s.checkpointReady
+	ui.continueButton.Visible = canContinue
+	ui.restart.Text = if canContinue then Text.RestartAll else Text.Restart
+	ui.restart.Position = UDim2.new(0.5, 0, 0.36, if canContinue then 204 else 150)
 	ui.finale.Visible = true
 end
 
@@ -627,10 +650,11 @@ local function playScareThenFinale(s: GameState.Snapshot)
 	end)
 end
 
-local function requestRestart()
+-- mode: "full" (do zero) ou "checkpoint" (continuar depois de voltar a energia).
+local function requestRestart(mode: "full" | "checkpoint")
 	task.spawn(function()
 		local ok, err = pcall(function()
-			Remotes.clientFunction("RequestRestart", 5):InvokeServer()
+			Remotes.clientFunction("RequestRestart", 5):InvokeServer(mode)
 		end)
 		if not ok then
 			warn(`[GameUi] restart failed: {err}`)
@@ -673,7 +697,7 @@ local function onState(s: GameState.Snapshot, changed: string?)
 			ui.scare.Visible = false
 			ui.note.Visible = false
 			noteOpen = false
-			playIntro()
+			playIntro(s.fromCheckpoint)
 		elseif s.phase == "Playing" then
 			endIntro()
 		elseif s.phase == "Lost" then
@@ -697,6 +721,11 @@ local function onState(s: GameState.Snapshot, changed: string?)
 		end
 		if s.gateOpen and not previous.gateOpen then
 			showCaption(Text.Captions.gate, 4)
+		end
+		if s.checkpointReady and not previous.checkpointReady then
+			task.delay(5.5, function()
+				showCaption(Text.Hints.checkpoint, 3)
+			end)
 		end
 	end
 	if changed == "RoundEndedAt" and (s.phase == "Won" or s.phase == "Lost") and ui.finale.Visible then
@@ -729,14 +758,21 @@ function GameUiController.Start()
 	local ui = r()
 	GameState.observe(onState)
 
-	ui.restart.Activated:Connect(requestRestart)
+	ui.restart.Activated:Connect(function()
+		requestRestart("full")
+	end)
+	ui.continueButton.Activated:Connect(function()
+		requestRestart("checkpoint")
+	end)
 	UserInputService.InputBegan:Connect(function(input: InputObject, processed: boolean)
 		if processed then
 			return
 		end
 		local s = snapshot
 		if input.KeyCode == Enum.KeyCode.R and s and (s.phase == "Won" or s.phase == "Lost") then
-			requestRestart()
+			requestRestart("full")
+		elseif input.KeyCode == Enum.KeyCode.C and s and s.phase == "Lost" and s.checkpointReady then
+			requestRestart("checkpoint")
 		elseif input.KeyCode == Enum.KeyCode.H then
 			ui.help.Visible = not ui.help.Visible
 			refreshHelp()
@@ -762,12 +798,21 @@ function GameUiController.Start()
 		if s then
 			refreshObjective(s)
 		end
-		local stamina, max = CharacterController.getStamina()
-		ui.staminaBar.Visible = stamina < max - 0.01 and s ~= nil and s.phase == "Playing"
-		ui.staminaFill.Size = UDim2.fromScale(stamina / max, 1)
-		ui.staminaFill.BackgroundColor3 = if stamina < 1 then Theme.Accent else Theme.Text
-		ui.flashlight.Text = `{Text.Flashlight}: {onOff(FlashlightController.isOn())}`
-		ui.flashlight.TextColor3 = if FlashlightController.isOn() then Theme.Hazard else Theme.TextDim
+		-- Inventário: só enquanto segura Tab, durante a rodada.
+		local showInventory = s ~= nil
+			and (s.phase == "Playing" or s.phase == "Intro")
+			and UserInputService:IsKeyDown(Enum.KeyCode.Tab)
+		ui.inventory.Visible = showInventory
+		if showInventory and s then
+			local battery = player:GetAttribute("Battery")
+			local percent = math.floor((if type(battery) == "number" then battery else 0) * 100 + 0.5)
+			ui.inventory.Text = table.concat({
+				Text.Inventory.title,
+				string.format(Text.Inventory.fuses, s.fusesHeld, s.fusesInserted, s.fusesTotal),
+				if s.hasKey then Text.Inventory.key else Text.Inventory.noKey,
+				string.format(Text.Inventory.battery, percent),
+			}, "\n")
+		end
 	end)
 end
 

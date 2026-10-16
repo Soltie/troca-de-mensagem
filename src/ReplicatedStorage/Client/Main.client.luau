@@ -33,6 +33,7 @@ local controllers: { any } = {
 	require("./Controllers/GameUiController"),
 	require("./Controllers/InteractionController"),
 	require("./Controllers/HudController"),
+	require("./Controllers/HapticsController"),
 	require("./Controllers/CampaignController"),
 	require("./Controllers/SpectatorController"),
 }

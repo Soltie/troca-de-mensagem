@@ -77,6 +77,64 @@ local spec: TestKit.Spec = {
 			end)
 		end
 
+		-- Pontos do polish (World/Features): armários, chave, pilhas, disjuntores e procedimento.
+		t.it("player: spawn reaches every polish feature stand", function()
+			local Features = require("@game/ServerScriptService/Server/World/Features")
+			local targets: { [string]: Vector3 } = {
+				breakers = point(Features.Breakers.stand),
+				note_breakers = point(Features.BreakerNote.stand),
+			}
+			for _, locker in Features.Lockers do
+				targets[locker.id] = point(locker.stand)
+			end
+			for _, list in { Features.KeySpots, Features.BatterySpots } do
+				for _, spot in list do
+					targets[spot.id] = point(spot.stand)
+				end
+			end
+			local failed = {}
+			for label, target in targets do
+				if not reachable(agents.player, spawn, target) then
+					table.insert(failed, label)
+				end
+			end
+			table.sort(failed)
+			if #failed > 0 then
+				error(`unreachable: {table.concat(failed, ", ")}`)
+			end
+		end)
+
+		-- Duto de cabos: agachado passa por dentro; o Vigia (alto) só dá a volta.
+		t.it("crawl duct: crouched agent goes through, creature never does", function()
+			local Features = require("@game/ServerScriptService/Server/World/Features")
+			local crawl = Features.Crawl
+			local from = point(crawl.standGenerator)
+			local to = point(crawl.standStorage)
+			local function throughDuct(params: { [string]: any }): (boolean, boolean)
+				local path = PathfindingService:CreatePath(params)
+				local ok = pcall(function()
+					path:ComputeAsync(from, to)
+				end)
+				if not ok or path.Status ~= Enum.PathStatus.Success then
+					return false, false
+				end
+				for _, waypoint in path:GetWaypoints() do
+					local p = waypoint.Position
+					if math.abs(p.X - crawl.wallX) < 1 and math.abs(p.Z - crawl.centerZ) < crawl.width / 2 then
+						return true, true
+					end
+				end
+				return true, false
+			end
+			local crouched = { AgentRadius = 1.2, AgentHeight = 3.5, AgentCanJump = false, Costs = { Door = 2 } }
+			local found, inside = throughDuct(crouched)
+			t.expect(found).toBe(true)
+			t.expect(inside).toBe(true)
+			local creatureFound, creatureInside = throughDuct(agents.creature)
+			t.expect(creatureFound).toBe(true) -- contorna pelas portas/corredor
+			t.expect(creatureInside).toBe(false)
+		end)
+
 		t.it("creature: patrol route is fully connected", function()
 			local nodes = Layout.PatrolNodes
 			local failed = {}

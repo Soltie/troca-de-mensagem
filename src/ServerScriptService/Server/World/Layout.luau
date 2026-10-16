@@ -143,7 +143,16 @@ Layout.Walls = {
 		exterior = false,
 		openings = { { center = -9, width = 5, bottom = 0, top = DOOR_TOP } },
 	},
-	{ id = "generatorStorage", axis = "Z", at = -4, from = -50, to = -26, exterior = false, openings = {} },
+	-- Vão baixo de cabos (só agachado; o Vigia não cabe). Moldura em World/FeatureBuilder (Features.Crawl).
+	{
+		id = "generatorStorage",
+		axis = "Z",
+		at = -4,
+		from = -50,
+		to = -26,
+		exterior = false,
+		openings = { { center = -47.4, width = 3.4, bottom = 0, top = 3.9 } },
+	},
 } :: { Wall }
 
 -- Portas com folha (o resto das aberturas é vão livre).

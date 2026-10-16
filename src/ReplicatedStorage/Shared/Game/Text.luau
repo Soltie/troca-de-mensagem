@@ -16,6 +16,8 @@ local Text = {
 		"DEPOIS, SAIA PELO PORTÃO ELÉTRICO.",
 		"O RÁDIO DO VIGIA NÃO RESPONDE DESDE A MEIA-NOITE.",
 	},
+	-- Cartela curta ao continuar do checkpoint.
+	IntroCheckpoint = "CONTINUANDO DO CHECKPOINT. A ENERGIA ESTÁ LIGADA.",
 	IntroControls = "WASD MOVER  ·  SHIFT CORRER  ·  C AGACHAR  ·  F LANTERNA  ·  E INTERAGIR  ·  H AJUDA",
 
 	Objectives = {

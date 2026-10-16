@@ -38,15 +38,15 @@ local function refreshMenu()
 		return
 	end
 	local lines = { Text.Options.title, "" }
-	-- Haptics ainda não tem executor: só expor as sete opções que já funcionam.
-	for i = 1, 7 do
+	-- As oito opções têm executor (vibração: HapticsController, só com controle conectado).
+	for i = 1, #KEYS do
 		local key = KEYS[i]
 		table.insert(
 			lines,
 			string.format("[%d] %s: %s", i, (Text.Options :: any)[key], if values[key] then Text.On else Text.Off)
 		)
 	end
-	table.insert(lines, "\n[1-7] ALTERNAR   [O] FECHAR")
+	table.insert(lines, "\n" .. Text.Options.footer)
 	menu.Text = table.concat(lines, "\n")
 end
 
@@ -103,7 +103,7 @@ function SettingsController.Init()
 		Name = "Options",
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.fromOffset(520, 310),
+		Size = UDim2.fromOffset(520, 330),
 		BackgroundColor3 = Color3.fromRGB(15, 19, 17),
 		BackgroundTransparency = 0.08,
 		TextColor3 = Color3.fromRGB(215, 225, 205),
@@ -145,6 +145,7 @@ function SettingsController.Start()
 				Enum.KeyCode.Five,
 				Enum.KeyCode.Six,
 				Enum.KeyCode.Seven,
+				Enum.KeyCode.Eight,
 			}
 			local index = table.find(numberKeys, input.KeyCode)
 			if index then
