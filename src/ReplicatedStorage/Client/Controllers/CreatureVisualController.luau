@@ -1,10 +1,11 @@
 --!strict
 --[[
-	Visual do Vigia no cliente, separado da simulação:
+	Visual da criatura no cliente, separado da simulação:
 	- A "Root" invisível do servidor anda liso (pathfinding, 60 Hz).
-	- O corpo visível só acompanha essa Root em passos de 12 Hz e troca de pose a 3–12 poses/s
-	  conforme o modo (stop-motion). Colisão, captura e controles não são afetados.
-	Também cuida dos sons da criatura (passos, rosnados, perseguição).
+	- Com o asset ReplicatedStorage.Assets.TungTung presente, o corpo é o Tung Tung com esqueleto
+	  e animações (andar, correr, golpe, passo lateral) misturadas pelo estado e pela velocidade.
+	- Sem o asset (place antiga), cai no boneco low poly em stop-motion (Rig + Poses).
+	Colisão, captura e controles não são afetados. Também cuida dos sons da criatura.
 ]]
 
 local RunService = game:GetService("RunService")
@@ -14,13 +15,19 @@ local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
 local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
 local Poses = require("../Creature/Poses")
 local Rig = require("../Creature/Rig")
+local TungTungRig = require("../Creature/TungTungRig")
 local AudioController = require("./AudioController")
 local CameraController = require("./CameraController")
 
 local HEIGHT = Config.Creature.Height
 local V = Config.Visual
 
+-- Velocidade (studs/s) que os pés percorrem em 1x em cada clipe (medida no bake).
+local WALK_FEET_SPEED = 1.55
+local RUN_FEET_SPEED = 16.5
+
 local rig: Rig.Rig? = nil
+local tung: TungTungRig.TungRig? = nil
 local shown = false
 local stepClock = 0
 local poseClock = 0
@@ -28,6 +35,8 @@ local poseIndex = 1
 local animation = "Idle"
 local displayBase: CFrame? = nil
 local lastBasePosition: Vector3? = nil
+local smoothSpeed = 0
+local lastCycle = 0
 local moving = false
 local mode = "Dormant"
 local headYaw = 0
@@ -44,9 +53,20 @@ local function serverRoot(): BasePart?
 	return if root and root:IsA("BasePart") then root else nil
 end
 
-local function getRig(): Rig.Rig
+local function visualModel(): Model
+	if tung then
+		return tung.model
+	end
 	assert(rig, "[CreatureVisualController] used before Init")
-	return rig
+	return rig.model
+end
+
+local function emitter(): Attachment
+	if tung then
+		return tung.emitter
+	end
+	assert(rig, "[CreatureVisualController] used before Init")
+	return rig.emitter
 end
 
 local function animationFor(currentMode: string): (string, number)
@@ -70,14 +90,13 @@ local function setShown(value: boolean)
 		return
 	end
 	shown = value
-	getRig().model.Parent = if value then workspace else nil
+	visualModel().Parent = if value then workspace else nil
 	if not value and chaseLoop then
 		chaseLoop:Stop()
 	end
 end
 
 local function onModeChanged(previous: string, current: string)
-	local r = getRig()
 	if current == "Chase" and previous ~= "Chase" then
 		reaction, reactionUntil = "Notice", os.clock() + 0.38
 	elseif current == "Investigate" then
@@ -87,8 +106,18 @@ local function onModeChanged(previous: string, current: string)
 	else
 		reactionUntil = 0
 	end
+	if tung then
+		-- No Tung Tung as reações viram golpes do bastão (perseguição começa com uma pancada no ar).
+		if current == "Capture" then
+			TungTungRig.play(tung, "slash", 0.08, 1.15)
+			reactionUntil = os.clock() + 1.0
+		elseif current == "Chase" and previous ~= "Chase" then
+			TungTungRig.play(tung, "slash", 0.1, 1.6)
+			reactionUntil = os.clock() + 0.7
+		end
+	end
 	if current == "Chase" and previous ~= "Chase" then
-		AudioController.playAt("Snarl", r.emitter)
+		AudioController.playAt("Snarl", emitter())
 		if chaseLoop then
 			chaseLoop:Play()
 		end
@@ -100,32 +129,72 @@ local function onModeChanged(previous: string, current: string)
 	end
 end
 
-local function solve(pose: Poses.Pose)
-	local base = displayBase
-	if not base then
-		return
+local function footstep(root: BasePart, camera: Camera?)
+	local distance = if camera then (root.Position - camera.CFrame.Position).Magnitude else math.huge
+	AudioController.playAt(
+		"CreatureStep",
+		emitter(),
+		if root:GetAttribute("FalseExit") then 0.25 else 1,
+		0.42 + rng:NextNumber(-0.04, 0.04)
+	)
+	-- Tremor dos passos pela distância (o compositor respeita a opção de conforto).
+	if distance < 30 then
+		local k = (30 - distance) / 30
+		CameraController.addTrauma(0.22 * k * k)
 	end
-	local r = getRig()
-	local cframes = Rig.solve(r, base, pose, headYaw)
-	workspace:BulkMoveTo(r.order, cframes, Enum.BulkMoveMode.FireCFrameChanged)
 end
 
-local function update(dt: number)
-	local root = serverRoot()
-	local active = root ~= nil and root:GetAttribute(Tags.Attr.CreatureActive) == true and root.Position.Y > -100
-	setShown(active and phase ~= "Won")
-	if not shown or not root then
-		return
+local function lookYawAt(base: CFrame, camera: Camera?): number
+	if camera and (mode == "Chase" or mode == "Capture" or mode == "Investigate" or mode == "Search") then
+		local toCamera = base:PointToObjectSpace(camera.CFrame.Position)
+		return math.clamp(math.deg(math.atan2(-toCamera.X, -toCamera.Z)), -50, 50)
 	end
-	local r = getRig()
-	local camera = workspace.CurrentCamera
+	return 0
+end
 
-	local currentMode = (root:GetAttribute(Tags.Attr.CreatureMode) :: string?) or "Patrol"
-	if currentMode ~= mode then
-		onModeChanged(mode, currentMode)
-		mode = currentMode
+-- Tung Tung: segue a Root a cada quadro, escolhe o clipe pela velocidade/estado e emite passos no ciclo.
+local function updateTung(t: TungTungRig.TungRig, root: BasePart, dt: number, camera: Camera?)
+	local base = root.CFrame * CFrame.new(0, -HEIGHT / 2, 0)
+	local previousBase = displayBase
+	if previousBase then
+		local speed = (base.Position - previousBase.Position).Magnitude / math.max(dt, 1e-3)
+		smoothSpeed += (math.min(speed, 40) - smoothSpeed) * math.min(1, dt * 8)
+		base = previousBase:Lerp(base, math.min(1, dt * 18))
+	end
+	displayBase = base
+	moving = smoothSpeed > 1.2
+	TungTungRig.place(t, base)
+
+	local reacting = os.clock() < reactionUntil
+	if not reacting then
+		if mode == "Capture" then
+			TungTungRig.play(t, "slash", 0.08, 1.15)
+		elseif mode == "Search" and not moving then
+			TungTungRig.play(t, "strafe", 0.25, 0.55)
+		elseif smoothSpeed > 5 then
+			TungTungRig.play(t, "run", 0.22, math.clamp(smoothSpeed / RUN_FEET_SPEED, 0.55, 1.35))
+		elseif moving then
+			TungTungRig.play(t, "walk", 0.25, math.clamp(smoothSpeed / WALK_FEET_SPEED, 0.8, 3.2))
+		else
+			TungTungRig.play(t, "idle", 0.35)
+		end
 	end
 
+	headYaw += (lookYawAt(base, camera) - headYaw) * math.min(1, dt * 10)
+	TungTungRig.step(t, dt, headYaw)
+
+	-- Passos: dois por ciclo na corrida/lateral, quatro no andar arrastado.
+	local playing = TungTungRig.playing(t)
+	local steps = if playing == "walk" then 4 elseif playing == "run" or playing == "strafe" then 2 else 0
+	local cycle = TungTungRig.cycle(t)
+	if steps > 0 and math.floor(cycle * steps) ~= math.floor(lastCycle * steps) then
+		footstep(root, camera)
+	end
+	lastCycle = cycle
+	t.eyeLight.Brightness = if mode == "Chase" then 1.8 else 1.1
+end
+
+local function updateLegacy(r: Rig.Rig, root: BasePart, dt: number, camera: Camera?)
 	local dirty = false
 	-- Posição em passos (12 Hz).
 	stepClock += dt
@@ -155,43 +224,47 @@ local function update(dt: number)
 		poseIndex = poseIndex % #frames + 1
 		dirty = true
 		local pose = frames[poseIndex]
-		local distance = if camera then (root.Position - camera.CFrame.Position).Magnitude else math.huge
 		if pose.step then
-			AudioController.playAt(
-				"CreatureStep",
-				r.emitter,
-				if root:GetAttribute("FalseExit") then 0.25 else 1,
-				0.42 + rng:NextNumber(-0.04, 0.04)
-			)
-			-- Tremor dos passos pela distância (o compositor respeita a opção de conforto).
-			if distance < 30 then
-				local k = (30 - distance) / 30
-				CameraController.addTrauma(0.22 * k * k)
-			end
+			footstep(root, camera)
 		end
 		-- Cabeça "estala" para olhar o jogador na perseguição (atualiza só no passo).
-		if
-			camera
-			and (mode == "Chase" or mode == "Capture" or mode == "Investigate" or mode == "Search")
-			and displayBase
-		then
-			local toCamera = displayBase:PointToObjectSpace(camera.CFrame.Position)
-			headYaw = math.clamp(math.deg(math.atan2(-toCamera.X, -toCamera.Z)), -50, 50)
-		else
-			headYaw = 0
-		end
+		headYaw = if displayBase then lookYawAt(displayBase, camera) else 0
 		r.eyeLight.Brightness = if rng:NextNumber() < 0.2 then 0.2 else 0.9
 	end
 
-	if dirty then
-		solve(frames[poseIndex])
+	if dirty and displayBase then
+		local cframes = Rig.solve(r, displayBase, frames[poseIndex], headYaw)
+		workspace:BulkMoveTo(r.order, cframes, Enum.BulkMoveMode.FireCFrameChanged)
+	end
+end
+
+local function update(dt: number)
+	local root = serverRoot()
+	local active = root ~= nil and root:GetAttribute(Tags.Attr.CreatureActive) == true and root.Position.Y > -100
+	setShown(active and phase ~= "Won")
+	if not shown or not root then
+		displayBase = nil
+		return
+	end
+	local camera = workspace.CurrentCamera
+
+	local currentMode = (root:GetAttribute(Tags.Attr.CreatureMode) :: string?) or "Patrol"
+	if currentMode ~= mode then
+		onModeChanged(mode, currentMode)
+		mode = currentMode
+	end
+
+	if tung then
+		updateTung(tung, root, dt, camera)
+	elseif rig then
+		updateLegacy(rig, root, dt, camera)
 	end
 
 	-- Rosnados ocasionais fora da perseguição.
 	local now = os.clock()
 	if now >= nextGrowlAt and mode ~= "Chase" and mode ~= "Capture" then
 		nextGrowlAt = now + rng:NextNumber(7, 14)
-		AudioController.playAt("Growl", r.emitter, 0.9, rng:NextNumber(0.75, 0.95))
+		AudioController.playAt("Growl", emitter(), 0.9, rng:NextNumber(0.75, 0.95))
 	end
 end
 
@@ -202,14 +275,21 @@ local CreatureVisualController = {
 function CreatureVisualController.react(name: string)
 	if name == "DoorBang" then
 		reaction, reactionUntil = name, os.clock() + 0.45
+		if tung then
+			-- Pancada do bastão na porta.
+			TungTungRig.play(tung, "slash", 0.08, 1.4)
+			reactionUntil = os.clock() + 0.85
+		end
 	end
 end
 
 function CreatureVisualController.Init()
-	rig = Rig.build(workspace)
-	local r = getRig()
-	r.model.Parent = nil
-	chaseLoop = AudioController.loopAt("ChaseLoop", r.emitter)
+	tung = TungTungRig.build(nil)
+	if not tung then
+		rig = Rig.build(workspace)
+		visualModel().Parent = nil
+	end
+	chaseLoop = AudioController.loopAt("ChaseLoop", emitter())
 end
 
 function CreatureVisualController.Start()
@@ -241,6 +321,11 @@ function CreatureVisualController.status(): (boolean, string, number)
 	local camera = workspace.CurrentCamera
 	local distance = if root and camera then (root.Position - camera.CFrame.Position).Magnitude else math.huge
 	return shown, mode, distance
+end
+
+-- Clipe atual do Tung Tung (nil no boneco antigo); usado por testes e câmeras.
+function CreatureVisualController.clip(): string?
+	return if tung then TungTungRig.playing(tung) else nil
 end
 
 return CreatureVisualController
