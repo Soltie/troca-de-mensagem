@@ -51,6 +51,8 @@ end
 local function clearTarget()
 	current = nil
 	if highlight then
+		-- Sem alvo, Adornee=nil usa o Parent (Workspace) e contorna o cenário inteiro.
+		highlight.Enabled = false
 		highlight.Adornee = nil
 	end
 	GameUiController.setPrompt(nil)
@@ -201,6 +203,7 @@ function InteractionController.Start()
 	local focus = Instance.new("Highlight")
 	highlight = focus
 	focus.Name = "InteractionFocus"
+	focus.Enabled = false
 	focus.FillTransparency = 1
 	focus.OutlineTransparency = 0.55
 	focus.OutlineColor = Color3.fromRGB(205, 188, 144)
@@ -303,6 +306,7 @@ function InteractionController.Start()
 			local parent = current.Parent
 			if highlight then
 				highlight.Adornee = if parent and parent:IsA("Model") then parent else current
+				highlight.Enabled = true
 			end
 		else
 			clearTarget()

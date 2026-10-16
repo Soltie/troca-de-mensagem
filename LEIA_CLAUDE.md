@@ -261,3 +261,5 @@ ANIMAÇÕES COMMITADAS; ÍNDICE LIBERADO. Dev encerrado em Edit após QA final: 
 
 
 **ENTREGA FINAL DAS DUAS FRENTES:** be50b06 / 1602f3d. Dev em Edit, plays e reservas encerrados, índice livre. Relatório docs/TWO_CHATS_RESUME.md. API pública CinematicController.play(sequence) e stop() preservada para StoryController. O menu de história fica acima da abertura de lobby; ajustar apresentação nessa frente. Fontes da história e suas alterações em Main.client/Remotes continuam intactas fora destes commits.
+
+**CODEX — OUTLINE CORRIGIDO (16/10/2026):** InteractionController desliga o Highlight sem alvo (Adornee=nil com Parent Workspace contornava o mundo). QA: início desligado, porta da sala destacada ao mirar e desligado ao afastar a mira. Check ALL GREEN (208); Studio 231 aprovados, sem erros do projeto. DEV LIBERADO EM EDIT. Recibo: docs/evidence/outline-fix/qa.json.

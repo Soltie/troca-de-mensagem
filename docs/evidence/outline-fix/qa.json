@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-16",
+  "before": {
+    "enabled": true,
+    "adornee": null,
+    "parent": "Workspace"
+  },
+  "after": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"enabled\":false,\"highlight\":\"Workspace.InteractionFocus\",\"adornee\":\"nil\"}"
+      }
+    ],
+    "isError": false
+  },
+  "selection": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"cleared\":{\"enabled\":false,\"adornee\":\"nil\"},\"selected\":{\"enabled\":true,\"adornee\":\"Workspace.Substation9.Doors.door_office\"}}"
+      }
+    ],
+    "isError": false
+  },
+  "studioTests": {
+    "content": [
+      {
+        "type": "text",
+        "text": "[Tests] 231 passed, 0 failed, 0 skipped specs"
+      }
+    ],
+    "isError": false
+  },
+  "localCheck": {
+    "passed": 208,
+    "failed": 0,
+    "robloxOnlySkipped": 4,
+    "result": "ALL GREEN"
+  }
+}
