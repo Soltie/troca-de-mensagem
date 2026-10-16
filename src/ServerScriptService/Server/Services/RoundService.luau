@@ -15,6 +15,10 @@ local Players = game:GetService("Players")
 local StarterPlayer = game:GetService("StarterPlayer")
 
 local Config = require("@game/ReplicatedStorage/Shared/Config")
+-- Um único dono da rodada; o runtime solo abaixo permanece disponível para regressão/polish.
+if require("../Campaign/CampaignMode").enabled() then
+	return require("../Campaign/CampaignRuntime") :: any
+end
 local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
 local Guard = require("@game/ReplicatedStorage/Shared/Net/Guard")
 local Logger = require("@game/ReplicatedStorage/Shared/Logger")

@@ -8,6 +8,28 @@ local TableUtil = require("./Util/TableUtil")
 local Types = require("./Types")
 
 local Config = {
+	-- Modo cooperativo; false seleciona o protótipo solo para regressão/polish.
+	Campaign = {
+		Enabled = true,
+		Seed = nil :: number?,
+		minPlayers = 3,
+		maxPlayers = 8,
+		downedSeconds = 45,
+		relayWindow = 12,
+		LobbySeconds = 5,
+		StageIntroSeconds = 3,
+		SpawnTimeout = 35,
+		IntermissionSeconds = 6,
+		ActionCooldown = 0.5,
+		ReviveSeconds = 4,
+		MedicReviveSeconds = 2.5,
+		ReviveGrace = 6,
+		SpawnGrace = 8,
+		CaptureRecovery = 2,
+		ThreatInterval = 25,
+		BlackoutSeconds = 5,
+		ScoutRange = 40,
+	},
 	-- Nível mínimo de log exibido.
 	LogLevel = "Info" :: Types.LogLevel,
 

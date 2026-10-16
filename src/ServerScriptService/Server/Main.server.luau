@@ -25,5 +25,15 @@ local services: { any } = {
 	require("./Services/DebugService"), -- só age no Studio
 }
 
+-- O runtime coop reutiliza o estado corporal por jogador quando o polish está presente.
+local roundRuntime: any = require("./Services/RoundService")
+if type(roundRuntime.setPlayerAdapter) == "function" then
+	for _, service in services do
+		if service.Name == "PlayerStateService" then
+			roundRuntime.setPlayerAdapter(service)
+		end
+	end
+end
+
 local count = Loader.boot(services, { label = "Server" })
 log.info("boot OK (%d services)", count)

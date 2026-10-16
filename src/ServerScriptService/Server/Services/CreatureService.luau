@@ -104,7 +104,19 @@ local function findTarget(): Target?
 		local character = player.Character
 		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 		local hrp = character and character:FindFirstChild("HumanoidRootPart")
-		if character and humanoid and humanoid.Health > 0 and hrp and hrp:IsA("BasePart") then
+		local campaignStatus = player:GetAttribute("CampaignStatus")
+		local campaignActive = campaignStatus == nil or campaignStatus == "Active"
+		local grace = player:GetAttribute("CampaignGraceUntil")
+		local protected = type(grace) == "number" and workspace:GetServerTimeNow() < grace
+		if
+			campaignActive
+			and not protected
+			and character
+			and humanoid
+			and humanoid.Health > 0
+			and hrp
+			and hrp:IsA("BasePart")
+		then
 			local head = character:FindFirstChild("Head")
 			local eye = if head and head:IsA("BasePart") then head.Position else hrp.Position + UP * 1.5
 			local distance = (hrp.Position - origin).Magnitude

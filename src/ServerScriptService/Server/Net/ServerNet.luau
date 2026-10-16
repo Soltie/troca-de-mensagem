@@ -50,6 +50,11 @@ end
 
 local ServerNet = {}
 
+-- Adaptadores de modo podem oferecer fallback sem registrar o mesmo handler duas vezes.
+function ServerNet.isRegistered(name: string): boolean
+	return registered[name] == true
+end
+
 -- RemoteFunction (cliente -> servidor com resposta).
 function ServerNet.onInvoke<T>(name: string, options: HandlerOptions, handler: (player: Player, ...any) -> T)
 	local remote = Remotes.serverFunction(name)

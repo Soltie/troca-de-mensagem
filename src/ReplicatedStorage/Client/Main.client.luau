@@ -30,6 +30,7 @@ local controllers: { any } = {
 	require("./Controllers/GameUiController"),
 	require("./Controllers/InteractionController"),
 	require("./Controllers/HudController"),
+	require("./Controllers/CampaignController"),
 }
 
 local count = Loader.boot(controllers, { label = "Client" })
