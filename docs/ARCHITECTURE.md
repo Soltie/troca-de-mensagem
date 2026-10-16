@@ -1,5 +1,20 @@
 # Arquitetura
 
+## Campanha cooperativa (15/10/2026)
+
+O slot `RoundService` do bootstrap é uma fachada de modo: seleciona o runtime solo ou
+`Server/Campaign/CampaignRuntime`, nunca ambos. Campanha publica seu estado limitado em
+`ReplicatedStorage.CampaignState` e os atributos `CampaignStatus`, `CampaignRole` e proteção
+temporária no Player; GameState mantém a fase compatível para câmera, áudio e serviços existentes.
+
+Catálogo → RNG puro → plano validado → CoopSession → ActivityBuilder → runtime autoritativo.
+O cliente só pede Interact/RequestRestart pelo ServerNet; distâncias, visão, cooldowns, estado
+de membro, relés, resgate e votos são decididos no servidor. Nenhum dado persistente foi alterado.
+
+O bootstrap injeta PlayerStateService no runtime quando presente, preservando bateria/postura
+por jogador. CampaignController usa o mesmo helper UI/Create; os HUDs não disputam a tela.
+Detalhes, limites e roadmap: [COOP_CAMPAIGN.md](COOP_CAMPAIGN.md).
+
 ## Visão geral
 
 ```

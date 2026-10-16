@@ -1,0 +1,253 @@
+{
+  "completed": true,
+  "statuses": {
+    "rbxassetid://9043365842": "Failure",
+    "rbxassetid://9117906668": "Failure",
+    "rbxassetid://1841353932": "Failure",
+    "rbxassetid://1846887425": "Failure",
+    "rbxassetid://9113980319": "Failure",
+    "rbxassetid://9119974504": "Failure",
+    "rbxassetid://9125742262": "Failure",
+    "rbxassetid://1843755486": "Failure",
+    "rbxassetid://9114496002": "Failure",
+    "rbxassetid://9120880067": "Failure",
+    "rbxassetid://1837172508": "Failure",
+    "rbxasset://sounds/action_footsteps_plastic.mp3": "Failure",
+    "rbxassetid://9116886745": "Failure",
+    "rbxassetid://9125469893": "Failure",
+    "rbxassetid://9112834179": "Failure",
+    "rbxassetid://9119727134": "Failure",
+    "rbxassetid://9125475724": "Failure",
+    "rbxassetid://9118748093": "Failure",
+    "rbxassetid://9114556036": "Failure",
+    "rbxassetid://9114435018": "Failure",
+    "rbxassetid://9114555699": "Failure",
+    "rbxassetid://9114432643": "Failure",
+    "rbxassetid://9042971851": "Failure",
+    "rbxasset://sounds/action_jump_land.mp3": "Failure",
+    "rbxassetid://9114555659": "Failure",
+    "rbxassetid://9114479860": "Failure",
+    "rbxassetid://9120527007": "Failure",
+    "rbxassetid://9112823813": "Failure",
+    "rbxassetid://9114145921": "Failure",
+    "rbxassetid://9120188618": "Failure",
+    "rbxasset://sounds/volume_slider.ogg": "Failure",
+    "rbxassetid://9120102763": "Failure",
+    "rbxassetid://9125550914": "Failure",
+    "rbxassetid://9126090979": "Failure",
+    "rbxassetid://9114555843": "Failure",
+    "rbxassetid://9114385821": "Failure",
+    "rbxassetid://9112839511": "Failure",
+    "rbxassetid://1843867314": "Failure",
+    "rbxassetid://9112889082": "Failure",
+    "rbxassetid://9113985466": "Failure",
+    "rbxassetid://9043347008": "Failure",
+    "rbxassetid://9114556046": "Failure",
+    "rbxassetid://9116502787": "Failure",
+    "rbxassetid://9125701986": "Failure",
+    "rbxassetid://9120188626": "Failure",
+    "rbxassetid://9116770610": "Failure",
+    "rbxassetid://9116501934": "Failure",
+    "rbxassetid://9114523629": "Failure",
+    "rbxassetid://1837843534": "Failure"
+  },
+  "uniqueAssets": 49,
+  "failed": [
+    {
+      "id": "rbxassetid://9125701986",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9112889082",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxasset://sounds/volume_slider.ogg",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9114556046",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9120102763",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9125742262",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9119974504",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9043347008",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9126090979",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9116501934",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://1846887425",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9125475724",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9118748093",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxasset://sounds/action_footsteps_plastic.mp3",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9112839511",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9114555699",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9116886745",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxasset://sounds/action_jump_land.mp3",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9112823813",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9120188626",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9116770610",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9116502787",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9114523629",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9114385821",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9114555659",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://1843755486",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9125550914",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9120527007",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://1843867314",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9113985466",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9125469893",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9114435018",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9112834179",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9119727134",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9120188618",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9120880067",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9117906668",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9114145921",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9114479860",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://1837843534",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://1841353932",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9114556036",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9114555843",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9043365842",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9113980319",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9114432643",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9114496002",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://1837172508",
+      "status": "Failure"
+    },
+    {
+      "id": "rbxassetid://9042971851",
+      "status": "Failure"
+    }
+  ]
+}

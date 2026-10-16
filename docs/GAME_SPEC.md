@@ -1,5 +1,11 @@
 # GAME_SPEC — SUBESTAÇÃO 9
 
+> Direção atual (15/10/2026): campanha cooperativa de **3–8 jogadores**, três estágios,
+> seed, atividades e atalhos variados. Especificação e estado de validação em
+> [COOP_CAMPAIGN.md](COOP_CAMPAIGN.md); testes em [COOP_QA.md](COOP_QA.md).
+> `Config.Campaign.Enabled = true` seleciona esse modo. A descrição abaixo preserva o
+> protótipo solo como referência de regressão, selecionável com a flag false.
+
 > Protótipo de terror atmosférico, estética PS1/início do PS2. Uma rodada de 5–10 minutos,
 > um jogador, PC (teclado e mouse), primeira pessoa.
 

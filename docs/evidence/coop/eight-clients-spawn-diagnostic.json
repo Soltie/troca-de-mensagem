@@ -1,0 +1,80 @@
+{
+  "ok": true,
+  "result": {
+    "players": 8,
+    "stage": 1,
+    "success": false,
+    "seed": 1792116102,
+    "phase": "Playing",
+    "spawnPositions": [
+      {
+        "id": -8,
+        "position": [
+          8,
+          3.200000047683716,
+          34
+        ]
+      },
+      {
+        "id": -7,
+        "position": [
+          8,
+          3.200000047683716,
+          34
+        ]
+      },
+      {
+        "id": -6,
+        "position": [
+          12,
+          3.200000047683716,
+          34
+        ]
+      },
+      {
+        "id": -5,
+        "position": [
+          16,
+          3.200000047683716,
+          34
+        ]
+      },
+      {
+        "id": -4,
+        "position": [
+          20,
+          3.200000047683716,
+          34
+        ]
+      },
+      {
+        "id": -3,
+        "position": [
+          8,
+          3.200000047683716,
+          38
+        ]
+      },
+      {
+        "id": -2,
+        "position": [
+          12,
+          3.200000047683716,
+          38
+        ]
+      },
+      {
+        "id": -1,
+        "position": [
+          16,
+          3.200000047683716,
+          38
+        ]
+      }
+    ],
+    "error": "ServerScriptService.Tests.CampaignHarness:44: separate spawn 1-2",
+    "checks": [
+      "8 real clients in roster"
+    ]
+  }
+}

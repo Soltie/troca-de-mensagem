@@ -4,6 +4,14 @@ Atualizado: 2026-10-15. Máquina: Windows 11, PowerShell 5.1 / Git Bash. Projeto
 
 ## Estado atual / próximo passo
 
+**Estado vigente — campanha coop (15/10/2026):** `Config.Campaign.Enabled=true`, mínimo 3,
+máximo 8; um cliente sozinho fica no lobby. Para regressão solo, selecionar false no arquivo.
+136 testes Lune e 144 testes Studio aprovados; 3 e 8 clientes do engine completaram os três
+estágios no roteiro automatizado. Script Sync confirmado nas duas raízes do Dev; Studio em Edit.
+Código: `68f3768`, `31f6b59`, `ca66ead`, sobre `c6b247a`. Sem push/publicação.
+Próximo passo: [NEXT_STEPS.md](NEXT_STEPS.md), começando por playtest humano e medições.
+Evidências/receita: [COOP_QA.md](COOP_QA.md). Os números abaixo são históricos do modo solo/mapa.
+
 **Expansão local do mapa (Codex, 15/10/2026):** cinco áreas novas e circulação em anel;
 76 testes Lune e 84 testes Studio passando. Entrada lateral, navegação do Vigia/jogador, perímetro,
 energia, vitória, derrota e reinício verificados. Studio devolvido em Edit. Detalhes, limites do QA

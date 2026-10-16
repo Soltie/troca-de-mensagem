@@ -1,5 +1,25 @@
 # Decisões
 
+## Campanha cooperativa — 15/10/2026
+
+- **Um runtime por modo:** RoundService delega para CampaignRuntime ou executa o solo; impede
+  registros duplicados de remotes e dois sistemas controlando fase/captura/spawn.
+- **Cooperação 3–8:** captura individual com resgate; eliminação aguarda o próximo estágio;
+  extração coletiva; reinício por maioria; entrada tardia não altera puzzles em andamento.
+- **Randomização determinística:** mesma seed/estágio/grupo reproduz atividades, sequências e
+  atalhos fechados. A espinha de circulação nunca é removida. Não é geração de prédios arbitrários.
+- **Três estágios no mapa existente:** Reconexão, Sincronização e Evacuação. Novos cenários completos
+  ficam no roadmap. Vigia é o único NPC; Eco/Apagão são eventos ambientais nesta versão.
+- **Especialidades sem dependência obrigatória:** Técnico, Socorrista, Batedor e Operador são bônus;
+  o último sobrevivente consegue completar relés, evitando softlock após desconexão/captura.
+- **Separar missão solo da campanha:** trancas e prompts de itens legados não podem bloquear o
+  grafo da campanha; conservados no modo solo. Os estágios usam estações próprias.
+- **Spawn estável:** vagas fixas, espera separada, contagem reiniciada em nova entrada e barreira
+  de personagens prontos. Corrige a sobreposição descoberta com oito clientes reais no Studio.
+- **Sem persistência nova:** seed, progresso, votos e membros duram somente a sessão.
+
+Evidências e limites: [COOP_CAMPAIGN.md](COOP_CAMPAIGN.md), [COOP_QA.md](COOP_QA.md).
+
 Formato: **decisão** · alternativas · por quê. Fontes conferidas em 2026-10-14 (docs oficiais da Roblox,
 READMEs/releases oficiais das ferramentas e docs do Claude Code).
 

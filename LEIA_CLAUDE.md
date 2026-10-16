@@ -1,5 +1,20 @@
 # LEIA CLAUDE — expansão do mapa pelo Codex
 
+**NOVO PEDIDO DO HUMANO:** leia [CLAUDE_HANDOFF_REQUEST.md](docs/CLAUDE_HANDOFF_REQUEST.md).
+O Codex iniciou a evolução cooperativa para 3–8 jogadores. Por favor, documente seu processo e
+próximas tarefas em `docs/CLAUDE_POLISH_HANDOFF.md` antes de encerrar seu contexto/tokens.
+O estado entregue abaixo refere-se à expansão anterior do mapa, não à campanha coop.
+
+**ATUALIZAÇÃO COOP / CODEX — ENTREGUE:** testes integrados com 3 e 8 clientes aprovados
+(3 estágios, resgate, desconexão/substituição, navegação e extração coletiva).
+Claude encerrou em `c6b247a`; handoff recebido e preservado.
+`Config.Campaign.Enabled` foi ativado; a opção false mantém o modo solo para regressão.
+**STUDIO LIBERADO EM EDIT — Dev.rbxlx.** Não há reserva de edição pendente.
+Commits Codex: `68f3768` (regras/seed), `31f6b59` (clientes entregues pelo Claude e correções),
+`ca66ead` (runtime coop ativado). 136 testes locais e 144 no Studio aprovados.
+Detalhes: [COOP_CAMPAIGN.md](docs/COOP_CAMPAIGN.md), [COOP_QA.md](docs/COOP_QA.md) e
+[NEXT_STEPS.md](docs/NEXT_STEPS.md). Abaixo permanece o histórico da expansão anterior.
+
 Data: 15/10/2026. Estado: **ENTREGUE — STUDIO LIBERADO EM EDIT**.
 
 Commit local da expansão: **`1406355`** — `feat(world): expand substation with technical wings and bypass loop`.
@@ -88,9 +103,24 @@ exigir, desde que registre aqui cada alteração (arquivo, o quê e por quê). P
 andamento, o Claude relê o arquivo imediatamente antes de editar e prefere mudanças pequenas e localizadas.
 
 Registro de alterações do Claude em arquivos do Codex:
-- (nenhuma até agora)
+- `WorldService.luau` reescrito para o polish (portas com fresta/tranca, novidades, checkpoint); a
+  detecção de entrada do Codex (`Layout.isIndoor`) foi mantida igual.
+- Ainda NÃO editei `Layout.luau`. Pretendo acrescentar a abertura baixa do duto na parede
+  `generatorStorage` (z -47.4, largura 3.4, topo 3.9); registrarei aqui quando fizer.
 
-Uso do Studio pelo Claude: **livre** (nenhum Play meu em andamento).
+Commit do Claude: **`e4dc5cc`** (base dos sistemas de terror). Para não referenciar módulos ainda fora do git,
+o stage removeu as adições de campanha do Codex em `Config` (seção Campaign), `RoundService` (seleção de modo),
+`CreatureService` (filtro de alvo), `ServerNet.isRegistered` e `Main.client` (CampaignController). Elas
+continuam INTACTAS no diretório de trabalho para o Codex commitar junto com `Server/Campaign`.
+Snapshot do commit validado isolado: ALL GREEN, 115 testes puros. Com os arquivos de campanha atuais,
+o check do diretório falha só em `Campaign*` (selene: `assert` com 1 argumento; tipos em
+`CampaignRuntime`/`CampaignController`).
+
+**CLAUDE PAROU (limite de uso) — 15/10/2026.** Pedido do humano: o **Codex finaliza todo o polish**.
+Leia `docs/CLAUDE_POLISH_HANDOFF.md`: estado exato, o que falta (seções A–L), critérios de pronto e decisões.
+Sem commit e do Claude no diretório: `AudioController` e `FlashlightController` (reescritos), `BodyAudioController` e
+`FearController` (novos, ainda não registrados no Main.client; 2 erros de tipo no BodyAudio descritos no handoff).
+Os arquivos centrais estão **liberados** para o Codex. Uso do Studio pelo Claude: **livre** (nenhum Play meu).
 
 ## Entrega concluída
 

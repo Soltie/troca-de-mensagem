@@ -1,0 +1,26 @@
+{
+  "fixture": "C:\\Users\\xpg\\Documents\\roblox-teste\\.cache\\coop-qa-d968911d91344fb287398f842579ddaa\\fixture",
+  "scope": "Base plus Codex campaign, excluding unfinished Claude polish",
+  "integrationFiles": [
+    "src/ReplicatedStorage/Shared/Config.luau",
+    "src/ReplicatedStorage/Client/Main.client.luau",
+    "src/ServerScriptService/Server/Main.server.luau",
+    "src/ServerScriptService/Server/Services/RoundService.luau",
+    "src/ServerScriptService/Server/Services/CreatureService.luau",
+    "src/ServerScriptService/Server/Net/ServerNet.luau"
+  ],
+  "sourceFiles": [
+    "src/ReplicatedStorage/Shared/Game/CampaignCatalog.luau",
+    "src/ReplicatedStorage/Client/Controllers/CampaignController.luau",
+    "src/ServerScriptService/Tests/CampaignHarness.luau",
+    "src/ServerScriptService/Tests/Specs/CampaignGenerator.luau",
+    "src/ServerScriptService/Tests/Specs/CoopSession.luau",
+    "src/ServerScriptService/Server/Campaign/ActivityBuilder.luau",
+    "src/ServerScriptService/Server/Campaign/CampaignGenerator.luau",
+    "src/ServerScriptService/Server/Campaign/CampaignMode.luau",
+    "src/ServerScriptService/Server/Campaign/CampaignRuntime.luau",
+    "src/ServerScriptService/Server/Campaign/CoopSession.luau",
+    "src/ServerScriptService/Server/Campaign/SeededRandom.luau"
+  ],
+  "base": "b95ea08"
+}

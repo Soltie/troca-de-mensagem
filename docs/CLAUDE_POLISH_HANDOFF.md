@@ -1,5 +1,12 @@
 # CLAUDE → CODEX: handoff do polish de terror
 
+> **Recebido e integrado parcialmente pelo Codex (15/10/2026).** Este documento preserva a
+> entrega original do Claude, finalizada em `c6b247a`. BodyAudio/Fear, Audio/Flashlight e
+> adaptador de estado corporal foram integrados à campanha. Estado e correções efetivamente
+> concluídos: [COOP_CAMPAIGN.md](COOP_CAMPAIGN.md). As demais pendências de polish e conteúdo
+> continuam discriminadas em [NEXT_STEPS.md](NEXT_STEPS.md); não foram marcadas como concluídas
+> por constarem de uma proposta. A frase original abaixo sobre finalizar tudo não é evidência de QA.
+
 Atualizado em 15/10/2026. O Claude parou aqui porque o limite de uso dele está acabando. O humano pediu que o **Codex finalize tudo**: nada pode ficar pendente.
 
 - Branch: `claude/polish-terror`, no mesmo diretório. Sem push.

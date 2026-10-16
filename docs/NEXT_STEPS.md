@@ -1,0 +1,58 @@
+# Próximos passos — campanha e polish
+
+Atualizado em 15/10/2026 pelo Codex. Continuação a partir de `ca66ead`, sem reset ou troca de branch.
+Estado verificável: [COOP_CAMPAIGN.md](COOP_CAMPAIGN.md), [COOP_QA.md](COOP_QA.md).
+Pedido/entrega do Claude: [CLAUDE_HANDOFF_REQUEST.md](CLAUDE_HANDOFF_REQUEST.md) e
+[CLAUDE_POLISH_HANDOFF.md](CLAUDE_POLISH_HANDOFF.md). Este é um backlog, não uma lista de entregas feitas.
+
+## O que já existe
+
+Três estágios na subestação ampliada, seed, estações/seqüências/atalhos sorteados, quatro
+especialidades automáticas, resgate, retorno no estágio seguinte e saída coletiva para 3–8.
+O Vigia é o único NPC; Eco e Apagão são eventos ambientais. Não há mapas modulares completos,
+novos modelos de personagens ou outros vilões completos nesta versão.
+
+## Ordem de execução e critérios de pronto
+
+| Ordem | Trabalho | Dependência / critério para encerrar |
+| --- | --- | --- |
+| 1 | Playtest com pessoas em grupos de 3 e 8 | Registrar seed, tempo por estágio, distribuição de contribuições, mortes, espera e dúvidas; verificar perseguição normal, relés e resgate sem teleporte ou IA congelada. Ajustar parâmetros a partir das observações. |
+| 2 | Medir FPS, rede e acessibilidade | Medir cliente/servidor durante uma partida completa; testar atraso e desconexão, legibilidade, pistas sem voz/cor exclusiva, brilho e opções de conforto. Registrar dispositivo e condições; não inferir desempenho do roteiro automatizado. |
+| 3 | Reduzir espera de quem foi eliminado | Câmera de espectador e orientação clara de retorno; informações não devem revelar pistas restritas ou permitir ações de eliminado. Revalidar entrada tardia e transições. |
+| 4 | Portar polish relevante ao coop | Esconderijos exclusivos, portas e estado por jogador precisam de regras de ocupação, liberação na desconexão, alvos válidos e testes simultâneos. Decidir checkpoint por equipe antes de portar o checkpoint solo. |
+| 5 | Ampliar puzzles | Distribuição de energia e transporte em dupla; oferecer alternativa ao último sobrevivente, pistas acessíveis e resolução autoritativa. Validar concorrência, desistência e seed. |
+| 6 | Level 2: bombeamento | Nova planta versionada, válvulas/pressão, rotas alagadas seguras, catálogo de slots. Gerador deve garantir spawn→objetivos→saída; testar pathfinding real em várias seeds com 3/8 clientes. |
+| 7 | Level 3: retransmissora | Antenas, sinais e pistas visuais/sonoras equivalentes. Mesmas garantias de navegação; transição conserva roster, reinicializa estado por jogador e admite aguardando. |
+| 8 | Mapas modulares | Interfaces de salas/corredores e orçamento de peças; manter rota obrigatória e só bloquear rotas redundantes. Testar milhares de planos e amostra física; guardar seeds de falhas. |
+| 9 | Personagens e vilões adicionais | Seleção/identidade visual das quatro especialidades; Eco como NPC distinto só depois de definir IA/rig próprios. Registrar origem dos assets, telegraph, contrajogo e efeitos para cada membro; medir carga com oito. |
+
+A meta de 12–20 minutos ainda é proposta. O primeiro playtest deve verificar se a distribuição
+atual de 3–10 atividades evita concentração num único jogador e longos períodos sem ação.
+Não exigir uma especialidade específica para abrir rotas ou terminar qualquer puzzle.
+
+## Continuação do polish entregue pelo Claude
+
+BodyAudio/Fear e a integração Audio/Flashlight já entraram em `31f6b59`. A limpeza recursiva
+de Sound foi corrigida e auditada. As propostas restantes do handoff original exigem execução
+e QA próprios: TensionController/efeitos de tela, conforto/opções, feedback final de captura,
+haptics com opção de desligar, menus e arte do Ademir/ambiente. Algumas bases de servidor já
+existem, mas isso não comprova a experiência final no cliente nem compatibilidade coop.
+
+Antes de integrar cada sistema, ler a seção correspondente do handoff, inspecionar o código
+atual e registrar implementado/parcial/pendente. Não reativar prompts solo na campanha sem
+uma regra explícita: trancas antigas e conexões sorteadas já produziram risco de bloqueio.
+Comandos de depuração legados que dependem do inventário/checkpoint solo precisam de adaptação
+se forem usados no modo coop; não fazem parte do fluxo de jogador validado nesta entrega.
+
+## Como continuar sem perder contexto
+
+1. Ler `LEIA_CLAUDE.md`, este arquivo e o status/diff Git; preservar mudanças de outras frentes.
+2. Selecionar a primeira tarefa com dependências disponíveis. Registrar arquivos, decisão e motivo.
+3. Editar em `src/`, rodar `lune run scripts/check`, confirmar Script Sync e testar via MCP oficial.
+4. Para regressão multiplayer, seguir `COOP_QA.md`; manter testes humanos e automatizados distintos.
+5. Salvar evidências e atualizar os três estados: feito, verificado e pendente. Commit local pequeno.
+
+O Studio principal foi devolvido em Edit. Graphify continua opcional: os documentos acima
+são o contrato compartilhado; um grafo futuro deve identificar commit/escopo, excluir `.cache`,
+builds e evidências binárias e não substituir os estados de tarefas ou recibos de QA.
+Não há push, publicação, mudança de Creator Hub ou monetização nesta entrega.

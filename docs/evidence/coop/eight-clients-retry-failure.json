@@ -1,0 +1,14 @@
+{
+  "ok": true,
+  "result": {
+    "players": 8,
+    "success": false,
+    "seed": 1792115665,
+    "phase": "Playing",
+    "stage": 1,
+    "error": "ServerScriptService.Tests.CampaignHarness:43: separate spawn 1-2",
+    "checks": [
+      "8 real clients in roster"
+    ]
+  }
+}

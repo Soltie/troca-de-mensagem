@@ -1,5 +1,13 @@
 # HANDOFF — SUBESTAÇÃO 9 (protótipo de terror)
 
+**Atualização vigente — Codex, 15/10/2026:** campanha cooperativa para 3–8 ativada em
+`Config.Campaign.Enabled`, com três estágios na subestação, atividades/atalhos por seed,
+quatro especialidades, resgate e extração coletiva. Integração sobre Claude `c6b247a`;
+commits `68f3768`, `31f6b59`, `ca66ead`. Check: 136 testes; Studio: 144 testes;
+simulações com 3 e 8 clientes aprovadas. Ainda falta playtest humano de equilíbrio/diversão.
+Leia [COOP_CAMPAIGN.md](COOP_CAMPAIGN.md), [COOP_QA.md](COOP_QA.md) e
+[NEXT_STEPS.md](NEXT_STEPS.md). O restante desta página descreve o protótipo solo histórico.
+
 Atualizado: 2026-10-15. Estado: **protótipo jogável, testado de ponta a ponta no Studio**.
 Atualização do mapa pelo Codex: [MAP_EXPANSION.md](MAP_EXPANSION.md), cinco áreas novas, 84 testes
 Studio passando; coordenação e ressalva de integração paralela em [LEIA_CLAUDE.md](../LEIA_CLAUDE.md).

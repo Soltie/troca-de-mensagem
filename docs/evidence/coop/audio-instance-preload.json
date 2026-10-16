@@ -1,0 +1,385 @@
+{
+  "completed": true,
+  "total": 54,
+  "failed": [],
+  "sounds": [
+    {
+      "name": "StepWater",
+      "id": "rbxassetid://9125701986",
+      "length": 4.2017291666666665,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "GeneratorHum",
+      "id": "rbxassetid://9112889082",
+      "length": 36.010041666666666,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "UiBlip",
+      "id": "rbxasset://sounds/volume_slider.ogg",
+      "length": 0.8454166666666667,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "Breath4",
+      "id": "rbxassetid://9114556046",
+      "length": 1.472,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "StepMetal",
+      "id": "rbxassetid://9120102763",
+      "length": 0.6684791666666666,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "WindInterior",
+      "id": "rbxassetid://9125742262",
+      "length": 33.16266666666667,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "RadioStatic",
+      "id": "rbxassetid://9119974504",
+      "length": 27.018666666666668,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "Whisper",
+      "id": "rbxassetid://9043347008",
+      "length": 14.341224489795918,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "Fall_box",
+      "id": "rbxassetid://9126090979",
+      "length": 2.058666666666667,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "Fall_extinguisher",
+      "id": "rbxassetid://9116501934",
+      "length": 3.2672291666666666,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "StingerCapture",
+      "id": "rbxassetid://1846887425",
+      "length": 5.115714285714286,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "Snarl",
+      "id": "rbxassetid://9125475724",
+      "length": 2.277125,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "Machinery",
+      "id": "rbxassetid://9118748093",
+      "length": 35.221333333333334,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "StepFallback",
+      "id": "rbxasset://sounds/action_footsteps_plastic.mp3",
+      "length": 2.4816326530612245,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "AmbInterior",
+      "id": "rbxassetid://9112839511",
+      "length": 51.45589583333334,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "Breath1",
+      "id": "rbxassetid://9114555699",
+      "length": 1.568,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "Fall_pipes",
+      "id": "rbxassetid://9116886745",
+      "length": 2.8266666666666667,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "Land",
+      "id": "rbxasset://sounds/action_jump_land.mp3",
+      "length": 0.2612244897959184,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "LampBuzz",
+      "id": "rbxassetid://9112823813",
+      "length": 49.397875,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "Fall_cans",
+      "id": "rbxassetid://9120188626",
+      "length": 1.9993333333333334,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "CreakMetal",
+      "id": "rbxassetid://9116770610",
+      "length": 10.555583333333333,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "Fall_bucket",
+      "id": "rbxassetid://9116502787",
+      "length": 3.4601458333333333,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "StepConcrete",
+      "id": "rbxassetid://9114523629",
+      "length": 0.408375,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "Paper",
+      "id": "rbxassetid://9114385821",
+      "length": 2.2801875,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "Breath2",
+      "id": "rbxassetid://9114555659",
+      "length": 1.6746666666666667,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "MusicRelief",
+      "id": "rbxassetid://1843755486",
+      "length": 141.32002267573696,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "BreakerFail",
+      "id": "rbxassetid://9125550914",
+      "length": 2.6771875,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "Drips",
+      "id": "rbxassetid://9120527007",
+      "length": 53.216,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "MusicTension",
+      "id": "rbxassetid://1843867314",
+      "length": 124.10303854875283,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "ChaseLoop",
+      "id": "rbxassetid://9113985466",
+      "length": 38.543645833333336,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "Growl",
+      "id": "rbxassetid://9125469893",
+      "length": 4.663854166666667,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "DoorLatch",
+      "id": "rbxassetid://9114435018",
+      "length": 10.24,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "AmbExterior",
+      "id": "rbxassetid://9112834179",
+      "length": 36.00995833333333,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "BreakerToggle",
+      "id": "rbxassetid://9120102763",
+      "length": 0.6684791666666666,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "Switch",
+      "id": "rbxassetid://9119727134",
+      "length": 0.4428125,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "KeyTurn",
+      "id": "rbxassetid://9120102763",
+      "length": 0.6684791666666666,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "Fall_bottles",
+      "id": "rbxassetid://9120188618",
+      "length": 2.947583333333333,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "StepWood",
+      "id": "rbxassetid://9120880067",
+      "length": 1.1527083333333332,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "DoorRattle",
+      "id": "rbxassetid://9117906668",
+      "length": 13.077333333333334,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "Door",
+      "id": "rbxassetid://9114145921",
+      "length": 4.224,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "Flashlight",
+      "id": "rbxassetid://9114479860",
+      "length": 1.0458958333333332,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "MusicChase",
+      "id": "rbxassetid://1837843534",
+      "length": 42.024965986394555,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "StingerAwaken",
+      "id": "rbxassetid://1841353932",
+      "length": 13.635918367346939,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "Gasp",
+      "id": "rbxassetid://9114556036",
+      "length": 1.7066666666666668,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "Breath3",
+      "id": "rbxassetid://9114555843",
+      "length": 0.9146041666666667,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "Heartbeat",
+      "id": "rbxassetid://9043365842",
+      "length": 60.055510204081635,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "Roar",
+      "id": "rbxassetid://9113980319",
+      "length": 3.124979166666667,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "DoorBang",
+      "id": "rbxassetid://9114432643",
+      "length": 23.722666666666665,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "CreakWood",
+      "id": "rbxassetid://9114496002",
+      "length": 16.291604166666666,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "LockerLatch",
+      "id": "rbxassetid://9114435018",
+      "length": 10.24,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "Pickup",
+      "id": "rbxassetid://9120880067",
+      "length": 1.1527083333333332,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "Music",
+      "id": "rbxassetid://1837172508",
+      "length": 97.91981859410431,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "CreatureStep",
+      "id": "rbxasset://sounds/action_jump_land.mp3",
+      "length": 0.2612244897959184,
+      "loaded": true,
+      "fetch": "Success"
+    },
+    {
+      "name": "StingerWin",
+      "id": "rbxassetid://9042971851",
+      "length": 11.493877551020407,
+      "loaded": true,
+      "fetch": "Success"
+    }
+  ]
+}
