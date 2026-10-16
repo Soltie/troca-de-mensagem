@@ -1,6 +1,10 @@
 # Testar em dupla e publicar uma versão
 
 Atualizado em 16/10/2026. História e Padrão aceitam **2–8 jogadores**.
+
+> Arquivo final auditado: **build/PlaytestDupla_ATUALIZADO.rbxlx**. Use essa cópia para publicar.
+> Ela corrige a migração do preset de iluminação ao abrir no Studio. Veja [BUILD_AUDIT.md](BUILD_AUDIT.md)
+> e confira Allow Mesh / Image APIs para as texturas procedurais na experiência publicada.
 Os dois precisam votar no mesmo modo; depois começa a contagem de cinco segundos.
 Um jogador sozinho aguarda companhia. A dificuldade em dupla ainda precisa de teste humano.
 

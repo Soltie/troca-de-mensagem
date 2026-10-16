@@ -1,5 +1,9 @@
 # Polish de iluminação e pós-processamento — 16/10/2026
 
+> Correção posterior de build: o Studio ignorava o preset novo ao migrar uma place sem Technology
+> explícita. Os dois projetos agora incluem Technology=Future junto de Realistic/true.
+> Roundtrip e execução confirmados em [BUILD_AUDIT.md](BUILD_AUDIT.md).
+
 Tratamento implementado sobre `b01d4fb`: noite fria, iluminação de emergência vermelha e luzes
 internas com leitura mais clara. Sombras voltam a definir volumes. O bloom, a vinheta e a
 granulação pesam menos na imagem. Materiais, texturas, modelos, planta e regras permanecem

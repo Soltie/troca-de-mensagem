@@ -5,7 +5,7 @@
 		"$className": "DataModel",
 		"Lighting": {
 			"$className": "Lighting",
-			"$properties": { "LightingStyle": "Realistic", "PrioritizeLightingQuality": true }
+			"$properties": { "Technology": "Future", "LightingStyle": "Realistic", "PrioritizeLightingQuality": true }
 		},
 		"Workspace": {
 			"$path": "world/Workspace"
