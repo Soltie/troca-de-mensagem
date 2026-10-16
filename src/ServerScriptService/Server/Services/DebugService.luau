@@ -13,7 +13,7 @@
 
 	Comandos: state | awaken | freezeCreature(bool) | placeCreature(Vector3) | teleport(Vector3) | restart
 	          checkpoint | grant("fuses"|"insert"|"breakers"|"key") | setBattery(0..1) | fall(id) | holdOff(s)
-	          storeGrant(fichas, creditos) | endRound("Won"|"Lost") | tape
+	          storeGrant(fichas, creditos) | endRound("Won"|"Lost") | tape | seasonXp(xp) | analytics
 ]]
 
 local HttpService = game:GetService("HttpService")
@@ -28,6 +28,7 @@ local PlayerStateService = require("./PlayerStateService")
 local PropService = require("./PropService")
 local RoundService = require("./RoundService")
 local StoreService = require("./StoreService")
+local TelemetryService = require("./TelemetryService")
 
 local log = Logger.new("DebugService")
 
@@ -112,6 +113,16 @@ local commands: { [string]: (...any) -> any } = {
 			end
 		end
 		return "ok"
+	end,
+	seasonXp = function(amount: number)
+		for _, player in Players:GetPlayers() do
+			StoreService.debugSeasonXp(player, amount or 0)
+		end
+		return "ok"
+	end,
+	-- Últimos eventos de analytics (no Studio nada vai para a Roblox; fica só aqui).
+	analytics = function()
+		return HttpService:JSONEncode(TelemetryService.history())
 	end,
 	tape = function()
 		return HttpService:JSONEncode(encode(CollectibleService.debugState()))

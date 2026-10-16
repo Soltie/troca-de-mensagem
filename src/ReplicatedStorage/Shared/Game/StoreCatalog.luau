@@ -15,8 +15,9 @@
 export type Currency = "fichas" | "creditos"
 export type Rarity = "common" | "rare" | "epic" | "legendary" | "exclusive"
 export type ItemKind = "flashlight" | "uniform" | "filter" | "title"
--- De onde o item vem: padrão (todos têm), loja/baús, nível, coleção de fitas, VIP ou Pacote Inicial.
-export type Source = "default" | "store" | "level" | "tapes" | "vip" | "starter" | "escape"
+-- De onde o item vem: padrão (todos têm), loja/baús, nível, coleção de fitas, VIP, Pacote Inicial
+-- ou passe de temporada (trilhas em SeasonCatalog).
+export type Source = "default" | "store" | "level" | "tapes" | "vip" | "starter" | "escape" | "season"
 export type RGB = { number }
 
 export type Item = {
@@ -458,6 +459,119 @@ StoreCatalog.Items = {
 		source = "vip",
 		color = { 230, 190, 80 },
 	}),
+
+	-- ===== Temporada 1 "Turno Extra" (só pelas trilhas do passe; ver SeasonCatalog) =====
+	-- Trilha grátis.
+	item({
+		id = "titulo_hora_extra",
+		kind = "title",
+		name = "HORA EXTRA",
+		rarity = "rare",
+		source = "season",
+		color = { 255, 170, 60 },
+	}),
+	item({
+		id = "lanterna_plantao",
+		kind = "flashlight",
+		name = "LANTERNA DE PLANTÃO",
+		rarity = "rare",
+		source = "season",
+		body = { 196, 146, 40 },
+		head = { 60, 50, 30 },
+		beam = { 255, 224, 170 },
+		material = "SmoothPlastic",
+	}),
+	item({
+		id = "filtro_madrugada",
+		kind = "filter",
+		name = "MADRUGADA",
+		rarity = "rare",
+		source = "season",
+		tint = { 200, 202, 236 },
+		saturation = -0.45,
+		contrast = 0.22,
+		brightness = -0.02,
+	}),
+	item({
+		id = "titulo_turno_extra",
+		kind = "title",
+		name = "TURNO EXTRA",
+		rarity = "epic",
+		source = "season",
+		color = { 240, 120, 60 },
+	}),
+	-- Trilha paga.
+	item({
+		id = "farda_hora_extra",
+		kind = "uniform",
+		name = "MACACÃO HORA EXTRA",
+		rarity = "epic",
+		source = "season",
+		shirt = { 30, 70, 74 },
+		pants = { 24, 44, 48 },
+		helmet = { 240, 140, 40 },
+		stripe = { 255, 170, 60 },
+	}),
+	item({
+		id = "lanterna_ponto",
+		kind = "flashlight",
+		name = "LANTERNA RELÓGIO DE PONTO",
+		rarity = "epic",
+		source = "season",
+		body = { 150, 120, 70 },
+		head = { 220, 190, 110 },
+		beam = { 255, 236, 190 },
+		material = "Metal",
+	}),
+	item({
+		id = "filtro_ponto",
+		kind = "filter",
+		name = "CARTÃO DE PONTO",
+		rarity = "epic",
+		source = "season",
+		tint = { 245, 226, 172 },
+		saturation = -0.6,
+		contrast = 0.24,
+		brightness = 0.01,
+	}),
+	item({
+		id = "titulo_insone",
+		kind = "title",
+		name = "INSONE",
+		rarity = "epic",
+		source = "season",
+		color = { 150, 140, 255 },
+	}),
+	item({
+		id = "farda_madrugada",
+		kind = "uniform",
+		name = "CHEFE DA MADRUGADA",
+		rarity = "legendary",
+		source = "season",
+		shirt = { 18, 18, 24 },
+		pants = { 14, 14, 18 },
+		cap = true,
+		stripe = { 230, 60, 50 },
+	}),
+	item({
+		id = "lanterna_tres",
+		kind = "flashlight",
+		name = "LANTERNA 03:00",
+		rarity = "legendary",
+		source = "season",
+		body = { 24, 20, 22 },
+		head = { 255, 60, 50 },
+		beam = { 255, 215, 205 },
+		material = "Neon",
+	}),
+	item({
+		id = "titulo_dono_madrugada",
+		kind = "title",
+		name = "DONO DA MADRUGADA",
+		rarity = "legendary",
+		source = "season",
+		color = { 255, 80, 70 },
+	}),
 } :: { Item }
 
 -- Índice por id.
@@ -628,6 +742,16 @@ StoreCatalog.Products = {
 		description = "+50% Fichas e XP, +1 giro diário, lanterna, farda e título exclusivos.",
 		id = 0,
 		robux = 299,
+		grant = {},
+	},
+	{
+		-- Um Game Pass NOVO por temporada (o acesso pago vale só para a temporada dele).
+		key = "turno_extra_s1",
+		kind = "pass",
+		name = "PASSE TURNO EXTRA (TEMPORADA 1)",
+		description = "Libera a trilha paga da temporada: 7 cosméticos temáticos, Fichas e 300 Créditos.",
+		id = 0,
+		robux = 399,
 		grant = {},
 	},
 } :: { Product }

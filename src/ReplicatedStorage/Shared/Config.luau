@@ -45,7 +45,7 @@ local Config = {
 	Data = {
 		-- Nome base do DataStore. No Studio (modo real) recebe o sufixo "_Studio".
 		StoreName = "PlayerData_v1",
-		SchemaVersion = 2,
+		SchemaVersion = 3,
 		AutosaveInterval = 120,
 		RetryAttempts = 3,
 		RetryBaseDelay = 1,

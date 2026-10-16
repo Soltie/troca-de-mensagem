@@ -36,6 +36,10 @@ export type PlayerData = {
 	purchases: { [string]: number },
 	-- Produtos de compra única já entregues (ex.: pacote inicial) -> os.time.
 	oncePurchases: { [string]: number },
+	-- v3: passe de temporada (regras em Shared/Game/Season). `id` = temporada a que xp e
+	-- recompensas se referem (outra temporada zera tudo). free/premium = níveis cuja recompensa
+	-- já foi entregue em cada trilha; chave = nível em texto ("1".."30"), porque o DataStore salva JSON.
+	season: { id: string, xp: number, free: { [string]: boolean }, premium: { [string]: boolean } },
 	-- Trava de sessão (um servidor por vez escreve os dados). Ver Server/Data/SessionLock.
 	sessionLock: { job: string, at: number }?,
 }

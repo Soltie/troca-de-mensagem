@@ -20,16 +20,18 @@ local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
 local PixelText = require("@game/ReplicatedStorage/Shared/Game/PixelText")
 local Remotes = require("@game/ReplicatedStorage/Shared/Net/Remotes")
 local StoreCatalog = require("@game/ReplicatedStorage/Shared/Game/StoreCatalog")
+local Season = require("@game/ReplicatedStorage/Shared/Game/Season")
+local SeasonCatalog = require("@game/ReplicatedStorage/Shared/Game/SeasonCatalog")
 local Text = require("@game/ReplicatedStorage/Shared/Game/Text")
 local Types = require("@game/ReplicatedStorage/Shared/Types")
 local Create = require("../UI/Create")
 local Theme = require("../UI/Theme")
 local AudioController = require("./AudioController")
 
-type Tab = "shop" | "chests" | "daily" | "collection" | "robux"
+type Tab = "shop" | "season" | "chests" | "daily" | "collection" | "robux"
 
 local player = Players.LocalPlayer
-local TABS: { Tab } = { "shop", "chests", "daily", "collection", "robux" }
+local TABS: { Tab } = { "shop", "season", "chests", "daily", "collection", "robux" }
 local S = Text.Store
 
 local panel: Frame? = nil
@@ -167,6 +169,10 @@ local function request(action: string, arg: string?): Types.Result<any>?
 	return response
 end
 
+local function track(event: string, offer: string?)
+	Remotes.clientEvent("StoreTrack", 5):FireServer(event, offer)
+end
+
 -- ===================== Avisos (toasts) =====================
 
 local function toast(lines: { string }, color: Color3?, duration: number?)
@@ -224,6 +230,14 @@ local function onNotice(payload: { [string]: any })
 		table.insert(lines, string.format(Text.Rewards.daily, payload.day or 1))
 	elseif kind == "purchase" then
 		table.insert(lines, Text.Rewards.purchase)
+	elseif kind == "season" then
+		table.insert(lines, if payload.premium then Text.Rewards.seasonPremium else Text.Rewards.seasonRewards)
+		for _, tier in payload.tiers or {} do
+			table.insert(lines, string.format(Text.Rewards.season, tier))
+		end
+	end
+	if (payload.seasonXp or 0) > 0 then
+		table.insert(lines, string.format(Text.Rewards.seasonXp, payload.seasonXp))
 	end
 	if (payload.fichas or 0) > 0 then
 		table.insert(lines, string.format(Text.Rewards.fichas, payload.fichas))
@@ -423,6 +437,7 @@ local function renderShop(c: ScrollingFrame)
 end
 
 local function showOdds(title: string, lines: { string })
+	track("view", "odds")
 	local o = overlay
 	if not o then
 		return
@@ -853,11 +868,118 @@ local function renderCollection(c: ScrollingFrame)
 	end
 end
 
+local function rewardText(reward: StoreCatalog.Reward?): string
+	if not reward then
+		return Text.Season.empty
+	end
+	local parts = {}
+	if reward.item then
+		table.insert(parts, itemName(reward.item))
+	end
+	if reward.fichas then
+		table.insert(parts, string.format(Text.Rewards.fichas, reward.fichas))
+	end
+	if reward.creditos then
+		table.insert(parts, string.format(Text.Rewards.creditos, reward.creditos))
+	end
+	return table.concat(parts, " · ")
+end
+
+local function renderSeason(c: ScrollingFrame)
+	setLayout(c, false)
+	local season = SeasonCatalog.SeasonById[attr("SeasonId", "")]
+	if not season then
+		label({ Size = UDim2.new(1, -12, 0, 64), Text = Text.Season.none, Parent = c })
+		return
+	end
+	local tier, into, need = Season.tierInfo(season, attr("SeasonXp", 0))
+	local premium = attr("SeasonPremium", false) == true
+	local intro = card(c, 0, Theme.Hazard)
+	intro.Name = "SeasonSummary"
+	intro.Size = UDim2.new(1, -12, 0, 172)
+	label({
+		Position = UDim2.fromOffset(12, 8),
+		Size = UDim2.new(1, -24, 0, 26),
+		Text = string.format(Text.Season.header, season.number, season.name),
+		TextColor3 = Theme.Hazard,
+		Parent = intro,
+	})
+	label({
+		Position = UDim2.fromOffset(12, 36),
+		Size = UDim2.new(1, -24, 0, 24),
+		Text = string.format(Text.Season.tier, tier, #season.tiers)
+			.. " · "
+			.. string.format(Text.Season.xp, into, need),
+		Parent = intro,
+	})
+	label({
+		Position = UDim2.fromOffset(12, 62),
+		Size = UDim2.new(1, -24, 0, 40),
+		Text = Text.Season.how,
+		TextSize = Theme.SizeSmall,
+		Parent = intro,
+	})
+	label({
+		Position = UDim2.fromOffset(12, 112),
+		Size = UDim2.new(0.4, -18, 0, 44),
+		Text = string.format(Text.Season.daysLeft, Season.daysLeft(season, os.time())),
+		TextSize = Theme.SizeSmall,
+		Parent = intro,
+	})
+	local product = StoreCatalog.ProductByKey[season.passKey]
+	button({
+		Name = "BuySeason",
+		Position = UDim2.new(0.4, 0, 0, 112),
+		Size = UDim2.new(0.6, -12, 0, 44),
+		Text = if premium then Text.Season.owned else string.format(Text.Season.buy, product.robux),
+		TextColor3 = if premium then Theme.Good else Theme.Hazard,
+		Parent = intro,
+	}, function()
+		if premium then
+			return
+		end
+		local result = request("buy_product", season.passKey)
+		if result then
+			setMessage(if result.ok then result.data.message else result.error)
+		end
+		task.delay(0.6, render)
+	end)
+	for index, entry in season.tiers do
+		local reached = index <= tier
+		local box = card(c, index, if reached then Theme.Good else Theme.TextDim)
+		box.Name = `SeasonTier_{index}`
+		box.Size = UDim2.new(1, -12, 0, 100)
+		label({
+			Position = UDim2.fromOffset(8, 4),
+			Size = UDim2.new(1, -16, 0, 20),
+			Text = string.format(Text.Season.tierLabel, index),
+			Parent = box,
+		})
+		for column, trackName in { "free", "premium" } do
+			local unlocked = reached and (trackName == "free" or premium)
+			local text = if trackName == "free" then Text.Season.free else Text.Season.premium
+			label({
+				Position = UDim2.new((column - 1) * 0.5, 8, 0, 26),
+				Size = UDim2.new(0.5, -16, 0, 68),
+				Text = text
+					.. " · "
+					.. (if unlocked then Text.Season.received else Text.Season.locked)
+					.. "\n"
+					.. rewardText(if trackName == "free" then entry.free else entry.premium),
+				TextSize = Theme.SizeSmall,
+				TextColor3 = if unlocked then Theme.Good else Theme.TextDim,
+				Parent = box,
+			})
+		end
+	end
+end
+
 local function renderRobux(c: ScrollingFrame)
 	setLayout(c, false)
 	for index, product in StoreCatalog.Products do
 		local owned = (product.key == "vip" and attr("Vip", false) == true)
 			or (product.key == "pacote_inicial" and attr("StarterBought", false) == true)
+			or (product.key == "turno_extra_s1" and attr("SeasonPremium", false) == true)
 		local box = card(c, index, if product.kind == "pass" then Theme.Hazard else Theme.TextDim)
 		box.Size = UDim2.new(1, -12, 0, 74)
 		label({
@@ -925,6 +1047,8 @@ render = function()
 	c.CanvasPosition = Vector2.zero
 	if tab == "shop" then
 		renderShop(c)
+	elseif tab == "season" then
+		renderSeason(c)
 	elseif tab == "chests" then
 		renderChests(c)
 	elseif tab == "daily" then
@@ -952,6 +1076,7 @@ local function setOpen(value: boolean)
 	isOpen = value
 	p.Visible = value
 	if value then
+		track("open")
 		mouseWasEnabled = UserInputService.MouseIconEnabled
 		UserInputService.MouseIconEnabled = true
 		setMessage(nil)
@@ -1060,6 +1185,7 @@ local function build()
 			Parent = p,
 		}, function()
 			tab = key :: Tab
+			track("view", key)
 			setMessage(nil)
 			render()
 		end)
@@ -1081,6 +1207,7 @@ local function build()
 			Parent = kinds,
 		}, function()
 			kindFilter = kind :: StoreCatalog.ItemKind
+			track("view", kind)
 			tab = "shop"
 			render()
 		end)
@@ -1178,6 +1305,9 @@ function StoreController.Start()
 			"DailyClaimable",
 			"DailyStreak",
 			"StarterBought",
+			"SeasonId",
+			"SeasonXp",
+			"SeasonPremium",
 		}
 	do
 		player:GetAttributeChangedSignal(name):Connect(function()

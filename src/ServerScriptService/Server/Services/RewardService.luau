@@ -7,7 +7,8 @@
 	  campanha  ReplicatedStorage.CampaignState (Phase Won/Lost, Stage, Roster com status e
 	            contribuições de cada membro).
 	Cada partida (GameState.RoundId) paga uma vez só. A tela de resultado do cliente recebe
-	os números via StoreService.awardRun -> StoreNotice.
+	os números via StoreService.awardRun -> StoreNotice. O SKU de analytics diz modo e resultado
+	(solo_won, solo_lost, campaign_won, campaign_lost): fonte de Fichas por tipo de partida.
 ]]
 
 local HttpService = game:GetService("HttpService")
@@ -57,7 +58,7 @@ local function campaignAwards(won: boolean)
 				fuses = 0,
 				breakers = false,
 				contributions = tonumber(member.contributions) or 0,
-			})
+			}, if won then "campaign_won" else "campaign_lost")
 		end
 	end
 end
@@ -73,7 +74,7 @@ local function onEnd(phase: string)
 		campaignAwards(won)
 	else
 		for _, player in Players:GetPlayers() do
-			StoreService.awardRun(player, soloSummary(won))
+			StoreService.awardRun(player, soloSummary(won), if won then "solo_won" else "solo_lost")
 		end
 	end
 	log.info("round %d rewards paid (%s)", round, phase)

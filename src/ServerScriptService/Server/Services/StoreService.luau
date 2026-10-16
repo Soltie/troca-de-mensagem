@@ -1,20 +1,26 @@
 --!strict
 --[[
-	StoreService: loja, progressão e compras com Robux (autoritativo).
+	StoreService: loja, progressão, passe de temporada e compras com Robux (autoritativo).
 
 	- Remote "Store" (ação, argumento?): diário, roleta, baús, compra com Fichas/Créditos,
 	  equipar e pedir compra em Robux. Tudo validado aqui com as regras puras de Shared/Game/Economy.
 	- Robux:
 	  * Developer Products -> MarketplaceService.ProcessReceipt, idempotente pelo PurchaseId
 	    (o recibo e o que ele concede ficam no MESMO registro do jogador, salvo antes de confirmar).
-	  * Game Pass VIP -> UserOwnsGamePassAsync na entrada + PromptGamePassPurchaseFinished.
+	  * Game Passes (VIP e o passe de cada temporada) -> UserOwnsGamePassAsync na entrada +
+	    PromptGamePassPurchaseFinished.
 	  * ID = 0 (ainda não criado no Creator Hub): no Studio a compra é SIMULADA (testes);
 	    no servidor ao vivo o item responde "store_unavailable".
+	- Passe de temporada (Shared/Game/Season): XP de temporada nas partidas, fitas e diário;
+	  as recompensas das trilhas saem sozinhas ao subir de nível. Comprar a trilha paga entrega
+	  na hora as recompensas pagas dos níveis já alcançados.
 	- PolicyService: quem tem ArePaidRandomItemsRestricted não abre o baú pago (Créditos);
 	  continua podendo comprar cada item diretamente (alternativa exigida pela política).
+	- Analytics (TelemetryService): cada mudança de Fichas/Créditos vira evento de economia
+	  (Server/Game/EconomyEvents) e cada compra fecha o funil da loja.
 	- Publica o estado no próprio Player (atributos) para a UI: Fichas, Creditos, Xp, Level, Vip,
 	  Owned (JSON), Tapes (JSON), Equip*, DailyStreak/DailyClaimable, SpinsLeft, StarterBought,
-	  PaidRandomRestricted, StoreReady.
+	  PaidRandomRestricted, SeasonId, SeasonXp, SeasonPremium, StoreReady.
 	- Notificações de recompensa: remote "StoreNotice" (servidor -> cliente).
 ]]
 
@@ -28,10 +34,14 @@ local Economy = require("@game/ReplicatedStorage/Shared/Game/Economy")
 local Guard = require("@game/ReplicatedStorage/Shared/Net/Guard")
 local Logger = require("@game/ReplicatedStorage/Shared/Logger")
 local Remotes = require("@game/ReplicatedStorage/Shared/Net/Remotes")
+local Season = require("@game/ReplicatedStorage/Shared/Game/Season")
+local SeasonCatalog = require("@game/ReplicatedStorage/Shared/Game/SeasonCatalog")
 local StoreCatalog = require("@game/ReplicatedStorage/Shared/Game/StoreCatalog")
 local Types = require("@game/ReplicatedStorage/Shared/Types")
+local EconomyEvents = require("../Game/EconomyEvents")
 local ServerNet = require("../Net/ServerNet")
 local PlayerDataService = require("./PlayerDataService")
+local TelemetryService = require("./TelemetryService")
 
 export type StoreResponse = {
 	ok: boolean,
@@ -46,10 +56,12 @@ export type StoreResponse = {
 }
 
 local log = Logger.new("StoreService")
+local TX = EconomyEvents.Transaction
 -- Fuso do "dia" do calendário e da roleta (Brasil, UTC-3): vira à meia-noite local.
 local DAY_OFFSET = -3 * 3600
 
-local vipCache: { [Player]: boolean } = {}
+-- Game Passes que cada jogador tem nesta sessão (chave do produto -> true).
+local passCache: { [Player]: { [string]: boolean } } = {}
 local restrictedCache: { [Player]: boolean } = {}
 local changedCallbacks: { (Player) -> () } = {}
 local rng = Random.new()
@@ -62,16 +74,45 @@ local function today(): number
 	return Economy.dayIndex(os.time() + DAY_OFFSET)
 end
 
-local function isVip(player: Player): boolean
-	return vipCache[player] == true
+local function ownsPass(player: Player, key: string): boolean
+	local passes = passCache[player]
+	return passes ~= nil and passes[key] == true
 end
 
-local function productById(id: number): StoreCatalog.Product?
+local function setPass(player: Player, key: string)
+	local passes = passCache[player] or {}
+	passes[key] = true
+	passCache[player] = passes
+end
+
+local function isVip(player: Player): boolean
+	return ownsPass(player, "vip")
+end
+
+local function activeSeason(): SeasonCatalog.SeasonDef?
+	return Season.current(os.time())
+end
+
+local function hasSeasonPass(player: Player, season: SeasonCatalog.SeasonDef): boolean
+	return ownsPass(player, season.passKey)
+end
+
+-- Temporada à qual pertence o Game Pass `key` (nil = não é passe de temporada).
+local function seasonOfPass(key: string): SeasonCatalog.SeasonDef?
+	for _, season in SeasonCatalog.Seasons do
+		if season.passKey == key then
+			return season
+		end
+	end
+	return nil
+end
+
+local function productById(id: number, kind: "product" | "pass"): StoreCatalog.Product?
 	if id == 0 then
 		return nil
 	end
 	for _, product in StoreCatalog.Products do
-		if product.id == id then
+		if product.id == id and product.kind == kind then
 			return product
 		end
 	end
@@ -97,6 +138,7 @@ local function publish(player: Player)
 	table.sort(tapes)
 	local day = today()
 	local claimable, streakDay = Economy.dailyState(data, day)
+	local season = activeSeason()
 	player:SetAttribute("Fichas", data.wallet.fichas)
 	player:SetAttribute("Creditos", data.wallet.creditos)
 	player:SetAttribute("Xp", data.xp)
@@ -113,6 +155,9 @@ local function publish(player: Player)
 	player:SetAttribute("EquipUniform", Economy.equipped(data, "uniform", vip))
 	player:SetAttribute("EquipFilter", Economy.equipped(data, "filter", vip))
 	player:SetAttribute("Title", Economy.equipped(data, "title", vip))
+	player:SetAttribute("SeasonId", if season then season.id else "")
+	player:SetAttribute("SeasonXp", if season then Season.xpOf(data, season) else 0)
+	player:SetAttribute("SeasonPremium", season ~= nil and hasSeasonPass(player, season))
 	player:SetAttribute("StoreReady", true)
 	for _, callback in changedCallbacks do
 		task.spawn(callback, player)
@@ -139,14 +184,63 @@ local function notify(player: Player, kind: string, granted: Economy.Granted?, e
 	end
 end
 
+-- Partes de analytics das trilhas da temporada (moedas que cada trilha entregou).
+local function seasonChanges(result: Season.SeasonGranted?): { EconomyEvents.Change }
+	if not result then
+		return {}
+	end
+	return {
+		{ transaction = TX.Season, sku = "season_free", granted = result.free },
+		{ transaction = TX.Season, sku = "season_premium", granted = result.premium },
+	}
+end
+
+-- Soma XP de temporada dentro de uma mutação (nil sem temporada ativa).
+local function addSeasonXp(player: Player, data: Types.PlayerData, amount: number): Season.SeasonGranted?
+	local season = activeSeason()
+	if not season then
+		return nil
+	end
+	return Season.addXp(data, season, amount, hasSeasonPass(player, season))
+end
+
+-- Aviso da temporada (nível novo ou recompensas das trilhas). Junta as duas trilhas no aviso.
+local function notifySeason(player: Player, result: Season.SeasonGranted?, extra: { [string]: any }?)
+	if not result or (#result.tiers == 0 and not Season.hasRewards(result)) then
+		return
+	end
+	local items = table.clone(result.free.items)
+	for _, id in result.premium.items do
+		table.insert(items, id)
+	end
+	local payload: { [string]: any } = { tiers = result.tiers, items = items }
+	if extra then
+		for key, value in extra do
+			payload[key] = value
+		end
+	end
+	notify(player, "season", {
+		fichas = result.free.fichas + result.premium.fichas,
+		creditos = result.free.creditos + result.premium.creditos,
+		xp = 0,
+		items = items,
+		refunds = {},
+		levels = {},
+	}, payload)
+end
+
 -- Entrega uma compra em Robux (recibo real ou simulado no Studio) e salva antes de confirmar.
 local function deliver(player: Player, product: StoreCatalog.Product, purchaseId: string): boolean
 	local result: Economy.Granted? = nil
 	local repeated = false
+	local events: { EconomyEvents.Event } = {}
 	local updated = PlayerDataService.update(player, function(data: Types.PlayerData)
 		local ok, message, granted = Economy.grantProduct(data, product, purchaseId, os.time())
 		repeated = not ok and message == "already_granted"
 		result = granted
+		if granted then
+			events = EconomyEvents.sources(granted, data.wallet, TX.IAP, product.key)
+		end
 	end)
 	if not updated then
 		return false
@@ -161,9 +255,32 @@ local function deliver(player: Player, product: StoreCatalog.Product, purchaseId
 		return false
 	end
 	log.info("delivered %s to %s (%s)", product.key, player.Name, purchaseId)
+	TelemetryService.economy(player, events)
+	TelemetryService.purchased(player, "product", "robux")
 	publish(player)
 	notify(player, "purchase", result, { product = product.key })
 	return true
+end
+
+-- Game Pass confirmado (compra real ou simulada): vale na hora; passe de temporada entrega
+-- as recompensas pagas dos níveis já alcançados.
+local function grantPass(player: Player, product: StoreCatalog.Product)
+	setPass(player, product.key)
+	local season = activeSeason()
+	local result: Season.SeasonGranted? = nil
+	local events: { EconomyEvents.Event } = {}
+	if season and season.passKey == product.key then
+		PlayerDataService.update(player, function(data)
+			result = Season.grantReached(data, season, true)
+			events = EconomyEvents.build(data.wallet, seasonChanges(result))
+		end)
+	end
+	log.info("pass %s active for %s", product.key, player.Name)
+	TelemetryService.economy(player, events)
+	TelemetryService.purchased(player, "pass", "robux")
+	publish(player)
+	notify(player, "purchase", nil, { product = product.key })
+	notifySeason(player, result, { premium = true })
 end
 
 local function processReceipt(receipt: { [string]: any }): Enum.ProductPurchaseDecision
@@ -171,7 +288,7 @@ local function processReceipt(receipt: { [string]: any }): Enum.ProductPurchaseD
 	if not player then
 		return Enum.ProductPurchaseDecision.NotProcessedYet
 	end
-	local product = productById(receipt.ProductId)
+	local product = productById(receipt.ProductId, "product")
 	if not product then
 		log.error("receipt for unknown product %s", tostring(receipt.ProductId))
 		return Enum.ProductPurchaseDecision.NotProcessedYet
@@ -185,14 +302,15 @@ local function processReceipt(receipt: { [string]: any }): Enum.ProductPurchaseD
 	return Enum.ProductPurchaseDecision.NotProcessedYet
 end
 
-local function refreshVip(player: Player)
-	local pass = StoreCatalog.ProductByKey.vip
-	if pass.id ~= 0 then
-		local ok, owns = pcall(function()
-			return MarketplaceService:UserOwnsGamePassAsync(player.UserId, pass.id)
-		end)
-		if ok then
-			vipCache[player] = owns == true
+local function refreshPasses(player: Player)
+	for _, product in StoreCatalog.Products do
+		if product.kind == "pass" and product.id ~= 0 then
+			local ok, owns = pcall(function()
+				return MarketplaceService:UserOwnsGamePassAsync(player.UserId, product.id)
+			end)
+			if ok and owns == true then
+				setPass(player, product.key)
+			end
 		end
 	end
 end
@@ -210,10 +328,28 @@ local function refreshPolicy(player: Player)
 	end
 end
 
+-- Entrada: põe os dados na temporada atual e entrega o que faltar (ex.: comprou a trilha paga
+-- noutro servidor). Idempotente.
+local function syncSeason(player: Player)
+	local season = activeSeason()
+	if not season then
+		return
+	end
+	local result: Season.SeasonGranted? = nil
+	local events: { EconomyEvents.Event } = {}
+	PlayerDataService.update(player, function(data)
+		result = Season.grantReached(data, season, hasSeasonPass(player, season))
+		events = EconomyEvents.build(data.wallet, seasonChanges(result))
+	end)
+	TelemetryService.economy(player, events)
+	notifySeason(player, result)
+end
+
 local function onPlayer(player: Player)
 	refreshPolicy(player)
-	refreshVip(player)
+	refreshPasses(player)
 	if PlayerDataService.waitFor(player, 30) then
+		syncSeason(player)
 		publish(player)
 	end
 end
@@ -241,11 +377,15 @@ local function requestProduct(player: Player, key: string): StoreResponse
 	if not data then
 		return { ok = false, message = "store_loading" }
 	end
-	if product.kind == "pass" and isVip(player) then
+	if product.kind == "pass" and ownsPass(player, product.key) then
 		return { ok = false, message = "store_owned" }
 	end
 	if product.once and data.oncePurchases[product.key] then
 		return { ok = false, message = "store_owned" }
+	end
+	local passSeason = seasonOfPass(product.key)
+	if passSeason and activeSeason() ~= passSeason then
+		return { ok = false, message = "season_closed" }
 	end
 	if product.id == 0 then
 		if not RunService:IsStudio() then
@@ -253,9 +393,7 @@ local function requestProduct(player: Player, key: string): StoreResponse
 		end
 		-- Studio: compra simulada (sem Robux), pelo mesmo caminho de entrega do recibo real.
 		if product.kind == "pass" then
-			vipCache[player] = true
-			publish(player)
-			notify(player, "purchase", nil, { product = product.key })
+			grantPass(player, product)
 			return { ok = true, message = "store_mock" }
 		end
 		local delivered = deliver(player, product, `studio-{HttpService:GenerateGUID(false)}`)
@@ -272,30 +410,62 @@ end
 local function handle(player: Player, action: string, arg: string?): StoreResponse
 	local vip = isVip(player)
 	local day = today()
+	local events: { EconomyEvents.Event } = {}
+	local purchase: { kind: string, currency: StoreCatalog.Currency }? = nil
+	local seasonResult: Season.SeasonGranted? = nil
+	local response: StoreResponse
 	if action == "claim_daily" then
-		return mutate(player, function(data)
+		response = mutate(player, function(data)
 			local ok, err, streakDay, granted = Economy.claimDaily(data, day)
-			if not ok then
+			if not ok or not granted then
 				return { ok = false, message = err or "daily_claimed" }
 			end
-			notify(player, "daily", granted, { day = streakDay })
+			seasonResult = addSeasonXp(player, data, SeasonCatalog.XpSources.daily)
+			local changes: { EconomyEvents.Change } =
+				{ { transaction = TX.TimedReward, sku = `daily_d{streakDay or 1}`, granted = granted } }
+			for _, change in seasonChanges(seasonResult) do
+				table.insert(changes, change)
+			end
+			events = EconomyEvents.build(data.wallet, changes)
+			notify(player, "daily", granted, {
+				day = streakDay,
+				seasonXp = if seasonResult then seasonResult.xp else 0,
+			})
 			return { ok = true, message = "daily_ok", granted = granted }
 		end)
 	elseif action == "spin" then
-		return mutate(player, function(data)
+		response = mutate(player, function(data)
 			local ok, err, segment, granted = Economy.spin(data, day, vip, random)
-			if not ok or not segment then
+			if not ok or not segment or not granted then
 				return { ok = false, message = err or "spin_used" }
 			end
+			events = EconomyEvents.sources(granted, data.wallet, TX.TimedReward, `spin_{segment.id}`)
 			return { ok = true, message = "spin_ok", segment = segment.id, granted = granted }
 		end)
 	elseif action == "open_chest" and arg then
 		local restricted = restrictedCache[player] ~= false
-		return mutate(player, function(data)
+		response = mutate(player, function(data)
 			local ok, err, result = Economy.openChest(data, arg, random, restricted)
 			if not ok or not result then
 				return { ok = false, message = err or "store_error" }
 			end
+			local chest = StoreCatalog.ChestById[arg]
+			events = EconomyEvents.build(data.wallet, {
+				{
+					transaction = TX.Shop,
+					sku = chest.id,
+					spend = { currency = chest.currency, amount = chest.price },
+					granted = {
+						fichas = result.refund,
+						creditos = 0,
+						xp = 0,
+						items = {},
+						refunds = if result.refund > 0 then { [result.item] = result.refund } else {},
+						levels = {},
+					},
+				},
+			})
+			purchase = { kind = "chest", currency = chest.currency }
 			log.info("%s opened %s -> %s (%s)", player.Name, arg, result.item, result.rarity)
 			return {
 				ok = true,
@@ -308,22 +478,32 @@ local function handle(player: Player, action: string, arg: string?): StoreRespon
 		end)
 	elseif (action == "buy_fichas" or action == "buy_creditos") and arg then
 		local currency: StoreCatalog.Currency = if action == "buy_fichas" then "fichas" else "creditos"
-		return mutate(player, function(data)
+		response = mutate(player, function(data)
 			local ok, err = Economy.buyItem(data, arg, currency, vip)
 			if not ok then
 				return { ok = false, message = err or "store_error" }
 			end
+			local price = Economy.price(StoreCatalog.ItemById[arg], currency) or 0
+			events = EconomyEvents.sink(currency, price, data.wallet, TX.Shop, arg)
+			purchase = { kind = "item", currency = currency }
 			return { ok = true, message = "store_bought", item = arg }
 		end)
 	elseif action == "equip" and arg then
-		return mutate(player, function(data)
+		response = mutate(player, function(data)
 			local ok, err = Economy.equip(data, arg, vip)
 			return { ok = ok, message = if ok then "store_equipped" else err or "store_error", item = arg }
 		end)
 	elseif action == "buy_product" and arg then
 		return requestProduct(player, arg)
+	else
+		return { ok = false, message = "store_unknown" }
 	end
-	return { ok = false, message = "store_unknown" }
+	TelemetryService.economy(player, events)
+	if purchase and response.ok then
+		TelemetryService.purchased(player, purchase.kind, purchase.currency)
+	end
+	notifySeason(player, seasonResult)
+	return response
 end
 
 local StoreService = {
@@ -342,17 +522,16 @@ function StoreService.Start()
 	MarketplaceService.ProcessReceipt = processReceipt
 	MarketplaceService.PromptGamePassPurchaseFinished:Connect(
 		function(player: Player, passId: number, purchased: boolean)
-			if purchased and passId == StoreCatalog.ProductByKey.vip.id and passId ~= 0 then
-				vipCache[player] = true
-				publish(player)
-				notify(player, "purchase", nil, { product = "vip" })
+			local product = productById(passId, "pass")
+			if purchased and product and not ownsPass(player, product.key) then
+				grantPass(player, product)
 			end
 		end
 	)
 
 	Players.PlayerAdded:Connect(onPlayer)
 	Players.PlayerRemoving:Connect(function(player: Player)
-		vipCache[player] = nil
+		passCache[player] = nil
 		restrictedCache[player] = nil
 	end)
 	for _, player in Players:GetPlayers() do
@@ -373,31 +552,63 @@ function StoreService.equipped(player: Player, kind: StoreCatalog.ItemKind): str
 	return Economy.equipped(data, kind, isVip(player))
 end
 
--- Fim de partida: aplica recompensa e avisa o cliente (tela de resultado).
-function StoreService.awardRun(player: Player, summary: Economy.RunSummary): Economy.Granted?
+--[[
+	Fim de partida: aplica recompensa e XP de temporada e avisa o cliente (tela de resultado).
+	`sku` = contexto para o analytics (RewardService: modo e resultado, ex. "campaign_won").
+]]
+function StoreService.awardRun(player: Player, summary: Economy.RunSummary, sku: string?): Economy.Granted?
 	local granted: Economy.Granted? = nil
+	local seasonResult: Season.SeasonGranted? = nil
+	local events: { EconomyEvents.Event } = {}
 	local ok = PlayerDataService.update(player, function(data)
-		granted = Economy.recordRun(data, summary, isVip(player))
+		local run = Economy.recordRun(data, summary, isVip(player))
+		granted = run
+		seasonResult = addSeasonXp(player, data, Season.runXp(summary))
+		local changes: { EconomyEvents.Change } = { { transaction = TX.Gameplay, sku = sku or "run", granted = run } }
+		for _, change in seasonChanges(seasonResult) do
+			table.insert(changes, change)
+		end
+		events = EconomyEvents.build(data.wallet, changes)
 	end)
 	if not ok then
 		return nil
 	end
+	TelemetryService.economy(player, events)
 	publish(player)
-	notify(player, "run", granted, { summary = summary, vip = isVip(player) })
+	notify(player, "run", granted, {
+		summary = summary,
+		vip = isVip(player),
+		seasonXp = if seasonResult then seasonResult.xp else 0,
+	})
+	notifySeason(player, seasonResult)
 	return granted
 end
 
--- Fita colecionável. Retorna true se era nova para o jogador.
+-- Fita colecionável. Retorna true se era nova para o jogador. Toda fita achada pela equipe
+-- dá XP de temporada (nova ou repetida); só a nova dá Fichas/XP da conta.
 function StoreService.awardTape(player: Player, tapeId: string, finder: string?): boolean
 	local isNew = false
 	local granted: Economy.Granted? = nil
+	local seasonResult: Season.SeasonGranted? = nil
+	local events: { EconomyEvents.Event } = {}
 	PlayerDataService.update(player, function(data)
 		isNew, granted = Economy.addTape(data, tapeId, os.time(), isVip(player))
+		seasonResult = addSeasonXp(player, data, SeasonCatalog.XpSources.tape)
+		local changes = seasonChanges(seasonResult)
+		if granted then
+			table.insert(changes, 1, { transaction = TX.Gameplay, sku = "tape", granted = granted })
+		end
+		events = EconomyEvents.build(data.wallet, changes)
 	end)
-	if isNew then
-		publish(player)
-	end
-	notify(player, "tape", granted, { tape = tapeId, new = isNew, finder = finder })
+	TelemetryService.economy(player, events)
+	publish(player)
+	notify(player, "tape", granted, {
+		tape = tapeId,
+		new = isNew,
+		finder = finder,
+		seasonXp = if seasonResult then seasonResult.xp else 0,
+	})
+	notifySeason(player, seasonResult)
 	return isNew
 end
 
@@ -418,12 +629,22 @@ function StoreService.onChanged(callback: (Player) -> ())
 	table.insert(changedCallbacks, callback)
 end
 
--- Depuração (DebugBridge): dá moedas sem compra.
+-- Depuração (DebugBridge): dá moedas sem compra (fora do analytics).
 function StoreService.debugGrant(player: Player, fichas: number, creditos: number)
 	PlayerDataService.update(player, function(data)
 		Economy.applyReward(data, { fichas = fichas, creditos = creditos })
 	end)
 	publish(player)
+end
+
+-- Depuração (DebugBridge): XP de temporada sem jogar (as recompensas saem normalmente).
+function StoreService.debugSeasonXp(player: Player, amount: number)
+	local result: Season.SeasonGranted? = nil
+	PlayerDataService.update(player, function(data)
+		result = addSeasonXp(player, data, amount)
+	end)
+	publish(player)
+	notifySeason(player, result)
 end
 
 return StoreService

@@ -12,6 +12,8 @@
 	  1  sessões e datas de entrada.
 	  2  economia/cosméticos/progressão (carteira, XP, itens, equipados, fitas, diário,
 	     estatísticas, recibos de compra) e trava de sessão. Contas v1 recebem tudo zerado.
+	  3  passe de temporada (season: id, XP de temporada e níveis entregues por trilha).
+	     Contas v2 começam a temporada do zero.
 ]]
 
 local Config = require("@game/ReplicatedStorage/Shared/Config")
@@ -39,6 +41,7 @@ local TEMPLATE: Types.PlayerData = TableUtil.deepFreeze({
 	stats = { runs = 0, escapes = 0, captures = 0, chests = 0, stages = 0 },
 	purchases = {},
 	oncePurchases = {},
+	season = { id = "", xp = 0, free = {}, premium = {} },
 })
 
 local PlayerDataSchema = {}
@@ -52,7 +55,7 @@ function PlayerDataSchema.migrate(raw: unknown): Types.PlayerData
 	if type(raw) ~= "table" then
 		return PlayerDataSchema.template()
 	end
-	-- v1 -> v2: os campos novos vêm do template (reconcile preenche o que falta).
+	-- v1 -> v2 -> v3: os campos novos vêm do template (reconcile preenche o que falta).
 	local data = TableUtil.reconcile(raw, TEMPLATE)
 	-- Valores corrompidos não podem travar a economia.
 	for _, currency in StoreCatalog.CURRENCIES do
@@ -63,6 +66,20 @@ function PlayerDataSchema.migrate(raw: unknown): Types.PlayerData
 	end
 	if type(data.xp) ~= "number" or data.xp ~= data.xp or data.xp < 0 then
 		data.xp = 0
+	end
+	-- Temporada corrompida: recomeça do zero (melhor do que travar a entrega das trilhas).
+	local season = data.season :: any
+	if
+		type(season) ~= "table"
+		or type(season.id) ~= "string"
+		or type(season.xp) ~= "number"
+		or season.xp ~= season.xp
+		or season.xp == math.huge
+		or season.xp < 0
+		or type(season.free) ~= "table"
+		or type(season.premium) ~= "table"
+	then
+		data.season = { id = "", xp = 0, free = {}, premium = {} }
 	end
 	data.schemaVersion = Config.Data.SchemaVersion
 	return data

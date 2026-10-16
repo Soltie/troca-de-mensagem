@@ -105,6 +105,7 @@ local Text = {
 		spin_used = "SEM GIROS HOJE. VOLTE AMANHÃ.",
 		spin_ok = "",
 		chest_ok = "",
+		season_closed = "ESTA TEMPORADA JÁ ACABOU.",
 	},
 	-- Avisos locais (cliente).
 	Hints = {
@@ -188,6 +189,7 @@ local Text = {
 			daily = "DIÁRIO",
 			collection = "COLEÇÃO",
 			robux = "CRÉDITOS",
+			season = "TEMPORADA",
 		},
 		kinds = {
 			flashlight = "LANTERNAS",
@@ -233,6 +235,7 @@ local Text = {
 			vip = "VIP",
 			starter = "PACOTE INICIAL",
 			escape = "PRIMEIRA FUGA",
+			season = "PASSE DA TEMPORADA",
 		},
 	},
 	Rewards = {
@@ -247,6 +250,28 @@ local Text = {
 		daily = "DIA %d DO CALENDÁRIO",
 		purchase = "COMPRA CONCLUÍDA",
 		vipBonus = "BÔNUS VIP x1,5",
+		season = "TEMPORADA: NÍVEL %d",
+		seasonXp = "+%d XP DA TEMPORADA",
+		seasonPremium = "TRILHA PAGA LIBERADA",
+		seasonRewards = "RECOMPENSAS DA TEMPORADA",
+	},
+	Season = {
+		header = "TEMPORADA %d · %s",
+		daysLeft = "TERMINA EM %d DIAS",
+		lastDay = "ÚLTIMO DIA DA TEMPORADA",
+		tier = "NÍVEL %d/%d",
+		xp = "%d / %d XP DA TEMPORADA",
+		maxed = "NÍVEL MÁXIMO!",
+		how = "XP DA TEMPORADA: PARTIDAS, ESTÁGIOS, FUGAS, FITAS E O DIÁRIO. AS RECOMPENSAS SAEM SOZINHAS.",
+		free = "GRÁTIS",
+		premium = "PAGA",
+		buy = "LIBERAR TRILHA PAGA · %d ROBUX",
+		owned = "TRILHA PAGA ATIVA",
+		tierLabel = "NÍVEL %d",
+		received = "RECEBIDO",
+		locked = "BLOQUEADO",
+		none = "NENHUMA TEMPORADA ATIVA. A PRÓXIMA CHEGA EM BREVE.",
+		empty = "-",
 	},
 	Inventory = {
 		title = "INVENTÁRIO",

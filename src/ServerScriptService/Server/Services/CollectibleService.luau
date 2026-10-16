@@ -7,6 +7,7 @@
 	  que houver ali (piso, mesa, caixote), sem depender da posição exata dos móveis.
 	- Escolhe a fita que MENOS jogadores presentes têm (empate: sorteio). Todos já têm todas: não aparece.
 	- Quem pega (mire + E, id "tape") dá a fita para a EQUIPE inteira: cooperação, não disputa.
+	  Cada membro ganha também XP de temporada; Fichas/XP e o analytics vêm de StoreService.awardTape.
 	  Os runtimes da rodada encaminham o id "tape" para CollectibleService.collect.
 	- Validação no servidor: fase Playing, membro ativo, vivo, distância e linha de visão.
 ]]

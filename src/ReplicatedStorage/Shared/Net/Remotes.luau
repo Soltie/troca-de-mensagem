@@ -32,6 +32,8 @@ local DEFINITIONS: { [string]: RemoteKind } = {
 	Store = "RemoteFunction",
 	-- Servidor -> cliente: recompensas concedidas (fim de partida, fita, nível, compra).
 	StoreNotice = "RemoteEvent",
+	-- Cliente -> servidor: só telemetria do funil da loja ("open" | "view", oferta?). Não muda o jogo.
+	StoreTrack = "RemoteEvent",
 }
 
 local FOLDER_NAME = Config.Net.RemotesFolderName
