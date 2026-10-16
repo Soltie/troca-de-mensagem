@@ -326,8 +326,49 @@ CinematicShots.Opening.captions = {
 	"Lá dentro, alguém ouviu vocês chegarem.",
 }
 CinematicShots.Attract = houseScene("Attract", 12, { "THE CURSED HOUSE", "CINCO CAPÍTULOS", "UMA ÚLTIMA NOITE" })
-CinematicShots.Escape =
-	houseScene("Escape", 12, { "A CASA DESTRUÍDA", "VOCÊS QUEIMARAM MINHA CASA...", "MAS NÃO ACABARAM COMIGO." })
+CinematicShots.Escape = {
+	name = "Escape",
+	title = "A ÚLTIMA NOITE",
+	subtitle = "THE CURSED HOUSE",
+	shots = {
+		shot({
+			label = "A CASA DESTRUÍDA",
+			from = v(-65, 65, 120),
+			to = v(-55, 60, 112),
+			lookFrom = v(0, 16, -10),
+			lookTo = v(0, 12, -10),
+			duration = 4,
+			fov = 64,
+			ease = "inOut",
+			handheld = 0,
+			cut = "blink",
+		}),
+		shot({
+			label = "VOCÊS QUEIMARAM MINHA CASA...",
+			from = v(12, 10, 90),
+			to = v(9, 9, 85),
+			lookFrom = v(0, 6, 58),
+			lookTo = v(0, 6, 58),
+			duration = 4,
+			fov = 58,
+			ease = "inOut",
+			handheld = 0,
+			cut = "hard",
+		}),
+		shot({
+			label = "MAS NÃO ACABARAM COMIGO.",
+			from = v(3, 7, 75),
+			to = v(2, 6.5, 73),
+			lookFrom = v(0, 5, 58),
+			lookTo = v(0, 5, 58),
+			duration = 4,
+			fov = 50,
+			ease = "inOut",
+			handheld = 0,
+			cut = "hard",
+		}),
+	},
+}
 CinematicShots.Escape.captions = {
 	"As chamas engoliram a casa. Vocês alcançaram a floresta.",
 	"VOCÊS QUEIMARAM MINHA CASA...",

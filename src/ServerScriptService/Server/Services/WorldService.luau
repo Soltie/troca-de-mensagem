@@ -862,6 +862,11 @@ function WorldService.houseEvent(event: string?)
 		local entry = gates:FindFirstChild("entry")
 		if entry and entry:IsA("BasePart") then
 			entry.CanCollide, entry.CanQuery, entry.Transparency = false, false, 1
+			for _, child in entry:GetDescendants() do
+				if child:IsA("SurfaceGui") then
+					child.Enabled = false
+				end
+			end
 		end
 	end
 	local gate = gates and gates:FindFirstChild(event)
@@ -881,13 +886,43 @@ function WorldService.houseRuins()
 		for _, part in architecture:GetChildren() do
 			if
 				part:IsA("BasePart")
-				and (string.find(part.Name, "Roof") or string.find(part.Name, "Facade") or part.Name == "RoomCeiling")
+				and (
+					string.find(part.Name, "Roof")
+					or string.find(part.Name, "Facade")
+					or part.Name == "RoomCeiling"
+					or part.Name == "EntrySide"
+					or part.Name == "EntryLintel"
+				)
 			then
 				part.Transparency = 1
 				part.CanCollide, part.CanQuery = false, false
 			end
 		end
 	end
+	local ruins = Build.folder(getWorld().root, "Ruins")
+	for _, x in { -21, 21 } do
+		local beam = Build.block(
+			ruins,
+			"FallenBeam",
+			Vector3.new(x, 0, 52),
+			Vector3.new(16, 2, 3),
+			x,
+			Color3.fromRGB(43, 29, 23),
+			{ collide = false, query = false }
+		)
+		local fire = Instance.new("Fire")
+		fire.Size, fire.Heat, fire.Parent = 5, 2, beam
+	end
+	local glow = Build.block(
+		ruins,
+		"EndingLight",
+		Vector3.new(0, 4, 65),
+		Vector3.one,
+		0,
+		Color3.new(0, 0, 0),
+		{ transparency = 1, collide = false, query = false }
+	)
+	Build.light(glow, "Ending", Color3.fromRGB(255, 148, 82), 30, 2, true)
 end
 function WorldService.setHouseDestruction(on: boolean)
 	local w = getWorld()

@@ -609,7 +609,7 @@ function CreatureService.silhouette()
 end
 function CreatureService.endingPose()
 	active, frozen = true, true
-	placeAt(Vector3.new(0, 0, 30), Vector3.new(0, 0, 1))
+	placeAt(Vector3.new(0, 0, 58), Vector3.new(0, 0, 1))
 	setAttributes("Search")
 end
 function CreatureService.freeze()

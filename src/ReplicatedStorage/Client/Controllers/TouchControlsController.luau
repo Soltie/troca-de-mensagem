@@ -198,7 +198,8 @@ function Controller.Start()
 		local menu = player:GetAttribute("ComfortMenuOpen") == true or player:GetAttribute("FieldGuideOpen") == true
 		controls.Visible = active and not menu and player:GetAttribute("CinematicActive") ~= true
 		inventory.Visible = controls.Visible and open
-		navigation.Visible = player:GetAttribute("CinematicActive") ~= true
+		local phase = GameState.get("Phase")
+		navigation.Visible = player:GetAttribute("CinematicActive") ~= true and phase ~= "Won" and phase ~= "Lost"
 		if not controls.Visible and (heldBreath or heldSprint) then
 			cancel()
 		end
