@@ -175,9 +175,14 @@ end
 
 -- ===================== Avisos (toasts) =====================
 
-local function toast(lines: { string }, color: Color3?, duration: number?)
+local function showToast(lines: { string }, color: Color3?, duration: number?)
 	local holder = toastHolder
 	if not holder then
+		return
+	end
+	-- Cenas (abertura, fuga, capítulo) passam limpas: o aviso espera a cena terminar (CinematicController).
+	if player:GetAttribute("CinematicHold") == true then
+		task.delay(0.5, showToast, lines, color, duration)
 		return
 	end
 	toastToken += 1
@@ -206,6 +211,11 @@ local function toast(lines: { string }, color: Color3?, duration: number?)
 	task.delay(duration or 5, function()
 		card:Destroy()
 	end)
+end
+
+-- O aviso do fim da partida chega junto com a fase: espera um instante para a cena de fuga começar.
+local function toast(lines: { string }, color: Color3?, duration: number?)
+	task.delay(0.35, showToast, lines, color, duration)
 end
 
 local function itemName(id: string): string

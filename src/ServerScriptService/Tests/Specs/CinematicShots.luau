@@ -2,7 +2,7 @@
 local CinematicShots = require("@game/ReplicatedStorage/Shared/Game/CinematicShots")
 local TestKit = require("../TestKit")
 
-local SEQUENCES = { CinematicShots.Opening, CinematicShots.Stage, CinematicShots.Escape }
+local SEQUENCES = { CinematicShots.Opening, CinematicShots.Stage, CinematicShots.Escape, CinematicShots.Attract }
 
 local testSpec: TestKit.Spec = {
 	name = "CinematicShots",
@@ -70,6 +70,31 @@ local testSpec: TestKit.Spec = {
 					t.expect(#s.label > 0).toBe(true)
 				end
 			end
+		end)
+		t.it("security cameras step on a 12 fps grid; handheld shots do not", function()
+			for _, s in CinematicShots.Attract.shots do
+				t.expect(CinematicShots.isCctv(s)).toBe(true)
+			end
+			t.expect(CinematicShots.isCctv(CinematicShots.Opening.shots[1])).toBe(false)
+			t.expect(CinematicShots.quantize(0, 5, 12)).toBe(0)
+			t.expect(CinematicShots.quantize(1, 5, 12)).toBe(1)
+			-- 60 quadros em 5 s: 0.0101 ainda está no quadro 0; 0.0167 já é o quadro 1.
+			t.expect(CinematicShots.quantize(0.0101, 5, 12)).toBe(0)
+			t.expect(CinematicShots.quantize(1 / 60, 5, 12)).toBeCloseTo(1 / 60)
+			t.expect(CinematicShots.quantize(7, 5, 12)).toBe(1)
+		end)
+		t.it("attract loops forever and captions split the running time", function()
+			local total = CinematicShots.duration(CinematicShots.Attract)
+			t.expect(CinematicShots.wrap(CinematicShots.Attract, total + 1.5)).toBeCloseTo(1.5)
+			t.expect(CinematicShots.wrap(CinematicShots.Attract, -3)).toBe(0)
+			local lines = { "a", "b", "c" }
+			t.expect(CinematicShots.caption(lines, 0, 9)).toBe("a")
+			t.expect(CinematicShots.caption(lines, 3.1, 9)).toBe("b")
+			t.expect(CinematicShots.caption(lines, 9, 9)).toBe("c")
+			t.expect(CinematicShots.caption(lines, 50, 9)).toBe("c")
+			t.expect(CinematicShots.caption(nil, 1, 9)).toBeNil()
+			t.expect(CinematicShots.caption({}, 1, 9)).toBeNil()
+			t.expect(#(CinematicShots.Opening.captions or {}) > 0).toBe(true)
 		end)
 		t.it("tape clock formats and wraps at midnight", function()
 			t.expect(CinematicShots.clock(CinematicShots.TAPE_START)).toBe("03:12:00")

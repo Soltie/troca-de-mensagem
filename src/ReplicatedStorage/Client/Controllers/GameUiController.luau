@@ -12,6 +12,7 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
+local Config = require("@game/ReplicatedStorage/Shared/Config")
 local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
 local Remotes = require("@game/ReplicatedStorage/Shared/Net/Remotes")
 local Text = require("@game/ReplicatedStorage/Shared/Game/Text")
@@ -807,7 +808,12 @@ function GameUiController.Start()
 		end
 	end)
 	local function cinematicChanged()
-		if player:GetAttribute("CinematicActive") == true then
+		local active = player:GetAttribute("CinematicActive") == true
+		-- Solo: a cena fica limpa (objetivo/legendas somem). No coop o CampaignController já esconde esta tela.
+		if not Config.Campaign.Enabled then
+			ui.gui.Enabled = not active
+		end
+		if active then
 			ui.intro.Visible = false
 			ui.finale.Visible = false
 		elseif snapshot and (snapshot.phase == "Won" or snapshot.phase == "Lost") then

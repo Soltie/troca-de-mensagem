@@ -49,6 +49,8 @@ function Controller.Start()
 		Size = UDim2.fromScale(1, 1),
 		BorderSizePixel = 0,
 		BackgroundColor3 = Color3.fromRGB(7, 12, 14),
+		-- Câmeras de segurança do lobby (CinematicController, Attract) aparecem ao fundo.
+		BackgroundTransparency = 0.35,
 	})
 	local panel = Create("Frame", {
 		Name = "Panel",
@@ -57,6 +59,7 @@ function Controller.Start()
 		Position = UDim2.fromScale(0.5, 0.5),
 		Size = UDim2.fromScale(0.92, 0.9),
 		BackgroundColor3 = Color3.fromRGB(13, 20, 22),
+		BackgroundTransparency = 0.12,
 		BorderSizePixel = 0,
 	})
 	Create("UISizeConstraint", { Parent = panel, MaxSize = Vector2.new(920, 620) })
@@ -141,7 +144,8 @@ function Controller.Start()
 		end
 	end
 	RunService:BindToRenderStep("S9ModeMenu", Enum.RenderPriority.Last.Value, function()
-		local open = state:GetAttribute("Phase") == "Lobby"
+		-- Na primeira entrada, a abertura (CinematicController) passa antes do menu.
+		local open = state:GetAttribute("Phase") == "Lobby" and player:GetAttribute("OpeningActive") ~= true
 		gui.Enabled = open
 		player:SetAttribute("ModeMenuOpen", open)
 		if open and not previous then

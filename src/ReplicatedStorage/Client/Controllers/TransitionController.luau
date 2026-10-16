@@ -241,7 +241,7 @@ local function build(): Refs
 		TextColor3 = Theme.Text,
 		TextStrokeTransparency = 0,
 		Visible = false,
-		ZIndex = 7,
+		ZIndex = 11, -- acima das pálpebras: a cartela de etapa aparece no escuro
 		Parent = gui,
 	})
 	local subtitle = text({
@@ -253,7 +253,7 @@ local function build(): Refs
 		TextColor3 = Theme.Hazard,
 		TextStrokeTransparency = 0,
 		Visible = false,
-		ZIndex = 7,
+		ZIndex = 11,
 		Parent = gui,
 	})
 	local caption = text({

@@ -33,6 +33,10 @@ export type Shot = {
 export type Sequence = {
 	name: string,
 	shots: { Shot },
+	-- Cartela do primeiro plano e legendas distribuídas pela duração (opcionais).
+	title: string?,
+	subtitle: string?,
+	captions: { string }?,
 }
 
 local function v(x: number, y: number, z: number): Vec
@@ -48,8 +52,16 @@ end
 local CinematicShots = {}
 
 -- Primeira entrada no servidor (lobby da campanha) e cartela da missão solo (~9 s).
+-- No solo o controller troca as legendas pelo briefing (Text.Intro).
 CinematicShots.Opening = table.freeze({
 	name = "Opening",
+	title = "SUBESTAÇÃO 9",
+	subtitle = "03:12 · O ÚLTIMO TURNO",
+	captions = table.freeze({
+		"03:12. A Subestação 9 parou de responder.",
+		"A equipe anterior entrou pelo portão e não voltou.",
+		"O vigia da noite ainda está no turno.",
+	}),
 	shots = table.freeze({
 		shot({
 			label = "ESTRADA DE ACESSO",
@@ -65,12 +77,12 @@ CinematicShots.Opening = table.freeze({
 		}),
 		shot({
 			label = "CÂMERA 2 · PÁTIO",
-			from = v(-27, 9.5, 40),
-			to = v(-27, 9.5, 40),
-			lookFrom = v(24, 2, 28),
+			from = v(-34, 13, 41),
+			to = v(-34, 13, 41),
+			lookFrom = v(18, 1, 26),
 			lookTo = v(-2, 3, 4),
 			duration = 3,
-			fov = 55,
+			fov = 62,
 			ease = "inOut",
 			handheld = 0,
 			cut = "static",
@@ -124,6 +136,12 @@ CinematicShots.Stage = table.freeze({
 -- Vitória: da estrada, olhando a equipe sair pelo portão (~5 s).
 CinematicShots.Escape = table.freeze({
 	name = "Escape",
+	title = "FIM DO TURNO",
+	subtitle = "GRAVAÇÃO RECUPERADA",
+	captions = table.freeze({
+		"O portão ficou para trás.",
+		"Lá dentro, alguém continua cumprindo a ordem.",
+	}),
 	shots = table.freeze({
 		shot({
 			label = "ESTRADA · FIM DA GRAVAÇÃO",
@@ -139,6 +157,93 @@ CinematicShots.Escape = table.freeze({
 		}),
 	}),
 }) :: Sequence
+
+-- Lobby: câmeras de segurança em laço atrás do menu de modo (~20 s por volta, sem tremor).
+CinematicShots.Attract = table.freeze({
+	name = "Attract",
+	shots = table.freeze({
+		shot({
+			label = "CÂMERA 1 · PORTÃO",
+			from = v(-6, 13, 68),
+			to = v(-6, 13, 68),
+			lookFrom = v(3, 1, 36),
+			lookTo = v(6, 1, 28),
+			duration = 5,
+			fov = 62,
+			ease = "inOut",
+			handheld = 0,
+			cut = "static",
+		}),
+		shot({
+			label = "CÂMERA 2 · PÁTIO",
+			from = v(-34, 13, 41),
+			to = v(-34, 13, 41),
+			lookFrom = v(16, 1, 24),
+			lookTo = v(0, 2, 8),
+			duration = 5,
+			fov = 64,
+			ease = "inOut",
+			handheld = 0,
+			cut = "static",
+		}),
+		shot({
+			label = "CÂMERA 3 · VAN",
+			from = v(40, 12, 22),
+			to = v(40, 12, 22),
+			lookFrom = v(14, 1, 30),
+			lookTo = v(2, 2, 38),
+			duration = 5,
+			fov = 64,
+			ease = "inOut",
+			handheld = 0,
+			cut = "static",
+		}),
+		shot({
+			label = "CÂMERA 4 · RECEPÇÃO",
+			from = v(6, 10, 24),
+			to = v(6, 10, 24),
+			lookFrom = v(-6, 3, 0),
+			lookTo = v(-2, 2.5, -2),
+			duration = 5,
+			fov = 62,
+			ease = "inOut",
+			handheld = 0,
+			cut = "static",
+		}),
+	}),
+}) :: Sequence
+
+-- Câmera de segurança: fixa e sem tremor (o controller dá cor de CFTV e 12 quadros/s).
+function CinematicShots.isCctv(s: Shot): boolean
+	return s.handheld <= 0
+end
+
+-- Progresso preso na grade de quadros do CFTV (fps), para a imagem andar "aos saltos".
+function CinematicShots.quantize(alpha: number, duration: number, fps: number): number
+	local frames = math.max(1, math.floor(duration * fps))
+	return math.clamp(math.floor(math.clamp(alpha, 0, 1) * frames) / frames, 0, 1)
+end
+
+-- Tempo dentro da volta de uma sequência em laço.
+function CinematicShots.wrap(sequence: Sequence, elapsed: number): number
+	local total = 0
+	for _, s in sequence.shots do
+		total += s.duration
+	end
+	if total <= 0 then
+		return 0
+	end
+	return math.max(0, elapsed) % total
+end
+
+-- Legenda da vez: as linhas se dividem igualmente pela duração (nil sem legendas).
+function CinematicShots.caption(lines: { string }?, elapsed: number, total: number): string?
+	if not lines or #lines == 0 or total <= 0 then
+		return nil
+	end
+	local index = math.floor(math.clamp(elapsed / total, 0, 0.9999) * #lines) + 1
+	return lines[index]
+end
 
 -- Curvas de suavização (t fora de 0..1 é limitado).
 function CinematicShots.ease(kind: Ease, t: number): number
