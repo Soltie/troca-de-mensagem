@@ -51,7 +51,10 @@ Detalhes e como regerar: [tools/tungtung/README.md](../tools/tungtung/README.md)
 - Conferido no Studio: Tung Tung andando/correndo/golpeando, captura com o rosto do modelo,
   moeda coletada (Fichas 100 → 102), derrota com volta grátis, comemoração de capítulo, menu e vitrine,
   aparição na abertura.
-- Multijogador: ver a seção abaixo (harness `campaignQA`).
+- Multijogador (`StudioTestService:ExecuteMultiplayerTestAsync`, harness `campaignQA`, receita em COOP_QA.md):
+  História com 2 clientes: 64 verificações, 5 capítulos, Won. Desafio (padrão) com 2: 64, Won.
+  História com 6 clientes (máximo): 68 verificações, 5 capítulos, Won. Nenhuma falha nem erro de projeto.
+- Som novo da moeda (`rbxasset://sounds/electronicpingshort.wav`): `PreloadAsync` = Success.
 
 Como testar: `lune run scripts/check`, depois `powershell -File tools/reopen_qa.ps1` (gera
 `build/FinalPolish.rbxlx` e abre no Studio). O modelo só existe em builds Rojo
