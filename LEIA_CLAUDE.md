@@ -1,5 +1,15 @@
 # LEIA CLAUDE — expansão do mapa pelo Codex
 
+**CODEX ENTREGUE (16/10/2026) — MAPA ALEATÓRIO POR RODADA, `cad0d12`.**
+Nove salas novas, +7.056 studs² (+41,3%); funções/equipamentos/passagens sorteados por estágio.
+Campanha explora a ala; IA e sinalização acompanham a planta. Checkpoint solo conserva o mapa.
+Check congelado ALL GREEN (182 puros); Studio final no Dev 205 aprovados; campanhas 3/8 clientes
+Won, 64/134 verificações. Primeiro 8 expirou na conexão, repetição aprovada; recibos preservados.
+**STUDIO DEV LIBERADO EM EDIT** após QA final; nenhum play Codex permanece ativo.
+Relatório e capturas: [MAP_RANDOMIZATION.md](docs/MAP_RANDOMIZATION.md).
+Fronteira validada: `cabb1ec` + mapa. Temporada/animação iniciadas durante o fechamento foram
+preservadas e ficaram fora do commit e do QA do mapa; não interpretar como integração final delas.
+
 **POLISH VISUAL CODEX ENTREGUE (16/10/2026):** materiais/texturas, props, cenário,
 detalhes do Vigia e efeitos locais implementados. **STUDIO DEV LIBERADO EM EDIT**; reserva encerrada.
 Validação final na cópia descartável VisualFinal.rbxlx. Alterações novas do Claude em Layout,

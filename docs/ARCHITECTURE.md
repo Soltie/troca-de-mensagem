@@ -176,6 +176,15 @@ do Vigia anexados aos CFrames existentes do Rig; não altera sua simulação no 
 
 ## Testes do jogo
 
+A geração física usa `World/ProceduralLayout` (puro: nove células, permutação de funções,
+árvore conectada e circuitos extras) e `World/SectorBuilder` (primitivas e sinalização).
+`CampaignGenerator.Plan.sector` viaja com os objetivos; `WorldService.resetRound(rng, plan)`
+reconstrói a ala antes de liberar os personagens. No solo, a seed vem do mesmo Random da rodada,
+então continuar do checkpoint reproduz o mapa. `patrolNodes`/`creatureSpawns` incluem a ala;
+o cérebro é reiniciado antes da troca. `ArtBuilder` reserva 16 superfícies do teto global e
+`ArtController` descarta texturas/CRT/poeira removidos. Sem novos remotes ou dados persistentes.
+Detalhes e evidências: [MAP_RANDOMIZATION.md](MAP_RANDOMIZATION.md).
+
 Continuação de interações/espectador: `InteractionController` mantém um único Highlight e envia
 somente o alvo atual ao Interact. `InteractionPresentation` concentra as regras puras de prompt e
 elegibilidade. Prompt/legenda/bilhete ficam em `InteractionUi`, independente do HUD solo/coop.

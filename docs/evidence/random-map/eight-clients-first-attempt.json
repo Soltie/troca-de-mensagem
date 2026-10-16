@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "result": {
+    "players": 8,
+    "stage": 1,
+    "success": false,
+    "seed": 1792131216,
+    "phase": "Playing",
+    "spawnPositions": [],
+    "error": "timeout: all clients connected",
+    "checks": []
+  }
+}

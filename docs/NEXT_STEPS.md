@@ -9,8 +9,10 @@ Pedido/entrega do Claude: [CLAUDE_HANDOFF_REQUEST.md](CLAUDE_HANDOFF_REQUEST.md)
 
 Três estágios na subestação ampliada, seed, estações/seqüências/atalhos sorteados, quatro
 especialidades automáticas, resgate, retorno no estágio seguinte e saída coletiva para 3–8.
-O Vigia é o único NPC; Eco e Apagão são eventos ambientais. Não há mapas modulares completos,
-novos modelos de personagens ou outros vilões completos nesta versão.
+O Vigia é o único NPC; Eco e Apagão são eventos ambientais. A ala norte agora tem nove módulos
+com funções, equipamentos e conexões sorteados por rodada/estágio, integrados aos objetivos e à IA.
+Ver [MAP_RANDOMIZATION.md](MAP_RANDOMIZATION.md). O núcleo/entrada e a saída continuam como referências fixas.
+Outros cenários e vilões completos continuam no backlog.
 
 ## Ordem de execução e critérios de pronto
 
@@ -23,7 +25,7 @@ novos modelos de personagens ou outros vilões completos nesta versão.
 | 5 | Ampliar puzzles | Distribuição de energia e transporte em dupla; oferecer alternativa ao último sobrevivente, pistas acessíveis e resolução autoritativa. Validar concorrência, desistência e seed. |
 | 6 | Level 2: bombeamento | Nova planta versionada, válvulas/pressão, rotas alagadas seguras, catálogo de slots. Gerador deve garantir spawn→objetivos→saída; testar pathfinding real em várias seeds com 3/8 clientes. |
 | 7 | Level 3: retransmissora | Antenas, sinais e pistas visuais/sonoras equivalentes. Mesmas garantias de navegação; transição conserva roster, reinicializa estado por jogador e admite aguardando. |
-| 8 | Mapas modulares | Interfaces de salas/corredores e orçamento de peças; manter rota obrigatória e só bloquear rotas redundantes. Testar milhares de planos e amostra física; guardar seeds de falhas. |
+| 8 | Expandir a geração modular entregue | A ala norte já usa árvore conectada + circuitos, funções permutadas e orçamento de peças/arte. Próximo passo: novas formas de módulos e biomas, após QA humano da orientação e duração; preservar as provas de navegação e as seeds de falha. |
 | 9 | Personagens e vilões adicionais | Seleção/identidade visual das quatro especialidades; Eco como NPC distinto só depois de definir IA/rig próprios. Registrar origem dos assets, telegraph, contrajogo e efeitos para cada membro; medir carga com oito. |
 
 A meta de 12–20 minutos ainda é proposta. O primeiro playtest deve verificar se a distribuição

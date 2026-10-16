@@ -1,0 +1,26 @@
+{
+  "checkpointGeometrySame": true,
+  "method": "Studio-only debug grants to reach power checkpoint, then Lost/continue and full restart",
+  "success": true,
+  "newMatchSeed": 1358652012,
+  "newMatchGeometryChanged": true,
+  "checkpointState": {
+    "powerOn": true,
+    "awakened": true,
+    "breakerOrder": "C - B - A",
+    "phase": "Playing",
+    "unlocked": [],
+    "breakersOn": true,
+    "checkpoint": true,
+    "breakerProgress": 3,
+    "held": 0,
+    "entered": true,
+    "hasKey": false,
+    "gateOpen": false,
+    "collected": 3,
+    "inserted": 3,
+    "roundId": 2
+  },
+  "checkpointSeed": 668878064,
+  "initialSeed": 668878064
+}

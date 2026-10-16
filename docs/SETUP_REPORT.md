@@ -4,6 +4,11 @@ Atualizado: 2026-10-15. Máquina: Windows 11, PowerShell 5.1 / Git Bash. Projeto
 
 ## Estado atual / próximo passo
 
+**Mapa modular — 16/10/2026:** ala norte com nove setores e geração física por rodada/estágio.
+Check local 182 testes / Studio 205 aprovados, incluindo navegação por nove plantas e o duto
+corrigido na integração. Campanhas com três/oito clientes Won, 64/134 verificações. Recibos e validação
+completa da expansão em [MAP_RANDOMIZATION.md](MAP_RANDOMIZATION.md). Os snapshots abaixo são históricos.
+
 **Polish visual — 16/10/2026:** materiais, cinco texturas autorais, props e detalhes do Vigia,
 efeitos locais. Check 151 testes / Studio 162 aprovados; mapa com 1.617 peças, 330 faces texturizadas
 na prévia. Capturas e recibos em [VISUAL_POLISH.md](VISUAL_POLISH.md), incluindo limites da medição.

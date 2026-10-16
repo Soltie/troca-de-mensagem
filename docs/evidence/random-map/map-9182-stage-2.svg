@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="432" height="480" viewBox="0 0 432 480">
+<rect width="432" height="480" fill="#111b20"/>
+<g font-family="monospace" fill="#e8dfbe" text-anchor="middle">
+<text x="216" y="22" font-size="14">SEED 9182 / ESTÁGIO 2</text>
+<rect x="24" y="304" width="128" height="128" fill="#283b3d" stroke="#a0aba4" stroke-width="3"/>
+<text x="88" y="346" font-size="16">N-01</text>
+<text x="88" y="364" font-size="10">TRATAMENTO</text>
+<text x="88" y="377" font-size="10">DE</text>
+<text x="88" y="390" font-size="10">ÁGUA</text>
+<rect x="152" y="304" width="128" height="128" fill="#283b3d" stroke="#a0aba4" stroke-width="3"/>
+<text x="216" y="346" font-size="16">N-02</text>
+<text x="216" y="364" font-size="10">COMUNICAÇÕES</text>
+<rect x="280" y="304" width="128" height="128" fill="#283b3d" stroke="#a0aba4" stroke-width="3"/>
+<text x="344" y="346" font-size="16">N-03</text>
+<text x="344" y="364" font-size="10">USINAGEM</text>
+<rect x="24" y="176" width="128" height="128" fill="#283b3d" stroke="#a0aba4" stroke-width="3"/>
+<text x="88" y="218" font-size="16">N-04</text>
+<text x="88" y="236" font-size="10">INSPEÇÃO</text>
+<rect x="152" y="176" width="128" height="128" fill="#283b3d" stroke="#a0aba4" stroke-width="3"/>
+<text x="216" y="218" font-size="16">N-05</text>
+<text x="216" y="236" font-size="10">BANCO</text>
+<text x="216" y="249" font-size="10">DE</text>
+<text x="216" y="262" font-size="10">BATERIAS</text>
+<rect x="280" y="176" width="128" height="128" fill="#283b3d" stroke="#a0aba4" stroke-width="3"/>
+<text x="344" y="218" font-size="16">N-06</text>
+<text x="344" y="236" font-size="10">RESFRIAMENTO</text>
+<rect x="24" y="48" width="128" height="128" fill="#283b3d" stroke="#a0aba4" stroke-width="3"/>
+<text x="88" y="90" font-size="16">N-07</text>
+<text x="88" y="108" font-size="10">TURBINA</text>
+<text x="88" y="121" font-size="10">AUXILIAR</text>
+<rect x="152" y="48" width="128" height="128" fill="#283b3d" stroke="#a0aba4" stroke-width="3"/>
+<text x="216" y="90" font-size="16">N-08</text>
+<text x="216" y="108" font-size="10">SALA</text>
+<text x="216" y="121" font-size="10">DE</text>
+<text x="216" y="134" font-size="10">RELÉS</text>
+<rect x="280" y="48" width="128" height="128" fill="#283b3d" stroke="#a0aba4" stroke-width="3"/>
+<text x="344" y="90" font-size="16">N-09</text>
+<text x="344" y="108" font-size="10">ALMOXARIFADO</text>
+<text x="344" y="121" font-size="10">DE</text>
+<text x="344" y="134" font-size="10">CABOS</text>
+<rect x="149" y="351" width="6" height="34" fill="#cbb65d"/>
+<rect x="71" y="301" width="34" height="6" fill="#cbb65d"/>
+<rect x="277" y="351" width="6" height="34" fill="#cbb65d"/>
+<rect x="199" y="301" width="34" height="6" fill="#cbb65d"/>
+<rect x="149" y="223" width="6" height="34" fill="#cbb65d"/>
+<rect x="71" y="173" width="34" height="6" fill="#cbb65d"/>
+<rect x="277" y="223" width="6" height="34" fill="#cbb65d"/>
+<rect x="199" y="173" width="34" height="6" fill="#cbb65d"/>
+<rect x="327" y="173" width="34" height="6" fill="#cbb65d"/>
+<rect x="149" y="95" width="6" height="34" fill="#cbb65d"/>
+<rect x="277" y="95" width="6" height="34" fill="#cbb65d"/>
+<rect x="199" y="429" width="34" height="6" fill="#84bb94"/>
+<text x="216" y="454" font-size="10">CONTROLE</text>
+<rect x="327" y="429" width="34" height="6" fill="#84bb94"/>
+<text x="344" y="454" font-size="10">ARQUIVO</text>
+<text x="216" y="475" font-size="10">AMARELO = PASSAGEM / VERDE = RETORNO AO NÚCLEO</text></g></svg>

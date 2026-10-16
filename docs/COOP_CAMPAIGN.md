@@ -1,5 +1,8 @@
 # Campanha cooperativa — SUBESTAÇÃO 9
 
+> Atualização de 16/10: a geração física da ala norte e os testes por seed estão em
+> [MAP_RANDOMIZATION.md](MAP_RANDOMIZATION.md). A descrição da V1 abaixo registra a base anterior.
+
 Pedido do humano: 15/10/2026. Responsável por esta frente: Codex.
 Estado: **V1 COOP ATIVADA E VALIDADA NO STUDIO; balanceamento humano e expansões pendentes**.
 Código entregue nos commits locais `68f3768`, `31f6b59` e `ca66ead`, sobre o handoff Claude `c6b247a`.

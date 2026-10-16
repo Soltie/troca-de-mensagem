@@ -1,0 +1,78 @@
+{
+  "method": "Runtime probes in disposable Play; 1 rebuild + 12 replacements, 0.5 s apart; powered visual QA; desktop Studio only",
+  "server": {
+    "creatureSpawns": 13,
+    "rooms": [
+      {
+        "kind": "Turbine",
+        "cell": 1
+      },
+      {
+        "kind": "CableDepot",
+        "cell": 2
+      },
+      {
+        "kind": "MachineShop",
+        "cell": 3
+      },
+      {
+        "kind": "RelayHall",
+        "cell": 4
+      },
+      {
+        "kind": "BatteryBank",
+        "cell": 5
+      },
+      {
+        "kind": "Cooling",
+        "cell": 6
+      },
+      {
+        "kind": "Radio",
+        "cell": 7
+      },
+      {
+        "kind": "Inspection",
+        "cell": 8
+      },
+      {
+        "kind": "WaterTreatment",
+        "cell": 9
+      }
+    ],
+    "peakBuildMs": 8.742699981667101,
+    "cycles": 13,
+    "indoor": true,
+    "seed": 9194,
+    "patrolNodes": 26,
+    "surfaces": 157,
+    "stage": 1,
+    "parts": 333
+  },
+  "client": {
+    "textures": 320,
+    "spark": true,
+    "images": 5,
+    "dust": 19,
+    "actualDust": 19,
+    "peakStepMs": 0.32620003912597895,
+    "actualScreens": 7,
+    "actualTextures": 320,
+    "indicators": 6,
+    "screens": 7,
+    "textureBytes": 20480
+  },
+  "patrol": {
+    "start": [
+      -6,
+      3.75,
+      -120
+    ],
+    "end": [
+      -27.13443374633789,
+      3.75,
+      -125.75333404541016
+    ],
+    "mode": "Patrol"
+  }
+}
