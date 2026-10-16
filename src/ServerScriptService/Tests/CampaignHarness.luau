@@ -33,6 +33,8 @@ function Harness.run(runtime: any, args: any)
 	local function move(player: Player, position: Vector3)
 		assert(player.Character, "Missing QA character")
 		player.Character:PivotTo(CFrame.new(position))
+		local root = player.Character:FindFirstChild("HumanoidRootPart") :: BasePart
+		root.AssemblyLinearVelocity, root.AssemblyAngularVelocity = Vector3.zero, Vector3.zero
 		Body.markTeleported(player)
 		task.wait(0.25)
 	end
@@ -95,10 +97,16 @@ function Harness.run(runtime: any, args: any)
 			local beacon = World.get().root:FindFirstChild(`Rescue_{players[2].UserId}`) :: BasePart
 			assert(beacon, "Rescue beacon missing")
 			move(actor, beacon.Position + Vector3.new(0, -3, 4))
-			request(actor, { id = `rescue_{players[2].UserId}` })
+			-- Setup determinístico: input/velocidade residual dos clientes não pode afastar o ajudante.
+			-- Cancelamento por distância foi observado à parte; aqui medimos a conclusão parado.
+			local helperRoot = (actor.Character :: Model):FindFirstChild("HumanoidRootPart") :: BasePart
+			helperRoot.Anchored = true
+			local rescue = request(actor, { id = `rescue_{players[2].UserId}` })
+			check(rescue.ok and rescue.data.accepted, "rescue request accepted")
 			waitFor(function()
 				return runtime.snapshot().downed == 0
 			end, "rescue", 20)
+			helperRoot.Anchored = false
 			check(players[2]:GetAttribute("CampaignStatus") == "Active", "rescue returns teammate")
 		end
 		for chapter = 1, 5 do
