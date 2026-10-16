@@ -35,6 +35,8 @@ local chaseLoop: Sound? = nil
 local nextGrowlAt = 0
 local phase: GameState.Phase = "Loading"
 local rng = Random.new()
+local reaction = ""
+local reactionUntil = 0
 
 local function serverRoot(): BasePart?
 	local model = workspace:FindFirstChild(Tags.CreatureModel)
@@ -48,6 +50,9 @@ local function getRig(): Rig.Rig
 end
 
 local function animationFor(currentMode: string): (string, number)
+	if os.clock() < reactionUntil then
+		return reaction, 8
+	end
 	if currentMode == "Chase" then
 		return "Chase", V.PoseRate.Chase
 	elseif currentMode == "Capture" then
@@ -73,6 +78,15 @@ end
 
 local function onModeChanged(previous: string, current: string)
 	local r = getRig()
+	if current == "Chase" and previous ~= "Chase" then
+		reaction, reactionUntil = "Notice", os.clock() + 0.38
+	elseif current == "Investigate" then
+		reaction, reactionUntil = "Sniff", os.clock() + 0.65
+	elseif current == "Capture" then
+		reaction, reactionUntil = "Lunge", os.clock() + 0.4
+	else
+		reactionUntil = 0
+	end
 	if current == "Chase" and previous ~= "Chase" then
 		AudioController.playAt("Snarl", r.emitter)
 		if chaseLoop then
@@ -180,6 +194,12 @@ local CreatureVisualController = {
 	Name = "CreatureVisualController",
 }
 
+function CreatureVisualController.react(name: string)
+	if name == "DoorBang" then
+		reaction, reactionUntil = name, os.clock() + 0.45
+	end
+end
+
 function CreatureVisualController.Init()
 	rig = Rig.build(workspace)
 	local r = getRig()
@@ -188,6 +208,22 @@ function CreatureVisualController.Init()
 end
 
 function CreatureVisualController.Start()
+	local function watchDoor(inst: Instance)
+		if not inst:IsA("BasePart") or not string.match(inst.Name, "^door_") then
+			return
+		end
+		inst:GetAttributeChangedSignal("BangSerial"):Connect(function()
+			local root = serverRoot()
+			if root and (root.Position - inst.Position).Magnitude < 12 then
+				CreatureVisualController.react("DoorBang")
+			end
+		end)
+	end
+	local world = workspace:WaitForChild(Tags.WorldFolder)
+	for _, inst in world:GetDescendants() do
+		watchDoor(inst)
+	end
+	world.DescendantAdded:Connect(watchDoor)
 	GameState.observe(function(snapshot)
 		phase = snapshot.phase
 	end)

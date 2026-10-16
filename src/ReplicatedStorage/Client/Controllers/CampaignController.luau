@@ -64,6 +64,11 @@ function Controller.Start()
 		DisplayOrder = 60,
 		Parent = player:WaitForChild("PlayerGui"),
 	}) :: ScreenGui
+	local function cinemaChanged()
+		gui.Enabled = player:GetAttribute("CinematicActive") ~= true
+	end
+	player:GetAttributeChangedSignal("CinematicActive"):Connect(cinemaChanged)
+	cinemaChanged()
 	Create("Frame", {
 		Name = "Crosshair",
 		Parent = gui,

@@ -58,6 +58,22 @@ local function pose(values: { [string]: any }): Pose
 end
 
 local Poses: { [string]: { Pose } } = {
+	Notice = {
+		pose({ spine = -10, neck = 30, lShoulder = 32, rShoulder = 42, bob = 0.12 }),
+		pose({ spine = -36, neck = 8, lShoulder = 75, rShoulder = 70, lElbow = -35, rElbow = -30 }),
+	},
+	Sniff = {
+		pose({ spine = -32, neck = 24, neckYaw = -30, rShoulder = 26 }),
+		pose({ spine = -30, neck = 28, neckYaw = 32, lShoulder = 20 }),
+	},
+	DoorBang = {
+		pose({ rShoulder = 110, rElbow = -70, spine = -18 }),
+		pose({ rShoulder = 90, rElbow = -4, spine = -40, bob = -0.1 }),
+	},
+	Lunge = {
+		pose({ spine = -48, lShoulder = 115, rShoulder = 120, lElbow = -20, rElbow = -25 }),
+		pose({ spine = -62, lShoulder = 140, rShoulder = 138, bob = -0.25 }),
+	},
 	Idle = {
 		pose({}),
 		pose({ spine = -27, neck = 22, neckRoll = 9, rElbow = -22, bob = -0.05 }),

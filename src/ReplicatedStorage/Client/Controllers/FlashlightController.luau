@@ -37,6 +37,9 @@ type Viewmodel = {
 
 local wanted = true
 local phase: GameState.Phase = "Loading"
+local raisedAt = 0
+local reachAt = -10
+local clickAt = -10
 local viewmodel: Viewmodel? = nil
 local emitter: BasePart? = nil
 local spot: SpotLight? = nil
@@ -189,7 +192,11 @@ end
 
 local function applyVisible()
 	local status = player:GetAttribute("CampaignStatus")
-	local on = serverOn() and phase ~= "Won" and not isHidden() and (status == nil or status == "Active")
+	local on = serverOn()
+		and phase ~= "Won"
+		and not isHidden()
+		and player:GetAttribute("CinematicActive") ~= true
+		and (status == nil or status == "Active")
 	if spot then
 		spot.Enabled = on
 	end
@@ -429,16 +436,29 @@ function FlashlightController.Init()
 end
 
 function FlashlightController.Start()
+	player:GetAttributeChangedSignal("CinematicActive"):Connect(function()
+		if player:GetAttribute("CinematicActive") ~= true then
+			raisedAt = os.clock()
+		end
+		applyVisible()
+	end)
 	player:GetAttributeChangedSignal("CampaignStatus"):Connect(applyVisible)
 	UserInputService.InputBegan:Connect(function(input: InputObject, processed: boolean)
 		if processed then
 			return
+		end
+		if player:GetAttribute("CinematicActive") == true then
+			return
+		end
+		if input.KeyCode == Enum.KeyCode.E or input.KeyCode == Enum.KeyCode.ButtonX then
+			reachAt = os.clock()
 		end
 		if input.KeyCode ~= Enum.KeyCode.F and input.KeyCode ~= Enum.KeyCode.ButtonY then
 			return
 		end
 		local status = player:GetAttribute("CampaignStatus")
 		if (phase == "Playing" or phase == "Intro") and not isHidden() and (status == nil or status == "Active") then
+			clickAt = os.clock()
 			FlashlightController.set(not wanted)
 		end
 	end)
@@ -464,6 +484,7 @@ function FlashlightController.Start()
 		applyVisible()
 	end)
 	player.CharacterAdded:Connect(function()
+		raisedAt = os.clock()
 		wanted = true
 		restoreAfterHide = false
 		applyVisible()
@@ -496,7 +517,19 @@ function FlashlightController.Start()
 		local hand = CFrame.new(camera.CFrame.Position)
 			* rotation
 			* CFrame.new(0.42 + bob * 0.02, -0.42 + math.abs(bob) * -0.025, -0.95)
+		local raise = math.clamp(1 - (now - raisedAt) / 0.65, 0, 1)
+		local reach = math.sin(math.clamp((now - reachAt) / 0.45, 0, 1) * math.pi)
+		local click = math.sin(math.clamp((now - clickAt) / 0.2, 0, 1) * math.pi)
+		local dip = if motion.stance == "Crouch" then 0.08 else 0
+		if SettingsController.motionEnabled() then
+			hand *= CFrame.new(-reach * 0.12, -raise * 0.7 - dip, -reach * 0.24 + click * 0.04) * CFrame.Angles(
+				math.rad(-raise * 40 + click * 7),
+				0,
+				math.rad(reach * -8)
+			)
+		end
 		local visible = not motion.hidden
+			and player:GetAttribute("CinematicActive") ~= true
 			and (player:GetAttribute("CampaignStatus") == nil or player:GetAttribute("CampaignStatus") == "Active")
 			and phase ~= "Won"
 			and (phase == "Playing" or phase == "Intro" or phase == "Lost")

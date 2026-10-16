@@ -19,6 +19,7 @@ local Create = require("../UI/Create")
 local Theme = require("../UI/Theme")
 local AdemirPortrait = require("../Creature/AdemirPortrait")
 local SettingsController = require("./SettingsController")
+local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
 local STEP = 1 / 12 -- passo das animações 2D
@@ -54,6 +55,9 @@ local noteOpen = false
 local captionToken = 0
 local introToken = 0
 local endToken = 0
+local finaleToken = 0
+local objectiveToken = 0
+local lastObjective = ""
 local blinkOn = false
 
 local function r(): Refs
@@ -514,6 +518,17 @@ local function refreshObjective(s: GameState.Snapshot)
 	if key == "fuses" then
 		ui.objective.Text ..= ` ({s.fusesCollected}/{s.fusesTotal})`
 	end
+	if key ~= lastObjective then
+		lastObjective = key
+		objectiveToken += 1
+		local token = objectiveToken
+		ui.objective.TextColor3 = Theme.Hazard
+		task.delay(0.7, function()
+			if token == objectiveToken then
+				ui.objective.TextColor3 = Theme.Text
+			end
+		end)
+	end
 	ui.objectiveHint.Text = if s.fusesHeld > 0 and not s.powerOn
 		then string.format(Text.ObjectiveHeld, s.fusesHeld)
 		else ""
@@ -621,6 +636,29 @@ local function showFinale(s: GameState.Snapshot)
 	ui.restart.Text = if canContinue then Text.RestartAll else Text.Restart
 	ui.restart.Position = UDim2.new(0.5, 0, 0.36, if canContinue then 204 else 150)
 	ui.finale.Visible = true
+	finaleToken += 1
+	local token = finaleToken
+	if SettingsController.motionEnabled() then
+		ui.finaleSubtitle.TextTransparency = 1
+		TweenService:Create(ui.finaleSubtitle, TweenInfo.new(0.4), { TextTransparency = 0 }):Play()
+		task.spawn(function()
+			for i = 1, 8 do
+				if token ~= finaleToken or not snapshot or snapshot.phase ~= s.phase then
+					return
+				end
+				local count = math.floor(total * i / 8)
+				ui.finaleStats.Text = string.format(
+					Text.EndStats,
+					string.format("%02d:%02d", count // 60, count % 60),
+					s.fusesCollected,
+					s.fusesTotal
+				)
+				task.wait(STEP)
+			end
+		end)
+	else
+		ui.finaleSubtitle.TextTransparency = 0
+	end
 end
 
 local function playScareThenFinale(s: GameState.Snapshot)
@@ -673,6 +711,11 @@ local function showCaption(text: string, duration: number?)
 	task.spawn(function()
 		ui.caption.Visible = true
 		ui.caption.Text = text
+		ui.caption.Position = UDim2.new(0.5, 0, 1, -64)
+		if SettingsController.motionEnabled() then
+			ui.caption.Position += UDim2.fromOffset(0, 8)
+			TweenService:Create(ui.caption, TweenInfo.new(0.16), { Position = UDim2.new(0.5, 0, 1, -64) }):Play()
+		end
 		ui.caption.TextTransparency = 0.5
 		task.wait(STEP)
 		ui.caption.TextTransparency = 0
@@ -757,6 +800,22 @@ end
 function GameUiController.Start()
 	local ui = r()
 	GameState.observe(onState)
+	local notePosition = ui.note.Position
+	ui.note:GetPropertyChangedSignal("Visible"):Connect(function()
+		if not ui.note.Visible then
+			ui.note.Position = notePosition
+		end
+	end)
+	local function cinematicChanged()
+		if player:GetAttribute("CinematicActive") == true then
+			ui.intro.Visible = false
+			ui.finale.Visible = false
+		elseif snapshot and (snapshot.phase == "Won" or snapshot.phase == "Lost") then
+			showFinale(snapshot)
+		end
+	end
+	player:GetAttributeChangedSignal("CinematicActive"):Connect(cinematicChanged)
+	cinematicChanged()
 
 	ui.restart.Activated:Connect(function()
 		requestRestart("full")
@@ -833,6 +892,11 @@ function GameUiController.showNote(id: string)
 	local text = (Text.Notes :: any)[id] or ""
 	ui.noteText.Text = if id == "note_breakers" then string.format(text, GameState.snapshot().breakerOrder) else text
 	ui.note.Visible = true
+	if SettingsController.motionEnabled() then
+		local target = UDim2.fromScale(0.5, 0.5)
+		ui.note.Position = target + UDim2.fromOffset(0, 12)
+		TweenService:Create(ui.note, TweenInfo.new(0.18), { Position = target }):Play()
+	end
 	noteOpen = true
 end
 

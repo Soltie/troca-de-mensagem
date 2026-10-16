@@ -684,6 +684,7 @@ function WorldService.lockedDoorNear(position: Vector3, range: number): MapBuild
 end
 
 function WorldService.bangDoor(door: MapBuilder.DoorHandle)
+	door.panel:SetAttribute("BangSerial", ((door.panel:GetAttribute("BangSerial") :: number?) or 0) + 1)
 	local sound = bangs[door.id]
 	if sound and not sound.IsPlaying then
 		sound:Play()

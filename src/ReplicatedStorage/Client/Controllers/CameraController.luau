@@ -30,7 +30,11 @@ local C = Config.Camera
 local P = Config.Player
 local player = Players.LocalPlayer
 
-type Mode = "normal" | "hidden" | "capture" | "spectate"
+type Mode = "normal" | "hidden" | "capture" | "spectate" | "cinema"
+local cinemaFrame = CFrame.identity
+local cinemaFov = 60
+local cinemaFocus = Vector3.zero
+local cinemaReturnFrame: CFrame? = nil
 
 local mode: Mode = "normal"
 local applied = CFrame.identity
@@ -227,7 +231,13 @@ local function apply(dt: number)
 	local motion = CharacterController.getMotion()
 	fearSmooth = approach(fearSmooth, fear, 3, dt)
 
-	if mode == "spectate" then
+	if mode == "cinema" then
+		camera.CameraType = Enum.CameraType.Scriptable
+		camera.CFrame = cinemaFrame
+		camera.Focus = CFrame.new(cinemaFocus)
+		camera.FieldOfView = if SettingsController.get("fov") then cinemaFov else P.FieldOfView
+		return
+	elseif mode == "spectate" then
 		local character = spectateTarget and spectateTarget.Character
 		local head = character and character:FindFirstChild("Head")
 		if head and head:IsA("BasePart") then
@@ -275,6 +285,27 @@ end
 local CameraController = {
 	Name = "CameraController",
 }
+
+function CameraController.setCinema(frame: CFrame, fov: number, focus: Vector3?): boolean
+	if mode == "capture" or mode == "hidden" or mode == "spectate" then
+		return false
+	end
+	undo()
+	if mode ~= "cinema" and workspace.CurrentCamera then
+		cinemaReturnFrame = workspace.CurrentCamera.CFrame
+	end
+	mode = "cinema"
+	cinemaFrame = frame
+	cinemaFov = fov
+	cinemaFocus = focus or (frame.Position + frame.LookVector * 20)
+	return true
+end
+
+function CameraController.endCinema()
+	if mode == "cinema" then
+		CameraController.reset()
+	end
+end
 
 function CameraController.setSpectator(target: Player?)
 	if target then
@@ -352,6 +383,8 @@ end
 -- Volta tudo ao normal (nova rodada, checkpoint, saída de cena).
 function CameraController.reset()
 	undo()
+	local returnFrame = if mode == "cinema" then cinemaReturnFrame else nil
+	cinemaReturnFrame = nil
 	mode = "normal"
 	spectateTarget = nil
 	hiddenOrigin = nil
@@ -370,6 +403,13 @@ function CameraController.reset()
 	if camera then
 		camera.CameraType = Enum.CameraType.Custom
 		camera.CameraSubject = humanoid()
+		if returnFrame then
+			camera.CFrame = returnFrame
+		end
+		local root = rootPart()
+		if root then
+			camera.Focus = CFrame.new(root.Position + Vector3.new(0, 1.5, 0))
+		end
 		camera.FieldOfView = P.FieldOfView
 	end
 	local h = humanoid()

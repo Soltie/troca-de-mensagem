@@ -21,6 +21,7 @@ local services: { any } = {
 	require("./Services/StoreService"),
 	require("./Services/WorldService"),
 	require("./Services/PlayerStateService"),
+	require("./Services/PresenceService"),
 	require("./Services/CreatureService"),
 	require("./Services/PropService"),
 	require("./Services/CosmeticService"),

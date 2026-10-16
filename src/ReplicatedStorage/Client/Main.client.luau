@@ -18,9 +18,11 @@ local log = Logger.new("Client")
 -- { any }: cada Controller tem campos próprios; o Loader valida Name/Init/Start em runtime.
 local controllers: { any } = {
 	require("./Controllers/SettingsController"),
+	require("./Controllers/TransitionController"),
 	require("./Controllers/AudioController"),
 	require("./Controllers/CharacterController"),
 	require("./Controllers/CameraController"),
+	require("./Controllers/CharacterAnimatorController"),
 	require("./Controllers/BodyAudioController"),
 	require("./Controllers/FlashlightController"),
 	require("./Controllers/FearController"),
@@ -39,6 +41,7 @@ local controllers: { any } = {
 	require("./Controllers/StoreController"),
 	require("./Controllers/CampaignController"),
 	require("./Controllers/SpectatorController"),
+	require("./Controllers/CinematicController"),
 }
 
 local count = Loader.boot(controllers, { label = "Client" })

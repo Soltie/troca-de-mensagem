@@ -34,6 +34,8 @@ local DEFINITIONS: { [string]: RemoteKind } = {
 	StoreNotice = "RemoteEvent",
 	-- Cliente -> servidor: só telemetria do funil da loja ("open" | "view", oferta?). Não muda o jogo.
 	StoreTrack = "RemoteEvent",
+	-- Pitch do olhar (graus) para os colegas verem cabeça e lanterna; só visual (PresenceService).
+	SetLook = "RemoteEvent",
 }
 
 local FOLDER_NAME = Config.Net.RemotesFolderName
