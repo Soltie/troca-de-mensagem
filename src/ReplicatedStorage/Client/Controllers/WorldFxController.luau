@@ -7,7 +7,6 @@
 	- picos de falha quando O Vigia acorda e quando a energia volta.
 ]]
 
-local CollectionService = game:GetService("CollectionService")
 local RunService = game:GetService("RunService")
 
 local Config = require("@game/ReplicatedStorage/Shared/Config")
@@ -21,7 +20,8 @@ local surgeUntil = 0
 local surgeOrigin: Vector3? = nil
 local surgeRadius = math.huge
 local snapshot: GameState.Snapshot? = nil
-local fixtures: { [BasePart]: { light: Light, seed: number } } = {}
+type Fixture = { part: BasePart, seed: number, brightness: number, range: number, visibility: number, visible: boolean }
+local fixtures: { [Light]: Fixture } = {}
 local nextSeed = 0
 local shadowClock = 1
 local shadowCount = 0
@@ -39,28 +39,35 @@ local function selectShadows()
 		return
 	end
 	local candidates: { Profile.Candidate } = {}
-	for part, entry in fixtures do
-		if part.Parent then
+	local world = workspace:FindFirstChild(Tags.WorldFolder)
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Include
+	params.FilterDescendantsInstances = if world then { world } else {}
+	params.RespectCanCollide = true
+	for light, entry in fixtures do
+		local part = entry.part
+		if part.Parent and light.Parent then
+			local direction = part.Position - camera.CFrame.Position
+			local hit = if direction.Magnitude <= Profile.ShadowDistance
+				then workspace:Raycast(camera.CFrame.Position, direction, params)
+				else nil
+			entry.visible = hit == nil or hit.Instance == part or (hit.Position - part.Position).Magnitude < 1.5
 			table.insert(candidates, {
 				id = tostring(entry.seed),
-				enabled = entry.light.Enabled,
+				enabled = light.Enabled and light.Brightness > 0.01 and entry.visible,
 				distance = (part.Position - camera.CFrame.Position).Magnitude,
-				range = (entry.light :: any).Range,
+				range = (light :: any).Range,
 			})
 		end
 	end
 	local chosen = Profile.selectShadows(candidates, Profile.shadowBudget(quality()))
 	shadowCount = 0
-	for _, entry in fixtures do
-		entry.light.Shadows = chosen[tostring(entry.seed)] == true
-		if entry.light.Shadows then
+	for light, entry in fixtures do
+		light.Shadows = chosen[tostring(entry.seed)] == true
+		if light.Shadows then
 			shadowCount += 1
 		end
 	end
-end
-
-local function lightOf(part: BasePart): Light?
-	return part:FindFirstChildWhichIsA("Light")
 end
 
 local function step()
@@ -68,16 +75,26 @@ local function step()
 	local flashes = SettingsController.get("flashes")
 	local surging = flashes and now < surgeUntil
 	local s = snapshot
-	for instance, entry in fixtures do
+	for light, entry in fixtures do
+		local instance = entry.part
 		if instance.Parent then
-			local light = entry.light
 			if light.Parent then
-				local base = (instance:GetAttribute("BaseBrightness") :: number?) or light.Brightness
+				local raw = (instance:GetAttribute("BaseBrightness") :: number?) or entry.brightness
+				local base, reach = Profile.fixture(instance.Name, raw, entry.range)
+				local ranged = light :: any
+				ranged.Range = reach
 				local kind = instance:GetAttribute(Tags.Attr.LightKind)
-				local factor =
-					Profile.flicker(now, entry.seed, instance:GetAttribute(Tags.Attr.Flicker) == true, flashes)
+				local architectural = kind ~= nil or instance.Name == "NightLight"
+				local factor = if architectural
+					then Profile.flicker(now, entry.seed, instance:GetAttribute(Tags.Attr.Flicker) == true, flashes)
+					else 1
+				-- Luzes sem sombra de outros cômodos não atravessam paredes/tetos na visão local.
+				local target = if architectural and kind ~= "Exit" and not entry.visible then 0.12 else 1
+				entry.visibility += (target - entry.visibility) * 0.22
+				factor *= entry.visibility
 				if
 					surging
+					and architectural
 					and kind ~= "Exit"
 					and (surgeOrigin == nil or (instance.Position - surgeOrigin).Magnitude <= surgeRadius)
 				then
@@ -115,27 +132,38 @@ end
 
 function WorldFxController.Start()
 	local function add(instance: Instance)
-		if not instance:IsA("BasePart") or fixtures[instance] then
+		if not instance:IsA("Light") or fixtures[instance] then
 			return
 		end
-		local light = lightOf(instance)
-		if light then
-			nextSeed += 1
-			fixtures[instance] = { light = light, seed = nextSeed }
+		local part = instance.Parent
+		if not part or not part:IsA("BasePart") then
+			return
 		end
+		nextSeed += 1
+		fixtures[instance] = {
+			part = part,
+			seed = nextSeed,
+			brightness = instance.Brightness,
+			range = (instance :: any).Range,
+			visibility = 1,
+			visible = true,
+		}
 	end
-	for _, instance in CollectionService:GetTagged(Tags.PowerLight) do
-		add(instance)
-	end
-	CollectionService:GetInstanceAddedSignal(Tags.PowerLight):Connect(add)
-	CollectionService:GetInstanceRemovedSignal(Tags.PowerLight):Connect(function(instance)
-		if instance:IsA("BasePart") then
-			local entry = fixtures[instance]
-			if entry and entry.light.Parent then
-				entry.light.Shadows = false
+	-- Inclui luzes decorativas sem tag, sem tocar nas lanternas dos jogadores.
+	task.spawn(function()
+		local world = workspace:WaitForChild(Tags.WorldFolder, 30)
+		if not world then
+			return
+		end
+		for _, instance in world:GetDescendants() do
+			add(instance)
+		end
+		world.DescendantAdded:Connect(add)
+		world.DescendantRemoving:Connect(function(instance)
+			if instance:IsA("Light") then
+				fixtures[instance] = nil
 			end
-			fixtures[instance] = nil
-		end
+		end)
 	end)
 	GameState.observe(function(next: GameState.Snapshot)
 		local previous = snapshot

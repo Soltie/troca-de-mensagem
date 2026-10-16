@@ -19,6 +19,8 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local SoundService = game:GetService("SoundService")
 
+local Config = require("@game/ReplicatedStorage/Shared/Config")
+local House = require("@game/ReplicatedStorage/Shared/Game/HouseCatalog")
 local Audio = require("@game/ReplicatedStorage/Shared/Game/Audio")
 local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
 local Presentation = require("@game/ReplicatedStorage/Shared/Game/ThreatPresentation")
@@ -44,6 +46,8 @@ local fear = 0
 local silenceUntil = 0
 local muffleOverride = 0
 local nextCreakAt = 0
+local nextHushAt = 0
+local hushUntil = 0
 local rng = Random.new()
 
 local Preferences = require("@game/ReplicatedStorage/Shared/Game/HousePreferences")
@@ -95,17 +99,32 @@ local function creatureRoot(): BasePart?
 end
 
 local function checkInside(position: Vector3): boolean
-	local params = RaycastParams.new()
-	params.FilterType = Enum.RaycastFilterType.Exclude
-	local exclude: { Instance } = {}
-	if player.Character then
-		table.insert(exclude, player.Character)
+	local world = workspace:FindFirstChild(Tags.WorldFolder)
+	if not world then
+		return false
 	end
-	params.FilterDescendantsInstances = exclude
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Include
+	params.FilterDescendantsInstances = { world }
+	params.RespectCanCollide = true
 	return workspace:Raycast(position, Vector3.new(0, 25, 0), params) ~= nil
 end
 
 local function zoneAt(position: Vector3): (string, string)
+	if Config.House.Enabled then
+		for _, room in House.Rooms do
+			if
+				room.id ~= "Exterior"
+				and math.abs(position.Y - (room.y + 5)) <= 8
+				and math.abs(position.X - room.x) <= 18
+				and math.abs(position.Z - room.z) <= 16
+			then
+				local reverb = if room.y < 0 then "StoneRoom" elseif room.id == "Bath" then "Bathroom" else "Room"
+				return room.id, reverb
+			end
+		end
+		return "Hall", "Hallway"
+	end
 	for _, part in zones do
 		local p = part.CFrame:PointToObjectSpace(position)
 		local half = part.Size / 2
@@ -158,7 +177,7 @@ function AudioController.playAt(clipName: string, parent: Instance, volumeScale:
 	end
 	sound.RollOffMode = Enum.RollOffMode.InverseTapered
 	sound.RollOffMinDistance = 8
-	sound.RollOffMaxDistance = 90
+	sound.RollOffMaxDistance = if clipName == "CreakWood" or clipName == "CreakMetal" then 38 else 90
 	sound:Play()
 	sound.Ended:Once(function()
 		sound:Destroy()
@@ -206,7 +225,7 @@ function AudioController.loopAt(clipName: string, parent: Instance): Sound
 	local sound = make(clipName, clipName, parent, true)
 	sound.RollOffMode = Enum.RollOffMode.InverseTapered
 	sound.RollOffMinDistance = 8
-	sound.RollOffMaxDistance = 90
+	sound.RollOffMaxDistance = if clipName == "CreakWood" or clipName == "CreakMetal" then 38 else 90
 	return sound
 end
 
@@ -259,6 +278,7 @@ function AudioController.debugState(): { [string]: any }
 		reverb = SoundService.AmbientReverb.Name,
 		muffle = if muffleEq then muffleEq.HighGain else 0,
 		silenced = os.clock() < silenceUntil,
+		hush = os.clock() < hushUntil,
 		volumes = volumes,
 	}
 end
@@ -342,8 +362,8 @@ function AudioController.Start()
 
 	-- Sons 3D do mundo (servidor) também passam pelo filtro lo-fi.
 	local function adopt(instance: Instance)
-		if instance:IsA("Sound") then
-			instance.SoundGroup = getGroup()
+		if instance:IsA("Sound") and not instance.SoundGroup then
+			instance.SoundGroup = mixer.effects
 		end
 	end
 	task.spawn(function()
@@ -353,6 +373,9 @@ function AudioController.Start()
 				adopt(d)
 			end
 			world.DescendantAdded:Connect(adopt)
+			if Config.House.Enabled then
+				return -- usa o catálogo da casa em vez das zonas industriais antigas.
+			end
 			local zoneFolder = world:WaitForChild("Features", 30)
 			zoneFolder = zoneFolder and zoneFolder:WaitForChild("Zones", 30)
 			if zoneFolder then
@@ -384,6 +407,7 @@ function AudioController.Start()
 				silenceUntil = 0
 				muffleOverride = 0
 				musicState = "none"
+				nextHushAt, hushUntil, nextCreakAt = 0, 0, 0
 			end
 		end
 	end)
@@ -400,7 +424,7 @@ function AudioController.Start()
 			lastInsideCheck = now
 			inside = checkInside(position)
 			local room, reverb = zoneAt(position)
-			zone = room
+			zone = if inside then room else "Outside"
 			setReverb(if inside then reverb else "Plain")
 		end
 
@@ -419,6 +443,18 @@ function AudioController.Start()
 
 		local music = musicState
 		local inPlay = Presentation.playing(s.phase, player:GetAttribute("CampaignStatus") :: string?)
+		-- Pausas espaçadas da ambiência; passos e perseguição continuam audíveis.
+		if inPlay and inside and music == "calm" and near == 0 then
+			if nextHushAt == 0 then
+				nextHushAt = now + rng:NextNumber(18, 32)
+			elseif now >= nextHushAt then
+				hushUntil = now + rng:NextNumber(3, 5)
+				nextHushAt = now + rng:NextNumber(28, 46)
+			end
+		else
+			hushUntil, nextHushAt = 0, 0
+		end
+		local hush = now < hushUntil
 		targets.Music = if inPlay and music == "calm" then Audio.Music.volume else 0
 		targets.MusicTension = if inPlay and music == "tension"
 			then Audio.MusicTension.volume * (0.7 + near * 0.6)
@@ -434,6 +470,9 @@ function AudioController.Start()
 
 		for name, sound in loops do
 			local target = targets[name]
+			if hush and (name == "Music" or name == "AmbInterior" or name == "WindInterior") then
+				target *= 0.18
+			end
 			if silenced and name ~= "Heartbeat" then
 				target = 0
 			end
@@ -461,10 +500,10 @@ function AudioController.Start()
 		if inPlay and inside and now >= nextCreakAt and not silenced then
 			nextCreakAt = now + rng:NextNumber(14, 30)
 			local offset = Vector3.new(rng:NextNumber(-14, 14), rng:NextNumber(3, 8), rng:NextNumber(-14, 14))
-			local clip = if zone == "Office" then "CreakWood" else "CreakMetal"
+			local clip = if Config.House.Enabled or zone == "Office" then "CreakWood" else "CreakMetal"
 			local sound = AudioController.playAtPosition(clip, position + offset, rng:NextNumber(0.5, 0.9))
 			sound.PlaybackSpeed = rng:NextNumber(0.8, 1.1)
-			sound.TimePosition = rng:NextNumber(0, 6)
+			sound.TimePosition = 0
 			task.delay(rng:NextNumber(1.6, 3), function()
 				if sound.Parent then
 					sound:Stop()

@@ -5,25 +5,24 @@ local Profile = {}
 export type RGB = { number }
 export type Grade = { tint: RGB, contrast: number, saturation: number, brightness: number }
 
--- Noite de lua cheia, legível para crianças: névoa lilás, ambiente azulado e contraste suave.
--- O medo vem do Tung Tung e do som, não de tela preta.
+-- Lua fria e pontos quentes: preserva as cores dos brinquedos sem iluminar todos os cantos.
 Profile.World = {
 	clock = 0.3,
-	brightness = 2.1,
-	ambient = { 58, 54, 88 },
-	ambientPower = { 84, 76, 98 },
-	outdoor = { 96, 104, 152 },
-	fog = { 46, 40, 82 },
-	fogPower = { 60, 54, 92 },
-	fogStart = 28,
-	fogEnd = 240,
-	fogEndPower = 280,
-	shadowSoftness = 0.25,
-	diffuse = 0.35,
-	specular = 0.35,
+	brightness = 1.05,
+	ambient = { 19, 22, 32 },
+	ambientPower = { 27, 28, 36 },
+	outdoor = { 65, 74, 100 },
+	fog = { 30, 36, 51 },
+	fogPower = { 35, 40, 53 },
+	fogStart = 24,
+	fogEnd = 190,
+	fogEndPower = 210,
+	shadowSoftness = 0.3,
+	diffuse = 0.14,
+	specular = 0.22,
 }
 Profile.Bloom = { intensity = 0.12, size = 12, threshold = 1.8 }
-Profile.Flashlight = { brightness = 3.1, spill = 0.22, angle = 48 }
+Profile.Flashlight = { brightness = 2.7, spill = 0.11, angle = 40 }
 Profile.ShadowBudget = 2 -- mais a lanterna própria; colegas nunca ganham sombras
 Profile.ShadowDistance = 60
 Profile.TransitionRate = 1.8
@@ -31,17 +30,28 @@ Profile.TransitionRate = 1.8
 function Profile.grade(indoor: number, power: number): Grade
 	local inside = math.clamp(indoor, 0, 1)
 	local on = math.clamp(power, 0, 1)
-	-- Contraste contido preserva os materiais; com energia, o interior recebe um toque quente.
+	-- Cor local continua reconhecível; energia aquece só o interior.
 	return {
-		tint = { 240 + inside * on * 12, 238 + inside * on * 6, 255 - inside * on * 22 },
-		contrast = 0.06 + inside * 0.03,
-		saturation = -0.02 - inside * 0.04,
-		brightness = 0.02,
+		tint = { 240 + inside * on * 12, 246 + inside * on * 2, 255 - inside * on * 18 },
+		contrast = 0.075 + inside * 0.025,
+		saturation = -0.035 - inside * 0.025,
+		brightness = 0.005,
 	}
 end
 
 function Profile.exposure(indoor: number, power: number): number
 	return 0.08 + math.clamp(indoor, 0, 1) * (0.08 - 0.06 * math.clamp(power, 0, 1))
+end
+
+-- Luz decorativa não deve preencher salas vizinhas nem competir com a lanterna.
+-- Nomes desconhecidos (pistas, moedas e efeitos de missão) conservam seus valores.
+function Profile.fixture(name: string, brightness: number, range: number): (number, number)
+	if name == "NightLight" then
+		return brightness * 0.55, math.min(range, 18)
+	elseif name == "Candle" then
+		return brightness * 0.8, math.min(range, 22)
+	end
+	return brightness, range
 end
 
 function Profile.fogEnd(base: number, danger: number): number

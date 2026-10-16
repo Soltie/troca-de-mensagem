@@ -51,6 +51,7 @@ local function underRoof(position: Vector3): boolean
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Include
 	params.FilterDescendantsInstances = { world }
+	params.RespectCanCollide = true
 	local hit = workspace:Raycast(position, Vector3.new(0, 18, 0), params)
 	return hit ~= nil and hit.Instance.CanCollide
 end
@@ -192,7 +193,10 @@ function controller.Start()
 				end
 				prior = {}
 			end
-			return controller.debugState()
+			local state = controller.debugState()
+			state.audio = require("./AudioController").debugState()
+			state.fixtures = require("./WorldFxController").debugState()
+			return state
 		end
 		bridge.Parent = gui
 		RunService:BindToRenderStep("S9LightingQA", Enum.RenderPriority.Last.Value + 5, function()

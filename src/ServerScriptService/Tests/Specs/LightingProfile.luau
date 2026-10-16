@@ -4,6 +4,16 @@ local TestKit = require("../TestKit")
 return {
 	name = "LightingProfile",
 	run = function(t)
+		t.it("contains decorative fill without dimming clues or mission effects", function()
+			local night, reach = P.fixture("NightLight", 0.75, 26)
+			t.expect(night > 0 and night < 0.75).toBe(true)
+			t.expect(reach).toBe(18)
+			local _, short = P.fixture("NightLight", 0.75, 8)
+			t.expect(short).toBe(8)
+			local clue, clueRange = P.fixture("ObjectiveGlow", 2, 30)
+			t.expect(clue).toBe(2)
+			t.expect(clueRange).toBe(30)
+		end)
 		t.it("preserves bounded grade and visibility across interior/power blends", function()
 			for i = -1, 11 do
 				for j = -1, 11 do

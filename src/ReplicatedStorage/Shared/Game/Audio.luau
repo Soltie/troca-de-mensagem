@@ -18,8 +18,8 @@ export type Clip = {
 
 local Audio: { [string]: Clip } = {
 	-- Ambiências
-	AmbExterior = { id = "rbxassetid://9112834179", volume = 0.35 }, -- PSE Neighborhood Ambience 4 (noite, grilos)
-	AmbInterior = { id = "rbxassetid://9112839511", volume = 0.22, speed = 0.4 }, -- PSE Oil Refinery Ambience 2 (grave)
+	AmbExterior = { id = "rbxassetid://9112834179", volume = 0.24 }, -- PSE Neighborhood Ambience 4 (noite, grilos)
+	AmbInterior = { id = "rbxassetid://9112839511", volume = 0.15, speed = 0.4 }, -- PSE Oil Refinery Ambience 2 (grave)
 	WindInterior = { id = "rbxassetid://9125742262", volume = 0.12, speed = 0.45 }, -- PSE Plasma Trails Airy Whooshing (vento em frestas)
 	Machinery = { id = "rbxassetid://9118748093", volume = 0.18, speed = 0.6 }, -- PSE Rumble Constant Roar (máquinas com energia)
 	Drips = { id = "rbxassetid://9120527007", volume = 0.35 }, -- PSE Water Drip Single Drops Into Tin Bucket 2
@@ -31,7 +31,7 @@ local Audio: { [string]: Clip } = {
 	GeneratorHum = { id = "rbxassetid://9112889082", volume = 0.5 }, -- PSE Transformer Hum 1
 
 	-- Música por estado (calma / tensão / perseguição / alívio)
-	Music = { id = "rbxassetid://1837172508", volume = 0.22 }, -- APM "The Fear Within" (calma inquieta)
+	Music = { id = "rbxassetid://1837172508", volume = 0.13 }, -- APM "The Fear Within" (calma inquieta)
 	MusicTension = { id = "rbxassetid://1843867314", volume = 0.2 }, -- APM "Tension Repeat Drones 29"
 	MusicChase = { id = "rbxassetid://1837843534", volume = 0.3 }, -- APM "Deliberate Pain (Fast Bass)"
 	MusicRelief = { id = "rbxassetid://1843755486", volume = 0.18 }, -- APM "Mid-Tone Drone 51"

@@ -1,0 +1,46 @@
+{
+  "comfort": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"flashesOffStable\":true,\"changing\":0,\"state\":{\"shadows\":true,\"audio\":{\"volumes\":{\"MusicRelief\":0,\"WindInterior\":0.13,\"AmbInterior\":0.15,\"MusicChase\":0,\"AmbExterior\":0.05,\"Whisper\":0,\"Music\":0.13,\"Heartbeat\":0.08,\"MusicTension\":0,\"Machinery\":0},\"hush\":false,\"zone\":\"Living\",\"silenced\":false,\"inside\":true,\"music\":\"calm\",\"reverb\":\"Room\",\"muffle\":0},\"power\":1.042128884558343e-85,\"contrast\":0.10000000149011612,\"fixtures\":{\"budget\":2,\"shadows\":2,\"fixtures\":118},\"danger\":0,\"baseFog\":190,\"style\":\"Realistic\",\"fog\":190,\"bloom\":0.11999999731779099,\"depth\":0,\"exposure\":0.1599999964237213,\"indoor\":0.9999999999999998}}"
+      }
+    ],
+    "isError": false
+  },
+  "runtime": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"state\":{\"shadows\":true,\"audio\":{\"volumes\":{\"MusicRelief\":0,\"WindInterior\":0.12,\"AmbInterior\":0.15,\"MusicChase\":0,\"AmbExterior\":0.05,\"Whisper\":0,\"Music\":0.13,\"Heartbeat\":0.03,\"MusicTension\":0,\"Machinery\":0},\"hush\":false,\"zone\":\"Living\",\"silenced\":false,\"inside\":true,\"music\":\"calm\",\"reverb\":\"Room\",\"muffle\":0},\"power\":0.9999993315192015,\"contrast\":0.10000000149011612,\"fixtures\":{\"budget\":2,\"shadows\":2,\"fixtures\":118},\"danger\":0,\"baseFog\":210,\"style\":\"Realistic\",\"fog\":209.99998474121095,\"bloom\":0.11999999731779099,\"depth\":0,\"exposure\":0.1000000387430191,\"indoor\":0.9999999999999999}}"
+      }
+    ],
+    "isError": false
+  },
+  "hush": {
+    "observed": true,
+    "low": 0.02,
+    "high": 0.13,
+    "seconds": 42.5
+  },
+  "studioTests": {
+    "isolated": 269,
+    "integrated": 271,
+    "failed": 0
+  },
+  "zones": [
+    {
+      "at": "Bath",
+      "zone": "Bath",
+      "reverb": "Bathroom",
+      "inside": true
+    },
+    {
+      "at": "Basement",
+      "zone": "Basement",
+      "reverb": "StoneRoom",
+      "inside": true
+    }
+  ],
+  "note": "QA controlado com camera fixa, criatura congelada/teleportada; nao comprova balanceamento humano."
+}

@@ -299,3 +299,20 @@ Não editar menu, ModeMenuController, StoryController, UI de escolhas, mapa, mat
 DEV LIBERADO EM EDIT; outro agente faz o menu. Check isolado 213, integrado 234; runner Dev final 257 aprovados.
 Evidências e limites: docs/LIGHTING_POLISH.md e docs/evidence/lighting-polish. Sem push/publicação/Creator Hub.
 ÍNDICE LIBERADO APÓS COMMIT desta frente; Main.client e Config incluem somente os hunks de iluminação.
+
+**CODEX — ATMOSFERA DE TERROR EM ANDAMENTO (chat 01a146fd, 16/10/2026).**
+Worktree próprio `.cache/horror-atmosphere`, branch `codex/horror-atmosphere`, base 0dd8a27 (Tung Tung novo).
+Reservados: LightingProfile, LightingController, WorldFxController, AudioController, Shared/Game/Audio e Specs/LightingProfile.
+Não edito HouseBuilder/HouseScenery/HouseArchitecture, layout, props, UI, roda, rig ou animações. O ajuste concorrente de bloom/exposição no house-map-polish será preservado como ponto de partida e absorvido pela nova direção de luz nesta frente.
+QA em build própria HorrorAtmosphere.rbxlx. Não interromper Casa_POLISH/HouseMapPolish/FinalPolish nem seus testes.
+Integração do mapa: aplicar os arquivos/commit desta frente depois; não substituir src inteiro. Sem push/publicação.
+
+**CODEX — ATMOSFERA DE TERROR ENTREGUE (chat 01a146fd, 16/10/2026).**
+Worktree `.cache/horror-atmosphere`, branch `codex/horror-atmosphere`, base 0dd8a27.
+Seis arquivos de src: LightingProfile, Shared/Game/Audio, LightingController, WorldFxController, AudioController e Specs/LightingProfile.
+Luz fria ambiente menor, pontos quentes, sombras incluindo decoração, redução suave de vazamento entre cômodos, lanterna recortada; áudio por cômodo, madeira e pausas de ambiência.
+Check isolado 261 / snapshot integrado do house-map-polish 263 ALL GREEN; Studio final 271/0; História 2 clientes: 64 verificações, 5 capítulos e Won.
+Build pronta: `build/Casa_TERROR_POLISH.rbxlx`, SHA256 914DB5D6E52C897B72E56CC9399520977414660C64825A04B824D22A61E21987.
+Relatório: `docs/HORROR_ATMOSPHERE.md` no worktree desta frente. Snapshot de mapa congelado antes de house-levels, não é o mapa final dessa outra frente.
+Integração: aplicar SOMENTE os seis arquivos de src/commit desta branch ao mapa final; nunca substituir src inteiro. Não editei mapa, roda, props, UI, rig ou animações.
+Studio próprio Casa_TERROR_POLISH_FINAL (991e6729-cfb1-4d17-8140-daf7fcb043e5) liberado em Edit; demais Studios preservados. Sem push/publicação.
