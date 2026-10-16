@@ -2,6 +2,7 @@
 -- Estado puro da equipe. Só o adaptador do servidor verifica distância/visão e aplica efeitos físicos.
 local Catalog = require("@game/ReplicatedStorage/Shared/Game/CampaignCatalog")
 local Generator = require("./CampaignGenerator")
+local StoryPlan = require("./StoryPlan")
 
 export type Status = "Active" | "Downed" | "Waiting" | "Escaped"
 export type Phase = "Lobby" | "Playing" | "Intermission" | "Extracting" | "Won" | "Lost"
@@ -15,6 +16,7 @@ export type TaskState = {
 }
 export type Policy = { minPlayers: number, maxPlayers: number, downedSeconds: number, relayWindow: number }
 export type State = {
+	mode: string,
 	seed: number,
 	stage: number,
 	phase: Phase,
@@ -31,7 +33,8 @@ local function finite(n: number): boolean
 	return n == n and math.abs(n) < math.huge
 end
 
-function Session.new(seed: number, policy: Policy): State
+function Session.new(seed: number, policy: Policy, mode: string?): State
+	assert(mode == nil or mode == "Standard" or mode == "Story", "Invalid game mode")
 	assert(finite(seed) and seed % 1 == 0, "Invalid campaign seed")
 	assert(
 		policy.minPlayers >= 1 and policy.maxPlayers <= 8 and policy.minPlayers <= policy.maxPlayers,
@@ -39,6 +42,7 @@ function Session.new(seed: number, policy: Policy): State
 	)
 	assert(policy.downedSeconds > 0 and policy.relayWindow > 0, "Invalid timer policy")
 	return {
+		mode = mode or "Standard",
 		seed = seed,
 		stage = 0,
 		phase = "Lobby",
@@ -119,7 +123,9 @@ function Session.beginStage(state: State): (boolean, string?)
 	if state.stage >= #Catalog.Stages then
 		return false, "campaign_complete"
 	end
-	local plan = Generator.create(state.seed, state.stage + 1, count)
+	local plan = if state.mode == "Story"
+		then StoryPlan.create(state.stage + 1, count)
+		else Generator.create(state.seed, state.stage + 1, count)
 	local valid, reason = Generator.validate(plan)
 	if not valid then
 		return false, reason
@@ -160,6 +166,16 @@ function Session.act(state: State, id: number, taskId: string, button: number, n
 	local activity = state.tasks[taskId]
 	if not activity or activity.solved then
 		return false, "not_available"
+	end
+	if state.mode == "Story" and state.plan then
+		for _, previous in state.plan.activities do
+			if previous.id == taskId then
+				break
+			end
+			if not state.tasks[previous.id].solved then
+				return false, "story_order"
+			end
+		end
 	end
 	local kind = activity.spec.kind
 	local result = "progress"

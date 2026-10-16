@@ -4,6 +4,11 @@ Atualizado: 2026-10-15. Máquina: Windows 11, PowerShell 5.1 / Git Bash. Projeto
 
 ## Estado atual / próximo passo
 
+**Dois modos — 16/10/2026:** menu de escolha cooperativa (História/Padrão), campanha
+"O Último Turno" com três capítulos e mapa fixo. Check local 206 aprovados; runner Studio
+229 aprovados; campanhas com três/oito clientes Won (59/84 verificações). Validação e recibos finais
+em [STORY_MODE.md](STORY_MODE.md). O padrão mantém a geração aleatória existente.
+
 **Mapa modular — 16/10/2026:** ala norte com nove setores e geração física por rodada/estágio.
 Check local 182 testes / Studio 205 aprovados, incluindo navegação por nove plantas e o duto
 corrigido na integração. Campanhas com três/oito clientes Won, 64/134 verificações. Recibos e validação

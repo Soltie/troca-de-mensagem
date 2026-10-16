@@ -30,8 +30,8 @@ function Harness.run(runtime: any, args: any)
 		end
 		return table.concat(signature, "/")
 	end
-	local deadline = os.clock() + 220
-	task.delay(230, function()
+	local deadline = os.clock() + (if args.storyQA then 350 else 220)
+	task.delay(if args.storyQA then 360 else 230, function()
 		if not completed then
 			StudioTestService:EndTest({ success = false, error = "watchdog timeout", players = expected })
 		end
@@ -82,6 +82,21 @@ function Harness.run(runtime: any, args: any)
 		if runtime.snapshot().stage ~= 0 or runtime.snapshot().active ~= expected then
 			runtime.restart()
 		end
+		local choiceSerial = 0
+		local function chooseStory()
+			if args.modeMenuQA then
+				choiceSerial += 1
+				check(runtime.snapshot().phase == "Lobby", "menu waits for a mode vote")
+				for _, player in Players:GetPlayers() do
+					player:SetAttribute("ModeQARequest", `Story:{choiceSerial}`)
+				end
+				waitFor(function()
+					return runtime.snapshot().mode == "Story"
+				end, "story selected through client remote")
+				check(runtime.snapshot().mode == "Story", "server accepts the team's story majority")
+			end
+		end
+		chooseStory()
 		waitFor(function()
 			local s = runtime.snapshot()
 			return s.stage == 1 and not s.building and s.phase == "Playing"
@@ -90,11 +105,18 @@ function Harness.run(runtime: any, args: any)
 		local firstSeed = runtime.snapshot().seed
 		local firstMap = mapSignature(runtime.snapshot().plan.sector)
 		runtime.restart()
+		chooseStory()
 		waitFor(function()
 			local s = runtime.snapshot()
 			return s.stage == 1 and not s.building and s.phase == "Playing"
 		end, "fresh match rebuild", 60)
-		if Config.Campaign.Seed == nil then
+		if args.storyQA then
+			check(runtime.snapshot().seed == firstSeed, "story keeps the same seed on replay")
+			check(
+				mapSignature(runtime.snapshot().plan.sector) == firstMap,
+				"story keeps the same physical map on replay"
+			)
+		elseif Config.Campaign.Seed == nil then
 			check(runtime.snapshot().seed ~= firstSeed, "new match receives a new seed")
 			check(mapSignature(runtime.snapshot().plan.sector) ~= firstMap, "new match changes physical map")
 		end
@@ -162,7 +184,7 @@ function Harness.run(runtime: any, args: any)
 			waitFor(function()
 				local s = runtime.snapshot()
 				return s.stage == stageIndex and not s.building and s.phase == "Playing"
-			end, `stage {stageIndex} start`, 20)
+			end, `stage {stageIndex} start`, if args.storyQA then 40 else 20)
 			local snapshot = runtime.snapshot()
 			check(snapshot.plan.players == expected, `stage {stageIndex} scales to party`)
 			players = {}
@@ -181,7 +203,8 @@ function Harness.run(runtime: any, args: any)
 			local sector = workspace.Substation9:FindFirstChild("ProceduralSector")
 			assert(sector, "Generated sector missing")
 			check(
-				sector:GetAttribute("Seed") == plan.seed and sector:GetAttribute("Stage") == stageIndex,
+				sector:GetAttribute("Seed") == plan.seed
+					and sector:GetAttribute("Stage") == (if args.storyQA then 1 else stageIndex),
 				`stage {stageIndex} builds its seeded physical map`
 			)
 			if previousSector then
@@ -189,7 +212,12 @@ function Harness.run(runtime: any, args: any)
 					previousSector.Parent == nil and previousSector ~= sector,
 					`stage {stageIndex} destroys the old sector`
 				)
-				check(mapSignature(plan.sector) ~= previousMap, `stage {stageIndex} changes rooms and routes`)
+				check(
+					if args.storyQA
+						then mapSignature(plan.sector) == previousMap
+						else mapSignature(plan.sector) ~= previousMap,
+					`stage {stageIndex} {if args.storyQA then "preserves the story map" else "changes rooms and routes"}`
+				)
 			end
 			for _, room in plan.sector.rooms do
 				local model = sector:FindFirstChild(`Cell_{room.cell}`)
@@ -278,6 +306,7 @@ function Harness.run(runtime: any, args: any)
 		stage = runtime.snapshot().stage,
 		phase = runtime.snapshot().phase,
 		seed = runtime.snapshot().seed,
+		mode = runtime.snapshot().mode,
 	}
 	log.info("RESULT %s", HttpService:JSONEncode(result))
 	StudioTestService:EndTest(result)

@@ -1,0 +1,75 @@
+{
+  "date": "2026-10-16",
+  "baseCommit": "4e637a3f86ca309ad3aebe809815559b639c1402",
+  "scope": "Final title layout and directed skip verification; 229 Studio tests. Multiplayer receipts use StoryModeFinal build, before the final title-only adjustment.",
+  "files": [
+    {
+      "sha256": "411FF3211CACEBEF1FFB7958FB5F61D3539B122D799A96F12340357D18456470",
+      "path": "src/ReplicatedStorage/Shared/Game/GameModes.luau"
+    },
+    {
+      "sha256": "02E9D1403A0FE0D151DA247566D204C769E2E15199B16AD43A1B8FF8B40DFD8A",
+      "path": "src/ReplicatedStorage/Shared/Game/StoryCatalog.luau"
+    },
+    {
+      "sha256": "A79653163C33C0FB4F6CA824E9B4C02E58DD05068D27B70B369045A5F36DA910",
+      "path": "src/ServerScriptService/Server/Campaign/StoryPlan.luau"
+    },
+    {
+      "sha256": "70666A6E568B5323070C13ABC595022FF4540EC069950FBCD68FF5791EAFE273",
+      "path": "src/ServerScriptService/Server/Campaign/CampaignRuntime.luau"
+    },
+    {
+      "sha256": "758EA2EAD36520D162744C097B72F155E562193A96B19D6C48B3653B47F45B79",
+      "path": "src/ServerScriptService/Server/Campaign/CoopSession.luau"
+    },
+    {
+      "sha256": "A0D34D8CB0CC5F8E0656D0E34A3049E67B11D543692FC67E68D1DAA5B42D8BE6",
+      "path": "src/ServerScriptService/Server/Campaign/CampaignGenerator.luau"
+    },
+    {
+      "sha256": "C5404F96A90BB39599A3433105C61FFF0479B61D1AA6378893F89CBE08A6FF8E",
+      "path": "src/ServerScriptService/Server/Campaign/ActivityBuilder.luau"
+    },
+    {
+      "sha256": "2EE4E89B2ABF4F285DB6E9B199DAEB37832C1274E40BAA1996F84370351B179B",
+      "path": "src/ReplicatedStorage/Client/Controllers/ModeMenuController.luau"
+    },
+    {
+      "sha256": "8E1886162EEEA7F5BB1430D2F85C5E940A1601A1632BC76EA49F4CBC1B52A968",
+      "path": "src/ReplicatedStorage/Client/Controllers/StoryController.luau"
+    },
+    {
+      "sha256": "873F330DB30B10AF2C02EB6ED7396904F0528FE9F57BE689FA619F763E92253B",
+      "path": "src/ReplicatedStorage/Client/Controllers/CinematicController.luau"
+    },
+    {
+      "sha256": "48D8035A387C0593F82A29BC1B56834773BE6599EB0B5805CF6837488B561C23",
+      "path": "src/ReplicatedStorage/Client/Controllers/CameraController.luau"
+    },
+    {
+      "sha256": "1D17F5059941DF068B5F7F0C5994E8B94F7B9A816469702575F5C21CF87E6648",
+      "path": "src/ReplicatedStorage/Client/Controllers/TransitionController.luau"
+    },
+    {
+      "sha256": "C1ECABEB3928C44A8F9B269F2FDFF5F413E92FCA3CB822F97D38CADE7C3C01E4",
+      "path": "src/ReplicatedStorage/Client/Main.client.luau"
+    },
+    {
+      "sha256": "6F57A3335DB5C431005D378D589A651697503195E6F52B8AE8245286FEE45765",
+      "path": "src/ReplicatedStorage/Shared/Net/Remotes.luau"
+    },
+    {
+      "sha256": "CFB6220591EE74232EC2C72BC62E1B435EE3E4C89AD7B617509FE4695D8B9C5D",
+      "path": "src/ServerScriptService/Tests/CampaignHarness.luau"
+    },
+    {
+      "sha256": "EC60089C4D58CAAC45062E98D2F55FBBFD89040B75533ECA8D6E9F2464A61354",
+      "path": "build/StoryModeFinal.rbxlx"
+    },
+    {
+      "sha256": "7BEE976D7D1F6F2202B21FF98918057972310C2234739ED1135428B1EE328BB0",
+      "path": "build/StoryModeRelease.rbxlx"
+    }
+  ]
+}

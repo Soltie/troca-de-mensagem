@@ -46,7 +46,7 @@ function Builder.build(parent: Instance, plan: Generator.Plan, distance: number)
 			p + Vector3.new(0, 5.2, 0),
 			Vector3.zAxis,
 			Vector2.new(5.5, 1.5),
-			string.format("%02d / %s\n%s", index, Catalog.RoomNames[activity.room] or "SETOR", clue),
+			string.format("%02d / %s\n%s", index, activity.title or Catalog.RoomNames[activity.room] or "SETOR", clue),
 			{
 				textColor = Palette.Hazard,
 				background = Palette.Black,

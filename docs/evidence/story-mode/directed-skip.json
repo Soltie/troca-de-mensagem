@@ -1,0 +1,16 @@
+{
+  "date": "2026-10-16",
+  "build": "StoryModeRelease.rbxlx",
+  "scope": "Directed presentation check in Play; temporary CampaignState attributes, not a multiplayer progression test",
+  "chapter": 2,
+  "input": "Space",
+  "serverSceneStillRunning": true,
+  "subtitleVisible": false,
+  "rootAnchored": true,
+  "cameraMode": "normal",
+  "cameraFov": 72,
+  "cinematicElapsed": 0.11504990141838789,
+  "sequenceAfterSkip": "",
+  "transition": { "eyes": 0, "letterbox": 0, "stamp": false, "static": false, "fade": 0 },
+  "studioReturnedToEdit": true
+}

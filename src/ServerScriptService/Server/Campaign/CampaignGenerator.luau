@@ -5,8 +5,18 @@ local Layout = require("../World/Layout")
 local ProceduralLayout = require("../World/ProceduralLayout")
 local SeededRandom = require("./SeededRandom")
 
-export type Activity = { id: string, slot: string, room: string, kind: string, order: { number }, x: number, z: number }
+export type Activity = {
+	id: string,
+	slot: string,
+	room: string,
+	kind: string,
+	order: { number },
+	x: number,
+	z: number,
+	title: string?,
+}
 export type Plan = {
+	mode: string?,
 	seed: number,
 	stage: number,
 	title: string,
@@ -77,7 +87,7 @@ function Generator.validate(plan: Plan): (boolean, string?)
 	if not valid then
 		return false, reason
 	end
-	if plan.sector.seed ~= plan.seed or plan.sector.stage ~= plan.stage then
+	if plan.sector.seed ~= plan.seed or plan.sector.stage ~= (if plan.mode == "Story" then 1 else plan.stage) then
 		return false, "map_identity_mismatch"
 	end
 	local slots = table.clone(Catalog.Slots)

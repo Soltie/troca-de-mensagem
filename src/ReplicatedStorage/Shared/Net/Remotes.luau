@@ -18,6 +18,8 @@ local Config = require("../Config")
 export type RemoteKind = "RemoteEvent" | "RemoteFunction" | "UnreliableRemoteEvent"
 
 local DEFINITIONS: { [string]: RemoteKind } = {
+	-- Voto de modo no lobby; a maioria da equipe decide antes do início.
+	SelectGameMode = "RemoteFunction",
 	-- Cliente pede para interagir com algo: (id, ação opcional "use" | "alt"). Servidor valida tudo.
 	Interact = "RemoteFunction",
 	-- Cliente pede lanterna ligada/desligada; o servidor decide pela bateria (afeta a visão do Vigia).

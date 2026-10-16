@@ -10,6 +10,8 @@ local StarterPlayer = game:GetService("StarterPlayer")
 local Config = require("@game/ReplicatedStorage/Shared/Config")
 local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
 local Catalog = require("@game/ReplicatedStorage/Shared/Game/CampaignCatalog")
+local Modes = require("@game/ReplicatedStorage/Shared/Game/GameModes")
+local Story = require("@game/ReplicatedStorage/Shared/Game/StoryCatalog")
 local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
 local Guard = require("@game/ReplicatedStorage/Shared/Net/Guard")
 local Logger = require("@game/ReplicatedStorage/Shared/Logger")
@@ -39,6 +41,20 @@ local playerAdapter: any = nil
 local channels: { [number]: { target: number, endsAt: number } } = {}
 local nextActionAt: { [number]: number } = {}
 local rescueParts: { [number]: BasePart } = {}
+local modeVotes: Modes.Votes = {}
+local selectedMode: Modes.Id? = nil
+local sceneSerial = 0
+local sceneStartedAt = 0
+local sceneEndsAt = 0
+local qaMode: Modes.Id? = nil
+if RunService:IsStudio() then
+	local ok, args = pcall(function()
+		return game:GetService("StudioTestService"):GetTestArgs()
+	end)
+	if ok and type(args) == "table" and args.campaignQA and not args.modeMenuQA then
+		qaMode = if args.storyQA then "Story" else "Standard"
+	end
+end
 
 local Runtime = { Name = "RoundService" }
 
@@ -108,10 +124,14 @@ local function publish()
 	if plan then
 		for _, spec in plan.activities do
 			local state = session.tasks[spec.id]
-			table.insert(
-				tasks,
-				{ id = spec.id, room = spec.room, kind = spec.kind, solved = state.solved, progress = state.progress }
-			)
+			table.insert(tasks, {
+				id = spec.id,
+				room = spec.room,
+				kind = spec.kind,
+				title = spec.title,
+				solved = state.solved,
+				progress = state.progress,
+			})
 		end
 	end
 	replicated:SetAttribute("Roster", HttpService:JSONEncode(roster))
@@ -124,8 +144,18 @@ local function publish()
 	replicated:SetAttribute("Total", if plan then #plan.activities else 0)
 	replicated:SetAttribute("NextStageAt", nextStageAt)
 	replicated:SetAttribute("Phase", session.phase)
-	local phase = if session.phase == "Won"
-		then "Won"
+	local _, standardVotes, storyVotes = Modes.winner(modeVotes, session.members, C.minPlayers)
+	replicated:SetAttribute("GameMode", selectedMode or "")
+	replicated:SetAttribute("StandardVotes", standardVotes)
+	replicated:SetAttribute("StoryVotes", storyVotes)
+	replicated:SetAttribute("Players", Session.count(session))
+	replicated:SetAttribute("Building", building)
+	replicated:SetAttribute("StorySceneSerial", sceneSerial)
+	replicated:SetAttribute("StorySceneStartedAt", sceneStartedAt)
+	replicated:SetAttribute("StorySceneEndsAt", sceneEndsAt)
+	local phase = if building
+		then "Intro"
+		elseif session.phase == "Won" then "Won"
 		elseif session.phase == "Lost" then "Lost"
 		elseif session.phase == "Playing" or session.phase == "Extracting" then "Playing"
 		else "Intro"
@@ -138,6 +168,12 @@ local function publish()
 	GameState.set("CreatureActive", CreatureService.isActive())
 	if built then
 		Builder.refresh(built, session.tasks)
+		if selectedMode == "Story" and session.plan then
+			local current = Session.solvedCount(session) + 1
+			for _, target in built.targets do
+				target.focus:SetAttribute(Tags.Attr.InteractEnabled, not building and target.taskId == `task_{current}`)
+			end
+		end
 	end
 end
 
@@ -236,7 +272,10 @@ local function stage()
 	CreatureService.reset()
 	local plan = session.plan
 	assert(plan, "[Campaign] missing stage plan")
-	WorldService.resetRound(Random.new(session.seed + session.stage), plan.sector)
+	WorldService.resetRound(
+		Random.new(if selectedMode == "Story" then Story.MapSeed else session.seed + session.stage),
+		plan.sector
+	)
 	local world = WorldService.get()
 	-- As trancas da missão solo não podem invalidar o grafo da campanha.
 	local worldAdapter: any = WorldService
@@ -261,7 +300,7 @@ local function stage()
 		task.spawn(spawnMember, player)
 	end
 	local thisVersion = version
-	task.delay(C.StageIntroSeconds, function()
+	task.delay(if selectedMode == "Story" then 0 else C.StageIntroSeconds, function()
 		if thisVersion ~= version then
 			return
 		end
@@ -287,6 +326,16 @@ local function stage()
 				member.status = "Waiting"
 				feedback(player, "spawn_failed")
 				log.warn("spawn timed out for %s", player.Name)
+			end
+		end
+		if selectedMode == "Story" then
+			sceneSerial += 1
+			sceneStartedAt = workspace:GetServerTimeNow()
+			sceneEndsAt = sceneStartedAt + Story.SceneSeconds
+			publish()
+			task.wait(Story.SceneSeconds)
+			if thisVersion ~= version then
+				return
 			end
 		end
 		building = false
@@ -370,7 +419,7 @@ local function afterActivity(previous: Session.Phase)
 				freeze(player, true)
 			end
 		elseif session.phase == "Extracting" then
-			WorldService.setPower(true)
+			WorldService.setPower(selectedMode ~= "Story")
 			WorldService.openGate()
 		end
 	end
@@ -452,11 +501,16 @@ local function restartCampaign()
 	building = false
 	clearRescues()
 	CreatureService.reset()
-	local seed = C.Seed or ((os.time() + version * 7919) % 2147483646)
-	session = Session.new(seed, C)
+	selectedMode, modeVotes = qaMode, {}
+	sceneStartedAt, sceneEndsAt = 0, 0
+	local seed = if selectedMode == "Story"
+		then Story.MapSeed
+		else C.Seed or ((os.time() + version * 7919) % 2147483646)
+	session = Session.new(seed, C, selectedMode)
 	spawnSlots = {}
 	for _, player in Players:GetPlayers() do
 		Session.join(session, player.UserId)
+		player:SetAttribute("GameModeVote", "")
 		slotFor(player.UserId)
 		freeze(player, true)
 	end
@@ -507,7 +561,16 @@ local function tick()
 		end
 	end
 	if session.phase == "Lobby" then
-		if Session.count(session) >= C.minPlayers then
+		local winner: Modes.Id? = qaMode or (Modes.winner(modeVotes, session.members, C.minPlayers))
+		if Session.count(session) >= C.minPlayers and winner then
+			if selectedMode ~= winner then
+				selectedMode = winner
+				session.mode = winner
+				session.seed = if winner == "Story"
+					then Story.MapSeed
+					else C.Seed or ((os.time() + version * 7919) % 2147483646)
+				nextStageAt = 0
+			end
 			if nextStageAt == 0 then
 				nextStageAt = now + C.LobbySeconds
 				publish()
@@ -517,6 +580,7 @@ local function tick()
 			end
 		elseif nextStageAt ~= 0 then
 			nextStageAt = 0
+			selectedMode = nil
 			publish()
 		end
 	elseif session.phase == "Intermission" then
@@ -584,6 +648,22 @@ function Runtime.Init()
 end
 
 function Runtime.Start()
+	ServerNet.onInvoke("SelectGameMode", {
+		args = { Guard.literal("Standard", "Story") },
+		rateLimit = { capacity = 4, refillPerSecond = 1 },
+	}, function(player: Player, mode: Modes.Id)
+		if session.phase ~= "Lobby" or not session.members[player.UserId] then
+			return { accepted = false, message = "mode_locked" }
+		end
+		if modeVotes[player.UserId] == mode then
+			return { accepted = true, message = "vote_recorded" }
+		end
+		modeVotes[player.UserId] = mode
+		player:SetAttribute("GameModeVote", mode)
+		nextStageAt = 0
+		publish()
+		return { accepted = true, message = "vote_recorded" }
+	end)
 	ServerNet.onInvoke("Interact", {
 		args = {
 			Guard.string({ maxLength = 32, pattern = "^[%w_%-]+$" }),
@@ -624,9 +704,7 @@ function Runtime.Start()
 			return
 		end
 		slotFor(player.UserId)
-		if session.phase == "Lobby" then
-			nextStageAt = workspace:GetServerTimeNow() + C.LobbySeconds
-		end
+		player:SetAttribute("GameModeVote", "")
 		player.CharacterAdded:Connect(function(character)
 			local function assign(instance: Instance)
 				if instance:IsA("BasePart") then
@@ -643,12 +721,19 @@ function Runtime.Start()
 	end
 	Players.PlayerAdded:Connect(join)
 	Players.PlayerRemoving:Connect(function(player)
+		modeVotes[player.UserId] = nil
 		Session.leave(session, player.UserId)
 		if Session.count(session) == 0 then
 			version += 1
 			building = false
 			-- Servidor vazio também encerra a partida: a próxima equipe recebe outro mapa.
-			session = Session.new(C.Seed or ((os.time() + version * 7919) % 2147483646), C)
+			session = Session.new(
+				if qaMode == "Story" then Story.MapSeed else C.Seed or ((os.time() + version * 7919) % 2147483646),
+				C,
+				qaMode
+			)
+			selectedMode, modeVotes = qaMode, {}
+			sceneStartedAt, sceneEndsAt = 0, 0
 			nextStageAt, startedAt = 0, 0
 			clearRescues()
 			CreatureService.reset()
@@ -706,6 +791,7 @@ function Runtime.getPhase(): "Loading" | "Intro" | "Playing" | "Won" | "Lost"
 end
 function Runtime.snapshot(): { [string]: any }
 	return {
+		mode = selectedMode,
 		building = building,
 		tasks = session.tasks,
 		phase = session.phase,

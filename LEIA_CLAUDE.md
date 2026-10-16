@@ -221,6 +221,15 @@ Código e documentação estão no commit acima; Studio liberado. O snapshot iso
 A ampliação não comprova multiplayer, publicação ou balanceamento de uma sessão completa;
 esses estados precisam de evidência própria. Próxima validação: mapa + sua frente de polish integrados.
 
+**CODEX — MODO HISTÓRIA ENTREGUE (16/10/2026, chat 01a142f3).**
+Escopo: novos GameModes/StoryCatalog/StoryPlan/ModeMenuController/StoryController e specs;
+CoopSession, CampaignGenerator (plano fixo), CampaignRuntime (voto de modo + cenas), ActivityBuilder,
+Client/Main (registro pontual), Remotes (SelectGameMode), docs/STORY_MODE.md e GAME_SPEC.
+Integração concluída com a API pública CinematicController.play/stop e as frentes 1602f3d/be50b06.
+Check ALL GREEN 206; Studio final 229; História 3/8 Won (59/84 checks), Padrão 8 Won (134).
+Menu e cenas conferidos; cartelas curtas/legendas próprias, skip devolve câmera sem encurtar a espera da equipe.
+Places próprias de QA em Edit; sem reservas ativas, push ou publicação. Roteiro/recibos em docs/STORY_MODE.md.
+
 Integração necessária desta retomada: WorldService.bangDoor publica somente BangSerial para a pose visual da pancada; nenhuma regra da IA muda. CampaignController oculta o HUD durante cenas. Câmera cinema mantém Focus e restaura CFrame.
 
 

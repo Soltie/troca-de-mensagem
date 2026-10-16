@@ -1,5 +1,19 @@
 # Decisões
 
+## História e padrão como modos separados — 16/10/2026
+
+- **Pedido:** manter as partidas aleatórias atuais e acrescentar a história do Vigia, com
+  3–8 jogadores, menu inicial, mapa predefinido e cenas.
+- **Escolha:** uma partida por servidor, modo decidido por maioria absoluta no lobby;
+  nova escolha após reinício aprovado pela equipe. História com três capítulos e nove
+  objetivos em sequência; padrão conserva o gerador e sua escala de tarefas.
+- **Narrativa inicial:** Elias Moura ficou preso à ordem de guardar a subestação. A equipe
+  recupera o incidente, isola os circuitos e encerra seu último turno.
+- **Mapa:** planta explícita, idêntica em capítulos/replays; sem chamar o gerador de mapa.
+- **Integração:** reutilizar perseguição, resgates e a API de cinematográficas existentes.
+  Sem nova infraestrutura de servidores ou alteração de dados persistentes.
+- **Roteiro e limites:** [STORY_MODE.md](STORY_MODE.md).
+
 ## Ala norte modular por rodada — 16/10/2026
 
 - **Escolha:** acrescentar nove salas de 28×28, duas entradas pelo núcleo, funções permutadas,
