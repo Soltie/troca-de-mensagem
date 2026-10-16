@@ -1,0 +1,9 @@
+Check congelado das duas frentes, base a1bce3d; resultado observado no functions.exec de 16/10/2026.
+format OK; selene 0 errors / 0 warnings / 0 parse errors; sourcemap OK; strict types OK.
+Lune: 201 passed, 0 failed, 4 skipped specs (Roblox-only).
+[check] ALL GREEN
+Check do stage da economia: 190 passed, 0 failed, 4 skipped specs; ALL GREEN.
+Check global posterior com modo história em andamento: 206 passed, 0 failed, 4 skipped specs; ALL GREEN.
+Studio inicial: 224 passed, 0 failed, 0 skipped specs.
+Studio posterior com specs de história: 229 passed, 0 failed, 0 skipped specs.
+Recibos JSON preservam as respostas reais do MCP e a fronteira dos builds.

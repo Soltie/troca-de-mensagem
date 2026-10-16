@@ -1,4 +1,35 @@
+**DUAS FRENTES ENTREGUES — DEV LIBERADO EM EDIT (16/10/2026).**
+**DEV LIBERADO EM EDIT; QA CODEX EM TwoChatsFinal.rbxlx (16/10/2026).**
+**CODEX RETOMANDO AS DUAS FRENTES (16/10/2026).**
+Históricos Claude confirmados: animações `1135ac66-f6b6-4996-9bb0-433465c51918` e
+analytics/temporada `460f9925-907b-47e3-a8b3-ebf4ecb7a682`, ambos interrompidos por limite.
+Snapshot original preservado em `.cache/resume-two-chats/original.zip`. O Codex assume os arquivos
+listados nas duas frentes abaixo, inclusive CampaignController para integração de cenas/HUD.
+Não há Play reservado neste momento; nenhuma troca de branch, reset, push ou publicação.
+
 # LEIA CLAUDE — expansão do mapa pelo Codex
+
+**CLAUDE RETOMADO E ENTREGUE PELO CODEX (16/10/2026) — FRENTE: ANALYTICS DE ECONOMIA + PASSE DE TEMPORADA (monetização).**
+- NOVOS: `Shared/Game/{Season,SeasonCatalog}`, `Server/Game/{EconomyEvents,StoreFunnel}`,
+  `Server/Services/TelemetryService`, specs `Season`/`EconomyEvents`/`StoreFunnel`.
+- Edições: `StoreService`, `RewardService`, `CollectibleService` (comentário), `StoreCatalog`, `Types`,
+  `PlayerDataSchema` + `Config.Data.SchemaVersion` (v3), `StoreController`, `Text` (Store/Season/Rewards),
+  `DebugService` (comandos `analytics`/`seasonXp`), `docs/MONETIZATION.md`.
+- Compartilhados com a frente de animações: `Remotes` (+`StoreTrack`) e `Main.server` (+`TelemetryService`).
+  Cada um commita só as próprias linhas.
+- Studio Dev: uso para QA; marco aqui quando estiver em Play.
+
+**CLAUDE RETOMADO E ENTREGUE PELO CODEX (16/10/2026) — FRENTE: ANIMAÇÕES, TRANSIÇÕES E ABERTURA (pedido do humano).**
+Arquivos que o Claude vai criar/editar:
+- NOVOS: `Client/Controllers/TransitionController`, `CinematicController`, `CharacterAnimatorController`;
+  `Shared/Game/CinematicShots` e `CharacterPose` (puros, com specs); `Server/Services/PresenceService`
+  (pitch do olhar replicado).
+- Edições: `CameraController` (modo cinema), `FlashlightController` (animações da mão), `GameUiController`
+  (transições da UI e intro), `Client/Creature/Poses` + `CreatureVisualController` (poses de transição do Vigia,
+  só cliente), `Remotes` (1 remote), `Main.client`/`Main.server` (registro).
+- NÃO toco: mapa aleatório (Codex), `CreatureService` servidor, loja/economia/temporada (outra sessão Claude).
+  Se precisar do `CampaignController` (UI da campanha), registro aqui antes.
+Studio Dev: uso para QA; marco aqui quando estiver em Play.
 
 **CODEX ENTREGUE (16/10/2026) — MAPA ALEATÓRIO POR RODADA, `cad0d12`.**
 Nove salas novas, +7.056 studs² (+41,3%); funções/equipamentos/passagens sorteados por estágio.
@@ -9,6 +40,23 @@ Won, 64/134 verificações. Primeiro 8 expirou na conexão, repetição aprovada
 Relatório e capturas: [MAP_RANDOMIZATION.md](docs/MAP_RANDOMIZATION.md).
 Fronteira validada: `cabb1ec` + mapa. Temporada/animação iniciadas durante o fechamento foram
 preservadas e ficaram fora do commit e do QA do mapa; não interpretar como integração final delas.
+
+**CLAUDE DE VOLTA (16/10/2026) — frente: pendências do polish + MONETIZAÇÃO (pedido do humano).**
+Não vou tocar nos arquivos do polish visual do Codex em andamento (Rig, CreatureVisual, Props, ArtBuilder,
+ArtController, SurfacePatterns, UniformDetails). Arquivos que o Claude vai editar (pequenas mudanças, registradas):
+- Pendências: `Layout` (abertura do duto na parede generatorStorage), `Specs/Navigation` (pontos de Features),
+  `GameUiController` (tela final solo com checkpoint, inventário Tab, sem barra de fôlego, UIScale),
+  `HapticsController` (novo) + `SettingsController` (8ª opção), `docs/ASSETS.md` (áudios novos).
+- Monetização (arquivos NOVOS, salvo indicação): `Shared/Game/StoreCatalog`, `Server/Game/Economy` (+specs),
+  `Server/Services/{EconomyService,StoreService,CosmeticService,CollectibleService}`, `Client/Controllers/StoreController`;
+  edições pequenas em `PlayerDataSchema`/`Types` (dados v2), `Remotes`, `Main.server`/`Main.client` (1 linha cada),
+  `Config.Data.SchemaVersion`, `FlashlightController`/`RetroFxController` (aplicar skin/filtro) e um gancho de 2 linhas
+  para fitas colecionáveis em `RoundService` e `CampaignRuntime`.
+**CLAUDE ENTREGUE (16/10/2026):** commits `9e3931e` (pendências), `b73ec51` (loja/monetização) e `cabb1ec` (docs/UI).
+**STUDIO DEV LIBERADO EM EDIT** pelo Claude; `Config.Campaign.Enabled` restaurado para true.
+A falha do duto que o Codex apontou foi corrigida: vão de 3,0 e teste geométrico. Studio com 189 aprovados.
+Estado e QA em `docs/MONETIZATION.md` e no topo de `docs/CLAUDE_POLISH_HANDOFF.md`.
+Os arquivos do mapa aleatório (Codex) não foram tocados nem commitados pelo Claude.
 
 **POLISH VISUAL CODEX ENTREGUE (16/10/2026):** materiais/texturas, props, cenário,
 detalhes do Vigia e efeitos locais implementados. **STUDIO DEV LIBERADO EM EDIT**; reserva encerrada.
@@ -172,3 +220,25 @@ Código e documentação estão no commit acima; Studio liberado. O snapshot iso
 `.cache/map-expansion-qa-554f19c0b1ed4f97a5963700158ecd23` (local, ignorado), incluindo o build descartável.
 A ampliação não comprova multiplayer, publicação ou balanceamento de uma sessão completa;
 esses estados precisam de evidência própria. Próxima validação: mapa + sua frente de polish integrados.
+
+Integração necessária desta retomada: WorldService.bangDoor publica somente BangSerial para a pose visual da pancada; nenhuma regra da IA muda. CampaignController oculta o HUD durante cenas. Câmera cinema mantém Focus e restaura CFrame.
+
+
+QA das duas frentes agora CONGELADO em .cache/two-chats-final, base a1bce3d sem StoryMode. Main.client e Remotes mistos serão commitados por trechos; código do modo história preservado. Usarei place descartável TwoChatsFinal para QA; Dev continua reservado até liberar explicitamente.
+
+
+Economia/temporada commitadas em snapshot isolado (190 testes puros ALL GREEN). Índice liberado; próximo commit só animações. Preservados Main.client/Remotes da história no diretório.
+
+
+ÍNDICE RESERVADO temporariamente para o commit de animações (18 arquivos, sem modo história). Check da cópia stage: ALL GREEN. QA 3 clientes Won; 8 em andamento. Correção final do cache Motor6D + ponte QA persistente gerou TwoChatsVerified.rbxlx. Nenhuma edição de src/Campaign desta frente.
+
+
+**MODO HISTÓRIA / QA (chat 01a142f3):** Studio StoryModeFinal.rbxlx reservado para simulação própria de 8 clientes. 3 clientes já Won. Não uso o Dev reservado para animações. Arquivos novos em src e roteiro docs/STORY_MODE.md. Main/Remotes têm apenas duas inclusões de controllers e SelectGameMode, ainda fora do index da outra frente.
+
+QA final Dev: 229 specs aprovadas com os módulos da história presentes. AnimationConstraint confirmado no avatar R15; poses agora suportam os dois tipos de junta e aguardam HasAppearanceLoaded para capturar offsets completos (15/15). Menu da história está acima do overlay cinema; integração visual de lobby pertence à frente de história. Espaço/A de skip precisa ignorar processed do próprio bloqueio de movimento, correção aplicada.
+
+
+ANIMAÇÕES COMMITADAS; ÍNDICE LIBERADO. Dev encerrado em Edit após QA final: 15 AnimationConstraints animadas, offsets preservados, câmera/skip normal e overlays zerados. Economia be50b06; animações no HEAD atual. Documentação/evidências sendo fechadas sem stage de arquivos da história.
+
+
+**ENTREGA FINAL DAS DUAS FRENTES:** be50b06 / 1602f3d. Dev em Edit, plays e reservas encerrados, índice livre. Relatório docs/TWO_CHATS_RESUME.md. API pública CinematicController.play(sequence) e stop() preservada para StoryController. O menu de história fica acima da abertura de lobby; ajustar apresentação nessa frente. Fontes da história e suas alterações em Main.client/Remotes continuam intactas fora destes commits.

@@ -297,16 +297,30 @@ Os agentes não criam produtos, não publicam e não mexem no Creator Hub.
 ## 9. Próximos passos sugeridos (em ordem de impacto)
 
 1. **Criar os produtos (seção 5) e testar compras reais.**
-2. **Analytics de economia** (`AnalyticsService:LogEconomyEvent` / funil): medir fontes e sumidouros,
-   conversão e onde o jogador desiste.
-3. **Passe de temporada "Turno Extra":**
-   - trilha grátis + trilha paga, ~30 níveis;
-   - cosméticos temáticos por mês.
-
-   É o maior motor de receita recorrente em jogos de coleção.
+2. **Analytics de economia — IMPLEMENTADO:** fontes/sumidouros separados, saldo após cada evento,
+   SKU e funil abrir loja → escolher oferta → comprar. `TelemetryService` usa AnalyticsService no
+   servidor publicado; Studio mantém histórico limitado em memória (`DebugBridge:Invoke("analytics")`).
+   Falhas de telemetria não interrompem concessões. O painel real ainda não foi validado.
+3. **Passe "Turno Extra" — IMPLEMENTADO:** 30 níveis, grátis/pago, XP separado da conta, concessão
+   automática e idempotente, entrega retroativa ao comprar o passe. Aba TEMPORADA na loja.
+   SeasonCatalog define as datas UTC e recompensas; a primeira temporada ocorre entre
+   15/10/2026 00:00 e 01/12/2026 00:00 em Brasília, com 400 XP por nível (nível 1 imediato).
+   Partidas, etapas, fugas, contribuições, fitas e diário dão XP, sem aceleração por VIP.
+   PlayerData v3 migra v2 preservando carteira e inventário. Cosméticos ficam na conta após o fim;
+   a próxima temporada usa ID e Game Pass novos. O passe `turno_extra_s1` está com ID 0:
+   simulação gratuita exclusivamente no Studio; em servidor publicado retorna indisponível.
+   Criar o Game Pass e preencher ID/preço continua sendo passo humano, sem execução nesta entrega.
 4. **Assinatura Roblox:** "Supervisor Mensal", com Créditos diários e farda mensal, só após medir o VIP.
 5. **Emotes e gestos para o lobby/espectador**, um cosmético social visível no coop.
 6. **Eventos sazonais** (Halloween/Natal) com fitas e fardas limitadas: urgência sem pagar por poder.
 7. **Rewarded video ads:** quando elegível (~100 mil DAU, maturidade leve), um giro extra por anúncio.
 8. **Creator Rewards:** já contam com engajamento. Sessões de 10+ min e retorno diário estão no design
    (calendário, roleta, fitas).
+
+## 10. Retomada dos dois chats (16/10/2026)
+
+Analytics e temporada: commit `be50b06`. Snapshot isolado desta frente: ALL GREEN, 190 testes puros.
+QA integrado com animações: 224 testes no Studio; trilha grátis/paga, compra simulada, retroatividade
+do nível 5, recompra bloqueada e funil de três passos conferidos no Dev. Nenhuma compra real.
+Relatório consolidado e fronteira com o modo história: [TWO_CHATS_RESUME.md](TWO_CHATS_RESUME.md).
+API verificada na [documentação oficial de AnalyticsService](https://create.roblox.com/docs/reference/engine/classes/AnalyticsService).

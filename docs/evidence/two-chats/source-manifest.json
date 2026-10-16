@@ -1,0 +1,146 @@
+[
+  {
+    "sha256": "48D8035A387C0593F82A29BC1B56834773BE6599EB0B5805CF6837488B561C23",
+    "path": "src/ReplicatedStorage/Client/Controllers/CameraController.luau"
+  },
+  {
+    "sha256": "83A5B8EA760B9C08326DF8EFD14CA629CC76F06A3D2E093ADA915817CD58FD37",
+    "path": "src/ReplicatedStorage/Client/Controllers/CampaignController.luau"
+  },
+  {
+    "sha256": "A4C496BD84AD26878EA9FFC30A4FE09AF3E2CB0F0EE5F5A39D3683C0F1644548",
+    "path": "src/ReplicatedStorage/Client/Controllers/CreatureVisualController.luau"
+  },
+  {
+    "sha256": "71B581305F2B23961B1EA5A3EB23BAB230D58CEB04B82C48C73831FDEE44A5BD",
+    "path": "src/ReplicatedStorage/Client/Controllers/FlashlightController.luau"
+  },
+  {
+    "sha256": "5ECC2B6AFFD25B2F66802B4EBE4BE181CD02C5D0348E97A073BB704DE230A7EA",
+    "path": "src/ReplicatedStorage/Client/Controllers/GameUiController.luau"
+  },
+  {
+    "sha256": "7A71B55C5CF6E577B1872E5A70EF47F303073BCB5FD1C7B9EEA999303D151536",
+    "path": "src/ReplicatedStorage/Client/Controllers/StoreController.luau"
+  },
+  {
+    "sha256": "CEE5B9EE7E9B7A84A26A7C2DD6A488F0E1A2C95A5DBC00B191CA13BDD13A37D7",
+    "path": "src/ReplicatedStorage/Client/Creature/Poses.luau"
+  },
+  {
+    "sha256": "5C26F52DEECC0CBA5AFBA2756130800E65EA0017ECB32031E8131F7D3955A2A8",
+    "path": "src/ReplicatedStorage/Client/Main.client.luau"
+  },
+  {
+    "sha256": "68B0376D0E075DD199DF575127EE4E0E3680A3BFF08ADE8CDFE82FCF9D579EBB",
+    "path": "src/ReplicatedStorage/Shared/Config.luau"
+  },
+  {
+    "sha256": "F28784A6A6236AAEA24011973F1408B04C8C0247556E9278DFD21A30B574F0F0",
+    "path": "src/ReplicatedStorage/Shared/Game/StoreCatalog.luau"
+  },
+  {
+    "sha256": "A1FAA4332DC2F8C2D8D4C8EEACFF7CD83780C365A36681400FB1E39C5766CBA9",
+    "path": "src/ReplicatedStorage/Shared/Game/Text.luau"
+  },
+  {
+    "sha256": "85987128D303F0705ECADBDC440CC27C6549460E8A273C2B292298F3EE4892D9",
+    "path": "src/ReplicatedStorage/Shared/Net/Remotes.luau"
+  },
+  {
+    "sha256": "3D0908DA5874B076A2214E44266604A0B84D36EF42051AC4E782F94DA4BE0993",
+    "path": "src/ReplicatedStorage/Shared/Types.luau"
+  },
+  {
+    "sha256": "9E199DF9F437EA58321BB05E1D3555357425AA55B58B7AC8A63AD3253683BC36",
+    "path": "src/ServerScriptService/Server/Data/PlayerDataSchema.luau"
+  },
+  {
+    "sha256": "A81CA2601E37AEF05068C830DEFCC5D7C2C03EB85CFA5904936D730B0026DF14",
+    "path": "src/ServerScriptService/Server/Main.server.luau"
+  },
+  {
+    "sha256": "30C28E7DE81BEBB0C926D096463A5073E8B731EB6F568C49340265F88C685DFC",
+    "path": "src/ServerScriptService/Server/Services/CollectibleService.luau"
+  },
+  {
+    "sha256": "4F310CB2329081FEC227A59375D7C2A914633D42C7357CAF659C6D12F1C27495",
+    "path": "src/ServerScriptService/Server/Services/DebugService.luau"
+  },
+  {
+    "sha256": "9773E367F6BBDF102199CAF6A1DC31B6045CD4DD86B77B292F2CD60C0CE516CE",
+    "path": "src/ServerScriptService/Server/Services/RewardService.luau"
+  },
+  {
+    "sha256": "BE5AE02C2B4C38204A328E05C456294145DE19704DE15C1C696A3D7EF3FE479B",
+    "path": "src/ServerScriptService/Server/Services/StoreService.luau"
+  },
+  {
+    "sha256": "8264CC8C5CA384AEE46AF3B95FA2266689BCB6D3C9D871E1FB3E479D6210B8C2",
+    "path": "src/ServerScriptService/Server/Services/WorldService.luau"
+  },
+  {
+    "sha256": "65CFEA2A6EC4B4584FD4A2BE4F849830AF0C3784E17DD2684202BE2ABBDC7BB3",
+    "path": "src/ReplicatedStorage/Client/Controllers/CharacterAnimatorController.luau"
+  },
+  {
+    "sha256": "873F330DB30B10AF2C02EB6ED7396904F0528FE9F57BE689FA619F763E92253B",
+    "path": "src/ReplicatedStorage/Client/Controllers/CinematicController.luau"
+  },
+  {
+    "sha256": "1D17F5059941DF068B5F7F0C5994E8B94F7B9A816469702575F5C21CF87E6648",
+    "path": "src/ReplicatedStorage/Client/Controllers/TransitionController.luau"
+  },
+  {
+    "sha256": "B8B5E1CEEEF10A152E1C9694FF832AF9390E2DEA0571267CB6E9A0AAC716BDDE",
+    "path": "src/ReplicatedStorage/Shared/Game/CharacterPose.luau"
+  },
+  {
+    "sha256": "FF13BD31EC03D0F101BE3B3277E01EEBC0AB0D0B4A02DE5ACABD2D69D651056F",
+    "path": "src/ReplicatedStorage/Shared/Game/CinematicShots.luau"
+  },
+  {
+    "sha256": "E05AD000221F777E21A1EA14B4B84503CB0C48C901E11EC5007EE1744C5976C3",
+    "path": "src/ReplicatedStorage/Shared/Game/Season.luau"
+  },
+  {
+    "sha256": "250E4E983FBCAA8D4F3BD7076AFFDA30700E2FA4732C71BD92A438B39872002D",
+    "path": "src/ReplicatedStorage/Shared/Game/SeasonCatalog.luau"
+  },
+  {
+    "sha256": "71F66686BD762A96EE5964263FBDD8BEDFD30CAF685D2FF20CEA6CC5B7E8E3F5",
+    "path": "src/ServerScriptService/Server/Game/EconomyEvents.luau"
+  },
+  {
+    "sha256": "CEC7C87EEA292B6D6171F3A670B39099218195B9CB648DDB73D2F158FA3B3D56",
+    "path": "src/ServerScriptService/Server/Game/StoreFunnel.luau"
+  },
+  {
+    "sha256": "FA0BF1CC5FF7B7E419E9260574F5D6B517FBB11E3042C35640E8A9FADC97DF04",
+    "path": "src/ServerScriptService/Server/Services/PresenceService.luau"
+  },
+  {
+    "sha256": "8A0C7DDC8DDBBA87986F30AB7F402D5561C367F40B77B2CD5784139F026225C8",
+    "path": "src/ServerScriptService/Server/Services/TelemetryService.luau"
+  },
+  {
+    "sha256": "C4198C3D34F614C0CC6ABAE1D1EA10F9C941B8E40ECD26E1F47E0E1E2D52F30B",
+    "path": "src/ServerScriptService/Tests/Specs/CharacterPose.luau"
+  },
+  {
+    "sha256": "1409738757233ADB9586B674F1A05A42929B8BD77B5D7908991471D755333335",
+    "path": "src/ServerScriptService/Tests/Specs/CinematicShots.luau"
+  },
+  {
+    "sha256": "AC8FC2B211E5FAF86944DA13D18C1518D67BC2D9FC7911D1B020F3BC9F14C185",
+    "path": "src/ServerScriptService/Tests/Specs/EconomyEvents.luau"
+  },
+  {
+    "sha256": "4536AE950E28C9C9299CF1061613DDB4FF76401F9FF197A47023B7A0A428ACFB",
+    "path": "src/ServerScriptService/Tests/Specs/Season.luau"
+  },
+  {
+    "sha256": "B07F230E176F3344E03D139DAEA2D1B046233367CD1A86709C8F3C5582F009BB",
+    "path": "src/ServerScriptService/Tests/Specs/StoreFunnel.luau"
+  }
+]

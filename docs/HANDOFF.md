@@ -165,3 +165,6 @@ energia / 17 com energia):
 4. Áudio posicional de passos do jogador por material e reverb por sala.
 5. Mais variação: posições extras de fusíveis e rota de patrulha alternativa por rodada.
 6. Suporte a gamepad (E → ButtonX, F → ButtonY) e checagem em resoluções menores.
+
+## Duas frentes recuperadas — 16/10/2026
+Animações/transições e analytics/temporada concluídos nos commits be50b06 e 1602f3d. Relatório e critérios verificados: docs/TWO_CHATS_RESUME.md. Sem push/publicação. QA de compras reais, mobile/FPS e integração visual com menu de história continua separado.

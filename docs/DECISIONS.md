@@ -287,3 +287,18 @@ READMEs/releases oficiais das ferramentas e docs do Claude Code).
   - Os dois runtimes têm donos diferentes (Claude e Codex) e mudam em paralelo.
   - Observar estado público evita acoplamento e funciona nos dois modos.
   - A fita dá a recompensa à equipe toda: cooperação, não disputa.
+
+## D-SEASON. Temporada e telemetria autoritativas (16/10/2026)
+- Escolha: XP separado, 30 níveis, recompensas automáticas marcadas por trilha e temporada; Game Pass por temporada.
+- Alternativas: resgate manual, XP comprado ou reaproveitar VIP como passe.
+- Motivo: entrega retroativa idempotente, sem vantagem de gameplay e sem confundir os dois passes.
+- Analytics registra gasto bruto e reembolso separadamente, inclusive níveis da conta e recompensas da temporada.
+  Eventos em Studio ficam em memória; falha de envio não bloqueia o jogo. Compras reais/painel aguardam QA próprio.
+
+## D-ANIMATION. Um compositor de câmera e animações locais (16/10/2026)
+- Escolha: câmera cinema no CameraController, cenas canceláveis no CinematicController, overlay com tokens por camada.
+  Poses de jogadores/Vigia são locais; LookPitch validado pelo servidor só comunica aparência.
+- Alternativas: segundo compositor, assets de animação publicados ou cinematografia longa no início de cada combate.
+- Motivo: preservar autoridade/física e evitar perda de controle durante a ação. Abertura só no lobby/intro, fuga na vitória;
+  início de etapa ativa usa piscada curta. Espaço/A/botão pula a cena; movimento reduzido usa planos estáticos.
+- Focus acompanha o plano e CFrame anterior é restaurado; câmera de captura/esconderijo/espectador tem prioridade.

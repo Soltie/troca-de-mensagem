@@ -189,3 +189,6 @@ Problemas encontrados e corrigidos durante a validação:
 
 Observação: outra sessão de agente trabalhou ao mesmo tempo no mesmo Studio e no mesmo repositório
 (rosto do Ademir, `docs/TEAM_WORKFLOW.md`, `.github/`). O trabalho dela foi preservado e versionado por ela.
+
+## Retomada dos dois chats — 16/10/2026
+Economia/temporada be50b06 e animações 1602f3d entregues. Snapshot isolado ALL GREEN (201); Studio 224, campanha 3/8 Won; smoke posterior de articulações/câmera/skip no Dev e runner com 229 aprovados. Plays encerrados. Modo história é frente paralela e precisa de integração própria. Ver docs/TWO_CHATS_RESUME.md e docs/evidence/two-chats.

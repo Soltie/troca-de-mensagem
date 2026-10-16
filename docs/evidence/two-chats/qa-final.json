@@ -1,0 +1,56 @@
+{
+  "tests": {
+    "content": [
+      {
+        "type": "text",
+        "text": "[Tests] 229 passed, 0 failed, 0 skipped specs"
+      }
+    ],
+    "isError": false
+  },
+  "avatar": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"state\":{\"characters\":{\"rigs\":1,\"constraints\":15,\"lamps\":0,\"lastPitch\":-14,\"joints\":15},\"camera\":{\"offset\":\"0, 0.018863579258322716, 0\",\"trauma\":0,\"fov\":72,\"mode\":\"normal\",\"crouch\":0,\"fear\":0},\"cinematic\":{\"elapsed\":0.016699999570846559,\"sequence\":\"\",\"shot\":0},\"transition\":{\"eyes\":0,\"letterbox\":0,\"stamp\":false,\"static\":false,\"fade\":0}},\"joints\":[{\"class\":\"AnimationConstraint\",\"name\":\"Neck\",\"c0\":\"2.05740637e-16, 0.873651743, 0.0177080594, 1, 0, -0, 0, 0.987404704, 0.158215076, 0, -0.158215076, 0.987404704\"},{\"class\":\"AnimationConstraint\",\"name\":\"Waist\",\"c0\":\"4.11478415e-17, 0.0660777092, -0.0185182095, 1, 0, -0, 0, 0.996342659, 0.0854479, 0, -0.0854479, 0.996342659\"},{\"class\":\"AnimationConstraint\",\"name\":\"RightShoulder\",\"c0\":\"0.769439995, 0.554899752, 0.0177080594, 0.990268052, -0.139173105, 0, 0.0737557411, 0.524799347, -0.848024547, 0.118022218, 0.839771688, 0.529956818\"}]}"
+      }
+    ],
+    "isError": false
+  },
+  "skip": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"state\":{\"characters\":{\"rigs\":1,\"constraints\":15,\"lamps\":0,\"lastPitch\":-14,\"joints\":15},\"camera\":{\"offset\":\"0, 0.020619068294763565, 0\",\"trauma\":0,\"fov\":72,\"mode\":\"normal\",\"crouch\":0,\"fear\":0},\"cinematic\":{\"elapsed\":0.2477003000676632,\"sequence\":\"\",\"shot\":1},\"transition\":{\"eyes\":0,\"letterbox\":0,\"stamp\":false,\"static\":false,\"fade\":0}},\"skipVisible\":false,\"cameraReturnDelta\":0.0011925697326660157}"
+      }
+    ],
+    "isError": false
+  },
+  "reducedMotion": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"afterSkip\":{\"characters\":{\"rigs\":1,\"constraints\":15,\"lamps\":0,\"lastPitch\":-14,\"joints\":15},\"camera\":{\"offset\":\"0, 0.01831662282347679, 0\",\"trauma\":0,\"fov\":55,\"mode\":\"cinema\",\"crouch\":0,\"fear\":0},\"cinematic\":{\"elapsed\":3.799720802344382,\"sequence\":\"Opening\",\"shot\":2},\"transition\":{\"eyes\":0,\"letterbox\":1,\"stamp\":true,\"static\":false,\"title\":\"SUBESTAÇÃO 9\",\"fade\":0}},\"returnedPositionDelta\":16.08802604675293,\"reducedMotionDelta\":0}"
+      }
+    ],
+    "isError": false
+  },
+  "purchase": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"again\":{\"ok\":true,\"data\":{\"ok\":false,\"message\":\"store_owned\"}},\"buy\":{\"ok\":true,\"data\":{\"ok\":true,\"message\":\"store_mock\"}}}"
+      }
+    ],
+    "isError": false
+  },
+  "telemetry": {
+    "content": [
+      {
+        "type": "text",
+        "text": "[{\"flow\":\"Source\",\"type\":\"economy\",\"transaction\":\"SeasonPass\",\"sku\":\"season_free\",\"at\":90007.22128619999,\"player\":\"XISPEGE\",\"amount\":100,\"currency\":\"Fichas\",\"balance\":100},{\"at\":90078.91104110005,\"type\":\"funnel\",\"name\":\"OpenStore\",\"fields\":[],\"step\":1,\"funnel\":\"Store\",\"session\":\"303a84f3-292d-4161-b097-15c9b373a1da\",\"player\":\"XISPEGE\"},{\"at\":90078.91106079996,\"type\":\"funnel\",\"name\":\"ViewOffer\",\"fields\":[\"Offer - season\"],\"step\":2,\"funnel\":\"Store\",\"session\":\"303a84f3-292d-4161-b097-15c9b373a1da\",\"player\":\"XISPEGE\"},{\"flow\":\"Source\",\"type\":\"economy\",\"transaction\":\"SeasonPass\",\"sku\":\"season_premium\",\"at\":90078.91127050005,\"player\":\"XISPEGE\",\"amount\":250,\"currency\":\"Fichas\",\"balance\":525},{\"flow\":\"Source\",\"type\":\"economy\",\"transaction\":\"SeasonPass\",\"sku\":\"season_premium\",\"at\":90078.91127229994,\"player\":\"XISPEGE\",\"amount\":30,\"currency\":\"Creditos\",\"balance\":30},{\"at\":90078.91127659998,\"type\":\"funnel\",\"name\":\"Purchase\",\"fields\":[\"Kind - pass\",\"Currency - robux\"],\"step\":3,\"funnel\":\"Store\",\"session\":\"303a84f3-292d-4161-b097-15c9b373a1da\",\"player\":\"XISPEGE\"},{\"at\":90079.09383499995,\"type\":\"funnel\",\"name\":\"OpenStore\",\"fields\":[],\"step\":1,\"funnel\":\"Store\",\"session\":\"37835ce1-15df-46bf-8013-85b936bd9b9d\",\"player\":\"XISPEGE\"},{\"at\":90079.72688540002,\"type\":\"funnel\",\"name\":\"ViewOffer\",\"fields\":[\"Offer - season\"],\"step\":2,\"funnel\":\"Store\",\"session\":\"37835ce1-15df-46bf-8013-85b936bd9b9d\",\"player\":\"XISPEGE\"}]"
+      }
+    ],
+    "isError": false
+  }
+}
