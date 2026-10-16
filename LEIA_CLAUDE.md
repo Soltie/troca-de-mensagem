@@ -1,3 +1,8 @@
+**CLAUDE PAROU POR LIMITE (16/10/2026) — TRAILER DO JOGO: CODEX CONCLUI.** Tudo em [TRAILER.md](docs/TRAILER.md).
+Commitado: `TrailerController` (só Studio) + `Client/Trailer/TrailerActors` + `tools/trailer/*` + 1 linha no `Main.client`.
+Estado: janela do `build/Test.rbxlx` visível no 2º monitor; OBS fechado (perfil/coleção S9Trailer criados; os do usuário
+intactos). Falta: comando `arm` + preto no fim, gravar com captura de TELA (a de janela não pega a UI), revisar e entregar.
+
 **CLAUDE EM ANDAMENTO (16/10/2026) — MENU INICIAL + MONETIZAÇÃO COM VANTAGENS PAGAS (pedido do humano).**
 NÃO toco em iluminação/sombras/shaders (frente do Codex): `WorldService` (luz), `ArtController`, `RetroFxController`,
 `FlashlightController`, `Palette`, `MapBuilder`, `ArtBuilder`, `Lighting`.
