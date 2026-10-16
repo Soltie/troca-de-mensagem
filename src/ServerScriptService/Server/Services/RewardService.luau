@@ -26,7 +26,7 @@ local CampaignMode = require("../Campaign/CampaignMode")
 local StoreService = require("./StoreService")
 
 local log = Logger.new("RewardService")
-local awarded: { [number]: boolean } = {}
+local awarded: { [string]: boolean } = {}
 -- História: capítulos já pagos (por rodada + capítulo) e se alguém caiu no capítulo atual.
 local storyPaid: { [string]: boolean } = {}
 local chapterHadDown = false
@@ -72,10 +72,11 @@ end
 
 local function onEnd(phase: string)
 	local round = GameState.get("RoundId") or 0
-	if awarded[round] then
+	local key = `{round}:{phase}`
+	if awarded[key] then
 		return
 	end
-	awarded[round] = true
+	awarded[key] = true
 	local won = phase == "Won"
 	if CampaignMode.enabled() then
 		campaignAwards(won)
@@ -133,7 +134,7 @@ local function watchStory(state: Instance)
 		local roster = decodeRoster(state)
 		if roster and state:GetAttribute("Phase") == "Playing" then
 			for _, member in roster do
-				if member.status == "Downed" then
+				if member.status == "Downed" or member.deathCause == "oxygen" then
 					chapterHadDown = true
 				end
 			end

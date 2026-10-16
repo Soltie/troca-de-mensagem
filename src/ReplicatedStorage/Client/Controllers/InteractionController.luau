@@ -209,6 +209,18 @@ function InteractionController.activate(action: string?)
 	end
 end
 
+function InteractionController.requestBreath(value: boolean)
+	if not value or allowed() then
+		holdBreath(value)
+	end
+end
+function InteractionController.useSupply(item: string)
+	if allowed() then
+		task.spawn(function()
+			Remotes.clientFunction("UseHouseItem", 5):InvokeServer(item)
+		end)
+	end
+end
 function InteractionController.Start()
 	campaign = GameState.wait():GetAttribute("CampaignActive") == true
 	local focus = Instance.new("Highlight")
@@ -293,29 +305,23 @@ function InteractionController.Start()
 	ContextActionService:BindAction(
 		"HouseBreath",
 		breathAction,
-		true,
+		false,
 		(Enum.KeyCode :: any)[Config.House.BreathKey],
 		Enum.KeyCode.ButtonL1,
 		Enum.KeyCode.Space
 	)
-	ContextActionService:SetTitle("HouseBreath", "RESPIRAR")
-	ContextActionService:SetPosition("HouseBreath", UDim2.new(1, -180, 1, -200))
 	ContextActionService:BindAction("HouseInteract", function(_, state)
 		if state == Enum.UserInputState.Begin then
 			InteractionController.activate()
 		end
 		return Enum.ContextActionResult.Sink
-	end, true, Enum.KeyCode.ButtonX)
-	ContextActionService:SetTitle("HouseInteract", "AÇÃO / SAIR")
-	ContextActionService:SetPosition("HouseInteract", UDim2.new(1, -90, 1, -210))
+	end, false, Enum.KeyCode.ButtonX)
 	ContextActionService:BindAction("HouseLightTouch", function(_, state)
 		if state == Enum.UserInputState.Begin and allowed() then
 			FlashlightController.set(not FlashlightController.isWanted())
 		end
 		return Enum.ContextActionResult.Sink
-	end, true)
-	ContextActionService:SetTitle("HouseLightTouch", "LUZ")
-	ContextActionService:SetPosition("HouseLightTouch", UDim2.new(1, -180, 1, -110))
+	end, false)
 	local function cancelBreath()
 		holdBreath(false)
 	end
@@ -324,37 +330,25 @@ function InteractionController.Start()
 		player:GetAttributeChangedSignal(attr):Connect(cancelBreath)
 	end
 	player.CharacterAdded:Connect(cancelBreath)
-	local function useItem(item: string)
-		if allowed() and player:GetAttribute("ComfortMenuOpen") ~= true then
-			task.spawn(function()
-				Remotes.clientFunction("UseHouseItem", 5):InvokeServer(item)
-			end)
-		end
-	end
+
 	ContextActionService:BindAction("HouseBattery", function(_, state)
 		if state == Enum.UserInputState.Begin then
-			useItem("battery")
+			InteractionController.useSupply("battery")
 		end
 		return Enum.ContextActionResult.Sink
-	end, true, Enum.KeyCode.One, Enum.KeyCode.DPadLeft)
-	ContextActionService:SetTitle("HouseBattery", "PILHA")
-	ContextActionService:SetPosition("HouseBattery", UDim2.new(0, 30, 1, -250))
+	end, false, Enum.KeyCode.One, Enum.KeyCode.DPadLeft)
 	ContextActionService:BindAction("HouseOxygen", function(_, state)
 		if state == Enum.UserInputState.Begin then
-			useItem("oxygen")
+			InteractionController.useSupply("oxygen")
 		end
 		return Enum.ContextActionResult.Sink
-	end, true, Enum.KeyCode.Two, Enum.KeyCode.DPadUp)
-	ContextActionService:SetTitle("HouseOxygen", "O₂ +25")
-	ContextActionService:SetPosition("HouseOxygen", UDim2.new(0, 120, 1, -250))
+	end, false, Enum.KeyCode.Two, Enum.KeyCode.DPadUp)
 	ContextActionService:BindAction("HouseDecoy", function(_, state)
 		if state == Enum.UserInputState.Begin then
-			useItem("decoy")
+			InteractionController.useSupply("decoy")
 		end
 		return Enum.ContextActionResult.Sink
-	end, true, Enum.KeyCode.Three, Enum.KeyCode.DPadRight)
-	ContextActionService:SetTitle("HouseDecoy", "ISCA")
-	ContextActionService:SetPosition("HouseDecoy", UDim2.new(0, 210, 1, -250))
+	end, false, Enum.KeyCode.Three, Enum.KeyCode.DPadRight)
 	local accumulator = 0
 	RunService.RenderStepped:Connect(function(dt: number)
 		accumulator += dt

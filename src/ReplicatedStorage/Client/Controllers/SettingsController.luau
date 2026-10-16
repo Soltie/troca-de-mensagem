@@ -58,6 +58,12 @@ local SettingsController = {
 	KEYS = KEYS,
 }
 
+function SettingsController.toggleMenu()
+	if menu then
+		menu.Visible = not menu.Visible
+		Players.LocalPlayer:SetAttribute("ComfortMenuOpen", menu.Visible)
+	end
+end
 function SettingsController.get(key: Key): boolean
 	return values[key]
 end
@@ -126,6 +132,7 @@ function SettingsController.Init()
 	local function option(key: string, index: number, column: number, callback: () -> ())
 		local button = Create("TextButton", {
 			Name = key,
+			Modal = true,
 			Parent = panel,
 			Position = UDim2.new(column * 0.5, 4, 0, 38 + (index - 1) * 34),
 			Size = UDim2.new(0.5, -15, 0, 30),
@@ -193,9 +200,7 @@ function SettingsController.Start()
 			Players.LocalPlayer:SetAttribute("ComfortMenuOpen", menu.Visible)
 		end
 		return Enum.ContextActionResult.Sink
-	end, true, Enum.KeyCode.ButtonR3)
-	ContextActionService:SetTitle("HouseOptionsTouch", "OPÇÕES")
-	ContextActionService:SetPosition("HouseOptionsTouch", UDim2.new(1, -85, 0, 55))
+	end, false, Enum.KeyCode.ButtonR3)
 
 	-- O também é zoom da câmera padrão; InputBegan chega processado e perdia o atalho.
 	ContextActionService:BindActionAtPriority("S9ComfortOptions", function(_, state)

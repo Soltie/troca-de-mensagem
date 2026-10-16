@@ -41,6 +41,7 @@ local controllers: { any } = {
 	require("./Controllers/CosmeticController"),
 	require("./Controllers/StoreController"),
 	require("./Controllers/CampaignController"),
+	require("./Controllers/TouchControlsController"),
 	require("./Controllers/SpectatorController"),
 	require("./Controllers/CinematicController"),
 	require("./Controllers/MainMenuController"),

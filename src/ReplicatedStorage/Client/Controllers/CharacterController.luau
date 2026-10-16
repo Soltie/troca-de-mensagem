@@ -316,17 +316,13 @@ function CharacterController.Start()
 	actions:BindAction("HouseSprintTouch", function(_, state)
 		player:SetAttribute("TouchSprint", state == Enum.UserInputState.Begin)
 		return Enum.ContextActionResult.Sink
-	end, true)
-	actions:SetTitle("HouseSprintTouch", "CORRER")
-	actions:SetPosition("HouseSprintTouch", UDim2.new(1, -270, 1, -190))
+	end, false)
 	actions:BindAction("HouseCrouchTouch", function(_, state)
 		if state == Enum.UserInputState.Begin then
 			CharacterController.requestStance(if serverStance() == "Stand" then "Crouch" else "Stand")
 		end
 		return Enum.ContextActionResult.Sink
-	end, true)
-	actions:SetTitle("HouseCrouchTouch", "AGACHAR")
-	actions:SetPosition("HouseCrouchTouch", UDim2.new(1, -270, 1, -100))
+	end, false)
 	UserInputService.WindowFocusReleased:Connect(function()
 		player:SetAttribute("TouchSprint", false)
 	end)

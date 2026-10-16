@@ -130,6 +130,7 @@ local function publish()
 				status = member.status,
 				contributions = member.contributions,
 				downedUntil = member.downedUntil,
+				deathCause = player:GetAttribute("DeathCause"),
 			})
 		end
 	end
@@ -688,12 +689,11 @@ local function retryStage(player: Player): (boolean, string?)
 	version += 1
 	clearRescues()
 	CreatureService.reset()
-	-- Nova "rodada" para recompensa e efeitos (a vitória depois da continuação também paga).
-	GameState.set("RoundId", version)
+	-- O checkpoint mantém a identidade da campanha: não repete pagamentos por derrota.
 	GameState.set("RoundEndedAt", 0)
 	nextStageAt = workspace:GetServerTimeNow() + C.IntermissionSeconds
 	for _, other in Players:GetPlayers() do
-		feedback(other, "continue_used")
+		feedback(other, "checkpoint_restored")
 	end
 	publish()
 	log.info("%s used a continue: stage %d again", player.Name, session.stage + 1)

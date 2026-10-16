@@ -16,6 +16,12 @@ local Character = require("./CharacterController")
 
 local player = Players.LocalPlayer
 local Controller = { Name = "CampaignController" }
+local guideToggle: (() -> ())? = nil
+function Controller.toggleGuide()
+	if guideToggle then
+		guideToggle()
+	end
+end
 local messages: { [string]: string } = {
 	progress = "SÍMBOLO CONFIRMADO. SIGA A PISTA.",
 	solved = "OBJETIVO CONCLUÍDO.",
@@ -41,6 +47,7 @@ local messages: { [string]: string } = {
 	spawn_failed = "VOCÊ ENTRA NO PRÓXIMO ESTÁGIO.",
 	second_chance = "SEGUNDA CHANCE: VOCÊ LEVANTOU.",
 	continue_used = "CONTINUAÇÃO USADA: A EQUIPE REPETE A ETAPA.",
+	checkpoint_restored = "CHECKPOINT RESTAURADO. A EQUIPE REPETE O CAPÍTULO.",
 }
 
 function Controller.Start()
@@ -51,15 +58,16 @@ function Controller.Start()
 	assert(state, "[CampaignUI] missing campaign state")
 	local ui = Hud.build(player:WaitForChild("PlayerGui"))
 	local helpOpen, teamHeld = false, false
+	guideToggle = function()
+		helpOpen = not helpOpen
+	end
 	local actions = game:GetService("ContextActionService")
 	actions:BindAction("HouseGuideTouch", function(_, inputState)
 		if inputState == Enum.UserInputState.Begin then
 			helpOpen = not helpOpen
 		end
 		return Enum.ContextActionResult.Sink
-	end, true, Enum.KeyCode.ButtonSelect)
-	actions:SetTitle("HouseGuideTouch", "GUIA / EQUIPE")
-	actions:SetPosition("HouseGuideTouch", UDim2.new(1, -175, 0, 55))
+	end, false, Enum.KeyCode.ButtonSelect)
 	ui.close.Activated:Connect(function()
 		helpOpen, teamHeld = false, false
 	end)
