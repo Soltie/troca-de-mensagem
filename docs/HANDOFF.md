@@ -71,12 +71,20 @@ Principais arquivos: `src/ServerScriptService/Server/{World,Game,Services}`,
    | WASD + mouse | andar e olhar |
    | Shift | correr (fôlego) |
    | F | lanterna |
-   | E | interagir (mire no objeto) |
-   | R | reiniciar nas telas finais |
+   | E | interagir (mire no objeto); escondido: sair do armário |
+   | Q | entreabrir/fechar porta |
+   | C / Ctrl | agachar (alterna / segura) |
+   | Espaço | escondido: prender a respiração |
+   | Tab | inventário (segurar) |
+   | L | **loja** (fora da ação: intro, intervalo, telas finais, esperando) |
+   | O | opções de conforto (1–8) |
+   | C / R | telas finais: continuar do checkpoint / reiniciar tudo |
    | V | filtro retrô |
    | B | movimento de câmera |
    | H | ajuda |
    | F3 | debug (FPS, estado) |
+
+   Loja, progressão e compras: `docs/MONETIZATION.md`.
 
 4. Reiniciar: R ou o botão "[R] JOGAR DE NOVO" nas telas finais (sem parar o Play).
 5. Recriar a place do zero, se precisar: `lune run scripts/build dev --force`, abrir e refazer o Script Sync

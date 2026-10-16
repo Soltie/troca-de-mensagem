@@ -50,6 +50,10 @@ Client/Creature/   Rig + Poses (Vigia em stop-motion), AdemirPortrait/AdemirFace
 - Mudou o mapa? Mantenha `Layout` coerente e rode os testes: `Layout` (Lune) e `Navigation` (Studio:
   rotas reais para o jogador e para o Vigia). Corredores e portas precisam de folga para o agente.
 - Textos em fonte pixel passam por `PixelText` (a fonte Arcade não tem É/Í/Ó/Ú maiúsculos).
+- **Loja/monetização** (`docs/MONETIZATION.md`): regras puras em `Shared/Game/{StoreCatalog,Economy}`, servidor
+  em `StoreService` (+ Cosmetic/Reward/Collectible). Compras Robux com ID 0 são simuladas só no Studio.
+  Nunca crie produtos nem mexa no Creator Hub: isso é passo humano. Depuração: `DebugBridge`
+  `storeGrant(f, c)`, `endRound("Won"|"Lost")`, `tape`.
 
 ## Loop de desenvolvimento
 

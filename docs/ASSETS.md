@@ -43,6 +43,45 @@ de origem incerta.
 | Flashlight | 9114479860 | Flashlight On Off Clicks 5 (SFX) | ProSoundEffects | lanterna |
 | Door | 9114145921 | Door Long Squeaks On Close 2 (SFX) | ProSoundEffects | portas; portão (grave, 0,55×) |
 
+### Áudios do polish de terror (acrescentados em 15–16/10/2026)
+
+Verificação em 16/10/2026 no Studio (cliente em Play, `PreloadAsync` + Sound parentado):
+**54/54 clipes de `Audio.luau` carregados com duração > 0**. Os passos usam só um trecho do arquivo
+(`region` → `Sound.PlaybackRegion`). O início de cada golpe foi medido tocando a 0,25× e amostrando
+`PlaybackLoudness`: concreto, madeira e metal começam em 0,01–0,02 s; a água tem o respingo em 0,49 s,
+por isso o trecho dela é 0,47–0,82 s.
+
+| Chave | ID | Nome no Creator Store | Criador | Uso no jogo |
+| --- | --- | --- | --- | --- |
+| WindInterior | 9125742262 | Plasma Trails Constant Airy Whooshing Windy (SFX) | ProSoundEffects | vento nas frestas (0,45×) |
+| Machinery | 9118748093 | Rumble Constant Roar Energy Building 2 (SFX) | ProSoundEffects | máquinas com energia (0,6×) |
+| Drips | 9120527007 | Water Drip Single Drops Into Tin Bucket 2 (SFX) | ProSoundEffects | goteiras 3D |
+| CreakWood | 9114496002 | Floor Creaks Short Med Wood Creaks 19 (SFX) | ProSoundEffects | rangidos do prédio / assoalho |
+| CreakMetal | 9116770610 | Metal Popping Constant Muffled Buckling 8 (SFX) | ProSoundEffects | estalos de metal |
+| Whisper | 9043347008 | DISTURBED WHISPERS 02 | APMOfficial | sussurros com medo alto |
+| RadioStatic | 9119974504 | Television Turn On And Off 1 (SFX) | ProSoundEffects | chiado do rádio do vigia |
+| MusicTension | 1843867314 | Tension Repeat Drones 29 | APMOfficial | música de tensão |
+| MusicChase | 1837843534 | Deliberate Pain (Fast Bass) | APMOfficial | música de perseguição |
+| MusicRelief | 1843755486 | Mid-Tone Drone 51 | APMOfficial | calmaria pós-perseguição |
+| StepConcrete | 9114523629 | Foot Stomp 7 (SFX) | ProSoundEffects | passo em concreto (trecho 0–0,3 s) |
+| StepWood | 9120880067 | Wood Grab Muted Thuds 15 (SFX) | ProSoundEffects | passo em madeira; som de pegar item |
+| StepMetal / KeyTurn / BreakerToggle | 9120102763 | Toggle Switch Metal Industrial Equipment 18 (SFX) | ProSoundEffects | passo em metal; tranca; disjuntor |
+| StepWater | 9125701986 | Mud Puddle Splash Shallow Water Impacts Hit 13 (SFX) | ProSoundEffects | passo em poça (0,47–0,82 s) |
+| Breath1–4 | 9114555699 / 9114555659 / 9114555843 / 9114556046 | Gasp Trouble Breathing 3 / 1 / 4 / 7 (SFX) | ProSoundEffects | respiração (ritmo pelo medo/exaustão) |
+| Gasp | 9114556036 | Gasp Trouble Breathing 8 (SFX) | ProSoundEffects | fôlego acabou no armário |
+| DoorBang | 9114432643 | Fire Door Frantic Knocks 2 (SFX) | ProSoundEffects | Vigia batendo na porta trancada |
+| DoorRattle | 9117906668 | Prison Bars Rattle 3 (SFX) | ProSoundEffects | porta trancada chacoalhando |
+| DoorLatch / LockerLatch | 9114435018 | Fire Door Latch Open And Close 9 (SFX) | ProSoundEffects | trinco de porta e de armário |
+| BreakerFail | 9125550914 | Engine Abuse Metal Hits On Various Engine Parts 4 (SFX) | ProSoundEffects | disjuntor na ordem errada |
+| Paper | 9114385821 | Fax Paper Flutter 13 (SFX) | ProSoundEffects | bilhetes |
+| Fall_bucket / Fall_extinguisher | 9116502787 / 9116501934 | Metal 50 Gallon Drum (SFX) | ProSoundEffects | objetos que caem |
+| Fall_cans / Fall_bottles | 9120188626 / 9120188618 | Toolbox Impact Wood Metal Hits Fall Crash 11 / 10 (SFX) | ProSoundEffects | objetos que caem |
+| Fall_pipes | 9116886745 | Metal Tank Impact 3 (SFX) | ProSoundEffects | canos caindo |
+| Fall_box | 9126090979 | Table Falls Impact On Concrete Various Versions 9 (SFX) | ProSoundEffects | caixa caindo |
+
+Também do cliente Roblox: `StepFallback` (`rbxasset://sounds/action_footsteps_plastic.mp3`, trecho 0–0,26 s)
+e `Land` (`action_jump_land.mp3`). Os passos padrão do personagem são silenciados pelo `BodyAudioController`.
+
 ## Áudio embutido no cliente Roblox (sem upload)
 
 | Chave | Caminho | Uso |

@@ -1,5 +1,17 @@
 # Decisões
 
+## Ala norte modular por rodada — 16/10/2026
+
+- **Escolha:** acrescentar nove salas de 28×28, duas entradas pelo núcleo, funções permutadas,
+  equipamentos por cantos e paredes/passagens sorteadas por seed + estágio. O núcleo, pátio e
+  saída são referências estáveis; a maioria dos objetivos explora a ala nova.
+- **Por quê:** variar o espaço físico sem invalidar as interações solo, o spawn e a extração.
+  Kruskal garante conectividade; 1–3 arestas adicionais dão circuitos. Sinalização de retorno
+  segue busca em largura real, nunca uma direção que cruza parede fechada.
+- **Limites:** geração reconstruída entre estágios, com jogadores congelados e Vigia reiniciado;
+  sem mover salas durante uma perseguição. Checkpoint solo conserva o sorteio. Arte continua
+  limitada a 160 superfícies/360 texturas por cliente. Ver `MAP_RANDOMIZATION.md`.
+
 ## Tensão e captura por jogador — 15/10/2026
 
 - Chase/Capture globais não representam ataque a toda a equipe: publicar alvo no servidor e
@@ -239,3 +251,39 @@ READMEs/releases oficiais das ferramentas e docs do Claude Code).
   A integração (`AdemirPortrait.luau`, `EditableImage` local com fallback) foi preservada sem mudanças
   e versionada separadamente. Antes de publicar, confirmar o consentimento da pessoa e as permissões
   de `EditableImage`.
+
+## D34. Monetização só cosmética, com duas moedas (16/10/2026)
+- **Escolha:**
+  - **Fichas** (ganhas jogando, nunca vendidas) e **Créditos** (Robux).
+  - Lojas de lanternas, fardas, filtros e títulos.
+  - Baú grátis (Fichas) e baú pago (Créditos).
+  - Roleta e calendário diários, níveis, fitas colecionáveis, Passe VIP e Pacote Inicial.
+- **Alternativas:** vender revives, baterias ou velocidade (vantagem contra o Vigia); moeda única
+  comprável que alimentasse todos os sorteios.
+- **Por quê:**
+  - Pagar por poder num coop de terror quebra o medo e a justiça entre colegas.
+  - Separar a moeda ganha da paga deixa só UM sorteio pago (o Baú Lacrado) sob as regras de itens
+    aleatórios pagos: chances em % antes da compra, PolicyService e alternativa de compra direta.
+  - O resto é sorteio grátis, mas mostra as chances do mesmo jeito.
+  - Detalhes em `docs/MONETIZATION.md`.
+
+## D35. Trava de sessão nos dados do jogador (16/10/2026)
+- **Escolha:**
+  - `sessionLock = { job, at }` gravado no load por UpdateAsync.
+  - O save não sobrescreve trava válida de outro servidor.
+  - O autosave renova a trava; a saída a libera; TTL de 300 s.
+  - Depois de 4 tentativas, o load assume a trava (servidor antigo caiu).
+- **Alternativas:** ProfileStore (dependência externa/Wally) ou "último save vence" (TODO anterior).
+- **Por quê:** com compras em Robux, uma reconexão rápida não pode apagar Créditos já entregues.
+  O ProcessReceipt grava o recibo e a concessão no mesmo registro e salva antes de confirmar.
+
+## D36. Recompensa e coleção sem mexer nos runtimes (16/10/2026)
+- **Escolha:**
+  - `RewardService` paga o fim de partida observando o estado replicado: `GameState` no solo e
+    `CampaignState` na campanha (Roster, estágio).
+  - As fitas VHS entram nos runtimes só por um gancho de 3 linhas (id `"tape"`).
+- **Alternativas:** chamar a economia de dentro de `RoundService`/`CampaignRuntime`.
+- **Por quê:**
+  - Os dois runtimes têm donos diferentes (Claude e Codex) e mudam em paralelo.
+  - Observar estado público evita acoplamento e funciona nos dois modos.
+  - A fita dá a recompensa à equipe toda: cooperação, não disputa.

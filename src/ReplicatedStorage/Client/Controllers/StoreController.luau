@@ -44,6 +44,8 @@ local tabButtons: { [Tab]: TextButton } = {}
 local tab: Tab = "shop"
 local kindFilter: StoreCatalog.ItemKind = "flashlight"
 local isOpen = false
+-- Animação em curso (roleta/baú): mudanças de atributo não redesenham a aba no meio dela.
+local animating = false
 local busy = false
 local phase: GameState.Phase = "Loading"
 local mouseWasEnabled = false
@@ -432,35 +434,44 @@ local function showOdds(title: string, lines: { string })
 	local box = Create("Frame", {
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.fromOffset(560, 80 + #lines * 22),
+		Size = UDim2.fromOffset(620, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
 		BackgroundColor3 = Theme.Panel,
 		BorderSizePixel = 0,
 		Parent = o,
 	}, {
 		Create("UIStroke", { Color = Theme.Hazard, Thickness = 2 }),
+		Create("UIPadding", {
+			PaddingLeft = UDim.new(0, 12),
+			PaddingRight = UDim.new(0, 12),
+			PaddingTop = UDim.new(0, 10),
+			PaddingBottom = UDim.new(0, 10),
+		}),
+		Create("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder }),
 	}) :: Frame
 	label({
-		Position = UDim2.fromOffset(12, 10),
-		Size = UDim2.new(1, -24, 0, 22),
+		Size = UDim2.new(1, 0, 0, 22),
 		Text = px(title),
 		TextColor3 = Theme.Hazard,
+		LayoutOrder = 0,
 		Parent = box,
 	})
 	for i, line in lines do
 		label({
-			Position = UDim2.fromOffset(12, 18 + i * 22),
-			Size = UDim2.new(1, -24, 0, 20),
+			Size = UDim2.fromScale(1, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
 			Text = px(line),
 			TextSize = Theme.SizeSmall,
 			TextXAlignment = Enum.TextXAlignment.Left,
+			LayoutOrder = i,
 			Parent = box,
 		})
 	end
 	button({
-		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, -8),
+		Name = "OddsOk",
 		Size = UDim2.fromOffset(140, 24),
 		Text = "OK",
+		LayoutOrder = #lines + 1,
 		Parent = box,
 	}, function()
 		o.Visible = false
@@ -556,6 +567,7 @@ local function playReel(
 		Parent = box,
 	}, function()
 		o.Visible = false
+		animating = false
 		render()
 	end)
 end
@@ -593,6 +605,7 @@ local function renderChests(c: ScrollingFrame)
 			then string.format(S.fichas, chest.price)
 			else string.format(S.creditos, chest.price)
 		button({
+			Name = `Open_{chest.id}`,
 			Position = UDim2.new(0.66, 0, 0, 14),
 			Size = UDim2.new(0.32, -6, 0, 34),
 			Text = if blocked then S.restricted else string.format(S.open, price),
@@ -603,12 +616,15 @@ local function renderChests(c: ScrollingFrame)
 				setMessage("store_restricted")
 				return
 			end
+			animating = true
 			local result = request("open_chest", chest.id)
 			if not result or not result.ok then
+				animating = false
 				return
 			end
 			local data = result.data
 			if not data.ok then
+				animating = false
 				setMessage(data.message)
 				return
 			end
@@ -622,6 +638,7 @@ local function renderChests(c: ScrollingFrame)
 			task.spawn(playReel, pool, data.item, data.rarity, data.duplicate == true, data.refund or 0)
 		end)
 		button({
+			Name = `Odds_{chest.id}`,
 			Position = UDim2.new(0.66, 0, 0, 56),
 			Size = UDim2.new(0.32, -6, 0, 28),
 			Text = S.odds,
@@ -674,6 +691,7 @@ local function renderDaily(c: ScrollingFrame)
 		})
 	end
 	button({
+		Name = "ClaimDaily",
 		Position = UDim2.new(0, 12, 1, -42),
 		Size = UDim2.new(0.5, -18, 0, 30),
 		Text = if claimable then string.format(S.daily, streak) else string.format(S.dailyDone, streak % 7 + 1),
@@ -714,6 +732,7 @@ local function renderDaily(c: ScrollingFrame)
 		Parent = wheel,
 	})
 	button({
+		Name = "Spin",
 		Position = UDim2.new(0, 12, 1, -42),
 		Size = UDim2.new(0.42, -12, 0, 30),
 		Text = S.spin,
@@ -724,8 +743,10 @@ local function renderDaily(c: ScrollingFrame)
 			setMessage("spin_used")
 			return
 		end
+		animating = true
 		local result = request("spin")
 		if not result or not result.ok or not result.data.ok then
+			animating = false
 			if result and result.ok then
 				setMessage(result.data.message)
 			end
@@ -751,7 +772,13 @@ local function renderDaily(c: ScrollingFrame)
 			end
 			AudioController.play("Switch", 0.7, 1.2, true)
 			task.wait(0.8)
+			animating = false
 			render()
+			-- O prêmio aparece depois do giro (o saldo já veio do servidor).
+			local segment = StoreCatalog.Spin[target]
+			if message and segment then
+				message.Text = px("+ " .. segment.label)
+			end
 		end)
 	end)
 	button({
@@ -798,7 +825,13 @@ local function renderCollection(c: ScrollingFrame)
 		})
 	end
 	local order = #StoreCatalog.Tapes
-	for amount, reward in StoreCatalog.TapeMilestones do
+	local amounts = {}
+	for amount in StoreCatalog.TapeMilestones do
+		table.insert(amounts, amount)
+	end
+	table.sort(amounts)
+	for _, amount in amounts do
+		local reward = StoreCatalog.TapeMilestones[amount]
 		order += 1
 		local box = card(c, order, if count >= amount then Theme.Good else Theme.TextDim)
 		local parts = {}
@@ -845,6 +878,7 @@ local function renderRobux(c: ScrollingFrame)
 			Parent = box,
 		})
 		button({
+			Name = `Buy_{product.key}`,
 			Position = UDim2.new(0.66, 0, 0, 18),
 			Size = UDim2.new(0.32, -6, 0, 36),
 			Text = if owned then S.owned else string.format(S.buyRobux, product.robux),
@@ -1018,6 +1052,7 @@ local function build()
 
 	for i, key in TABS do
 		tabButtons[key :: Tab] = button({
+			Name = `Tab_{key}`,
 			Position = UDim2.new((i - 1) / #TABS, 16, 0, 52),
 			Size = UDim2.new(1 / #TABS, -20, 0, 30),
 			Text = (S.tabs :: any)[key],
@@ -1039,6 +1074,7 @@ local function build()
 	}) :: Frame
 	for i, kind in StoreCatalog.KINDS do
 		button({
+			Name = `Kind_{kind}`,
 			Position = UDim2.fromScale((i - 1) / #StoreCatalog.KINDS, 0),
 			Size = UDim2.new(1 / #StoreCatalog.KINDS, -8, 1, 0),
 			Text = (S.kinds :: any)[kind],
@@ -1126,9 +1162,26 @@ function StoreController.Start()
 		end
 	end)
 	-- Qualquer mudança de saldo/itens redesenha a loja aberta.
-	for _, name in { "Fichas", "Creditos", "Owned", "EquipFlashlight", "EquipUniform", "EquipFilter", "Title", "Vip" } do
+	for _, name in
+		{
+			"Fichas",
+			"Creditos",
+			"Xp",
+			"Owned",
+			"Tapes",
+			"EquipFlashlight",
+			"EquipUniform",
+			"EquipFilter",
+			"Title",
+			"Vip",
+			"SpinsLeft",
+			"DailyClaimable",
+			"DailyStreak",
+			"StarterBought",
+		}
+	do
 		player:GetAttributeChangedSignal(name):Connect(function()
-			if isOpen and not (overlay and overlay.Visible) then
+			if isOpen and not animating and not (overlay and overlay.Visible) then
 				render()
 			end
 		end)

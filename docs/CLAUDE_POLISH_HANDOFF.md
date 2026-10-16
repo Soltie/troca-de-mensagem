@@ -7,6 +7,24 @@
 > continuam discriminadas em [NEXT_STEPS.md](NEXT_STEPS.md); não foram marcadas como concluídas
 > por constarem de uma proposta. A frase original abaixo sobre finalizar tudo não é evidência de QA.
 
+> **Claude de volta (16/10/2026) — pendências fechadas e verificadas no Studio:**
+> - **Duto** (`9e3931e` + `b73ec51`): a abertura passou a existir no `Layout`, com 3,0 de altura. No R15 a
+>   cabeça não colide, e com 3,9 dava para passar de pé. Resultado testado com o personagem real:
+>   - agachado atravessa, com a câmera a 2,64;
+>   - de pé bate na parede;
+>   - levantar dentro do duto é bloqueado, com o aviso "SEM ESPAÇO PARA LEVANTAR".
+>
+>   O teste `Navigation` checa as caixas de colisão; Studio com 189 aprovados.
+> - **Tela final solo:** "[C] CONTINUAR DO CHECKPOINT" separado de "[R] REINICIAR TUDO", intro curta e
+>   inventário no Tab; sem barra de fôlego. Continuar restaurou energia, fusíveis, disjuntores, bateria e
+>   trégua do Vigia.
+> - **Vibração:** `HapticsController` e 8ª opção no menu O. Não foi testada com controle físico.
+> - **Áudio:** 54/54 IDs carregam; trechos dos passos medidos; a água foi corrigida para 0,47–0,82 s.
+>   Detalhes em `ASSETS.md`.
+> - **Monetização** (pedido novo do humano): `docs/MONETIZATION.md`.
+>
+> Ainda pendente: QA humano de jogo, vibração com controle, mobile, fita no coop com 3+ clientes.
+
 > **Segunda entrega Codex:** diretor de tensão, ScreenFx, captura pessoal e opções de conforto
 > implementados em `ca18f17`/`fab121c`. Evidências, limites e pendências restantes em
 > [TERROR_POLISH_PROGRESS.md](TERROR_POLISH_PROGRESS.md). O texto original abaixo é histórico.

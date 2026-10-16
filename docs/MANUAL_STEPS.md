@@ -48,3 +48,17 @@ Se algum prompt de administrador/UAC aparecer em qualquer passo, aceite (é do i
   (no Studio usa o store `PlayerData_v1_Studio`).
 - **Secrets / HTTP:** *Allow HTTP Requests* e Local Secrets ficam em Experience Settings → Security.
 - **macOS:** o MCP é `claude mcp add --scope user --transport stdio Roblox_Studio -- /Applications/RobloxStudio.app/Contents/MacOS/StudioMCP`.
+
+## Monetização (quando decidir vender)
+
+Os passos ficam com o humano: os agentes não criam produtos nem mexem no Creator Hub.
+Lista completa em `docs/MONETIZATION.md`, seção 5.
+
+1. Publicar a experiência.
+2. Criar os 5 Developer Products e o Game Pass VIP.
+3. Colar os IDs em `src/ReplicatedStorage/Shared/Game/StoreCatalog.luau` (`Products`, campo `id`).
+4. Ativar preços gerenciados e servidores privados, se desejado.
+5. Testar uma compra real de cada tipo.
+
+Enquanto os IDs forem 0, a compra é simulada só no Studio; no servidor ao vivo o botão responde
+"COMPRA AINDA NÃO DISPONÍVEL".
