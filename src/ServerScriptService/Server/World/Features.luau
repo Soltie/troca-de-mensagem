@@ -144,7 +144,7 @@ Features.Crawl = {
 	wallX = -4,
 	centerZ = -47.4,
 	width = 3.4,
-	top = 3.9,
+	top = 3,
 	standGenerator = { x = -7, y = 0, z = -47.4 } :: Point,
 	standStorage = { x = -1, y = 0, z = -47.4 } :: Point,
 }

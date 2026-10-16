@@ -48,6 +48,8 @@ local flickerFactor = 1
 local forcedFlickerUntil = 0
 local restoreAfterHide = false
 local hintCallbacks: { (string) -> () } = {}
+-- Cor do feixe e da lente acesa (skin equipada; ver CosmeticController).
+local beamColor = WARM
 local rng = Random.new()
 
 local function charge(): number
@@ -200,8 +202,21 @@ local function applyVisible()
 	local vm = viewmodel
 	if vm then
 		vm.lens.Material = if on then Enum.Material.Neon else Enum.Material.SmoothPlastic
-		vm.lens.Color = if on then WARM else Color3.fromRGB(90, 88, 80)
+		vm.lens.Color = if on then beamColor else Color3.fromRGB(90, 88, 80)
 	end
+end
+
+local function partNamed(name: string): BasePart?
+	local vm = viewmodel
+	if not vm then
+		return nil
+	end
+	for _, part in vm.parts do
+		if part.Name == name then
+			return part
+		end
+	end
+	return nil
 end
 
 local FlashlightController = {
@@ -215,6 +230,36 @@ end
 
 function FlashlightController.isWanted(): boolean
 	return wanted
+end
+
+-- Skin da lanterna (cosmético, só o dono vê). O feixe muda de tom, nunca de alcance/brilho.
+function FlashlightController.applySkin(body: Color3, head: Color3, beam: Color3, material: Enum.Material)
+	beamColor = beam
+	local bodyPart = partNamed("Body")
+	local headPart = partNamed("Head")
+	if bodyPart then
+		bodyPart.Color = body
+		bodyPart.Material = material
+	end
+	if headPart then
+		headPart.Color = head
+		headPart.Material = if material == Enum.Material.Neon then Enum.Material.Neon else Enum.Material.Metal
+	end
+	if spot then
+		spot.Color = beam
+	end
+	if spill then
+		spill.Color = beam
+	end
+	applyVisible()
+end
+
+-- Manga do braço com a cor da farda equipada.
+function FlashlightController.applySleeve(color: Color3)
+	local sleeve = partNamed("Sleeve")
+	if sleeve then
+		sleeve.Color = color
+	end
 end
 
 -- Pede ligar/desligar (o servidor confirma pelo atributo).

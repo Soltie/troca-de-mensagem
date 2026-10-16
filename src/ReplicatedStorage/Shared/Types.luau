@@ -20,6 +20,24 @@ export type PlayerData = {
 	sessions: number,
 	firstJoin: number,
 	lastJoin: number,
+	-- v2: economia, cosméticos e progressão (regras em Shared/Game/Economy).
+	wallet: { fichas: number, creditos: number },
+	xp: number,
+	-- Último nível cujas recompensas já foram entregues.
+	rewardedLevel: number,
+	owned: { [string]: boolean },
+	-- Tipo de cosmético -> id equipado (flashlight, uniform, filter, title).
+	equipped: { [string]: string },
+	-- Fitas colecionáveis -> quando achou (os.time).
+	tapes: { [string]: number },
+	daily: { lastDay: number, streak: number, spinDay: number, spinsUsed: number },
+	stats: { runs: number, escapes: number, captures: number, chests: number, stages: number },
+	-- Recibos de compra já concedidos (idempotência do ProcessReceipt) -> os.time.
+	purchases: { [string]: number },
+	-- Produtos de compra única já entregues (ex.: pacote inicial) -> os.time.
+	oncePurchases: { [string]: number },
+	-- Trava de sessão (um servidor por vez escreve os dados). Ver Server/Data/SessionLock.
+	sessionLock: { job: string, at: number }?,
 }
 
 -- Resposta do remote "Interact" / "RequestRestart" (dentro do envelope Result).

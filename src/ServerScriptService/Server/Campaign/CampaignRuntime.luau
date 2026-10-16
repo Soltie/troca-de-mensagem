@@ -16,6 +16,7 @@ local Logger = require("@game/ReplicatedStorage/Shared/Logger")
 local ServerNet = require("../Net/ServerNet")
 local WorldService = require("../Services/WorldService")
 local CreatureService = require("../Services/CreatureService")
+local CollectibleService = require("../Services/CollectibleService")
 local Builder = require("./ActivityBuilder")
 local Build = require("../World/Build")
 local Session = require("./CoopSession")
@@ -374,6 +375,10 @@ local function afterActivity(previous: Session.Phase)
 end
 
 local function interact(player: Player, id: string, _action: string?): { accepted: boolean, message: string }
+	-- Fita VHS colecionável (Claude, monetização/progressão): mesma validação nos dois modos.
+	if id == CollectibleService.TAPE_ID then
+		return CollectibleService.collect(player)
+	end
 	local member = session.members[player.UserId]
 	local now = workspace:GetServerTimeNow()
 	local function response(ok: boolean, message: string)

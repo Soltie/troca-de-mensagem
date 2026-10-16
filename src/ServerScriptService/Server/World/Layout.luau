@@ -151,7 +151,7 @@ Layout.Walls = {
 		from = -50,
 		to = -26,
 		exterior = false,
-		openings = { { center = -47.4, width = 3.4, bottom = 0, top = 3.9 } },
+		openings = { { center = -47.4, width = 3.4, bottom = 0, top = 3 } },
 	},
 } :: { Wall }
 

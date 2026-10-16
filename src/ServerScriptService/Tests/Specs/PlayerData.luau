@@ -22,6 +22,24 @@ local spec: TestKit.Spec = {
 				t.expect(data.schemaVersion).toBe(Config.Data.SchemaVersion)
 			end)
 
+			t.it("migrates v1 saves to v2 without losing old fields", function()
+				local data =
+					PlayerDataSchema.migrate({ schemaVersion = 1, sessions = 3, firstJoin = 10, lastJoin = 20 })
+				t.expect(data.sessions).toBe(3)
+				t.expect(data.wallet.fichas).toBe(0)
+				t.expect(data.wallet.creditos).toBe(0)
+				t.expect(data.equipped.flashlight).toBe("lanterna_padrao")
+				t.expect(data.rewardedLevel).toBe(1)
+				t.expect((next(data.purchases))).toBeNil()
+			end)
+
+			t.it("repairs corrupted wallet values", function()
+				local data = PlayerDataSchema.migrate({ wallet = { fichas = -5, creditos = "x" }, xp = 0 / 0 })
+				t.expect(data.wallet.fichas).toBe(0)
+				t.expect(data.wallet.creditos).toBe(0)
+				t.expect(data.xp).toBe(0)
+			end)
+
 			t.it("returns independent copies of the template", function()
 				local a = PlayerDataSchema.template()
 				a.sessions = 99

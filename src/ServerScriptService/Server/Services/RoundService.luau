@@ -29,6 +29,7 @@ local HideRules = require("../Game/HideRules")
 local Objectives = require("../Game/Objectives")
 local RoundRules = require("../Game/RoundRules")
 local ServerNet = require("../Net/ServerNet")
+local CollectibleService = require("./CollectibleService")
 local CreatureService = require("./CreatureService")
 local PlayerStateService = require("./PlayerStateService")
 local WorldService = require("./WorldService")
@@ -308,6 +309,10 @@ local function hide(player: Player, id: string, position: Vector3, alive: boolea
 end
 
 local function interact(player: Player, id: string, action: string?): Response
+	-- Fita VHS colecionável: validada e entregue à equipe pelo CollectibleService.
+	if id == CollectibleService.TAPE_ID then
+		return CollectibleService.collect(player)
+	end
 	local character, hrp, humanoid = characterParts(player)
 	local item = WorldService.interactable(id)
 	local distance = if hrp and item then (hrp.Position - item.focus.Position).Magnitude else math.huge

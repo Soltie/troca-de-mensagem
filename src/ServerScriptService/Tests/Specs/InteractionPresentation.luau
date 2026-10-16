@@ -19,7 +19,7 @@ return {
 			t.expect(Rules.prompt("ABRIR", "ENTREABRIR", true, true, true)).toBe("[E] ABRIR")
 		end)
 		t.it("only approved item kinds receive pickup animation", function()
-			for _, kind in { "Fuse", "Battery", "Key" } do
+			for _, kind in { "Fuse", "Battery", "Key", "Tape" } do
 				t.expect(Rules.pickup(kind)).toBe(true)
 			end
 			t.expect(Rules.pickup("BreakerWrong")).toBe(false)

@@ -17,11 +17,15 @@ Remotes.setupServer()
 -- { any }: cada Service tem campos próprios; o Loader valida Name/Init/Start em runtime.
 local services: { any } = {
 	require("./Services/PlayerDataService"),
+	require("./Services/StoreService"),
 	require("./Services/WorldService"),
 	require("./Services/PlayerStateService"),
 	require("./Services/CreatureService"),
 	require("./Services/PropService"),
+	require("./Services/CosmeticService"),
+	require("./Services/CollectibleService"),
 	require("./Services/RoundService"),
+	require("./Services/RewardService"),
 	require("./Services/DebugService"), -- só age no Studio
 }
 

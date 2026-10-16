@@ -41,7 +41,7 @@ local Audio: { [string]: Clip } = {
 	StepConcrete = { id = "rbxassetid://9114523629", volume = 0.5, region = { 0, 0.3 } }, -- PSE Foot Stomp 7
 	StepWood = { id = "rbxassetid://9120880067", volume = 0.55, region = { 0, 0.3 } }, -- PSE Wood Grab Muted Thuds 15
 	StepMetal = { id = "rbxassetid://9120102763", volume = 0.35, region = { 0, 0.25 } }, -- PSE Toggle Switch Metal Industrial 18
-	StepWater = { id = "rbxassetid://9125701986", volume = 0.45, region = { 0, 0.4 } }, -- PSE Mud Puddle Splash 13
+	StepWater = { id = "rbxassetid://9125701986", volume = 0.45, region = { 0.47, 0.82 } }, -- PSE Mud Puddle Splash 13
 	StepFallback = { id = "rbxasset://sounds/action_footsteps_plastic.mp3", volume = 0.4, region = { 0, 0.26 } }, -- Roblox (cliente)
 	Land = { id = "rbxasset://sounds/action_jump_land.mp3", volume = 0.5 }, -- Roblox (cliente)
 	Breath1 = { id = "rbxassetid://9114555699", volume = 0.35 }, -- PSE Gasp Trouble Breathing 3

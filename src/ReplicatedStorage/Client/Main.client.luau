@@ -35,6 +35,8 @@ local controllers: { any } = {
 	require("./Controllers/InteractionController"),
 	require("./Controllers/HudController"),
 	require("./Controllers/HapticsController"),
+	require("./Controllers/CosmeticController"),
+	require("./Controllers/StoreController"),
 	require("./Controllers/CampaignController"),
 	require("./Controllers/SpectatorController"),
 }

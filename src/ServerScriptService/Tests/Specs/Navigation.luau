@@ -104,35 +104,49 @@ local spec: TestKit.Spec = {
 			end
 		end)
 
-		-- Duto de cabos: agachado passa por dentro; o Vigia (alto) só dá a volta.
-		t.it("crawl duct: crouched agent goes through, creature never does", function()
+		-- Duto de cabos. No R15 deste jogo só raiz e torso colidem (a cabeça não), então o teste usa
+		-- as caixas de colisão reais do corpo: agachado (HipHeight baixo) cabe; de pé bate no lintel.
+		-- O pathfinding não serve para o agachado (grade de 4 studs fecha um vão de 3,4).
+		t.it("crawl duct: crouched body fits, standing body is blocked, creature goes around", function()
 			local Features = require("@game/ServerScriptService/Server/World/Features")
 			local crawl = Features.Crawl
-			local from = point(crawl.standGenerator)
-			local to = point(crawl.standStorage)
-			local function throughDuct(params: { [string]: any }): (boolean, boolean)
-				local path = PathfindingService:CreatePath(params)
-				local ok = pcall(function()
-					path:ComputeAsync(from, to)
-				end)
-				if not ok or path.Status ~= Enum.PathStatus.Success then
-					return false, false
+			local params = OverlapParams.new()
+			params.RespectCanCollide = true
+			local exclude: { Instance } = {}
+			for _, player in game:GetService("Players"):GetPlayers() do
+				if player.Character then
+					table.insert(exclude, player.Character)
 				end
-				for _, waypoint in path:GetWaypoints() do
-					local p = waypoint.Position
-					if math.abs(p.X - crawl.wallX) < 1 and math.abs(p.Z - crawl.centerZ) < crawl.width / 2 then
-						return true, true
+			end
+			params.FilterType = Enum.RaycastFilterType.Exclude
+			params.FilterDescendantsInstances = exclude
+			-- Extensão vertical do corpo que colide (base da raiz até o topo do torso).
+			local standing = { bottom = 1.75, top = 3.7 }
+			local crouched = { bottom = 0.25, top = 2.15 }
+			local function clear(body: { bottom: number, top: number }): boolean
+				local height = body.top - body.bottom
+				for x = crawl.wallX - 2, crawl.wallX + 2, 0.5 do
+					local center = Vector3.new(x, body.bottom + height / 2, crawl.centerZ)
+					if #workspace:GetPartBoundsInBox(CFrame.new(center), Vector3.new(1, height, 2), params) > 0 then
+						return false
 					end
 				end
-				return true, false
+				return true
 			end
-			local crouched = { AgentRadius = 1.2, AgentHeight = 3.5, AgentCanJump = false, Costs = { Door = 2 } }
-			local found, inside = throughDuct(crouched)
-			t.expect(found).toBe(true)
-			t.expect(inside).toBe(true)
-			local creatureFound, creatureInside = throughDuct(agents.creature)
-			t.expect(creatureFound).toBe(true) -- contorna pelas portas/corredor
-			t.expect(creatureInside).toBe(false)
+			t.expect(clear(crouched)).toBe(true)
+			t.expect(clear(standing)).toBe(false)
+			t.expect(crawl.top > crouched.top + 0.4).toBe(true) -- folga para a câmera agachada
+
+			local path = PathfindingService:CreatePath(agents.creature)
+			local ok = pcall(function()
+				path:ComputeAsync(point(crawl.standGenerator), point(crawl.standStorage))
+			end)
+			t.expect(ok and path.Status == Enum.PathStatus.Success).toBe(true) -- contorna pelas portas
+			for _, waypoint in path:GetWaypoints() do
+				local p = waypoint.Position
+				local inside = math.abs(p.X - crawl.wallX) < 1 and math.abs(p.Z - crawl.centerZ) < crawl.width / 2
+				t.expect(inside).toBe(false)
+			end
 		end)
 
 		t.it("creature: patrol route is fully connected", function()

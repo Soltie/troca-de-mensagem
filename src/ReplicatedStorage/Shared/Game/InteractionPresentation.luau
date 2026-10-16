@@ -13,7 +13,7 @@ function Rules.prompt(prompt: string, alt: string?, locked: boolean, hasKey: boo
 end
 
 function Rules.pickup(kind: string?): boolean
-	return kind == "Fuse" or kind == "Key" or kind == "Battery"
+	return kind == "Fuse" or kind == "Key" or kind == "Battery" or kind == "Tape"
 end
 
 return table.freeze(Rules)

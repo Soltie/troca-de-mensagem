@@ -28,6 +28,10 @@ local DEFINITIONS: { [string]: RemoteKind } = {
 	SetHoldBreath = "RemoteEvent",
 	-- Cliente pede nova rodada nas telas finais: "full" (do zero) ou "checkpoint".
 	RequestRestart = "RemoteFunction",
+	-- Loja/progressão: (ação, argumento?). O servidor valida preço, posse, política e moeda.
+	Store = "RemoteFunction",
+	-- Servidor -> cliente: recompensas concedidas (fim de partida, fita, nível, compra).
+	StoreNotice = "RemoteEvent",
 }
 
 local FOLDER_NAME = Config.Net.RemotesFolderName

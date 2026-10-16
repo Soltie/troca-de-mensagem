@@ -16,9 +16,9 @@
 		PlayerDataService.save(player)                -> boolean (yield)
 		PlayerDataService.getMode()                   -> ("real" | "mock", motivo)
 
-	TODO(session-locking): dois servidores podem ter o mesmo jogador por alguns segundos
-	(teleporte/reconexão) e o último save vence. Antes de lançar com dados valiosos, implemente
-	lock de sessão (campo de lock no UpdateAsync com expiração) ou adote ProfileStore.
+	Trava de sessão (Server/Data/SessionLock): o load reserva os dados para este servidor
+	(UpdateAsync); o save nunca sobrescreve a trava válida de OUTRO servidor (reconexão rápida);
+	o autosave renova a trava e a saída do jogador a libera. Necessário com compras em Robux.
 	Ver docs/ARCHITECTURE.md#playerdata.
 ]]
 
@@ -33,6 +33,7 @@ local TableUtil = require("@game/ReplicatedStorage/Shared/Util/TableUtil")
 local Types = require("@game/ReplicatedStorage/Shared/Types")
 local MockDataStore = require("../Data/MockDataStore")
 local PlayerDataSchema = require("../Data/PlayerDataSchema")
+local SessionLock = require("../Data/SessionLock")
 
 type Store = MockDataStore.Store
 
@@ -99,17 +100,36 @@ local function retryOptions(label: string): Retry.Options
 	}
 end
 
-local function saveProfile(player: Player, profile: Profile): boolean
+local function jobId(): string
+	return if game.JobId ~= "" then game.JobId else "studio"
+end
+
+-- `release` = jogador saindo: grava sem trava (outro servidor pode assumir na hora).
+local function saveProfile(player: Player, profile: Profile, release: boolean?): boolean
 	local snapshot = TableUtil.deepCopy(profile.data)
 	local userId = player.UserId
+	local job = jobId()
+	local blocked = false
+	snapshot.sessionLock = if release then nil else SessionLock.make(job, os.time())
 	pendingSaves += 1
 	local ok, _, err = Retry.run(function()
-		return getStore():UpdateAsync(profile.key, function(_current: any)
+		blocked = false
+		return getStore():UpdateAsync(profile.key, function(current: any)
+			local lock = if type(current) == "table" then current.sessionLock else nil
+			if not SessionLock.canTake(lock, job, os.time()) then
+				-- Outro servidor assumiu este jogador (reconexão): não sobrescrever.
+				blocked = true
+				return nil
+			end
 			-- userIds associa a chave ao jogador (pedidos de remoção de dados / GDPR).
 			return snapshot, { userId }
 		end)
 	end, retryOptions(`save {profile.key}`))
 	pendingSaves -= 1
+	if blocked then
+		log.warn("save skipped for %s: session lock held by another server", player.Name)
+		return false
+	end
 	if ok then
 		log.debug("saved %s", player.Name)
 	else
@@ -118,11 +138,44 @@ local function saveProfile(player: Player, profile: Profile): boolean
 	return ok
 end
 
+-- Lê os dados e reserva a sessão. Espera um pouco se outro servidor ainda segura a trava
+-- (ex.: ainda salvando a saída anterior); depois de `Attempts`, assume (servidor antigo caiu).
+local function acquire(key: string): (boolean, any, string?)
+	local job = jobId()
+	for attempt = 1, SessionLock.Attempts do
+		local force = attempt == SessionLock.Attempts
+		local taken = false
+		local loaded: any = nil
+		local ok, _, err = Retry.run(function()
+			return getStore():UpdateAsync(key, function(current: any)
+				local lock = if type(current) == "table" then current.sessionLock else nil
+				if not force and not SessionLock.canTake(lock, job, os.time()) then
+					return nil
+				end
+				local value = if type(current) == "table" then current else {}
+				value.sessionLock = SessionLock.make(job, os.time())
+				taken = true
+				loaded = value
+				return value
+			end)
+		end, retryOptions(`load {key}`))
+		if not ok then
+			return false, nil, err
+		end
+		if taken then
+			if force then
+				log.warn("took over a stale session lock for %s", key)
+			end
+			return true, loaded, nil
+		end
+		task.wait(SessionLock.RetryDelay)
+	end
+	return false, nil, "session lock busy"
+end
+
 local function loadProfile(player: Player)
 	local key = `Player_{player.UserId}`
-	local ok, raw, err = Retry.run(function()
-		return getStore():GetAsync(key)
-	end, retryOptions(`load {key}`))
+	local ok, raw, err = acquire(key)
 
 	if player.Parent == nil then
 		return -- saiu durante o load; nada mudou, nada a salvar
@@ -152,14 +205,14 @@ local function onPlayerRemoving(player: Player)
 		return
 	end
 	profiles[player] = nil
-	saveProfile(player, profile)
+	saveProfile(player, profile, true)
 end
 
 local function onShutdown()
 	shuttingDown = true
 	for player, profile in profiles do
 		profiles[player] = nil
-		task.spawn(saveProfile, player, profile)
+		task.spawn(saveProfile, player, profile, true)
 	end
 	local deadline = os.clock() + Config.Data.ShutdownTimeout
 	while pendingSaves > 0 and os.clock() < deadline do

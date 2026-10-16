@@ -13,6 +13,7 @@
 
 	Comandos: state | awaken | freezeCreature(bool) | placeCreature(Vector3) | teleport(Vector3) | restart
 	          checkpoint | grant("fuses"|"insert"|"breakers"|"key") | setBattery(0..1) | fall(id) | holdOff(s)
+	          storeGrant(fichas, creditos) | endRound("Won"|"Lost") | tape
 ]]
 
 local HttpService = game:GetService("HttpService")
@@ -21,10 +22,12 @@ local RunService = game:GetService("RunService")
 local ServerStorage = game:GetService("ServerStorage")
 
 local Logger = require("@game/ReplicatedStorage/Shared/Logger")
+local CollectibleService = require("./CollectibleService")
 local CreatureService = require("./CreatureService")
 local PlayerStateService = require("./PlayerStateService")
 local PropService = require("./PropService")
 local RoundService = require("./RoundService")
+local StoreService = require("./StoreService")
 
 local log = Logger.new("DebugService")
 
@@ -92,6 +95,26 @@ local commands: { [string]: (...any) -> any } = {
 	end,
 	fall = function(id: string)
 		return PropService.debugFall(id)
+	end,
+	storeGrant = function(fichas: number, creditos: number)
+		for _, player in Players:GetPlayers() do
+			StoreService.debugGrant(player, fichas or 0, creditos or 0)
+		end
+		return "ok"
+	end,
+	endRound = function(result: string)
+		local player = Players:GetPlayers()[1]
+		if player then
+			if result == "Won" then
+				(RoundService :: any).win(player)
+			else
+				(RoundService :: any).lose(player)
+			end
+		end
+		return "ok"
+	end,
+	tape = function()
+		return HttpService:JSONEncode(encode(CollectibleService.debugState()))
 	end,
 	holdOff = function(seconds: number)
 		CreatureService.holdOff(seconds)
