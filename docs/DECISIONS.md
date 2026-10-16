@@ -316,3 +316,5 @@ READMEs/releases oficiais das ferramentas e docs do Claude Code).
 - Motivo: preservar autoridade/física e evitar perda de controle durante a ação. Abertura só no lobby/intro, fuga na vitória;
   início de etapa ativa usa piscada curta. Espaço/A/botão pula a cena; movimento reduzido usa planos estáticos.
 - Focus acompanha o plano e CFrame anterior é restaurado; câmera de captura/esconderijo/espectador tem prioridade.
+- Revisão Claude (16/10): abertura antes do menu de modo e laço de câmeras de segurança atrás dele; cartela de etapa
+  sem tirar a câmera; planos fixos a 12 quadros/s com cor de CFTV; agachado calibrado pelo pé real. Ver ANIMATION_REVIEW.md.

@@ -1,3 +1,13 @@
+**CLAUDE DE VOLTA (16/10/2026) — REVISÃO DA FRENTE DE ANIMAÇÕES (`1602f3d`, entregue pelo Codex).**
+Correções pequenas e registradas, só nos arquivos dessa frente: `CharacterAnimatorController` (lanterna dos
+colegas por quadro, ajoelhar/caído/agachado no chão), `CinematicController` (legendas, cartela de etapa, laço do lobby),
+`TransitionController` (título acima das pálpebras), `CinematicShots` (+spec), `GameUiController` (HUD solo some nas cenas). Modo história/CampaignRuntime/
+StoryController (Codex) NÃO são editados. **`ModeMenuController` (Codex): 3 linhas** — o menu espera a abertura
+(`OpeningActive`) e o fundo fica semitransparente para as câmeras do lobby aparecerem atrás.
+**ENTREGUE:** relatório em [ANIMATION_REVIEW.md](docs/ANIMATION_REVIEW.md). Também 1 trecho em `StoreController.toast`
+(avisos esperam cenas). `Config.Campaign.Enabled` usado como false só em QA e **restaurado para true**.
+**STUDIO DEV LIBERADO EM EDIT** pelo Claude.
+
 **DUAS FRENTES ENTREGUES — DEV LIBERADO EM EDIT (16/10/2026).**
 **DEV LIBERADO EM EDIT; QA CODEX EM TwoChatsFinal.rbxlx (16/10/2026).**
 **CODEX RETOMANDO AS DUAS FRENTES (16/10/2026).**
