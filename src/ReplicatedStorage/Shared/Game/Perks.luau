@@ -96,7 +96,7 @@ local PERK_LIST: { Perk } = {
 	{
 		id = "silencio",
 		name = "PASSOS LEVES",
-		description = "Correr faz menos barulho para o Vigia.",
+		description = "Correr faz menos barulho para o Tung Tung.",
 		step = 0.08,
 		sign = -1,
 		fichas = { 350, 700, 1150, 1800, 2800 },
@@ -126,7 +126,7 @@ local CONSUMABLE_LIST: { Consumable } = {
 	{
 		id = "continuar",
 		name = "CONTINUAÇÃO",
-		description = "Depois de uma derrota, a equipe repete a etapa em vez de recomeçar.",
+		description = "Depois de uma derrota, o time volta na hora, sem esperar a contagem.",
 		bundle = 1,
 		fichas = nil,
 		creditos = 120,

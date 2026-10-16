@@ -1,11 +1,10 @@
 --!strict
 --[[
-	Oferta de Continuação na derrota da campanha (co-op e história): a equipe repete a etapa perdida
-	em vez de voltar ao menu. Qualquer integrante pode usar.
+	Tela de derrota da campanha (co-op e história). O servidor já repete o capítulo DE GRAÇA,
+	sozinho, depois de alguns segundos (CampaignRuntime). Esta tela deixa isso claro com uma contagem.
 
-	  Tem Continuação no estoque -> "USAR CONTINUAÇÃO" (Store "use_continue").
-	  Não tem -> "CONTINUAR · R$" compra o produto continuar_1; quando a unidade entra no estoque
-	  (Studio: na hora; ao vivo: depois do recibo), usa sozinho.
+	Quem já tem Continuação no estoque (ganha em kits/recompensas) pode voltar na hora, sem esperar
+	("use_continue"). Não há botão de compra aqui: derrota não é momento de vender nada para criança.
 	Quem valida a derrota e reabre a etapa é o servidor (CampaignRuntime via StoreService).
 ]]
 
@@ -15,33 +14,27 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
+local Config = require("@game/ReplicatedStorage/Shared/Config")
 local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
-local PixelText = require("@game/ReplicatedStorage/Shared/Game/PixelText")
-local StoreCatalog = require("@game/ReplicatedStorage/Shared/Game/StoreCatalog")
 local Text = require("@game/ReplicatedStorage/Shared/Game/Text")
 local Remotes = require("@game/ReplicatedStorage/Shared/Net/Remotes")
 local Create = require("../UI/Create")
+local Juice = require("../UI/Juice")
 local Theme = require("../UI/Theme")
 local AudioController = require("./AudioController")
 
 local player = Players.LocalPlayer
-local PRODUCT = "continuar_1"
--- Depois de pedir a compra, usa sozinho se a unidade chegar dentro deste prazo (s).
-local PENDING_SECONDS = 90
 
 local Controller = { Name = "ContinueController" }
 
 local panel: Frame? = nil
 local primary: TextButton? = nil
 local status: TextLabel? = nil
+local body: TextLabel? = nil
 local busy = false
-local pendingUntil = 0
 local shown = false
+local shownAt = 0
 local mouseWas = false
-
-local function px(value: string): string
-	return PixelText.normalize(value)
-end
 
 local function stock(): number
 	local raw = player:GetAttribute("Consumables")
@@ -56,49 +49,28 @@ end
 
 local function say(key: string?)
 	if status then
-		status.Text = px(if key then (Text.Messages :: any)[key] or key else "")
+		status.Text = if key then (Text.Messages :: any)[key] or key else ""
 	end
 end
 
-local function request(action: string, arg: string?): any
+local function useContinue()
 	if busy then
-		return nil
+		return
 	end
 	busy = true
 	local ok, result = pcall(function()
-		return Remotes.clientFunction("Store", 5):InvokeServer(action, arg)
+		return Remotes.clientFunction("Store", 5):InvokeServer("use_continue")
 	end)
 	busy = false
 	if not ok or type(result) ~= "table" or not result.ok then
 		say("store_error")
-		return nil
+		return
 	end
 	local data = result.data
 	if type(data) == "table" then
 		say(data.message)
-	end
-	return data
-end
-
-local function useContinue()
-	local data = request("use_continue")
-	if type(data) == "table" and data.ok then
-		pendingUntil = 0
-		AudioController.play("StingerAwaken", 0.6, 1.2, true)
-	end
-end
-
-local function onPrimary()
-	if stock() > 0 then
-		useContinue()
-		return
-	end
-	local data = request("buy_product", PRODUCT)
-	if type(data) == "table" and data.ok then
-		pendingUntil = os.clock() + PENDING_SECONDS
-		-- Studio: a compra simulada já entregou; usa na hora.
-		if stock() > 0 then
-			useContinue()
+		if data.ok then
+			AudioController.play("StingerAwaken", 0.6, 1.2, true)
 		end
 	end
 end
@@ -115,64 +87,64 @@ local function build()
 		Name = "Offer",
 		AnchorPoint = Vector2.new(0.5, 1),
 		Position = UDim2.new(0.5, 0, 1, -40),
-		Size = UDim2.fromOffset(600, 132),
+		Size = UDim2.fromOffset(600, 150),
 		BackgroundColor3 = Theme.Panel,
 		BackgroundTransparency = 0.05,
 		BorderSizePixel = 0,
 		Visible = false,
 		Parent = gui,
 	}, {
-		Create("UIStroke", { Color = Theme.Hazard, Thickness = 2 }),
+		Create("UICorner", { CornerRadius = Theme.Corner }),
+		Create("UIStroke", { Color = Theme.Accent, Thickness = 3 }),
 	}) :: Frame
 	Create("TextLabel", {
 		Name = "Title",
-		Position = UDim2.fromOffset(16, 10),
-		Size = UDim2.new(1, -32, 0, 24),
+		Position = UDim2.fromOffset(18, 12),
+		Size = UDim2.new(1, -36, 0, 30),
 		BackgroundTransparency = 1,
 		FontFace = Theme.Font,
-		Text = px("A EQUIPE CAIU. CONTINUAR DESTA ETAPA?"),
-		TextColor3 = Theme.Hazard,
-		TextSize = Theme.SizeLarge,
+		Text = "💥 O TUNG TUNG PEGOU O TIME!",
+		TextColor3 = Theme.Accent,
+		TextSize = 26,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = p,
 	})
-	Create("TextLabel", {
+	body = Create("TextLabel", {
 		Name = "Body",
-		Position = UDim2.fromOffset(16, 36),
-		Size = UDim2.new(1, -32, 0, 34),
+		Position = UDim2.fromOffset(18, 46),
+		Size = UDim2.new(1, -36, 0, 44),
 		BackgroundTransparency = 1,
 		FontFace = Theme.FontNote,
-		Text = "Todos voltam no começo da etapa perdida, com o progresso das anteriores. Ou vote [R] para recomeçar a campanha.",
-		TextColor3 = Theme.TextDim,
-		TextSize = 14,
+		Text = "",
+		TextColor3 = Theme.Text,
+		TextSize = 15,
 		TextWrapped = true,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextYAlignment = Enum.TextYAlignment.Top,
 		Parent = p,
-	})
+	}) :: TextLabel
 	local b = Create("TextButton", {
 		Name = "Continue",
-		Position = UDim2.fromOffset(16, 80),
+		Position = UDim2.fromOffset(18, 98),
 		Size = UDim2.fromOffset(330, 38),
 		AutoButtonColor = true,
-		BackgroundColor3 = Color3.fromRGB(28, 44, 30),
+		BackgroundColor3 = Theme.Good,
 		BorderSizePixel = 0,
 		FontFace = Theme.Font,
 		Text = "",
-		TextColor3 = Theme.Text,
+		TextColor3 = Theme.Ink,
 		TextSize = Theme.SizeBody,
+		Visible = false,
 		Parent = p,
-	}, {
-		Create("UIStroke", { Color = Color3.fromRGB(120, 200, 140), Thickness = 1 }),
-	}) :: TextButton
+	}, { Create("UICorner", { CornerRadius = Theme.CornerSmall }) }) :: TextButton
 	b.Activated:Connect(function()
 		AudioController.play("UiBlip", 0.5, 1.1, true)
-		task.spawn(onPrimary)
+		task.spawn(useContinue)
 	end)
 	status = Create("TextLabel", {
 		Name = "Status",
-		Position = UDim2.fromOffset(356, 80),
-		Size = UDim2.new(1, -372, 0, 38),
+		Position = UDim2.fromOffset(360, 98),
+		Size = UDim2.new(1, -378, 0, 38),
 		BackgroundTransparency = 1,
 		FontFace = Theme.Font,
 		Text = "",
@@ -187,7 +159,7 @@ local function build()
 end
 
 function Controller.debugState(): { [string]: any }
-	return { shown = shown, stock = stock(), pending = pendingUntil > os.clock() }
+	return { shown = shown, stock = stock() }
 end
 
 function Controller.Start()
@@ -196,16 +168,9 @@ function Controller.Start()
 	end
 	local state = ReplicatedStorage:WaitForChild("CampaignState")
 	build()
-	-- Compra real confirmada depois do recibo: a unidade entra no estoque e é usada sozinha.
-	player:GetAttributeChangedSignal("Consumables"):Connect(function()
-		if pendingUntil > os.clock() and shown and stock() > 0 then
-			task.spawn(useContinue)
-		end
-	end)
-	local product = StoreCatalog.ProductByKey[PRODUCT]
 	RunService.RenderStepped:Connect(function()
-		local p, b = panel, primary
-		if not p or not b then
+		local p, b, text = panel, primary, body
+		if not p or not b or not text then
 			return
 		end
 		local visible = state:GetAttribute("Phase") == "Lost" and player:GetAttribute("CinematicActive") ~= true
@@ -214,21 +179,23 @@ function Controller.Start()
 			p.Visible = visible
 			if visible then
 				say(nil)
+				shownAt = os.clock()
 				mouseWas = UserInputService.MouseIconEnabled
+				Juice.appear(p)
 			else
 				UserInputService.MouseIconEnabled = mouseWas
-				pendingUntil = 0
 			end
 		end
 		if visible then
 			UserInputService.MouseBehavior = Enum.MouseBehavior.Default
 			UserInputService.MouseIconEnabled = true
+			local remaining = math.max(0, math.ceil(Config.Campaign.IntermissionSeconds - (os.clock() - shownAt)))
+			text.Text = if remaining > 0
+				then `Calma! Todo mundo volta no começo deste capítulo em {remaining}s, de graça. Os capítulos que vocês já terminaram ficam salvos.`
+				else "Voltando para o começo do capítulo..."
 			local count = stock()
-			b.Text = px(
-				if count > 0
-					then `USAR CONTINUAÇÃO (VOCÊ TEM {count})`
-					else `CONTINUAR · R$ {if product then product.robux else 49}`
-			)
+			b.Visible = count > 0 and remaining > 0
+			b.Text = `⏩ VOLTAR AGORA (CONTINUAÇÕES: {count})`
 		end
 	end)
 end

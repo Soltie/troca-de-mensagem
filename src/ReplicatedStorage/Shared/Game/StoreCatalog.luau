@@ -276,7 +276,7 @@ StoreCatalog.Items = {
 	item({
 		id = "farda_cinza",
 		kind = "uniform",
-		name = "FARDA DE MANUTENÇÃO",
+		name = "MACACÃO DE AVENTUREIRO",
 		rarity = "common",
 		source = "level",
 		shirt = { 110, 112, 108 },
@@ -286,7 +286,7 @@ StoreCatalog.Items = {
 	item({
 		id = "farda_noturna",
 		kind = "uniform",
-		name = "TURNO DA NOITE",
+		name = "NOITE ESTRELADA",
 		rarity = "rare",
 		source = "store",
 		fichas = 1000,
@@ -335,7 +335,7 @@ StoreCatalog.Items = {
 	item({
 		id = "farda_vigia",
 		kind = "uniform",
-		name = "FARDA DE VIGIA",
+		name = "UNIFORME DE GUARDA",
 		rarity = "legendary",
 		source = "store",
 		creditos = 750,
@@ -347,7 +347,7 @@ StoreCatalog.Items = {
 	item({
 		id = "farda_supervisor",
 		kind = "uniform",
-		name = "SUPERVISOR DE TURNO",
+		name = "CAPITÃO DA NOITE",
 		rarity = "exclusive",
 		source = "vip",
 		shirt = { 235, 235, 230 },
@@ -421,7 +421,7 @@ StoreCatalog.Items = {
 	item({
 		id = "titulo_estagiario",
 		kind = "title",
-		name = "ESTAGIÁRIO",
+		name = "NOVATO",
 		rarity = "common",
 		source = "default",
 		color = { 180, 180, 170 },
@@ -429,7 +429,7 @@ StoreCatalog.Items = {
 	item({
 		id = "titulo_tecnico",
 		kind = "title",
-		name = "TÉCNICO",
+		name = "EXPLORADOR",
 		rarity = "common",
 		source = "level",
 		color = { 200, 210, 200 },
@@ -445,7 +445,7 @@ StoreCatalog.Items = {
 	item({
 		id = "titulo_senior",
 		kind = "title",
-		name = "TÉCNICO SÊNIOR",
+		name = "CORAJOSO",
 		rarity = "rare",
 		source = "level",
 		color = { 110, 170, 240 },
@@ -453,7 +453,7 @@ StoreCatalog.Items = {
 	item({
 		id = "titulo_arquivista",
 		kind = "title",
-		name = "ARQUIVISTA",
+		name = "CAÇA-PISTAS",
 		rarity = "epic",
 		source = "tapes",
 		color = { 190, 120, 240 },
@@ -461,7 +461,7 @@ StoreCatalog.Items = {
 	item({
 		id = "titulo_lenda",
 		kind = "title",
-		name = "LENDA DA SUBESTAÇÃO",
+		name = "LENDA DO TUM TUM",
 		rarity = "legendary",
 		source = "level",
 		color = { 250, 200, 70 },
@@ -469,7 +469,7 @@ StoreCatalog.Items = {
 	item({
 		id = "titulo_supervisor",
 		kind = "title",
-		name = "SUPERVISOR",
+		name = "CAPITÃO DO TIME",
 		rarity = "exclusive",
 		source = "vip",
 		color = { 230, 190, 80 },
@@ -480,7 +480,7 @@ StoreCatalog.Items = {
 	item({
 		id = "titulo_hora_extra",
 		kind = "title",
-		name = "HORA EXTRA",
+		name = "CORUJÃO",
 		rarity = "rare",
 		source = "season",
 		color = { 255, 170, 60 },
@@ -510,7 +510,7 @@ StoreCatalog.Items = {
 	item({
 		id = "titulo_turno_extra",
 		kind = "title",
-		name = "TURNO EXTRA",
+		name = "INCANSÁVEL",
 		rarity = "epic",
 		source = "season",
 		color = { 240, 120, 60 },
@@ -552,7 +552,7 @@ StoreCatalog.Items = {
 	item({
 		id = "titulo_insone",
 		kind = "title",
-		name = "INSONE",
+		name = "SEM MEDO DO ESCURO",
 		rarity = "epic",
 		source = "season",
 		color = { 150, 140, 255 },
@@ -582,7 +582,7 @@ StoreCatalog.Items = {
 	item({
 		id = "titulo_dono_madrugada",
 		kind = "title",
-		name = "DONO DA MADRUGADA",
+		name = "DONO DA NOITE",
 		rarity = "legendary",
 		source = "season",
 		color = { 255, 80, 70 },
@@ -615,7 +615,7 @@ StoreCatalog.Items = {
 	item({
 		id = "titulo_ultimo_turno",
 		kind = "title",
-		name = "O ÚLTIMO TURNO",
+		name = "O ÚLTIMO A SAIR",
 		rarity = "legendary",
 		source = "story",
 		color = { 209, 173, 100 },
@@ -646,7 +646,7 @@ StoreCatalog.Items = {
 	item({
 		id = "titulo_arquivista_elias",
 		kind = "title",
-		name = "GUARDIÃO DO ARQUIVO",
+		name = "GUARDIÃO DA CASA",
 		rarity = "exclusive",
 		source = "storypass",
 		color = { 120, 200, 140 },
@@ -747,8 +747,8 @@ StoreCatalog.Tapes = {
 	{ id = "fita_08", title = "ARQUIVO MORTO", line = "Fichas de ponto até 2003. Depois, nada." },
 	{ id = "fita_09", title = "O PORTÃO", line = "Ele nunca deixa o portão aberto por muito tempo." },
 	{ id = "fita_10", title = "SALA DE CONTROLE", line = "Os monitores mostram alguém parado. Não há ninguém." },
-	{ id = "fita_11", title = "ÚLTIMO TURNO", line = "Assinou o livro e continuou a ronda." },
-	{ id = "fita_12", title = "SUBESTAÇÃO 9", line = "Se ouvir os passos, apague a lanterna." },
+	{ id = "fita_11", title = "A ÚLTIMA RONDA", line = "Assinou o livro e continuou a ronda." },
+	{ id = "fita_12", title = "A CASA ACORDA", line = "Se ouvir os passos, apague a lanterna." },
 } :: { Tape }
 
 StoreCatalog.TapeById = {} :: { [string]: Tape }
@@ -808,7 +808,7 @@ StoreCatalog.Products = {
 		key = "pacote_inicial",
 		kind = "product",
 		name = "PACOTE INICIAL",
-		description = "300 Créditos + Lanterna 1987 + Turno da Noite. Uma vez por conta.",
+		description = "300 Créditos + Lanterna 1987 + Noite Estrelada. Uma vez por conta.",
 		id = 0,
 		robux = 149,
 		grant = { creditos = 300 },
@@ -828,7 +828,7 @@ StoreCatalog.Products = {
 		key = "segunda_chance_3",
 		kind = "product",
 		name = "3 SEGUNDAS CHANCES",
-		description = "Levante sozinho quando o Vigia te pegar.",
+		description = "Levante sozinho quando o Tung Tung te pegar.",
 		id = 0,
 		robux = 99,
 		grant = { consumables = { segunda_chance = 3 } },
@@ -846,7 +846,7 @@ StoreCatalog.Products = {
 		key = "continuar_1",
 		kind = "product",
 		name = "1 CONTINUAÇÃO",
-		description = "A equipe repete a etapa perdida em vez de recomeçar.",
+		description = "Depois de uma derrota, o time volta na hora, sem esperar a contagem (a volta grátis acontece sozinha).",
 		id = 0,
 		robux = 49,
 		grant = { consumables = { continuar = 1 } },
@@ -855,7 +855,7 @@ StoreCatalog.Products = {
 		key = "continuar_5",
 		kind = "product",
 		name = "5 CONTINUAÇÕES",
-		description = "+20% de bônus no pacote.",
+		description = "5 voltas imediatas depois de derrotas (a volta grátis acontece sozinha).",
 		id = 0,
 		robux = 199,
 		grant = { consumables = { continuar = 5 } },
@@ -910,7 +910,7 @@ StoreCatalog.Products = {
 		-- Um Game Pass NOVO por temporada (o acesso pago vale só para a temporada dele).
 		key = "turno_extra_s1",
 		kind = "pass",
-		name = "PASSE TURNO EXTRA (TEMPORADA 1)",
+		name = "PASSE NOITE EXTRA (TEMPORADA 1)",
 		description = "Libera a trilha paga da temporada: 7 cosméticos temáticos, Fichas e 300 Créditos.",
 		id = 0,
 		robux = 399,

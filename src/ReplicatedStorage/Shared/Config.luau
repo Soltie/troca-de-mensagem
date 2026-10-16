@@ -316,8 +316,8 @@ local Config = {
 
 	-- Valores iniciais das opções de conforto (menu O; V e B são atalhos).
 	Comfort = {
-		retro = true, -- scanlines, granulação, vinheta fixa
-		vhs = true, -- carimbo de hora, linha de tracking, aberração cromática
+		retro = false, -- scanlines, granulação, vinheta fixa (opcional; visual limpo por padrão)
+		vhs = false, -- carimbo de hora, linha de tracking, aberração cromática (opcional)
 		bob = true, -- balanço da câmera ao andar e respiração parada
 		tilt = true, -- inclinação lateral
 		shake = true, -- tremores

@@ -61,8 +61,8 @@ SeasonCatalog.Seasons = {
 	{
 		id = "s1",
 		number = 1,
-		name = "TURNO EXTRA",
-		tagline = "A subestação precisa de gente para o turno extra. Cada partida conta.",
+		name = "NOITE EXTRA",
+		tagline = "A casa do Tung Tung guarda novos segredos. Cada partida conta!",
 		-- 15/10/2026 00:00 a 01/12/2026 00:00 (horário de Brasília).
 		startsAt = 1792033200,
 		endsAt = 1796094000,

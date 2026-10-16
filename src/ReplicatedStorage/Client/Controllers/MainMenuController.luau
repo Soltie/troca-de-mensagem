@@ -28,7 +28,6 @@ local Config = require("@game/ReplicatedStorage/Shared/Config")
 local Economy = require("@game/ReplicatedStorage/Shared/Game/Economy")
 local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
 local Perks = require("@game/ReplicatedStorage/Shared/Game/Perks")
-local PixelText = require("@game/ReplicatedStorage/Shared/Game/PixelText")
 local StoreCatalog = require("@game/ReplicatedStorage/Shared/Game/StoreCatalog")
 local StoryRewards = require("@game/ReplicatedStorage/Shared/Game/StoryRewards")
 local Text = require("@game/ReplicatedStorage/Shared/Game/Text")
@@ -38,32 +37,36 @@ local Theme = require("../UI/Theme")
 local AudioController = require("./AudioController")
 local Cinema = require("./CinematicController")
 local Store = require("./StoreController")
+local Settings = require("./SettingsController")
+local TungTungRig = require("../Creature/TungTungRig")
 
-type TabId = "play" | "perks" | "store" | "season" | "daily" | "servers" | "friends"
+type TabId = "play" | "perks" | "store" | "season" | "daily" | "servers" | "friends" | "settings"
 
 local player = Players.LocalPlayer
 local GREEN = Color3.fromRGB(120, 200, 140)
-local VEIL = Color3.fromRGB(6, 9, 10)
-local CARD = Color3.fromRGB(14, 18, 20)
+local VEIL = Color3.fromRGB(16, 8, 34)
+local CARD = Color3.fromRGB(30, 18, 56)
 
-local NAV: { { id: TabId, label: string } } = {
-	{ id = "play", label = "JOGAR" },
-	{ id = "perks", label = "MELHORIAS" },
-	{ id = "store", label = "LOJA" },
-	{ id = "season", label = "PASSE DA TEMPORADA" },
-	{ id = "daily", label = "RECOMPENSAS DIÁRIAS" },
-	{ id = "servers", label = "SERVIDORES" },
-	{ id = "friends", label = "AMIGOS" },
+local NAV: { { id: TabId, label: string, icon: string } } = {
+	{ id = "play", label = "JOGAR", icon = "▶️" },
+	{ id = "perks", label = "MELHORIAS", icon = "⚡" },
+	{ id = "store", label = "LOJA", icon = "🛒" },
+	{ id = "season", label = "PASSE DA TEMPORADA", icon = "🎫" },
+	{ id = "daily", label = "PRÊMIO DIÁRIO", icon = "🎁" },
+	{ id = "servers", label = "SERVIDORES", icon = "🌐" },
+	{ id = "friends", label = "AMIGOS", icon = "👫" },
+	{ id = "settings", label = "AJUSTES", icon = "⚙️" },
 }
 -- Abas que só abrem a loja.
 local STORE_TABS: { [string]: string } = { store = "shop", season = "season", daily = "daily" }
 local TIPS = {
-	"APAGUE A LANTERNA QUANDO OUVIR OS PASSOS.",
-	"AGACHADO VOCÊ FAZ MENOS BARULHO E TUNG TUNG TE VÊ DE MAIS PERTO.",
-	"UM COLEGA CAÍDO PODE SER RESGATADO: FIQUE PERTO E COM VISÃO.",
-	"SEGUNDA CHANCE NO KIT: VOCÊ LEVANTA SOZINHO UMA VEZ POR ETAPA.",
-	"FITAS VHS DÃO FICHAS PARA A EQUIPE TODA.",
-	"NO MODO HISTÓRIA, VENCER SEM QUEDAS DÁ BÔNUS.",
+	"OUVIU TUM TUM TUM? APAGUE A LANTERNA E SE ESCONDA!",
+	"AGACHADO VOCÊ FAZ MENOS BARULHO.",
+	"AMIGO CAIU? CHEGUE PERTO E APERTE E PARA AJUDAR.",
+	"MOEDAS BRILHANTES VIRAM FICHAS. A GEMA ROXA VALE MUITO MAIS!",
+	"FITAS VHS ESCONDIDAS DÃO FICHAS PARA O TIME TODO.",
+	"NO MODO HISTÓRIA, TERMINAR SEM CAIR DÁ BÔNUS.",
+	"CONVIDE AMIGOS: EM TIME É MAIS FÁCIL (E MAIS DIVERTIDO)!",
 }
 
 local Controller = { Name = "MainMenuController" }
@@ -86,8 +89,9 @@ local lastServerFetch = 0
 local wasOpen = false
 local tipIndex = 1
 
+-- A fonte do tema (FredokaOne) tem acentos; o texto passa direto.
 local function px(value: string): string
-	return PixelText.normalize(value)
+	return value
 end
 
 local function campaign(): Instance?
@@ -426,7 +430,7 @@ local function buildPlay(b: Frame)
 		modes,
 		1,
 		"Story",
-		"01 · MODO HISTÓRIA",
+		"📖 MODO HISTÓRIA",
 		"THE CURSED HOUSE",
 		"Uma casa amaldiçoada em 5 capítulos. Solo ou equipe de até 6.",
 		function(card)
@@ -469,7 +473,7 @@ local function buildPlay(b: Frame)
 				label({
 					Position = UDim2.fromOffset(0, 188),
 					Size = UDim2.new(1, 0, 0, 16),
-					Text = "ARQUIVO DO ELIAS: RECOMPENSAS x2",
+					Text = "⭐ PASSE DA HISTÓRIA ATIVO: RECOMPENSAS x2",
 					TextSize = Theme.SizeSmall,
 					TextColor3 = Theme.Hazard,
 					Parent = card,
@@ -496,13 +500,13 @@ local function buildPlay(b: Frame)
 		modes,
 		2,
 		"Standard",
-		"02 · MODO CO-OP",
+		"🎲 MODO DESAFIO",
 		"MAIS UMA NOITE",
 		"A mesma casa, com itens e códigos variáveis. 5 capítulos, 1–6 jogadores.",
 		function(card)
 			local lines = {
-				"RECOMPENSA: FICHAS E XP POR ETAPA, FUGA E AJUDA À EQUIPE",
-				"FITAS VHS: FICHAS PARA TODOS",
+				"PRÊMIOS: FICHAS E XP POR CAPÍTULO, FUGA E AJUDA AO TIME",
+				"MOEDAS E FITAS VHS ESPALHADAS PELA CASA",
 			}
 			for i, line in lines do
 				label({
@@ -616,11 +620,11 @@ local function buildPlay(b: Frame)
 			else 0
 		status.Text = px(
 			if remaining > 0
-				then `EQUIPE REUNIDA · INICIANDO EM {remaining}s`
+				then `TIME REUNIDO · COMEÇANDO EM {remaining}s`
 				elseif
 					count < Config.Campaign.minPlayers
-				then `EQUIPE {count}/{Config.Campaign.maxPlayers} · FALTAM {Config.Campaign.minPlayers - count} PARA COMEÇAR`
-				else `EQUIPE {count}/{Config.Campaign.maxPlayers} · AGUARDANDO A MAIORIA DOS VOTOS`
+				then `TIME {count}/{Config.Campaign.maxPlayers} · FALTAM {Config.Campaign.minPlayers - count} PARA COMEÇAR`
+				else `TIME {count}/{Config.Campaign.maxPlayers} · ESPERANDO OS VOTOS`
 		)
 		for i, slot in slotFrames do
 			local other = list[i]
@@ -659,7 +663,7 @@ local function buildPlay(b: Frame)
 	})
 	label({
 		Size = UDim2.new(1, 0, 0, 16),
-		Text = "KIT DO TURNO",
+		Text = "🎒 MOCHILA DA PARTIDA",
 		TextSize = Theme.SizeSmall,
 		TextColor3 = Theme.Hazard,
 		Parent = kit,
@@ -694,6 +698,83 @@ local function buildPlay(b: Frame)
 			end
 		end)
 		chip.TextWrapped = true
+	end
+
+	-- Vitrine: o próprio Tung Tung do jogo, animado, com a "fala" dele.
+	local showcase = frame({
+		Name = "Showcase",
+		Position = UDim2.fromOffset(0, 496),
+		Size = UDim2.new(1, 0, 0, 146),
+		BackgroundColor3 = Theme.PanelLight,
+		BackgroundTransparency = 0.3,
+		Parent = b,
+	}, { Create("UICorner", { CornerRadius = Theme.Corner }), stroke(Theme.Hazard, 2, 0.35) })
+	local viewport = Create("ViewportFrame", {
+		Name = "TungTung",
+		Size = UDim2.new(0, 210, 1, 0),
+		BackgroundTransparency = 1,
+		Ambient = Color3.fromRGB(190, 170, 230),
+		LightColor = Color3.fromRGB(255, 236, 210),
+		LightDirection = Vector3.new(-0.6, -1, 0.4),
+		Parent = showcase,
+	}) :: ViewportFrame
+	label({
+		Position = UDim2.fromOffset(220, 14),
+		Size = UDim2.new(1, -236, 0, 34),
+		Text = "TUNG TUNG SAHUR",
+		TextSize = 30,
+		TextColor3 = Theme.Hazard,
+		Parent = showcase,
+	})
+	note({
+		Position = UDim2.fromOffset(220, 52),
+		Size = UDim2.new(1, -236, 0, 46),
+		Text = "“TUM... TUM... TUM... SAHUR!” 🥁",
+		TextSize = 18,
+		TextColor3 = Theme.Text,
+		Parent = showcase,
+	})
+	note({
+		Position = UDim2.fromOffset(220, 92),
+		Size = UDim2.new(1, -236, 0, 48),
+		Text = "Ele anda pela casa com o bastão. Apague a lanterna, se esconda nos armários e salve seus amigos!",
+		TextSize = 14,
+		TextColor3 = Theme.TextDim,
+		Parent = showcase,
+	})
+	local world = Instance.new("WorldModel")
+	world.Parent = viewport
+	local rig = TungTungRig.build(world)
+	if rig then
+		local camera = Instance.new("Camera")
+		camera.FieldOfView = 30
+		camera.CFrame = CFrame.lookAt(Vector3.new(0, 4.6, -13.5), Vector3.new(0, 3.9, 0))
+		camera.Parent = viewport
+		viewport.CurrentCamera = camera
+		local clips: { TungTungRig.ClipName } = { "idle", "slash", "strafe", "walk", "sheath" }
+		local index, showClock, sway = 1, 0, 0
+		local connection: RBXScriptConnection? = nil
+		connection = RunService.RenderStepped:Connect(function(dt)
+			if not viewport.Parent then
+				if connection then
+					connection:Disconnect()
+				end
+				return
+			end
+			local screen = gui
+			if not screen or not screen.Enabled then
+				return
+			end
+			showClock += dt
+			sway += dt
+			if showClock > 3 then
+				showClock = 0
+				index = index % #clips + 1
+				TungTungRig.play(rig, clips[index], 0.3)
+			end
+			TungTungRig.place(rig, CFrame.Angles(0, math.sin(sway * 0.6) * 0.5, 0))
+			TungTungRig.step(rig, dt)
+		end)
 	end
 end
 
@@ -791,7 +872,7 @@ local function buildPerks(b: Frame)
 			end)
 		end
 	end
-	sectionTitle(scroll, "CONSUMÍVEIS · LIGUE NO KIT DO TURNO (ABA JOGAR)", 20)
+	sectionTitle(scroll, "CONSUMÍVEIS · LIGUE NA MOCHILA DA PARTIDA (ABA JOGAR)", 20)
 	for i, def in Perks.Consumables do
 		local row = frame({
 			Name = `Consumable_{def.id}`,
@@ -862,8 +943,6 @@ local function buildPerks(b: Frame)
 		"kit_sobrevivente",
 		"segunda_chance_3",
 		"segunda_chance_10",
-		"continuar_1",
-		"continuar_5",
 		"pilhas_10",
 		"bonus_fichas_1h",
 		"bonus_duplo_3h",
@@ -1218,6 +1297,10 @@ local function renderTab()
 end
 
 local function selectTab(id: TabId)
+	if id == "settings" then
+		Settings.toggleMenu()
+		return
+	end
 	local storeTab = STORE_TABS[id]
 	if storeTab then
 		Store.openTab(storeTab)
@@ -1273,7 +1356,7 @@ local function build(): ScreenGui
 	label({
 		Position = UDim2.fromOffset(20, 0),
 		Size = UDim2.new(1, -20, 0, 20),
-		Text = "AO VIVO · ARQUIVO 009 · TURNO DA NOITE",
+		Text = "🌙 UMA NOITE NA CASA DO TUNG TUNG",
 		TextSize = Theme.SizeSmall,
 		TextColor3 = Theme.Accent,
 		Parent = left,
@@ -1288,7 +1371,7 @@ local function build(): ScreenGui
 	label({
 		Position = UDim2.fromOffset(0, 86),
 		Size = UDim2.new(1, 0, 0, 18),
-		Text = "A CASA ESTÁ ESPERANDO",
+		Text = "EXPLORE · PEGUE MOEDAS · FUJA DO TUM TUM TUM!",
 		TextSize = Theme.SizeSmall,
 		TextColor3 = Theme.Hazard,
 		Parent = left,
@@ -1296,7 +1379,7 @@ local function build(): ScreenGui
 	local nav = frame({
 		Name = "Nav",
 		Position = UDim2.fromOffset(0, 128),
-		Size = UDim2.new(1, 0, 0, 7 * 46),
+		Size = UDim2.new(1, 0, 0, #NAV * 44),
 		BackgroundTransparency = 1,
 		Parent = left,
 	}, {
@@ -1305,13 +1388,13 @@ local function build(): ScreenGui
 	for i, item in NAV do
 		local navButton = Create("TextButton", {
 			Name = `Nav_{item.id}`,
-			Size = UDim2.new(1, 0, 0, 42),
+			Size = UDim2.new(1, 0, 0, 40),
 			AutoButtonColor = false,
 			BackgroundColor3 = Color3.fromRGB(46, 38, 16),
 			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
 			FontFace = Theme.Font,
-			Text = px(`   {string.format("%02d", i)}  {item.label}`),
+			Text = `   {item.icon}  {item.label}`,
 			TextColor3 = Theme.Text,
 			TextSize = Theme.SizeLarge,
 			TextXAlignment = Enum.TextXAlignment.Left,
@@ -1363,46 +1446,7 @@ local function build(): ScreenGui
 		navButtons[item.id] = navButton
 	end
 
-	-- Oferta em destaque (some depois da compra única do kit).
-	local offer = frame({
-		Name = "Offer",
-		AnchorPoint = Vector2.new(0, 1),
-		Position = UDim2.new(0, 0, 1, -140),
-		Size = UDim2.new(1, 0, 0, 104),
-		BackgroundColor3 = Color3.fromRGB(34, 28, 12),
-		BackgroundTransparency = 0.05,
-		Parent = left,
-	}, { stroke(Theme.Hazard, 2, 0) })
-	local kitProduct = StoreCatalog.ProductByKey.kit_sobrevivente
-	label({
-		Position = UDim2.fromOffset(12, 8),
-		Size = UDim2.new(1, -24, 0, 18),
-		Text = "OFERTA ÚNICA · KIT SOBREVIVENTE",
-		TextSize = Theme.SizeSmall,
-		TextColor3 = Theme.Hazard,
-		Parent = offer,
-	})
-	note({
-		Position = UDim2.fromOffset(12, 28),
-		Size = UDim2.new(1, -150, 0, 70),
-		Text = kitProduct.description,
-		TextSize = 13,
-		TextColor3 = Theme.Text,
-		Parent = offer,
-	})
-	button({
-		Name = "BuyKit",
-		AnchorPoint = Vector2.new(1, 1),
-		Position = UDim2.new(1, -12, 1, -12),
-		Size = UDim2.fromOffset(124, 40),
-		Text = if kitProduct.id > 0 then `R$ {kitProduct.robux}` else "INDISPONÍVEL",
-		TextSize = Theme.SizeLarge,
-		Accent = GREEN,
-		BackgroundColor3 = Color3.fromRGB(28, 44, 30),
-		Parent = offer,
-	}, function()
-		buyProduct("kit_sobrevivente")
-	end)
+	-- O kit pago fica só na aba MELHORIAS (sem oferta fixa na tela inicial).
 
 	-- Cartão do jogador.
 	local cardFrame = frame({
@@ -1542,7 +1586,7 @@ local function build(): ScreenGui
 		)
 		nameLabel.Text = player.DisplayName
 		wallet.Text = px(
-			`{number(tonumber(player:GetAttribute("Fichas")) or 0)} FICHAS   {number(
+			`💰 {number(tonumber(player:GetAttribute("Fichas")) or 0)} FICHAS   💎 {number(
 				tonumber(player:GetAttribute("Creditos")) or 0
 			)} CRÉDITOS`
 		)
@@ -1551,7 +1595,6 @@ local function build(): ScreenGui
 			badge.Visible = player:GetAttribute("DailyClaimable") == true
 				or (tonumber(player:GetAttribute("SpinsLeft")) or 0) > 0
 		end
-		offer.Visible = player:GetAttribute("KitBought") ~= true
 		tipClock += dt
 		if tipClock > 6 or tip.Text == "" then
 			tipClock = 0

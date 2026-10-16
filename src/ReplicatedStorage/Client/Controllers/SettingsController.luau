@@ -21,6 +21,7 @@ local Remotes = require("@game/ReplicatedStorage/Shared/Net/Remotes")
 local Config = require("@game/ReplicatedStorage/Shared/Config")
 local Text = require("@game/ReplicatedStorage/Shared/Game/Text")
 local Create = require("../UI/Create")
+local Theme = require("../UI/Theme")
 
 export type Key = "retro" | "vhs" | "bob" | "tilt" | "shake" | "fov" | "flashes" | "haptics"
 
@@ -33,22 +34,34 @@ for _, key in KEYS do
 	values[key] = (Config.Comfort :: any)[key] ~= false
 end
 local listeners: { (key: Key, value: boolean) -> () } = {}
-local menu: TextLabel? = nil
+local menu: Frame? = nil
 local buttons: { [string]: TextButton } = {}
 local mixes: { [string]: number } = { master = 1, music = 1, effects = 1, breathing = 1, ambient = 1 }
 local syncing = false
 
+local ON_COLOR = Color3.fromRGB(70, 190, 110)
+local OFF_COLOR = Color3.fromRGB(70, 60, 96)
+
 local function refreshMenu()
 	for index, key in KEYS do
-		if buttons[key] then
-			buttons[key].Text = `[{index}] {(Text.Options :: any)[key]}: {if values[key] then Text.On else Text.Off}`
+		local button = buttons[key]
+		if button then
+			button.Text = `{index}  {(Text.Options :: any)[key]}: {if values[key] then Text.On else Text.Off}`
+			button.BackgroundColor3 = if values[key] then ON_COLOR else OFF_COLOR
 		end
 	end
-	local labels =
-		{ master = "GERAL", music = "MÚSICA", effects = "EFEITOS", breathing = "RESPIRAÇÃO", ambient = "AMBIENTE" }
+	local labels = {
+		master = "🔊 GERAL",
+		music = "🎵 MÚSICA",
+		effects = "💥 EFEITOS",
+		breathing = "😮‍💨 RESPIRAÇÃO",
+		ambient = "🌙 AMBIENTE",
+	}
 	for key, value in mixes do
-		if buttons[key] then
-			buttons[key].Text = `{labels[key]} {math.floor(value * 100)}%`
+		local button = buttons[key]
+		if button then
+			button.Text = `{labels[key]} {math.floor(value * 100)}%`
+			button.BackgroundColor3 = if value > 0 then Theme.PanelLight else OFF_COLOR
 		end
 	end
 end
@@ -108,41 +121,64 @@ function SettingsController.Init()
 	local gui = Create("ScreenGui", {
 		Name = "ComfortOptions",
 		ResetOnSpawn = false,
-		DisplayOrder = 90,
+		DisplayOrder = 250,
+		IgnoreGuiInset = true,
 		Parent = Players.LocalPlayer:WaitForChild("PlayerGui"),
 	}) :: ScreenGui
-	menu = Create("TextLabel", {
+	local panel = Create("Frame", {
 		Name = "Options",
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.new(0.92, 0, 0, 350),
-		Text = "CONFORTO E ÁUDIO / O FECHAR",
-		BackgroundColor3 = Color3.fromRGB(15, 19, 17),
-		BackgroundTransparency = 0.08,
-		TextColor3 = Color3.fromRGB(215, 225, 205),
-		TextSize = 16,
-		Font = Enum.Font.Code,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		TextYAlignment = Enum.TextYAlignment.Top,
+		Size = UDim2.new(0.92, 0, 0, 420),
+		BackgroundColor3 = Theme.Panel,
+		BackgroundTransparency = 0.04,
 		Visible = false,
 		Parent = gui,
-	}, { Create("UIPadding", { PaddingLeft = UDim.new(0, 18) }) }) :: TextLabel
-	local panel = menu :: TextLabel
-	Create("UISizeConstraint", { MaxSize = Vector2.new(640, 350), Parent = panel })
+	}, {
+		Create("UICorner", { CornerRadius = Theme.Corner }),
+		Create("UIStroke", { Color = Theme.Stroke, Thickness = 3 }),
+		Create("UISizeConstraint", { MaxSize = Vector2.new(680, 420) }),
+	}) :: Frame
+	menu = panel
+	Create("TextLabel", {
+		Name = "Title",
+		Position = UDim2.fromOffset(20, 12),
+		Size = UDim2.new(1, -40, 0, 34),
+		BackgroundTransparency = 1,
+		FontFace = Theme.Font,
+		TextSize = 26,
+		TextColor3 = Theme.Hazard,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Text = "⚙️ AJUSTES",
+		Parent = panel,
+	})
+	Create("TextLabel", {
+		Name = "Hint",
+		Position = UDim2.fromOffset(20, 46),
+		Size = UDim2.new(1, -40, 0, 18),
+		BackgroundTransparency = 1,
+		FontFace = Theme.FontNote,
+		TextSize = 13,
+		TextColor3 = Theme.TextDim,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Text = "Clique para ligar/desligar. Volume: cada clique baixa 25%. Tecla O abre e fecha.",
+		Parent = panel,
+	})
 	local function option(key: string, index: number, column: number, callback: () -> ())
 		local button = Create("TextButton", {
 			Name = key,
 			Modal = true,
 			Parent = panel,
-			Position = UDim2.new(column * 0.5, 4, 0, 38 + (index - 1) * 34),
-			Size = UDim2.new(0.5, -15, 0, 30),
-			BackgroundColor3 = Color3.fromRGB(30, 35, 31),
-			TextColor3 = Color3.fromRGB(230, 216, 180),
-			TextSize = 12,
+			Position = UDim2.new(column * 0.5, if column == 0 then 16 else 6, 0, 74 + (index - 1) * 40),
+			Size = UDim2.new(0.5, -22, 0, 34),
+			BackgroundColor3 = OFF_COLOR,
+			TextColor3 = Theme.Text,
+			TextSize = 14,
 			TextWrapped = true,
-			Font = Enum.Font.Code,
+			FontFace = Theme.Font,
+			AutoButtonColor = true,
 			Text = key,
-		}) :: TextButton
+		}, { Create("UICorner", { CornerRadius = Theme.CornerSmall }) }) :: TextButton
 		buttons[key] = button
 		button.Activated:Connect(callback)
 	end
@@ -163,7 +199,8 @@ function SettingsController.Init()
 		panel.Visible = false
 		Players.LocalPlayer:SetAttribute("ComfortMenuOpen", false)
 	end)
-	buttons.close.Text = "FECHAR"
+	buttons.close.Text = "✖ FECHAR"
+	buttons.close.BackgroundColor3 = Theme.Accent
 	refreshMenu()
 end
 

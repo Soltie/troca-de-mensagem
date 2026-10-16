@@ -65,7 +65,8 @@ function Guide.objective(phase: string, status: string?, activity: Activity?): (
 	elseif phase == "Won" then
 		return "Vocês escaparam!", "Que coragem! Aperte R para votar e voltar ao menu com o time."
 	elseif phase == "Lost" then
-		return "O Tung Tung pegou o time!", "Sem problema: aperte R para tentar de novo deste capítulo."
+		return "O Tung Tung pegou o time!",
+			"Sem problema: vocês voltam no começo deste capítulo em instantes, de graça."
 	elseif phase == "Intermission" then
 		return "Capítulo concluído!", "Respire fundo. Amigos que caíram voltam no próximo capítulo."
 	elseif status == "Downed" then

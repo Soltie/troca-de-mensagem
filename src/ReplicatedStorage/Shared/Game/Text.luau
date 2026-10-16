@@ -14,14 +14,14 @@ local Text = {
 		"03:12 - QUEDA TOTAL DE ENERGIA.",
 		"TROQUE OS 3 FUSÍVEIS DO QUADRO E RELIGUE OS DISJUNTORES.",
 		"DEPOIS, SAIA PELO PORTÃO ELÉTRICO.",
-		"O RÁDIO DO VIGIA NÃO RESPONDE DESDE A MEIA-NOITE.",
+		"DIZEM QUE O TUNG TUNG ACORDA À MEIA-NOITE.",
 	},
 	-- Cartela curta ao continuar do checkpoint.
 	IntroCheckpoint = "CONTINUANDO DO CHECKPOINT. A ENERGIA ESTÁ LIGADA.",
 	IntroControls = "WASD MOVER  ·  SHIFT CORRER  ·  C AGACHAR  ·  F LANTERNA  ·  E INTERAGIR  ·  H AJUDA",
 
 	Objectives = {
-		enter = "ENTRE NA SUBESTAÇÃO",
+		enter = "ENTRE NA CASA",
 		fuses = "ENCONTRE OS FUSÍVEIS",
 		insert = "LEVE OS FUSÍVEIS AO QUADRO (SALA DO GERADOR)",
 		breakers = "RELIGUE OS DISJUNTORES NA ORDEM DO PROCEDIMENTO",
@@ -124,7 +124,7 @@ local Text = {
 		server_full = "SERVIDOR CHEIO.",
 		server_gone = "SERVIDOR NÃO ENCONTRADO. ATUALIZE A LISTA.",
 		server_self = "VOCÊ JÁ ESTÁ NESTE SERVIDOR.",
-		friend_offline = "SEU AMIGO NÃO ESTÁ NA SUBESTAÇÃO 9 AGORA.",
+		friend_offline = "SEU AMIGO NÃO ESTÁ JOGANDO AGORA.",
 		friend_not_friend = "SÓ DÁ PARA ENTRAR NO SERVIDOR DE AMIGOS.",
 	},
 	-- Avisos locais (cliente).
@@ -158,11 +158,11 @@ local Text = {
 
 	EndWon = {
 		title = "VOCÊ ESCAPOU",
-		subtitle = "O VIGIA CONTINUA O TURNO.",
+		subtitle = "O TUNG TUNG CONTINUA ACORDADO.",
 	},
 	EndLost = {
-		title = "O VIGIA TE ENCONTROU",
-		subtitle = "O TURNO NÃO TERMINOU.",
+		title = "O TUNG TUNG TE PEGOU!",
+		subtitle = "TENTE DE NOVO!",
 	},
 	EndStats = "TEMPO %s   ·   FUSÍVEIS %d/%d",
 	Restart = "[R] JOGAR DE NOVO",
@@ -189,20 +189,20 @@ local Text = {
 	Options = {
 		title = "OPÇÕES DE CONFORTO",
 		footer = "[1-8] ALTERNAR   ·   [O] FECHAR",
-		bob = "BALANÇO AO ANDAR",
+		bob = "CÂMERA BALANÇA AO ANDAR",
 		tilt = "INCLINAÇÃO LATERAL",
 		shake = "TREMORES",
-		fov = "FOV DINÂMICO",
-		flashes = "CLARÕES E FALHAS DE TELA",
+		fov = "ZOOM AO CORRER E SE ASSUSTAR",
+		flashes = "CLARÕES NA TELA",
 		retro = "FILTRO RETRÔ",
-		vhs = "VHS (DATA, TRACKING, CORES)",
-		haptics = "VIBRAÇÃO (CONTROLE)",
+		vhs = "EFEITO FITA VHS",
+		haptics = "VIBRAÇÃO DO CONTROLE",
 	},
 	Store = {
-		title = "LOJA DO TURNO",
+		title = "LOJA",
 		hint = "[L] LOJA",
 		close = "[L] FECHAR",
-		blocked = "A LOJA ABRE FORA DO TURNO (ENTRE PARTIDAS OU ESPERANDO).",
+		blocked = "A LOJA ABRE ENTRE AS PARTIDAS.",
 		tabs = {
 			shop = "LOJA",
 			chests = "BAÚS",
@@ -259,7 +259,7 @@ local Text = {
 		},
 	},
 	Rewards = {
-		run = "RELATÓRIO DO TURNO",
+		run = "RESUMO DA PARTIDA",
 		fichas = "+%d FICHAS",
 		creditos = "+%d CRÉDITOS",
 		xp = "+%d XP",

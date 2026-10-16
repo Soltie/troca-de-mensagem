@@ -17,7 +17,6 @@ local UserInputService = game:GetService("UserInputService")
 
 local Economy = require("@game/ReplicatedStorage/Shared/Game/Economy")
 local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
-local PixelText = require("@game/ReplicatedStorage/Shared/Game/PixelText")
 local Remotes = require("@game/ReplicatedStorage/Shared/Net/Remotes")
 local Perks = require("@game/ReplicatedStorage/Shared/Game/Perks")
 local StoreCatalog = require("@game/ReplicatedStorage/Shared/Game/StoreCatalog")
@@ -58,8 +57,9 @@ local function rgb(c: StoreCatalog.RGB): Color3
 	return Color3.fromRGB(c[1], c[2], c[3])
 end
 
+-- A fonte do tema (FredokaOne) tem acentos; o texto passa direto.
 local function px(value: string): string
-	return PixelText.normalize(value)
+	return value
 end
 
 local function attr(name: string, fallback: any): any

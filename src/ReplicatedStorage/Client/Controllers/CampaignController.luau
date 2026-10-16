@@ -15,6 +15,7 @@ local Hud = require("../UI/FieldHud")
 local Juice = require("../UI/Juice")
 local Theme = require("../UI/Theme")
 local Character = require("./CharacterController")
+local AudioController = require("./AudioController")
 
 type FieldSlot = Hud.Slot
 
@@ -118,9 +119,26 @@ function Controller.Start()
 		if value > shownLevel then
 			Juice.pop(ui.level.Parent :: GuiObject, 0.3)
 			Juice.confetti(ui.canvas, Vector2.new(0.5, 0.35), 48)
-			Juice.floatText(ui.canvas, `NÍVEL {value}!`, UDim2.fromScale(0.5, 0.4), Theme.Hazard, 44)
+			Juice.floatText(ui.canvas, `⭐ NÍVEL {value}! ⭐`, UDim2.fromScale(0.5, 0.62), Theme.Good, 40, 1.6)
 		end
 		shownLevel = value
+	end
+	-- Moedas pegas no capítulo atual (para o resumo da comemoração).
+	local chapterCoins = 0
+	player:GetAttributeChangedSignal("CoinPickupSerial"):Connect(function()
+		chapterCoins += 1
+	end)
+	local function celebrate(big: boolean, title: string, detail: string)
+		Juice.confetti(ui.canvas, Vector2.new(0.5, 0.3), if big then 90 else 50)
+		if big then
+			Juice.confetti(ui.canvas, Vector2.new(0.2, 0.35), 40)
+			Juice.confetti(ui.canvas, Vector2.new(0.8, 0.35), 40)
+		end
+		Juice.floatText(ui.canvas, title, UDim2.fromScale(0.5, 0.4), Theme.Hazard, if big then 54 else 44, 2.2)
+		task.delay(0.35, function()
+			Juice.floatText(ui.canvas, detail, UDim2.fromScale(0.5, 0.5), Theme.Text, 26, 2)
+		end)
+		AudioController.play("StingerWin", if big then 0.9 else 0.6, 1, true)
 	end
 	player:GetAttributeChangedSignal("Fichas"):Connect(refreshCoins)
 	player:GetAttributeChangedSignal("Level"):Connect(refreshLevel)
@@ -150,6 +168,7 @@ function Controller.Start()
 		slot.icon.TextTransparency = if count > 0 then 0 else 0.6
 	end
 	local elapsed, stageAt, lastStage, lastObjective, lastSolved = 0, 0, "", "", -1
+	local lastPhase = ""
 	RunService.RenderStepped:Connect(function(dt)
 		elapsed += dt
 		if elapsed < 0.1 then
@@ -158,6 +177,14 @@ function Controller.Start()
 		elapsed = 0
 		local phase = tostring(state:GetAttribute("Phase"))
 		local stage = (state:GetAttribute("Stage") or 0) :: number
+		if phase ~= lastPhase then
+			if phase == "Intermission" then
+				celebrate(false, `⭐ CAPÍTULO {stage} CONCLUÍDO! ⭐`, `💰 {chapterCoins} moedas neste capítulo`)
+			elseif phase == "Won" then
+				celebrate(true, "🏆 VOCÊS ESCAPARAM! 🏆", `💰 {chapterCoins} moedas no último capítulo`)
+			end
+			lastPhase = phase
+		end
 		local story = state:GetAttribute("GameMode") == "Story"
 		local status = player:GetAttribute("CampaignStatus") :: string?
 		local cinema = player:GetAttribute("CinematicActive") == true
@@ -174,6 +201,7 @@ function Controller.Start()
 		local key = `{state:GetAttribute("Seed")}:{stage}:{story}`
 		if key ~= lastStage then
 			lastStage, stageAt, helpOpen = key, os.clock(), false
+			chapterCoins = 0
 		end
 		local camera = workspace.CurrentCamera
 		if not camera then
@@ -231,7 +259,7 @@ function Controller.Start()
 		if briefingRemaining > 0 then
 			ui.action.Text = `Começa em {briefingRemaining}s...`
 		end
-		if status == "Downed" then
+		if status == "Downed" and phase ~= "Lost" then
 			for _, member in roster do
 				if member.id == player.UserId then
 					ui.action.Text = `Espere um amigo te levantar: {math.max(0, math.ceil(member.downedUntil - now))}s`

@@ -39,8 +39,8 @@ function Juice.appear(object: GuiObject, delay: number?)
 	):Play()
 end
 
--- Texto que sobe e some (ex.: "+5" ao pegar moeda). `position` em pixels do pai.
-function Juice.floatText(parent: Instance, text: string, position: UDim2, color: Color3?, size: number?)
+-- Texto que sobe e some (ex.: "+5" ao pegar moeda). `hold` segura o texto parado antes de sumir.
+function Juice.floatText(parent: Instance, text: string, position: UDim2, color: Color3?, size: number?, hold: number?)
 	local label = Create("TextLabel", {
 		Name = "FloatText",
 		Parent = parent,
@@ -57,11 +57,15 @@ function Juice.floatText(parent: Instance, text: string, position: UDim2, color:
 		ZIndex = 50,
 	}) :: TextLabel
 	Juice.appear(label)
-	local rise = TweenService:Create(label, TweenInfo.new(1.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		Position = position - UDim2.fromOffset(0, 70),
-		TextTransparency = 1,
-		TextStrokeTransparency = 1,
-	})
+	local rise = TweenService:Create(
+		label,
+		TweenInfo.new(1.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, 0, false, hold or 0),
+		{
+			Position = position - UDim2.fromOffset(0, 70),
+			TextTransparency = 1,
+			TextStrokeTransparency = 1,
+		}
+	)
 	rise:Play()
 	rise.Completed:Once(function()
 		label:Destroy()
