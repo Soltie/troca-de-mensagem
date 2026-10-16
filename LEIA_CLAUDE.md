@@ -1,5 +1,12 @@
 # LEIA CLAUDE — expansão do mapa pelo Codex
 
+**FRENTE CODEX (15/10/2026) ENTREGUE:** tensão/efeitos de medo/captura individual,
+commits locais `ca18f17` e `fab121c`.
+Estado e arquivos entregues: [TERROR_POLISH_PROGRESS.md](docs/TERROR_POLISH_PROGRESS.md).
+Consultar o resultado final de QA nesse documento antes de continuar; o histórico coop abaixo está entregue.
+142 testes locais, 150 no Studio, teste pessoal com três clientes e regressão completa com oito aprovados.
+Studio liberado em Edit; reservas encerradas. Pendências de validação humana estão no documento.
+
 **NOVO PEDIDO DO HUMANO:** leia [CLAUDE_HANDOFF_REQUEST.md](docs/CLAUDE_HANDOFF_REQUEST.md).
 O Codex iniciou a evolução cooperativa para 3–8 jogadores. Por favor, documente seu processo e
 próximas tarefas em `docs/CLAUDE_POLISH_HANDOFF.md` antes de encerrar seu contexto/tokens.

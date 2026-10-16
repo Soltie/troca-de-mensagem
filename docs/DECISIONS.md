@@ -1,5 +1,17 @@
 # Decisões
 
+## Tensão e captura por jogador — 15/10/2026
+
+- Chase/Capture globais não representam ataque a toda a equipe: publicar alvo no servidor e
+  filtrar pelo UserId/status local; derrubados/evacuados/aguardando não recebem eventos de jogo ativo.
+- Captura de apresentação tem duração limitada e restaura câmera, sem impedir resgate/continuação.
+- Eventos locais têm geração de cancelamento. Props usam clones sem colisão; deslocamento retorna
+  após 1,2 s, em vez de acumular até Intro. Isso evita divergência visual prolongada do collider real.
+- Faixas coloridas são aproximação de glitch/chroma; Roblox não fornece shader de tela próprio aqui.
+  Não há dessaturação de ferimento, porque não existe esse estado. Opções desativam os efeitos respectivos.
+- Expor sete opções já executáveis; haptics não é apresentado como funcional antes de ter executor.
+- Separar testes puros, simulação de clientes e playtest humano. Limites em `TERROR_POLISH_PROGRESS.md`.
+
 ## Campanha cooperativa — 15/10/2026
 
 - **Um runtime por modo:** RoundService delega para CampaignRuntime ou executa o solo; impede

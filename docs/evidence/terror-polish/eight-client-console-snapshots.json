@@ -1,0 +1,142 @@
+{
+  "date": "2026-10-15",
+  "method": "LogService snapshots during eight-client campaign regression, before completion",
+  "raw": [
+    {
+      "status": "fulfilled",
+      "value": {
+        "id": "15ac563a-c1cd-412b-a9d3-5aea3c93f968",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"name\":\"Player8\",\"errors\":[]}"
+            }
+          ],
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "id": "203f8238-009f-4fad-990c-58bc6f74e8a2",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"name\":\"Player6\",\"errors\":[\"Players.Player6.PlayerScripts.ChatScript:116: Error calling SetCore CoreGuiChatConnections: SetCore: CoreGuiChatConnections has not been registered by the CoreScripts\"]}"
+            }
+          ],
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "id": "7cf1b82a-50e2-46b7-840d-21567d7c1136",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"name\":\"Player1\",\"errors\":[\"Players.Player1.PlayerScripts.ChatScript:116: Error calling SetCore CoreGuiChatConnections: SetCore: CoreGuiChatConnections has not been registered by the CoreScripts\",\"Server Kick Message: Campaign QA: simulated disconnect; Metadata: \"]}"
+            }
+          ],
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "id": "86f298e7-de8b-4074-977d-feb409017a0c",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"name\":\"Player2\",\"errors\":[\"Players.Player2.PlayerScripts.ChatScript:116: Error calling SetCore CoreGuiChatConnections: SetCore: CoreGuiChatConnections has not been registered by the CoreScripts\"]}"
+            }
+          ],
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "id": "a10bed04-2dbc-4790-9f15-0a08dba0c184",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"name\":\"Player3\",\"errors\":[\"Players.Player3.PlayerScripts.ChatScript:116: Error calling SetCore CoreGuiChatConnections: SetCore: CoreGuiChatConnections has not been registered by the CoreScripts\"]}"
+            }
+          ],
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "id": "a5ad7dc4-569b-4755-bb9e-c4ee843aa156",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"name\":\"Player4\",\"errors\":[\"Players.Player4.PlayerScripts.ChatScript:116: Error calling SetCore CoreGuiChatConnections: SetCore: CoreGuiChatConnections has not been registered by the CoreScripts\"]}"
+            }
+          ],
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "id": "b500b2ad-9aff-4299-ab48-7b9ebe566c42",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"name\":\"Player7\",\"errors\":[]}"
+            }
+          ],
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "id": "bee951b7-c36e-4877-bccf-dcd2d8be7587",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"name\":\"Player9\",\"errors\":[]}"
+            }
+          ],
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "id": "cd702132-acf7-4a0e-ac4c-75b98078d29a",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"name\":\"Player5\",\"errors\":[]}"
+            }
+          ],
+          "isError": false
+        }
+      }
+    }
+  ],
+  "classification": "CoreGuiChatConnections SetCore failures originate from Roblox ChatScript/CoreScripts; expected Server Kick Message is the simulated disconnect. Preserve raw messages; no project controller error observed in these snapshots."
+}

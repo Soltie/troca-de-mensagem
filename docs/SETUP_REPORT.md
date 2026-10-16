@@ -4,6 +4,10 @@ Atualizado: 2026-10-15. Máquina: Windows 11, PowerShell 5.1 / Git Bash. Projeto
 
 ## Estado atual / próximo passo
 
+**Atualização mais recente — terror:** `ca18f17`/`fab121c`, 142 testes locais/150 Studio;
+três clientes validaram perseguição/captura pessoal e resgate; oito completaram a regressão de campanha.
+Studio devolvido em Edit. Continuação e limites: [TERROR_POLISH_PROGRESS.md](TERROR_POLISH_PROGRESS.md).
+
 **Estado vigente — campanha coop (15/10/2026):** `Config.Campaign.Enabled=true`, mínimo 3,
 máximo 8; um cliente sozinho fica no lobby. Para regressão solo, selecionar false no arquivo.
 136 testes Lune e 144 testes Studio aprovados; 3 e 8 clientes do engine completaram os três

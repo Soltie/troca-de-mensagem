@@ -1,5 +1,14 @@
 # Arquitetura
 
+## Apresentação de terror por jogador (15/10/2026)
+
+`ThreatTargetUserId` no Root do Vigia é publicado pelo CreatureService. `ThreatPresentation`
+filtra modo/status e calcula intensidades de efeitos, com testes puros. TensionController executa
+o diretor e eventos locais canceláveis; ScreenFxController cria UI/blur/fog respeitando conforto;
+ThreatFeedbackController reage à captura individual e restaura a câmera. Não há remotes novos.
+Os três controllers estão no bootstrap único; efeitos de props usam clones sem colisão e máscaras
+locais restauradas, sem mover geometria autoritativa. Detalhes/QA: `TERROR_POLISH_PROGRESS.md`.
+
 ## Campanha cooperativa (15/10/2026)
 
 O slot `RoundService` do bootstrap é uma fachada de modo: seleciona o runtime solo ou

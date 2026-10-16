@@ -1,0 +1,1947 @@
+{
+  "date": "2026-10-15",
+  "scenario": "Three real engine clients; frozen Vigia; explicit target -1; real runtime.lose and remote Interact rescue_-1 after helper teleport",
+  "chase": [
+    {
+      "id": "41af8c9c-c0a6-4a60-a8bb-23e63bf2be57",
+      "state": {
+        "options": false,
+        "tension": {
+          "state": "Tension",
+          "log": [
+            "    5.2 reset",
+            "   13.1 awaken",
+            "   35.1 event distant_steps (Anticipation, zone Outside, fear 0.02, progress 0)",
+            "   68.7 event flicker (Anticipation, zone Outside, fear 0.02, progress 0)",
+            "   72.2 state Anticipation -> Tension"
+          ],
+          "events": {
+            "flicker": 1,
+            "distant_steps": 1
+          },
+          "generation": 5,
+          "localParts": 0,
+          "active": true,
+          "visualsCreated": 0
+        },
+        "samples": [],
+        "screen": {
+          "impact": false,
+          "blur": 0,
+          "fog": 89.35667419433594,
+          "baseFog": 90,
+          "vhs": true,
+          "bands": 6,
+          "effects": {
+            "glitch": 0,
+            "vignette": 0.08457408424333816,
+            "blur": 0,
+            "grain": 0.1301139757589818,
+            "fog": 0.0169296466878089,
+            "fear": 0.1301139757589818
+          }
+        },
+        "feedback": {
+          "capturing": false,
+          "mode": "Patrol",
+          "chases": 0,
+          "captures": 0
+        },
+        "camera": {
+          "offset": "0, -0.010334708727896214, 0",
+          "trauma": 0,
+          "crouch": 0,
+          "mode": "normal",
+          "fov": 71.89798736572266,
+          "fear": 0.06612026385608467
+        },
+        "music": "tension",
+        "errors": [],
+        "fear": {
+          "visible": false,
+          "darkness": 0,
+          "value": 0.15,
+          "level": 0,
+          "base": 0.15,
+          "spike": 0
+        }
+      }
+    },
+    {
+      "id": "91598325-5a4c-4ba9-aab8-2b0ab76c667f",
+      "state": {
+        "options": false,
+        "tension": {
+          "state": "Tension",
+          "log": [
+            "    5.1 reset",
+            "   14.2 awaken",
+            "   24.3 event radio_static (Anticipation, zone Outside, fear 0.06, progress 0)",
+            "   46.1 event flicker (Anticipation, zone Outside, fear 0.06, progress 0)",
+            "   63.5 event distant_steps (Anticipation, zone Outside, fear 0.06, progress 0)",
+            "   73.3 state Anticipation -> Tension"
+          ],
+          "events": {
+            "flicker": 1,
+            "distant_steps": 1,
+            "radio_static": 1
+          },
+          "generation": 7,
+          "localParts": 0,
+          "active": true,
+          "visualsCreated": 0
+        },
+        "samples": [],
+        "screen": {
+          "impact": false,
+          "blur": 0,
+          "fog": 88.1155776977539,
+          "baseFog": 90,
+          "vhs": true,
+          "bands": 6,
+          "effects": {
+            "glitch": 0,
+            "vignette": 0.1447474793674139,
+            "blur": 0,
+            "grain": 0.22268842979602135,
+            "fog": 0.04959013676501753,
+            "fear": 0.22268842979602135
+          }
+        },
+        "feedback": {
+          "capturing": false,
+          "mode": "Patrol",
+          "chases": 0,
+          "captures": 0
+        },
+        "camera": {
+          "offset": "0, -0.004257067572325468, 0",
+          "trauma": 0,
+          "crouch": 0,
+          "mode": "normal",
+          "fov": 71.56169128417969,
+          "fear": 0.1747503176919467
+        },
+        "music": "tension",
+        "errors": [],
+        "fear": {
+          "visible": false,
+          "darkness": 0.35,
+          "value": 0.24,
+          "level": 0,
+          "base": 0.24,
+          "spike": 0
+        }
+      }
+    },
+    {
+      "id": "9ab18216-56f3-4a2d-87bb-98a3a2a720b9",
+      "state": {
+        "options": false,
+        "tension": {
+          "state": "Chase",
+          "log": [
+            "    4.7 reset",
+            "   15.8 awaken",
+            "   21.0 event flicker (Anticipation, zone Outside, fear 0.06, progress 0)",
+            "   43.3 event radio_static (Anticipation, zone Outside, fear 0.06, progress 0)",
+            "   60.4 event distant_steps (Anticipation, zone Outside, fear 0.06, progress 0)",
+            "   75.1 state Anticipation -> Chase"
+          ],
+          "events": {
+            "flicker": 1,
+            "distant_steps": 1,
+            "radio_static": 1
+          },
+          "generation": 8,
+          "localParts": 0,
+          "active": false,
+          "visualsCreated": 0
+        },
+        "samples": [],
+        "screen": {
+          "impact": false,
+          "blur": 3.1091952323913574,
+          "fog": 58.97053146362305,
+          "baseFog": 90,
+          "vhs": true,
+          "bands": 6,
+          "effects": {
+            "glitch": 0.5181991952011294,
+            "vignette": 0.5873658953761469,
+            "blur": 3.1091951712067765,
+            "grain": 0.9036398390402259,
+            "fog": 0.8165649587006454,
+            "fear": 0.9036398390402259
+          }
+        },
+        "feedback": {
+          "capturing": false,
+          "mode": "Chase",
+          "chases": 1,
+          "captures": 0
+        },
+        "camera": {
+          "offset": "0, 0.035707928240299225, 0",
+          "trauma": 0.025224274654440923,
+          "crouch": 0,
+          "mode": "normal",
+          "fov": 68.03337097167969,
+          "fear": 0.8050121840486033
+        },
+        "music": "chase",
+        "errors": [],
+        "fear": {
+          "visible": false,
+          "darkness": 0.35,
+          "value": 0.92,
+          "level": 3,
+          "base": 0.67,
+          "spike": 0.25
+        }
+      }
+    }
+  ],
+  "capture": [
+    {
+      "id": "41af8c9c-c0a6-4a60-a8bb-23e63bf2be57",
+      "state": {
+        "options": false,
+        "tension": {
+          "state": "Anticipation",
+          "log": [
+            "    5.2 reset",
+            "   13.1 awaken",
+            "   35.1 event distant_steps (Anticipation, zone Outside, fear 0.02, progress 0)",
+            "   68.7 event flicker (Anticipation, zone Outside, fear 0.02, progress 0)",
+            "   72.2 state Anticipation -> Tension",
+            "   77.0 state Tension -> Anticipation"
+          ],
+          "events": {
+            "flicker": 1,
+            "distant_steps": 1
+          },
+          "generation": 5,
+          "localParts": 0,
+          "active": true,
+          "visualsCreated": 0
+        },
+        "samples": [
+          {
+            "at": 0.05,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.1,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.15000000000000002,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.2,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.25,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.30000000000000004,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.35000000000000003,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.4,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.45,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.5,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.55,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.6000000000000001,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.65,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.7000000000000001,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.75,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.8,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.8500000000000001,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.9,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.9500000000000001,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.05,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.1,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.1500000000000001,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.2000000000000002,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.25,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.3,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.35,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.4000000000000001,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.4500000000000002,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.5,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.55,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.6,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.6500000000000001,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.7000000000000002,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.75,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.8,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.85,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.9000000000000001,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.9500000000000002,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 2,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          }
+        ],
+        "screen": {
+          "impact": false,
+          "blur": 0,
+          "fog": 87.90176391601562,
+          "baseFog": 90,
+          "vhs": true,
+          "bands": 6,
+          "effects": {
+            "glitch": 0,
+            "vignette": 0.1527385691659455,
+            "blur": 0,
+            "grain": 0.23498241410145462,
+            "fog": 0.0552167349369475,
+            "fear": 0.23498241410145462
+          }
+        },
+        "feedback": {
+          "capturing": false,
+          "mode": "Patrol",
+          "chases": 0,
+          "captures": 0
+        },
+        "camera": {
+          "offset": "0, 0.02617938444018364, 0",
+          "trauma": 0,
+          "crouch": 0,
+          "mode": "normal",
+          "fov": 71.28172302246094,
+          "fear": 0.2428998855491341
+        },
+        "music": "calm",
+        "errors": [],
+        "fear": {
+          "visible": false,
+          "darkness": 0.35,
+          "value": 0.23,
+          "level": 1,
+          "base": 0.23,
+          "spike": 0
+        }
+      }
+    },
+    {
+      "id": "91598325-5a4c-4ba9-aab8-2b0ab76c667f",
+      "state": {
+        "options": false,
+        "tension": {
+          "state": "Anticipation",
+          "log": [
+            "    5.1 reset",
+            "   14.2 awaken",
+            "   24.3 event radio_static (Anticipation, zone Outside, fear 0.06, progress 0)",
+            "   46.1 event flicker (Anticipation, zone Outside, fear 0.06, progress 0)",
+            "   63.5 event distant_steps (Anticipation, zone Outside, fear 0.06, progress 0)",
+            "   73.3 state Anticipation -> Tension",
+            "   76.8 state Tension -> Anticipation"
+          ],
+          "events": {
+            "flicker": 1,
+            "distant_steps": 1,
+            "radio_static": 1
+          },
+          "generation": 7,
+          "localParts": 0,
+          "active": true,
+          "visualsCreated": 0
+        },
+        "samples": [
+          {
+            "at": 0.05,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.1,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.15000000000000002,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.2,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.25,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.30000000000000004,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.35000000000000003,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.4,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.45,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.5,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.55,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.6000000000000001,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.65,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.7000000000000001,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.75,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.8,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.8500000000000001,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.9,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.9500000000000001,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.05,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.1,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.1500000000000001,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.2000000000000002,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.25,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.3,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.35,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.4000000000000001,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.4500000000000002,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.5,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.55,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.6,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.6500000000000001,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.7000000000000002,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.75,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.8,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.85,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.9000000000000001,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.9500000000000002,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 2,
+            "blur": 0,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          }
+        ],
+        "screen": {
+          "impact": false,
+          "blur": 0,
+          "fog": 89.17792510986328,
+          "baseFog": 90,
+          "vhs": true,
+          "bands": 6,
+          "effects": {
+            "glitch": 0,
+            "vignette": 0.09560434309418828,
+            "blur": 0,
+            "grain": 0.14708360476028964,
+            "fog": 0.0216335867892811,
+            "fear": 0.14708360476028964
+          }
+        },
+        "feedback": {
+          "capturing": false,
+          "mode": "Patrol",
+          "chases": 0,
+          "captures": 0
+        },
+        "camera": {
+          "offset": "0, -0.004136825446039438, 0",
+          "trauma": 0,
+          "crouch": 0,
+          "mode": "normal",
+          "fov": 71.64751434326172,
+          "fear": 0.15112149545264067
+        },
+        "music": "calm",
+        "errors": [],
+        "fear": {
+          "visible": false,
+          "darkness": 0.35,
+          "value": 0.15,
+          "level": 0,
+          "base": 0.15,
+          "spike": 0
+        }
+      }
+    },
+    {
+      "id": "9ab18216-56f3-4a2d-87bb-98a3a2a720b9",
+      "state": {
+        "options": false,
+        "tension": {
+          "state": "Recovery",
+          "log": [
+            "    4.7 reset",
+            "   15.8 awaken",
+            "   21.0 event flicker (Anticipation, zone Outside, fear 0.06, progress 0)",
+            "   43.3 event radio_static (Anticipation, zone Outside, fear 0.06, progress 0)",
+            "   60.4 event distant_steps (Anticipation, zone Outside, fear 0.06, progress 0)",
+            "   75.1 state Anticipation -> Chase",
+            "   76.4 state Chase -> Recovery"
+          ],
+          "events": {
+            "flicker": 1,
+            "distant_steps": 1,
+            "radio_static": 1
+          },
+          "generation": 8,
+          "localParts": 0,
+          "active": false,
+          "visualsCreated": 0
+        },
+        "samples": [
+          {
+            "at": 0.05,
+            "blur": 4.141667366027832,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.1,
+            "blur": 4.141667366027832,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.15000000000000002,
+            "blur": 4.4151482582092285,
+            "captures": 0,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 0.2,
+            "blur": 4.4151482582092285,
+            "captures": 1,
+            "mode": "capture",
+            "impact": false
+          },
+          {
+            "at": 0.25,
+            "blur": 4.4151482582092285,
+            "captures": 1,
+            "mode": "capture",
+            "impact": false
+          },
+          {
+            "at": 0.30000000000000004,
+            "blur": 0,
+            "captures": 1,
+            "mode": "capture",
+            "impact": true
+          },
+          {
+            "at": 0.35000000000000003,
+            "blur": 0,
+            "captures": 1,
+            "mode": "capture",
+            "impact": true
+          },
+          {
+            "at": 0.4,
+            "blur": 0,
+            "captures": 1,
+            "mode": "capture",
+            "impact": false
+          },
+          {
+            "at": 0.45,
+            "blur": 0,
+            "captures": 1,
+            "mode": "capture",
+            "impact": false
+          },
+          {
+            "at": 0.5,
+            "blur": 0,
+            "captures": 1,
+            "mode": "capture",
+            "impact": false
+          },
+          {
+            "at": 0.55,
+            "blur": 0,
+            "captures": 1,
+            "mode": "capture",
+            "impact": false
+          },
+          {
+            "at": 0.6000000000000001,
+            "blur": 0,
+            "captures": 1,
+            "mode": "capture",
+            "impact": false
+          },
+          {
+            "at": 0.65,
+            "blur": 0,
+            "captures": 1,
+            "mode": "capture",
+            "impact": false
+          },
+          {
+            "at": 0.7000000000000001,
+            "blur": 0,
+            "captures": 1,
+            "mode": "capture",
+            "impact": false
+          },
+          {
+            "at": 0.75,
+            "blur": 0,
+            "captures": 1,
+            "mode": "capture",
+            "impact": false
+          },
+          {
+            "at": 0.8,
+            "blur": 0,
+            "captures": 1,
+            "mode": "capture",
+            "impact": false
+          },
+          {
+            "at": 0.8500000000000001,
+            "blur": 0,
+            "captures": 1,
+            "mode": "capture",
+            "impact": false
+          },
+          {
+            "at": 0.9,
+            "blur": 0,
+            "captures": 1,
+            "mode": "capture",
+            "impact": false
+          },
+          {
+            "at": 0.9500000000000001,
+            "blur": 0,
+            "captures": 1,
+            "mode": "capture",
+            "impact": false
+          },
+          {
+            "at": 1,
+            "blur": 0,
+            "captures": 1,
+            "mode": "capture",
+            "impact": false
+          },
+          {
+            "at": 1.05,
+            "blur": 0,
+            "captures": 1,
+            "mode": "capture",
+            "impact": false
+          },
+          {
+            "at": 1.1,
+            "blur": 0,
+            "captures": 1,
+            "mode": "capture",
+            "impact": false
+          },
+          {
+            "at": 1.1500000000000001,
+            "blur": 0,
+            "captures": 1,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.2000000000000002,
+            "blur": 0,
+            "captures": 1,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.25,
+            "blur": 0,
+            "captures": 1,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.3,
+            "blur": 0,
+            "captures": 1,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.35,
+            "blur": 0,
+            "captures": 1,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.4000000000000001,
+            "blur": 0,
+            "captures": 1,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.4500000000000002,
+            "blur": 0,
+            "captures": 1,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.5,
+            "blur": 0,
+            "captures": 1,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.55,
+            "blur": 0,
+            "captures": 1,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.6,
+            "blur": 0,
+            "captures": 1,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.6500000000000001,
+            "blur": 0,
+            "captures": 1,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.7000000000000002,
+            "blur": 0,
+            "captures": 1,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.75,
+            "blur": 0,
+            "captures": 1,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.8,
+            "blur": 0,
+            "captures": 1,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.85,
+            "blur": 0,
+            "captures": 1,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.9000000000000001,
+            "blur": 0,
+            "captures": 1,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 1.9500000000000002,
+            "blur": 0,
+            "captures": 1,
+            "mode": "normal",
+            "impact": false
+          },
+          {
+            "at": 2,
+            "blur": 0,
+            "captures": 1,
+            "mode": "normal",
+            "impact": false
+          }
+        ],
+        "screen": {
+          "impact": false,
+          "blur": 0,
+          "fog": 90,
+          "baseFog": 90,
+          "vhs": false,
+          "bands": 6,
+          "effects": {
+            "glitch": 0,
+            "vignette": 0,
+            "blur": 0,
+            "grain": 0,
+            "fog": 0,
+            "fear": 0
+          }
+        },
+        "feedback": {
+          "capturing": false,
+          "mode": "Dormant",
+          "chases": 1,
+          "captures": 1
+        },
+        "camera": {
+          "offset": "0, 0.026188695803284645, 0",
+          "trauma": 0,
+          "crouch": 0,
+          "mode": "normal",
+          "fov": 71.4937973022461,
+          "fear": 0.19235810727101763
+        },
+        "music": "none",
+        "errors": [],
+        "fear": {
+          "visible": false,
+          "darkness": 0.35,
+          "value": 0.18,
+          "level": 0,
+          "base": 0.18,
+          "spike": 0
+        }
+      }
+    }
+  ],
+  "revived": {
+    "options": false,
+    "tension": {
+      "state": "Anticipation",
+      "log": [
+        "    4.7 reset",
+        "   15.8 awaken",
+        "   21.0 event flicker (Anticipation, zone Outside, fear 0.06, progress 0)",
+        "   43.3 event radio_static (Anticipation, zone Outside, fear 0.06, progress 0)",
+        "   60.4 event distant_steps (Anticipation, zone Outside, fear 0.06, progress 0)",
+        "   75.1 state Anticipation -> Chase",
+        "   76.4 state Chase -> Recovery",
+        "   92.7 state Recovery -> Anticipation",
+        "  102.0 event radio_static (Anticipation, zone Outside, fear 0.07, progress 0)"
+      ],
+      "events": {
+        "flicker": 1,
+        "distant_steps": 1,
+        "radio_static": 2
+      },
+      "generation": 10,
+      "localParts": 0,
+      "active": true,
+      "visualsCreated": 0
+    },
+    "samples": [
+      {
+        "at": 0.05,
+        "blur": 4.141667366027832,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 0.1,
+        "blur": 4.141667366027832,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 0.15000000000000002,
+        "blur": 4.4151482582092285,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 0.2,
+        "blur": 4.4151482582092285,
+        "captures": 1,
+        "mode": "capture",
+        "impact": false
+      },
+      {
+        "at": 0.25,
+        "blur": 4.4151482582092285,
+        "captures": 1,
+        "mode": "capture",
+        "impact": false
+      },
+      {
+        "at": 0.30000000000000004,
+        "blur": 0,
+        "captures": 1,
+        "mode": "capture",
+        "impact": true
+      },
+      {
+        "at": 0.35000000000000003,
+        "blur": 0,
+        "captures": 1,
+        "mode": "capture",
+        "impact": true
+      },
+      {
+        "at": 0.4,
+        "blur": 0,
+        "captures": 1,
+        "mode": "capture",
+        "impact": false
+      },
+      {
+        "at": 0.45,
+        "blur": 0,
+        "captures": 1,
+        "mode": "capture",
+        "impact": false
+      },
+      {
+        "at": 0.5,
+        "blur": 0,
+        "captures": 1,
+        "mode": "capture",
+        "impact": false
+      },
+      {
+        "at": 0.55,
+        "blur": 0,
+        "captures": 1,
+        "mode": "capture",
+        "impact": false
+      },
+      {
+        "at": 0.6000000000000001,
+        "blur": 0,
+        "captures": 1,
+        "mode": "capture",
+        "impact": false
+      },
+      {
+        "at": 0.65,
+        "blur": 0,
+        "captures": 1,
+        "mode": "capture",
+        "impact": false
+      },
+      {
+        "at": 0.7000000000000001,
+        "blur": 0,
+        "captures": 1,
+        "mode": "capture",
+        "impact": false
+      },
+      {
+        "at": 0.75,
+        "blur": 0,
+        "captures": 1,
+        "mode": "capture",
+        "impact": false
+      },
+      {
+        "at": 0.8,
+        "blur": 0,
+        "captures": 1,
+        "mode": "capture",
+        "impact": false
+      },
+      {
+        "at": 0.8500000000000001,
+        "blur": 0,
+        "captures": 1,
+        "mode": "capture",
+        "impact": false
+      },
+      {
+        "at": 0.9,
+        "blur": 0,
+        "captures": 1,
+        "mode": "capture",
+        "impact": false
+      },
+      {
+        "at": 0.9500000000000001,
+        "blur": 0,
+        "captures": 1,
+        "mode": "capture",
+        "impact": false
+      },
+      {
+        "at": 1,
+        "blur": 0,
+        "captures": 1,
+        "mode": "capture",
+        "impact": false
+      },
+      {
+        "at": 1.05,
+        "blur": 0,
+        "captures": 1,
+        "mode": "capture",
+        "impact": false
+      },
+      {
+        "at": 1.1,
+        "blur": 0,
+        "captures": 1,
+        "mode": "capture",
+        "impact": false
+      },
+      {
+        "at": 1.1500000000000001,
+        "blur": 0,
+        "captures": 1,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.2000000000000002,
+        "blur": 0,
+        "captures": 1,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.25,
+        "blur": 0,
+        "captures": 1,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.3,
+        "blur": 0,
+        "captures": 1,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.35,
+        "blur": 0,
+        "captures": 1,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.4000000000000001,
+        "blur": 0,
+        "captures": 1,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.4500000000000002,
+        "blur": 0,
+        "captures": 1,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.5,
+        "blur": 0,
+        "captures": 1,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.55,
+        "blur": 0,
+        "captures": 1,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.6,
+        "blur": 0,
+        "captures": 1,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.6500000000000001,
+        "blur": 0,
+        "captures": 1,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.7000000000000002,
+        "blur": 0,
+        "captures": 1,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.75,
+        "blur": 0,
+        "captures": 1,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.8,
+        "blur": 0,
+        "captures": 1,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.85,
+        "blur": 0,
+        "captures": 1,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.9000000000000001,
+        "blur": 0,
+        "captures": 1,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.9500000000000002,
+        "blur": 0,
+        "captures": 1,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 2,
+        "blur": 0,
+        "captures": 1,
+        "mode": "normal",
+        "impact": false
+      }
+    ],
+    "screen": {
+      "impact": false,
+      "blur": 0,
+      "fog": 89.8783187866211,
+      "baseFog": 90,
+      "vhs": true,
+      "bands": 6,
+      "effects": {
+        "glitch": 0,
+        "vignette": 0.036781341224659446,
+        "blur": 0,
+        "grain": 0.056586678807168375,
+        "fog": 0.0032020522184256386,
+        "fear": 0.056586678807168375
+      }
+    },
+    "feedback": {
+      "capturing": false,
+      "mode": "Patrol",
+      "chases": 1,
+      "captures": 1
+    },
+    "camera": {
+      "offset": "0, -0.01925351284444332, 0",
+      "trauma": 0,
+      "crouch": 0,
+      "mode": "normal",
+      "fov": 71.919189453125,
+      "fear": 0.05660680290372164
+    },
+    "music": "calm",
+    "errors": [],
+    "fear": {
+      "visible": false,
+      "darkness": 0.35,
+      "value": 0.06,
+      "level": 0,
+      "base": 0.06,
+      "spike": 0
+    }
+  },
+  "comfortOff": {
+    "options": false,
+    "tension": {
+      "state": "Anticipation",
+      "log": [
+        "    5.2 reset",
+        "   13.1 awaken",
+        "   35.1 event distant_steps (Anticipation, zone Outside, fear 0.02, progress 0)",
+        "   68.7 event flicker (Anticipation, zone Outside, fear 0.02, progress 0)",
+        "   72.2 state Anticipation -> Tension",
+        "   77.0 state Tension -> Anticipation",
+        "   91.9 event flicker (Anticipation, zone Outside, fear 0.11, progress 0)",
+        "  111.7 event distant_steps (Anticipation, zone Outside, fear 0.06, progress 0)",
+        "  138.3 event flicker (Anticipation, zone Outside, fear 0.06, progress 0)"
+      ],
+      "events": {
+        "flicker": 3,
+        "distant_steps": 2
+      },
+      "generation": 11,
+      "localParts": 0,
+      "active": true,
+      "visualsCreated": 0
+    },
+    "samples": [
+      {
+        "at": 0.05,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 0.1,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 0.15000000000000002,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 0.2,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 0.25,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 0.30000000000000004,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 0.35000000000000003,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 0.4,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 0.45,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 0.5,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 0.55,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 0.6000000000000001,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 0.65,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 0.7000000000000001,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 0.75,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 0.8,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 0.8500000000000001,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 0.9,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 0.9500000000000001,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.05,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.1,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.1500000000000001,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.2000000000000002,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.25,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.3,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.35,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.4000000000000001,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.4500000000000002,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.5,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.55,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.6,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.6500000000000001,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.7000000000000002,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.75,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.8,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.85,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.9000000000000001,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 1.9500000000000002,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      },
+      {
+        "at": 2,
+        "blur": 0,
+        "captures": 0,
+        "mode": "normal",
+        "impact": false
+      }
+    ],
+    "screen": {
+      "impact": false,
+      "blur": 0,
+      "fog": 90,
+      "baseFog": 90,
+      "vhs": false,
+      "bands": 6,
+      "effects": {
+        "glitch": 0,
+        "vignette": 0,
+        "blur": 0,
+        "grain": 0,
+        "fog": 0,
+        "fear": 0.05602670137308746
+      }
+    },
+    "feedback": {
+      "capturing": false,
+      "mode": "Patrol",
+      "chases": 0,
+      "captures": 0
+    },
+    "camera": {
+      "offset": "0, 0, 0",
+      "trauma": 0,
+      "crouch": 0,
+      "mode": "normal",
+      "fov": 72,
+      "fear": 0.05602762286638126
+    },
+    "music": "calm",
+    "errors": [],
+    "fear": {
+      "visible": false,
+      "darkness": 0.35,
+      "value": 0.06,
+      "level": 0,
+      "base": 0.06,
+      "spike": 0
+    }
+  }
+}

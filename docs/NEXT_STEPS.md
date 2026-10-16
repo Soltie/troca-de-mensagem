@@ -32,11 +32,17 @@ Não exigir uma especialidade específica para abrir rotas ou terminar qualquer 
 
 ## Continuação do polish entregue pelo Claude
 
-BodyAudio/Fear e a integração Audio/Flashlight já entraram em `31f6b59`. A limpeza recursiva
-de Sound foi corrigida e auditada. As propostas restantes do handoff original exigem execução
-e QA próprios: TensionController/efeitos de tela, conforto/opções, feedback final de captura,
-haptics com opção de desligar, menus e arte do Ademir/ambiente. Algumas bases de servidor já
-existem, mas isso não comprova a experiência final no cliente nem compatibilidade coop.
+**Atualização Codex 15/10/2026:** pacote de tensão/medo/captura implementado; estado e evidências
+em [TERROR_POLISH_PROGRESS.md](TERROR_POLISH_PROGRESS.md). A lista abaixo preserva o escopo
+original; consultar esse documento para não reimplementar sistemas já entregues.
+
+BodyAudio/Fear e Audio/Flashlight entraram em `31f6b59`. TensionController, ScreenFxController,
+captura pessoal, opções de conforto e log F3 entraram em `ca18f17`/`fab121c`. Não reimplementar.
+Fazer QA humano das aparições e confirmar fisicamente O/1–7: o envio de O pelo MCP não abriu
+o menu no teste, embora a API de opções tenha sido validada.
+Restam: feedback de itens/puzzles e câmera de armário, arte do Ademir/ambiente, haptics,
+menus de início/fim/checkpoint, duto e QA completo do polish solo. Algumas bases de servidor
+já existem; isso não comprova a experiência final no cliente nem sua adaptação ao coop.
 
 Antes de integrar cada sistema, ler a seção correspondente do handoff, inspecionar o código
 atual e registrar implementado/parcial/pendente. Não reativar prompts solo na campanha sem

@@ -1,5 +1,10 @@
 # HANDOFF — SUBESTAÇÃO 9 (protótipo de terror)
 
+**Última entrega — terror:** commits `ca18f17`/`fab121c`: diretor de tensão, efeitos de medo,
+captura individual e conforto. 142 testes Lune/150 Studio; QA pessoal com três clientes e
+regressão da campanha com oito aprovados. Leia [TERROR_POLISH_PROGRESS.md](TERROR_POLISH_PROGRESS.md)
+para evidências e pendências. Studio em Edit, sem reservas/push/publicação.
+
 **Atualização vigente — Codex, 15/10/2026:** campanha cooperativa para 3–8 ativada em
 `Config.Campaign.Enabled`, com três estágios na subestação, atividades/atalhos por seed,
 quatro especialidades, resgate e extração coletiva. Integração sobre Claude `c6b247a`;

@@ -7,6 +7,10 @@
 > continuam discriminadas em [NEXT_STEPS.md](NEXT_STEPS.md); não foram marcadas como concluídas
 > por constarem de uma proposta. A frase original abaixo sobre finalizar tudo não é evidência de QA.
 
+> **Segunda entrega Codex:** diretor de tensão, ScreenFx, captura pessoal e opções de conforto
+> implementados em `ca18f17`/`fab121c`. Evidências, limites e pendências restantes em
+> [TERROR_POLISH_PROGRESS.md](TERROR_POLISH_PROGRESS.md). O texto original abaixo é histórico.
+
 Atualizado em 15/10/2026. O Claude parou aqui porque o limite de uso dele está acabando. O humano pediu que o **Codex finalize tudo**: nada pode ficar pendente.
 
 - Branch: `claude/polish-terror`, no mesmo diretório. Sem push.
