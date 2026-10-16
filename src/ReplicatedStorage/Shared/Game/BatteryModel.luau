@@ -41,12 +41,14 @@ function BatteryModel.setOn(state: State, want: boolean): boolean
 end
 
 -- Avança `dt` segundos. Retorna true se a lanterna apagou sozinha agora (carga zerou).
-function BatteryModel.step(state: State, dt: number): boolean
+-- `drainFactor` < 1 = pilha que dura mais (melhoria "Bateria de Lítio", Shared/Game/Perks).
+function BatteryModel.step(state: State, dt: number, drainFactor: number?): boolean
 	if dt <= 0 then
 		return false
 	end
 	if state.on then
-		state.charge = math.max(0, state.charge - B.DrainPerSecond * dt)
+		local factor = math.clamp(drainFactor or 1, 0.1, 1)
+		state.charge = math.max(0, state.charge - B.DrainPerSecond * factor * dt)
 		if state.charge <= 0 then
 			state.on = false
 			return true

@@ -42,7 +42,8 @@ local controllers: { any } = {
 	require("./Controllers/CampaignController"),
 	require("./Controllers/SpectatorController"),
 	require("./Controllers/CinematicController"),
-	require("./Controllers/ModeMenuController"),
+	require("./Controllers/MainMenuController"),
+	require("./Controllers/ContinueController"),
 	require("./Controllers/StoryController"),
 }
 

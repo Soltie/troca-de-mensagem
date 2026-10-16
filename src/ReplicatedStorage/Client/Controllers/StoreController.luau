@@ -19,6 +19,7 @@ local Economy = require("@game/ReplicatedStorage/Shared/Game/Economy")
 local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
 local PixelText = require("@game/ReplicatedStorage/Shared/Game/PixelText")
 local Remotes = require("@game/ReplicatedStorage/Shared/Net/Remotes")
+local Perks = require("@game/ReplicatedStorage/Shared/Game/Perks")
 local StoreCatalog = require("@game/ReplicatedStorage/Shared/Game/StoreCatalog")
 local Season = require("@game/ReplicatedStorage/Shared/Game/Season")
 local SeasonCatalog = require("@game/ReplicatedStorage/Shared/Game/SeasonCatalog")
@@ -240,6 +241,20 @@ local function onNotice(payload: { [string]: any })
 		table.insert(lines, string.format(Text.Rewards.daily, payload.day or 1))
 	elseif kind == "purchase" then
 		table.insert(lines, Text.Rewards.purchase)
+	elseif kind == "story" then
+		table.insert(lines, string.format(Text.Rewards.story, payload.chapter or 1))
+		if payload.first then
+			table.insert(lines, Text.Rewards.storyFirst)
+		end
+		if payload.flawless then
+			table.insert(lines, Text.Rewards.storyFlawless)
+		end
+		if payload.completed then
+			table.insert(lines, Text.Rewards.storyComplete)
+		end
+		if payload.pass then
+			table.insert(lines, Text.Rewards.storyPass)
+		end
 	elseif kind == "season" then
 		table.insert(lines, if payload.premium then Text.Rewards.seasonPremium else Text.Rewards.seasonRewards)
 		for _, tier in payload.tiers or {} do
@@ -266,6 +281,13 @@ local function onNotice(payload: { [string]: any })
 	end
 	for _, id in payload.items or {} do
 		table.insert(lines, string.format(Text.Rewards.item, itemName(id)))
+	end
+	-- Consumíveis (Segunda Chance, Pilha Extra, Continuação) que entraram no estoque.
+	for id, amount in payload.consumables or {} do
+		local def = Perks.ConsumableById[id]
+		if def and type(amount) == "number" then
+			table.insert(lines, string.format(Text.Rewards.consumable, amount, def.name))
+		end
 	end
 	if #lines == 0 then
 		return
@@ -1274,6 +1296,20 @@ end
 
 function StoreController.setOpen(value: boolean)
 	setOpen(value)
+end
+
+-- Abre numa aba (menu inicial: LOJA, PASSE, RECOMPENSAS, ROBUX).
+function StoreController.openTab(key: string)
+	if table.find(TABS, key :: Tab) then
+		tab = key :: Tab
+		track("view", key)
+	end
+	if isOpen then
+		setMessage(nil)
+		render()
+	else
+		setOpen(true)
+	end
 end
 
 function StoreController.Init()

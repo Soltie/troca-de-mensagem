@@ -6,7 +6,15 @@ local StoryPlan = require("./StoryPlan")
 
 export type Status = "Active" | "Downed" | "Waiting" | "Escaped"
 export type Phase = "Lobby" | "Playing" | "Intermission" | "Extracting" | "Won" | "Lost"
-export type Member = { id: number, role: string, status: Status, downedUntil: number, contributions: number }
+export type Member = {
+	id: number,
+	role: string,
+	status: Status,
+	downedUntil: number,
+	contributions: number,
+	-- Segunda Chance (vantagem paga) em curso: até quando o caído ainda pode levantar sozinho.
+	risingUntil: number?,
+}
 export type TaskState = {
 	spec: Generator.Activity,
 	progress: number,
@@ -87,6 +95,12 @@ local function evaluate(state: State)
 	local active = Session.count(state, "Active")
 	local escaped = Session.count(state, "Escaped")
 	local downed = Session.count(state, "Downed")
+	-- Alguém caído vai levantar sozinho (Segunda Chance): a derrota espera a janela dele.
+	for _, member in state.members do
+		if member.status == "Downed" and member.risingUntil then
+			return
+		end
+	end
 	-- Evacuados não apagam instantaneamente os colegas derrubados: aguardar resgate/timeout.
 	if state.phase == "Extracting" and active == 0 and escaped > 0 and downed > 0 then
 		return
@@ -220,7 +234,8 @@ function Session.act(state: State, id: number, taskId: string, button: number, n
 	return true, result
 end
 
-function Session.capture(state: State, id: number, now: number): boolean
+-- `rising` (s): o jogador tem Segunda Chance; a derrota da equipe espera essa janela.
+function Session.capture(state: State, id: number, now: number, rising: number?): boolean
 	if state.phase ~= "Playing" and state.phase ~= "Extracting" then
 		return false
 	end
@@ -229,6 +244,7 @@ function Session.capture(state: State, id: number, now: number): boolean
 		return false
 	end
 	member.status, member.downedUntil = "Downed", now + state.policy.downedSeconds
+	member.risingUntil = if rising and rising > 0 and finite(rising) then now + rising else nil
 	for _, activity in state.tasks do
 		if activity.relayBy == id then
 			activity.relayBy, activity.relayUntil = nil, 0
@@ -254,13 +270,45 @@ function Session.revive(state: State, helperId: number, targetId: number, now: n
 	return true, nil
 end
 
+-- Consumível "Segunda Chance" (Shared/Game/Perks): o próprio incapacitado levanta, sem ajudante.
+function Session.selfRevive(state: State, id: number, now: number): (boolean, string?)
+	if state.phase ~= "Playing" and state.phase ~= "Extracting" then
+		return false, "wrong_phase"
+	end
+	local member = state.members[id]
+	if not finite(now) or not member or member.status ~= "Downed" or now >= member.downedUntil then
+		return false, "not_available"
+	end
+	member.status, member.downedUntil, member.risingUntil = "Active", 0, nil
+	return true, nil
+end
+
+-- Consumível "Continuação": depois da derrota a equipe volta para o intervalo e repete a mesma etapa.
+function Session.retryStage(state: State): (boolean, string?)
+	if state.phase ~= "Lost" then
+		return false, "wrong_phase"
+	end
+	if state.stage < 1 then
+		return false, "not_available"
+	end
+	state.stage -= 1
+	state.phase = "Intermission"
+	state.votes = {}
+	return true, nil
+end
+
 function Session.tick(state: State, now: number)
 	if not finite(now) then
 		return
 	end
 	for _, member in state.members do
+		-- Janela da Segunda Chance vencida (jogador saiu, etapa trocou): volta a valer a derrota.
+		if member.risingUntil and now >= member.risingUntil then
+			member.risingUntil = nil
+		end
 		if member.status == "Downed" and now >= member.downedUntil then
 			member.status = "Waiting"
+			member.risingUntil = nil
 		end
 	end
 	evaluate(state)

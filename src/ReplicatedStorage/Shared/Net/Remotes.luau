@@ -38,6 +38,8 @@ local DEFINITIONS: { [string]: RemoteKind } = {
 	StoreTrack = "RemoteEvent",
 	-- Pitch do olhar (graus) para os colegas verem cabeça e lanterna; só visual (PresenceService).
 	SetLook = "RemoteEvent",
+	-- Menu inicial: ("servers") lista de servidores; ("join", jobId) / ("friend", userId) teleporte validado.
+	Lobby = "RemoteFunction",
 }
 
 local FOLDER_NAME = Config.Net.RemotesFolderName

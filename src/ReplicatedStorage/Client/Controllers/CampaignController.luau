@@ -32,6 +32,9 @@ local messages = {
 	not_playing = "AGUARDE O PRÓXIMO ESTÁGIO.",
 	door_opened = "PASSAGEM LIBERADA.",
 	spawn_failed = "CARREGAMENTO INTERROMPIDO. VOCÊ ENTRA NO PRÓXIMO ESTÁGIO.",
+	-- Vantagens pagas (Claude): Segunda Chance e Continuação.
+	second_chance = "SEGUNDA CHANCE: VOCÊ LEVANTOU.",
+	continue_used = "CONTINUAÇÃO USADA: A EQUIPE REPETE A ETAPA.",
 }
 
 local function text(parent: Instance, name: string, position: UDim2, size: UDim2, fontSize: number): TextLabel

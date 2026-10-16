@@ -22,6 +22,11 @@
 	  Owned (JSON), Tapes (JSON), Equip*, DailyStreak/DailyClaimable, SpinsLeft, StarterBought,
 	  PaidRandomRestricted, SeasonId, SeasonXp, SeasonPremium, StoreReady.
 	- Notificações de recompensa: remote "StoreNotice" (servidor -> cliente).
+	- Vantagens pagas (Shared/Game/Perks): melhorias de 5 níveis (Fichas ou Créditos), consumíveis
+	  (Segunda Chance, Pilha Extra, Continuação), kit de uso automático e bônus de tempo. Publica
+	  Perks/Consumables/Loadout (JSON), Perk<Id> (nível, lido pelo jogo) e Boost*Until (os.time).
+	- Modo história (Shared/Game/StoryRewards): awardStory no fim de cada capítulo; passe Arquivo do
+	  Elias dobra as moedas e entrega 3 itens. Publica StoryProgress (JSON) e StoryPass.
 ]]
 
 local HttpService = game:GetService("HttpService")
@@ -31,6 +36,8 @@ local PolicyService = game:GetService("PolicyService")
 local RunService = game:GetService("RunService")
 
 local Economy = require("@game/ReplicatedStorage/Shared/Game/Economy")
+local Perks = require("@game/ReplicatedStorage/Shared/Game/Perks")
+local StoryRewards = require("@game/ReplicatedStorage/Shared/Game/StoryRewards")
 local Guard = require("@game/ReplicatedStorage/Shared/Net/Guard")
 local Logger = require("@game/ReplicatedStorage/Shared/Logger")
 local Remotes = require("@game/ReplicatedStorage/Shared/Net/Remotes")
@@ -65,6 +72,11 @@ local passCache: { [Player]: { [string]: boolean } } = {}
 local restrictedCache: { [Player]: boolean } = {}
 local changedCallbacks: { (Player) -> () } = {}
 local rng = Random.new()
+-- Quem executa a Continuação (CampaignRuntime): valida a derrota e repete a etapa.
+local continueHandler: ((Player) -> (boolean, string?))? = nil
+-- Atributo de jogo de cada melhoria (lido por PlayerStateService, CreatureService, CampaignRuntime e cliente).
+local PERK_ATTRIBUTES: { [string]: string } =
+	{ bateria = "PerkBateria", folego = "PerkFolego", socorro = "PerkSocorro", silencio = "PerkSilencio" }
 
 local function random(): number
 	return rng:NextNumber()
@@ -151,6 +163,7 @@ local function publish(player: Player)
 	player:SetAttribute("DailyClaimable", claimable)
 	player:SetAttribute("SpinsLeft", Economy.spinsLeft(data, day, vip))
 	player:SetAttribute("StarterBought", data.oncePurchases.pacote_inicial ~= nil)
+	player:SetAttribute("KitBought", data.oncePurchases.kit_sobrevivente ~= nil)
 	player:SetAttribute("EquipFlashlight", Economy.equipped(data, "flashlight", vip))
 	player:SetAttribute("EquipUniform", Economy.equipped(data, "uniform", vip))
 	player:SetAttribute("EquipFilter", Economy.equipped(data, "filter", vip))
@@ -158,6 +171,36 @@ local function publish(player: Player)
 	player:SetAttribute("SeasonId", if season then season.id else "")
 	player:SetAttribute("SeasonXp", if season then Season.xpOf(data, season) else 0)
 	player:SetAttribute("SeasonPremium", season ~= nil and hasSeasonPass(player, season))
+	-- Vantagens e história.
+	local levels: { [string]: number } = {}
+	for _, perk in Perks.List do
+		local perkLevel = Perks.level(data, perk.id)
+		levels[perk.id] = perkLevel
+		player:SetAttribute(PERK_ATTRIBUTES[perk.id], perkLevel)
+	end
+	local stock: { [string]: number } = {}
+	local kit: { string } = {}
+	for _, consumable in Perks.Consumables do
+		stock[consumable.id] = Perks.count(data, consumable.id)
+		if data.loadout[consumable.id] then
+			table.insert(kit, consumable.id)
+		end
+	end
+	player:SetAttribute("Perks", HttpService:JSONEncode(levels))
+	player:SetAttribute("Consumables", HttpService:JSONEncode(stock))
+	player:SetAttribute("Loadout", HttpService:JSONEncode(kit))
+	player:SetAttribute("BoostFichasUntil", data.boosts.fichasUntil)
+	player:SetAttribute("BoostXpUntil", data.boosts.xpUntil)
+	local cleared: { number } = {}
+	local flawless: { number } = {}
+	for key in data.story.cleared do
+		table.insert(cleared, tonumber(key) or 0)
+	end
+	for key in data.story.flawless do
+		table.insert(flawless, tonumber(key) or 0)
+	end
+	player:SetAttribute("StoryProgress", HttpService:JSONEncode({ cleared = cleared, flawless = flawless }))
+	player:SetAttribute("StoryPass", ownsPass(player, StoreCatalog.StoryPassKey))
 	player:SetAttribute("StoreReady", true)
 	for _, callback in changedCallbacks do
 		task.spawn(callback, player)
@@ -172,6 +215,7 @@ local function notify(player: Player, kind: string, granted: Economy.Granted?, e
 		payload.xp = granted.xp
 		payload.items = granted.items
 		payload.levels = granted.levels
+		payload.consumables = granted.consumables
 	end
 	if extra then
 		for key, value in extra do
@@ -264,6 +308,17 @@ end
 
 -- Game Pass confirmado (compra real ou simulada): vale na hora; passe de temporada entrega
 -- as recompensas pagas dos níveis já alcançados.
+-- Passe da história: entrega os itens que faltarem (idempotente; vale também na entrada).
+local function grantStoryPassItems(player: Player)
+	PlayerDataService.update(player, function(data)
+		for _, id in StoreCatalog.StoryPassItems do
+			if not data.owned[id] then
+				Economy.applyReward(data, { item = id })
+			end
+		end
+	end)
+end
+
 local function grantPass(player: Player, product: StoreCatalog.Product)
 	setPass(player, product.key)
 	local season = activeSeason()
@@ -274,6 +329,9 @@ local function grantPass(player: Player, product: StoreCatalog.Product)
 			result = Season.grantReached(data, season, true)
 			events = EconomyEvents.build(data.wallet, seasonChanges(result))
 		end)
+	end
+	if product.key == StoreCatalog.StoryPassKey then
+		grantStoryPassItems(player)
 	end
 	log.info("pass %s active for %s", product.key, player.Name)
 	TelemetryService.economy(player, events)
@@ -350,6 +408,9 @@ local function onPlayer(player: Player)
 	refreshPasses(player)
 	if PlayerDataService.waitFor(player, 30) then
 		syncSeason(player)
+		if ownsPass(player, StoreCatalog.StoryPassKey) then
+			grantStoryPassItems(player)
+		end
 		publish(player)
 	end
 end
@@ -493,6 +554,59 @@ local function handle(player: Player, action: string, arg: string?): StoreRespon
 			local ok, err = Economy.equip(data, arg, vip)
 			return { ok = ok, message = if ok then "store_equipped" else err or "store_error", item = arg }
 		end)
+	elseif (action == "upgrade_fichas" or action == "upgrade_creditos") and arg then
+		local currency: Perks.Currency = if action == "upgrade_fichas" then "fichas" else "creditos"
+		response = mutate(player, function(data)
+			local price = Perks.nextCost(arg, Perks.level(data, arg), currency)
+			local ok, err, level = Perks.upgrade(data, arg, currency)
+			if not ok or not price then
+				return { ok = false, message = err or "store_error" }
+			end
+			events = EconomyEvents.sink(currency, price, data.wallet, TX.Shop, `perk_{arg}_{level}`)
+			purchase = { kind = "perk", currency = currency }
+			log.info("%s upgraded %s to %d (%s)", player.Name, arg, level or 0, currency)
+			return { ok = true, message = "perk_upgraded", item = arg }
+		end)
+	elseif (action == "consumable_fichas" or action == "consumable_creditos") and arg then
+		local currency: Perks.Currency = if action == "consumable_fichas" then "fichas" else "creditos"
+		response = mutate(player, function(data)
+			local ok, err = Perks.buyConsumable(data, arg, currency)
+			if not ok then
+				return { ok = false, message = err or "store_error" }
+			end
+			local def = Perks.ConsumableById[arg]
+			local price = (if currency == "fichas" then def.fichas else def.creditos) or 0
+			events = EconomyEvents.sink(currency, price, data.wallet, TX.Shop, `consumable_{arg}`)
+			purchase = { kind = "consumable", currency = currency }
+			return { ok = true, message = "consumable_bought", item = arg }
+		end)
+	elseif (action == "loadout_on" or action == "loadout_off") and arg then
+		response = mutate(player, function(data)
+			local ok, err = Perks.setLoadout(data, arg, action == "loadout_on")
+			return { ok = ok, message = if ok then "loadout_saved" else err or "store_error", item = arg }
+		end)
+	elseif action == "use_continue" then
+		local data = PlayerDataService.get(player)
+		if not data then
+			return { ok = false, message = "store_loading" }
+		end
+		if Perks.count(data, "continuar") <= 0 then
+			return { ok = false, message = "continue_none" }
+		end
+		local handler = continueHandler
+		if not handler then
+			return { ok = false, message = "continue_unavailable" }
+		end
+		local ok, reason = handler(player)
+		if not ok then
+			return { ok = false, message = reason or "continue_unavailable" }
+		end
+		-- A etapa já foi reaberta: gasta a unidade (se o save falhar, o próximo save grava).
+		response = mutate(player, function(mutable)
+			Perks.consume(mutable, "continuar")
+			return { ok = true, message = "continue_used" }
+		end)
+		log.info("%s used a continue", player.Name)
 	elseif action == "buy_product" and arg then
 		return requestProduct(player, arg)
 	else
@@ -513,7 +627,22 @@ local StoreService = {
 function StoreService.Start()
 	ServerNet.onInvoke("Store", {
 		args = {
-			Guard.literal("claim_daily", "spin", "open_chest", "buy_fichas", "buy_creditos", "equip", "buy_product"),
+			Guard.literal(
+				"claim_daily",
+				"spin",
+				"open_chest",
+				"buy_fichas",
+				"buy_creditos",
+				"equip",
+				"buy_product",
+				"upgrade_fichas",
+				"upgrade_creditos",
+				"consumable_fichas",
+				"consumable_creditos",
+				"loadout_on",
+				"loadout_off",
+				"use_continue"
+			),
 			Guard.optional(Guard.string({ maxLength = 32, pattern = "[%w_]+" })),
 		},
 		rateLimit = { capacity = 8, refillPerSecond = 3 },
@@ -561,7 +690,7 @@ function StoreService.awardRun(player: Player, summary: Economy.RunSummary, sku:
 	local seasonResult: Season.SeasonGranted? = nil
 	local events: { EconomyEvents.Event } = {}
 	local ok = PlayerDataService.update(player, function(data)
-		local run = Economy.recordRun(data, summary, isVip(player))
+		local run = Economy.recordRun(data, summary, isVip(player), os.time())
 		granted = run
 		seasonResult = addSeasonXp(player, data, Season.runXp(summary))
 		local changes: { EconomyEvents.Change } = { { transaction = TX.Gameplay, sku = sku or "run", granted = run } }
@@ -627,6 +756,69 @@ end
 -- Avisado quando o estado de um jogador muda (cosméticos reaplicam).
 function StoreService.onChanged(callback: (Player) -> ())
 	table.insert(changedCallbacks, callback)
+end
+
+-- ===================== Vantagens e história (jogo) =====================
+
+function StoreService.perkLevel(player: Player, id: string): number
+	local data = PlayerDataService.get(player)
+	return if data then Perks.level(data, id) else 0
+end
+
+-- Consumível de kit pronto para uso automático?
+function StoreService.inLoadout(player: Player, id: string): boolean
+	local data = PlayerDataService.get(player)
+	return data ~= nil and Perks.inLoadout(data, id)
+end
+
+-- Gasta uma unidade (uso automático na partida). false se não tinha.
+function StoreService.consume(player: Player, id: string): boolean
+	local used = false
+	PlayerDataService.update(player, function(data)
+		used = Perks.consume(data, id)
+	end)
+	if used then
+		publish(player)
+	end
+	return used
+end
+
+-- CampaignRuntime registra quem repete a etapa (a validação da derrota fica com ele).
+function StoreService.setContinueHandler(handler: (Player) -> (boolean, string?))
+	continueHandler = handler
+end
+
+function StoreService.hasStoryPass(player: Player): boolean
+	return ownsPass(player, StoreCatalog.StoryPassKey)
+end
+
+-- Fim de capítulo do modo história (RewardService). Avisa a tela de resultado.
+function StoreService.awardStory(player: Player, chapter: number, flawless: boolean): StoryRewards.Outcome?
+	local granted: Economy.Granted? = nil
+	local outcome: StoryRewards.Outcome? = nil
+	local events: { EconomyEvents.Event } = {}
+	local pass = StoreService.hasStoryPass(player)
+	PlayerDataService.update(player, function(data)
+		granted, outcome = StoryRewards.award(data, chapter, flawless, pass, os.time())
+		if granted then
+			events = EconomyEvents.sources(granted, data.wallet, TX.Gameplay, `story_{chapter}`)
+		end
+	end)
+	local result = outcome
+	if not granted or not result then
+		return nil
+	end
+	TelemetryService.economy(player, events)
+	publish(player)
+	notify(player, "story", granted, {
+		chapter = chapter,
+		first = result.first,
+		flawless = result.flawless,
+		completed = result.completed,
+		pass = pass,
+		consumables = granted.consumables,
+	})
+	return result
 end
 
 -- Depuração (DebugBridge): dá moedas sem compra (fora do analytics).

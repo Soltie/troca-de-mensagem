@@ -14,6 +14,7 @@ local RunService = game:GetService("RunService")
 
 local Config = require("@game/ReplicatedStorage/Shared/Config")
 local Logger = require("@game/ReplicatedStorage/Shared/Logger")
+local Perks = require("@game/ReplicatedStorage/Shared/Game/Perks")
 local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
 local CreatureBrain = require("../Game/CreatureBrain")
 local HideRules = require("../Game/HideRules")
@@ -233,7 +234,9 @@ local function perceive(target: Target?, now: number): CreatureBrain.Perception
 	pendingNoise = nil
 	local velocity = target.root.AssemblyLinearVelocity
 	local horizontalSpeed = Vector3.new(velocity.X, 0, velocity.Z).Magnitude
-	if horizontalSpeed > Config.Player.NoiseSpeed and distance <= Config.Player.NoiseRadius then
+	-- Melhoria "Passos Leves" (StoreService publica o nível): o raio do barulho de corrida encolhe.
+	local quiet = Perks.factor("silencio", tonumber(target.player:GetAttribute("PerkSilencio")) or 0)
+	if horizontalSpeed > Config.Player.NoiseSpeed and distance <= Config.Player.NoiseRadius * quiet then
 		noise = targetFeet
 	end
 	if brain.fuses >= C.StalkFromFuses and brain.mode == "Patrol" and now - lastStalkAt >= C.StalkInterval then

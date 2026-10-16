@@ -69,7 +69,8 @@ local spec: TestKit.Spec = {
 			raw.schemaVersion = 2
 			raw.season = nil
 			local migrated = Schema.migrate(raw)
-			t.expect(migrated.schemaVersion).toBe(3)
+			-- Sobe até a versão atual (v4 acrescentou vantagens e história; a temporada continua aqui).
+			t.expect(migrated.schemaVersion >= 3).toBe(true)
 			t.expect(migrated.wallet.fichas).toBe(900)
 			t.expect(migrated.owned.lanterna_militar).toBe(true)
 			t.expect(migrated.season.xp).toBe(0)

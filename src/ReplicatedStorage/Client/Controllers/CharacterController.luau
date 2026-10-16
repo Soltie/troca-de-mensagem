@@ -15,6 +15,7 @@ local StarterGui = game:GetService("StarterGui")
 local UserInputService = game:GetService("UserInputService")
 
 local Config = require("@game/ReplicatedStorage/Shared/Config")
+local Perks = require("@game/ReplicatedStorage/Shared/Game/Perks")
 local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
 local Remotes = require("@game/ReplicatedStorage/Shared/Net/Remotes")
 
@@ -237,12 +238,15 @@ local function update(dt: number)
 		and stance == "Stand"
 		and not hidden
 
+	-- Melhoria "Fôlego de Maratona" (nível publicado pelo StoreService): mais fôlego e recarga.
+	local lungs = Perks.factor("folego", tonumber(player:GetAttribute("PerkFolego")) or 0)
+	local staminaMax = P.StaminaMax * lungs
 	if sprinting then
 		stamina = math.max(0, stamina - dt)
 	else
-		stamina = math.min(P.StaminaMax, stamina + dt * P.StaminaRegen * (if moving then 0.7 else 1))
+		stamina = math.min(staminaMax, stamina + dt * P.StaminaRegen * lungs * (if moving then 0.7 else 1))
 	end
-	local exhaustionTarget = if now < exhaustedUntil then 1 else math.clamp(1 - stamina / P.StaminaMax, 0, 1) * 0.5
+	local exhaustionTarget = if now < exhaustedUntil then 1 else math.clamp(1 - stamina / staminaMax, 0, 1) * 0.5
 	exhaustion += (exhaustionTarget - exhaustion) * math.min(1, dt * (if exhaustionTarget > exhaustion then 4 else 0.5))
 
 	-- Velocidade em rampa (peso).

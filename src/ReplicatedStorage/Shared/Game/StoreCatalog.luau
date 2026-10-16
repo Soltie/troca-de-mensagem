@@ -15,9 +15,20 @@
 export type Currency = "fichas" | "creditos"
 export type Rarity = "common" | "rare" | "epic" | "legendary" | "exclusive"
 export type ItemKind = "flashlight" | "uniform" | "filter" | "title"
--- De onde o item vem: padrão (todos têm), loja/baús, nível, coleção de fitas, VIP, Pacote Inicial
--- ou passe de temporada (trilhas em SeasonCatalog).
-export type Source = "default" | "store" | "level" | "tapes" | "vip" | "starter" | "escape" | "season"
+-- De onde o item vem: padrão (todos têm), loja/baús, nível, coleção de fitas, VIP, Pacote Inicial,
+-- passe de temporada (trilhas em SeasonCatalog), capítulos do modo história (StoryRewards) ou o
+-- passe da história (Arquivo do Elias).
+export type Source =
+	"default"
+	| "store"
+	| "level"
+	| "tapes"
+	| "vip"
+	| "starter"
+	| "escape"
+	| "season"
+	| "story"
+	| "storypass"
 export type RGB = { number }
 
 export type Item = {
@@ -62,6 +73,10 @@ export type Reward = {
 	creditos: number?,
 	xp: number?,
 	item: string?,
+	-- Consumíveis (Shared/Game/Perks) -> unidades.
+	consumables: { [string]: number }?,
+	-- Bônus de tempo em minutos (Fichas ×2 e/ou XP ×2); só produtos (precisa do relógio).
+	boost: { fichas: number?, xp: number? }?,
 }
 
 export type SpinSegment = { id: string, label: string, weight: number, reward: Reward }
@@ -572,6 +587,70 @@ StoreCatalog.Items = {
 		source = "season",
 		color = { 255, 80, 70 },
 	}),
+
+	-- ===== Modo história (capítulos; ver StoryRewards) =====
+	item({
+		id = "farda_ronda",
+		kind = "uniform",
+		name = "FARDA DE RONDA",
+		rarity = "epic",
+		source = "story",
+		shirt = { 38, 44, 40 },
+		pants = { 28, 30, 30 },
+		helmet = { 70, 76, 66 },
+		stripe = { 209, 173, 100 },
+		cap = true,
+	}),
+	item({
+		id = "lanterna_elias",
+		kind = "flashlight",
+		name = "LANTERNA DO ELIAS",
+		rarity = "legendary",
+		source = "story",
+		body = { 60, 48, 36 },
+		head = { 150, 120, 80 },
+		beam = { 255, 214, 160 },
+		material = "Metal",
+	}),
+	item({
+		id = "titulo_ultimo_turno",
+		kind = "title",
+		name = "O ÚLTIMO TURNO",
+		rarity = "legendary",
+		source = "story",
+		color = { 209, 173, 100 },
+	}),
+	-- Passe da história (Arquivo do Elias): entregues ao ativar o passe.
+	item({
+		id = "lanterna_arquivo",
+		kind = "flashlight",
+		name = "LANTERNA DO ARQUIVO",
+		rarity = "exclusive",
+		source = "storypass",
+		body = { 30, 34, 30 },
+		head = { 120, 200, 140 },
+		beam = { 210, 255, 220 },
+		material = "Metal",
+	}),
+	item({
+		id = "farda_arquivo",
+		kind = "uniform",
+		name = "FARDA DO ARQUIVO",
+		rarity = "exclusive",
+		source = "storypass",
+		shirt = { 54, 50, 40 },
+		pants = { 36, 32, 28 },
+		helmet = { 120, 200, 140 },
+		stripe = { 120, 200, 140 },
+	}),
+	item({
+		id = "titulo_arquivista_elias",
+		kind = "title",
+		name = "GUARDIÃO DO ARQUIVO",
+		rarity = "exclusive",
+		source = "storypass",
+		color = { 120, 200, 140 },
+	}),
 } :: { Item }
 
 -- Índice por id.
@@ -744,6 +823,89 @@ StoreCatalog.Products = {
 		robux = 299,
 		grant = {},
 	},
+	-- ===== Vantagens (Shared/Game/Perks): consumíveis, bônus e kits =====
+	{
+		key = "segunda_chance_3",
+		kind = "product",
+		name = "3 SEGUNDAS CHANCES",
+		description = "Levante sozinho quando o Vigia te pegar.",
+		id = 0,
+		robux = 99,
+		grant = { consumables = { segunda_chance = 3 } },
+	},
+	{
+		key = "segunda_chance_10",
+		kind = "product",
+		name = "10 SEGUNDAS CHANCES",
+		description = "+25% de bônus no pacote.",
+		id = 0,
+		robux = 249,
+		grant = { consumables = { segunda_chance = 10 } },
+	},
+	{
+		key = "continuar_1",
+		kind = "product",
+		name = "1 CONTINUAÇÃO",
+		description = "A equipe repete a etapa perdida em vez de recomeçar.",
+		id = 0,
+		robux = 49,
+		grant = { consumables = { continuar = 1 } },
+	},
+	{
+		key = "continuar_5",
+		kind = "product",
+		name = "5 CONTINUAÇÕES",
+		description = "+20% de bônus no pacote.",
+		id = 0,
+		robux = 199,
+		grant = { consumables = { continuar = 5 } },
+	},
+	{
+		key = "pilhas_10",
+		kind = "product",
+		name = "10 PILHAS EXTRAS",
+		description = "Cada etapa começa com +60% de bateria.",
+		id = 0,
+		robux = 79,
+		grant = { consumables = { pilha_extra = 10 } },
+	},
+	{
+		key = "bonus_fichas_1h",
+		kind = "product",
+		name = "FICHAS EM DOBRO (1 HORA)",
+		description = "Fichas ×2 nas recompensas de partida por 1 hora de relógio.",
+		id = 0,
+		robux = 99,
+		grant = { boost = { fichas = 60 } },
+	},
+	{
+		key = "bonus_duplo_3h",
+		kind = "product",
+		name = "FICHAS E XP EM DOBRO (3 HORAS)",
+		description = "Fichas ×2 e XP ×2 por 3 horas de relógio.",
+		id = 0,
+		robux = 299,
+		grant = { boost = { fichas = 180, xp = 180 } },
+	},
+	{
+		key = "kit_sobrevivente",
+		kind = "product",
+		name = "KIT SOBREVIVENTE",
+		description = "500 Créditos + 3 Segundas Chances + 5 Pilhas + 2 Continuações. Uma vez por conta.",
+		id = 0,
+		robux = 199,
+		grant = { creditos = 500, consumables = { segunda_chance = 3, pilha_extra = 5, continuar = 2 } },
+		once = true,
+	},
+	{
+		key = "arquivo_elias",
+		kind = "pass",
+		name = "ARQUIVO DO ELIAS (HISTÓRIA)",
+		description = "Recompensas dos capítulos em dobro + lanterna, farda e título exclusivos.",
+		id = 0,
+		robux = 249,
+		grant = {},
+	},
 	{
 		-- Um Game Pass NOVO por temporada (o acesso pago vale só para a temporada dele).
 		key = "turno_extra_s1",
@@ -758,6 +920,9 @@ StoreCatalog.Products = {
 
 -- Itens extras do Pacote Inicial (além do `grant`).
 StoreCatalog.StarterItems = { "lanterna_retro", "farda_noturna" }
+-- Itens entregues ao ativar o passe da história.
+StoreCatalog.StoryPassKey = "arquivo_elias"
+StoreCatalog.StoryPassItems = { "lanterna_arquivo", "farda_arquivo", "titulo_arquivista_elias" }
 
 StoreCatalog.ProductByKey = {} :: { [string]: Product }
 for _, product in StoreCatalog.Products do

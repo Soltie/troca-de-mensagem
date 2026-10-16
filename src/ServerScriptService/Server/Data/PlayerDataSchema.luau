@@ -14,6 +14,8 @@
 	     estatísticas, recibos de compra) e trava de sessão. Contas v1 recebem tudo zerado.
 	  3  passe de temporada (season: id, XP de temporada e níveis entregues por trilha).
 	     Contas v2 começam a temporada do zero.
+	  4  vantagens pagas (perks, consumables, loadout, boosts) e progresso da história (story).
+	     Contas v3 começam sem melhorias, sem estoque e sem capítulos.
 ]]
 
 local Config = require("@game/ReplicatedStorage/Shared/Config")
@@ -42,7 +44,30 @@ local TEMPLATE: Types.PlayerData = TableUtil.deepFreeze({
 	purchases = {},
 	oncePurchases = {},
 	season = { id = "", xp = 0, free = {}, premium = {} },
+	perks = {},
+	consumables = {},
+	loadout = {},
+	boosts = { fichasUntil = 0, xpUntil = 0 },
+	story = { cleared = {}, flawless = {} },
 })
+
+-- Mapa { [string]: number } saneado (lixo vira vazio; números inválidos somem).
+local function numberMap(value: unknown, max: number): { [string]: number }
+	local clean: { [string]: number } = {}
+	if type(value) ~= "table" then
+		return clean
+	end
+	for key, n in value :: { [any]: any } do
+		if type(key) == "string" and type(n) == "number" and n == n and n >= 0 and n ~= math.huge then
+			clean[key] = math.min(math.floor(n), max)
+		end
+	end
+	return clean
+end
+
+local function finiteOr(value: any, fallback: number): number
+	return if type(value) == "number" and value == value and math.abs(value) ~= math.huge then value else fallback
+end
 
 local PlayerDataSchema = {}
 
@@ -55,7 +80,7 @@ function PlayerDataSchema.migrate(raw: unknown): Types.PlayerData
 	if type(raw) ~= "table" then
 		return PlayerDataSchema.template()
 	end
-	-- v1 -> v2 -> v3: os campos novos vêm do template (reconcile preenche o que falta).
+	-- v1 -> v2 -> v3 -> v4: os campos novos vêm do template (reconcile preenche o que falta).
 	local data = TableUtil.reconcile(raw, TEMPLATE)
 	-- Valores corrompidos não podem travar a economia.
 	for _, currency in StoreCatalog.CURRENCIES do
@@ -81,6 +106,22 @@ function PlayerDataSchema.migrate(raw: unknown): Types.PlayerData
 	then
 		data.season = { id = "", xp = 0, free = {}, premium = {} }
 	end
+	-- v4: níveis e estoques nunca negativos/NaN; bônus e história com formato fixo.
+	data.perks = numberMap(data.perks, 5)
+	data.consumables = numberMap(data.consumables, 99)
+	local loadout: { [string]: boolean } = {}
+	if type(data.loadout) == "table" then
+		for key, on in data.loadout :: { [any]: any } do
+			if type(key) == "string" and on == true then
+				loadout[key] = true
+			end
+		end
+	end
+	data.loadout = loadout
+	local boosts = if type(data.boosts) == "table" then data.boosts :: any else {}
+	data.boosts = { fichasUntil = finiteOr(boosts.fichasUntil, 0), xpUntil = finiteOr(boosts.xpUntil, 0) }
+	local story = if type(data.story) == "table" then data.story :: any else {}
+	data.story = { cleared = numberMap(story.cleared, 2 ^ 40), flawless = numberMap(story.flawless, 2 ^ 40) }
 	data.schemaVersion = Config.Data.SchemaVersion
 	return data
 end

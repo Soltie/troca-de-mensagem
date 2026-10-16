@@ -7,6 +7,7 @@
 	Sorteios recebem `random: () -> number` (0 <= x < 1) injetado: testável e auditável.
 ]]
 
+local Perks = require("./Perks")
 local StoreCatalog = require("./StoreCatalog")
 local Types = require("../Types")
 
@@ -24,6 +25,8 @@ export type Granted = {
 	refunds: { [string]: number },
 	-- Níveis alcançados nesta concessão.
 	levels: { number },
+	-- Consumíveis que entraram no estoque (id -> unidades).
+	consumables: { [string]: number }?,
 }
 
 export type OddsLine = {
@@ -241,6 +244,16 @@ function Economy.applyReward(data: Data, reward: Reward, into: Granted?): Grante
 	if reward.xp then
 		addXp(data, reward.xp, granted)
 	end
+	if reward.consumables then
+		for id, amount in reward.consumables do
+			local added = Perks.add(data, id, amount)
+			if added > 0 then
+				local list = granted.consumables or {}
+				list[id] = (list[id] or 0) + added
+				granted.consumables = list
+			end
+		end
+	end
 	return granted
 end
 
@@ -351,7 +364,8 @@ function Economy.spin(
 end
 
 -- Fim de partida: estatísticas, recompensa e título da primeira fuga.
-function Economy.recordRun(data: Data, summary: RunSummary, vip: boolean?): Granted
+-- `now` (os.time) liga os bônus de tempo comprados (Fichas/XP ×2; ver Perks).
+function Economy.recordRun(data: Data, summary: RunSummary, vip: boolean?, now: number?): Granted
 	data.stats.runs += 1
 	data.stats.stages += summary.stages
 	if summary.won or summary.escaped then
@@ -359,7 +373,13 @@ function Economy.recordRun(data: Data, summary: RunSummary, vip: boolean?): Gran
 	else
 		data.stats.captures += 1
 	end
-	local granted = Economy.applyReward(data, Economy.runReward(summary, vip))
+	local reward = Economy.runReward(summary, vip)
+	if now then
+		local fichasMult, xpMult = Perks.runMultipliers(data, now)
+		reward.fichas = math.floor((reward.fichas or 0) * fichasMult + 0.5)
+		reward.xp = math.floor((reward.xp or 0) * xpMult + 0.5)
+	end
+	local granted = Economy.applyReward(data, reward)
 	if (summary.won or summary.escaped) and not data.owned[StoreCatalog.FirstEscapeItem] then
 		grantItem(data, StoreCatalog.FirstEscapeItem, granted)
 	end
@@ -443,6 +463,11 @@ function Economy.grantProduct(
 		data.oncePurchases[product.key] = now
 	end
 	local granted = Economy.applyReward(data, product.grant)
+	local boost = product.grant.boost
+	if boost then
+		Perks.addBoost(data, "fichas", boost.fichas or 0, now)
+		Perks.addBoost(data, "xp", boost.xp or 0, now)
+	end
 	if product.key == "pacote_inicial" then
 		for _, itemId in StoreCatalog.StarterItems do
 			grantItem(data, itemId, granted)

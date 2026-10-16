@@ -22,12 +22,14 @@ local services: { any } = {
 	require("./Services/WorldService"),
 	require("./Services/PlayerStateService"),
 	require("./Services/PresenceService"),
+	require("./Services/LobbyService"),
 	require("./Services/CreatureService"),
 	require("./Services/PropService"),
 	require("./Services/CosmeticService"),
 	require("./Services/CollectibleService"),
 	require("./Services/RoundService"),
 	require("./Services/RewardService"),
+	require("./Services/PerkService"),
 	require("./Services/DebugService"), -- só age no Studio
 }
 

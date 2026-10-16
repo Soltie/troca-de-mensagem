@@ -9,6 +9,10 @@
 	Cada partida (GameState.RoundId) paga uma vez só. A tela de resultado do cliente recebe
 	os números via StoreService.awardRun -> StoreNotice. O SKU de analytics diz modo e resultado
 	(solo_won, solo_lost, campaign_won, campaign_lost): fonte de Fichas por tipo de partida.
+
+	Modo história: cada capítulo vencido (CampaignState Phase -> Intermission ou Won com
+	GameMode "Story") paga as recompensas de capítulo (Shared/Game/StoryRewards) a quem participou.
+	"Sem quedas" = ninguém da equipe ficou Downed durante o capítulo (lido do Roster replicado).
 ]]
 
 local HttpService = game:GetService("HttpService")
@@ -23,6 +27,9 @@ local StoreService = require("./StoreService")
 
 local log = Logger.new("RewardService")
 local awarded: { [number]: boolean } = {}
+-- História: capítulos já pagos (por rodada + capítulo) e se alguém caiu no capítulo atual.
+local storyPaid: { [string]: boolean } = {}
+local chapterHadDown = false
 
 local function soloSummary(won: boolean): Economy.RunSummary
 	return {
@@ -80,11 +87,74 @@ local function onEnd(phase: string)
 	log.info("round %d rewards paid (%s)", round, phase)
 end
 
+local function decodeRoster(state: Instance): { any }?
+	local ok, roster = pcall(function()
+		return HttpService:JSONDecode((state:GetAttribute("Roster") :: string?) or "[]")
+	end)
+	return if ok and type(roster) == "table" then roster else nil
+end
+
+local function payChapter(state: Instance)
+	local chapter = tonumber(state:GetAttribute("Stage")) or 0
+	local key = `{GameState.get("RoundId") or 0}:{chapter}`
+	if chapter < 1 or storyPaid[key] then
+		return
+	end
+	storyPaid[key] = true
+	local roster = decodeRoster(state)
+	if not roster then
+		return
+	end
+	local flawless = not chapterHadDown
+	for _, member in roster do
+		local player = Players:GetPlayerByUserId(member.id)
+		-- Quem só esperou o capítulo (entrou tarde) não recebe o capítulo.
+		if player and member.status ~= "Waiting" then
+			StoreService.awardStory(player, chapter, flawless)
+		end
+	end
+	log.info("story chapter %d paid (flawless=%s)", chapter, tostring(flawless))
+end
+
+local function watchStory(state: Instance)
+	local lastPhase = state:GetAttribute("Phase")
+	state:GetAttributeChangedSignal("Roster"):Connect(function()
+		local roster = decodeRoster(state)
+		if roster and state:GetAttribute("Phase") == "Playing" then
+			for _, member in roster do
+				if member.status == "Downed" then
+					chapterHadDown = true
+				end
+			end
+		end
+	end)
+	state:GetAttributeChangedSignal("Phase"):Connect(function()
+		local phase = state:GetAttribute("Phase")
+		if phase == "Playing" and lastPhase ~= "Playing" and lastPhase ~= "Extracting" then
+			chapterHadDown = false
+		end
+		local story = state:GetAttribute("GameMode") == "Story"
+		-- Só conta capítulo terminado jogando (a Continuação também passa Lost -> Intermission).
+		local finished = lastPhase == "Playing" or lastPhase == "Extracting"
+		if story and (phase == "Intermission" or phase == "Won") and finished then
+			-- Deixa o runtime publicar Roster/Stage do mesmo quadro.
+			task.defer(payChapter, state)
+		end
+		lastPhase = phase
+	end)
+end
+
 local RewardService = {
 	Name = "RewardService",
 }
 
 function RewardService.Start()
+	task.spawn(function()
+		local state = ReplicatedStorage:WaitForChild("CampaignState", 30)
+		if state then
+			watchStory(state)
+		end
+	end)
 	GameState.observe(function(snapshot, changed)
 		if changed == "Phase" and (snapshot.phase == "Won" or snapshot.phase == "Lost") then
 			-- Deixa o runtime terminar de publicar Roster/Stage do mesmo quadro.

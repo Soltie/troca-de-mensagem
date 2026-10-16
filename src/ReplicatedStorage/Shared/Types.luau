@@ -40,6 +40,14 @@ export type PlayerData = {
 	-- recompensas se referem (outra temporada zera tudo). free/premium = níveis cuja recompensa
 	-- já foi entregue em cada trilha; chave = nível em texto ("1".."30"), porque o DataStore salva JSON.
 	season: { id: string, xp: number, free: { [string]: boolean }, premium: { [string]: boolean } },
+	-- v4: vantagens pagas (regras em Shared/Game/Perks): nível de cada melhoria, estoque de
+	-- consumíveis, kit de uso automático e bônus de tempo (os.time em que acabam).
+	perks: { [string]: number },
+	consumables: { [string]: number },
+	loadout: { [string]: boolean },
+	boosts: { fichasUntil: number, xpUntil: number },
+	-- v4: modo história (Shared/Game/StoryRewards): capítulo -> os.time da 1ª vitória / da 1ª sem quedas.
+	story: { cleared: { [string]: number }, flawless: { [string]: number } },
 	-- Trava de sessão (um servidor por vez escreve os dados). Ver Server/Data/SessionLock.
 	sessionLock: { job: string, at: number }?,
 }

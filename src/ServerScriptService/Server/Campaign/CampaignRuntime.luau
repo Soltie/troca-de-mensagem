@@ -11,6 +11,7 @@ local Config = require("@game/ReplicatedStorage/Shared/Config")
 local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
 local Catalog = require("@game/ReplicatedStorage/Shared/Game/CampaignCatalog")
 local Modes = require("@game/ReplicatedStorage/Shared/Game/GameModes")
+local Perks = require("@game/ReplicatedStorage/Shared/Game/Perks")
 local Story = require("@game/ReplicatedStorage/Shared/Game/StoryCatalog")
 local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
 local Guard = require("@game/ReplicatedStorage/Shared/Net/Guard")
@@ -19,6 +20,9 @@ local ServerNet = require("../Net/ServerNet")
 local WorldService = require("../Services/WorldService")
 local CreatureService = require("../Services/CreatureService")
 local CollectibleService = require("../Services/CollectibleService")
+-- Vantagens pagas (Claude): Segunda Chance, tempo de resgate e Continuação.
+local PerkService = require("../Services/PerkService")
+local StoreService = require("../Services/StoreService")
 local Builder = require("./ActivityBuilder")
 local Build = require("../World/Build")
 local Session = require("./CoopSession")
@@ -374,9 +378,43 @@ local function hasSight(player: Player, focus: BasePart, range: number): boolean
 	return hit == nil or hit.Instance == focus or (hit.Position - focus.Position).Magnitude < 1.5
 end
 
+-- Consumível Segunda Chance (PerkService): levanta sem ajudante, com a mesma carência do resgate.
+local function selfRevive(player: Player, expectedVersion: number)
+	if expectedVersion ~= version or not player.Parent then
+		return
+	end
+	local now = workspace:GetServerTimeNow()
+	if not Session.selfRevive(session, player.UserId, now) then
+		return
+	end
+	player:SetAttribute("CampaignGraceUntil", now + C.ReviveGrace)
+	freeze(player, false)
+	local beacon = rescueParts[player.UserId]
+	if beacon then
+		beacon:Destroy()
+		rescueParts[player.UserId] = nil
+	end
+	for helperId, channel in channels do
+		if channel.target == player.UserId then
+			channels[helperId] = nil
+		end
+	end
+	feedback(player, "second_chance")
+	publish()
+end
+
 local function capture(player: Player)
 	local now = workspace:GetServerTimeNow()
-	if not Session.capture(session, player.UserId, now) then
+	local member = session.members[player.UserId]
+	if not member or member.status ~= "Active" or (session.phase ~= "Playing" and session.phase ~= "Extracting") then
+		return
+	end
+	-- Segunda Chance no kit (PerkService): gasta agora e agenda o levantar; a derrota espera a janela.
+	local captureVersion = version
+	local rising = PerkService.secondChance(player, function()
+		selfRevive(player, captureVersion)
+	end)
+	if not Session.capture(session, player.UserId, now, if rising then Perks.SECOND_CHANCE_DELAY + 2 else nil) then
 		return
 	end
 	freeze(player, true)
@@ -464,7 +502,10 @@ local function interact(player: Player, id: string, _action: string?): { accepte
 			end
 			channels[player.UserId] = {
 				target = targetId,
-				endsAt = now + (if member.role == "medic" then C.MedicReviveSeconds else C.ReviveSeconds),
+				-- Melhoria "Mãos de Socorrista" (nível publicado pelo StoreService) encurta o resgate.
+				endsAt = now
+					+ (if member.role == "medic" then C.MedicReviveSeconds else C.ReviveSeconds)
+						* Perks.factor("socorro", tonumber(player:GetAttribute("PerkSocorro")) or 0),
 			}
 			return response(true, "rescuing")
 		end
@@ -494,6 +535,30 @@ local function interact(player: Player, id: string, _action: string?): { accepte
 		end
 	end
 	return response(false, "not_available")
+end
+
+-- Consumível Continuação (StoreService "use_continue"): depois da derrota, a equipe repete a etapa.
+local function retryStage(player: Player): (boolean, string?)
+	if building or not session.members[player.UserId] then
+		return false, "not_member"
+	end
+	local ok, reason = Session.retryStage(session)
+	if not ok then
+		return false, reason
+	end
+	version += 1
+	clearRescues()
+	CreatureService.reset()
+	-- Nova "rodada" para recompensa e efeitos (a vitória depois da continuação também paga).
+	GameState.set("RoundId", version)
+	GameState.set("RoundEndedAt", 0)
+	nextStageAt = workspace:GetServerTimeNow() + C.IntermissionSeconds
+	for _, other in Players:GetPlayers() do
+		feedback(other, "continue_used")
+	end
+	publish()
+	log.info("%s used a continue: stage %d again", player.Name, session.stage + 1)
+	return true, nil
 end
 
 local function restartCampaign()
@@ -648,6 +713,7 @@ function Runtime.Init()
 end
 
 function Runtime.Start()
+	StoreService.setContinueHandler(retryStage)
 	ServerNet.onInvoke("SelectGameMode", {
 		args = { Guard.literal("Standard", "Story") },
 		rateLimit = { capacity = 4, refillPerSecond = 1 },
