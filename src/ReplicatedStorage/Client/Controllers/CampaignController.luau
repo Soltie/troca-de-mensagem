@@ -139,7 +139,8 @@ function Controller.Start()
 		end
 		title.Text = PixelText.normalize(`{stage}/3 {state:GetAttribute("Title") or ""} · {roleTitle}`)
 		if phase == "Lobby" then
-			objective.Text = "AGUARDANDO EQUIPE: 3–8 JOGADORES\nTAB: tarefas e equipe"
+			objective.Text =
+				`AGUARDANDO EQUIPE: {Config.Campaign.minPlayers}–{Config.Campaign.maxPlayers} JOGADORES\nTAB: tarefas e equipe`
 		elseif phase == "Intermission" then
 			local remaining =
 				math.max(0, math.ceil((state:GetAttribute("NextStageAt") or 0) - workspace:GetServerTimeNow()))

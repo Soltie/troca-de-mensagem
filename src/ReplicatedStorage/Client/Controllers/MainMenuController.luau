@@ -1164,7 +1164,10 @@ local function buildFriends(b: Frame)
 end
 
 local TITLES: { [string]: { string } } = {
-	play = { "ESCOLHA O TURNO", "A maioria da equipe decide. Com 3 ou mais pessoas, a contagem começa." },
+	play = {
+		"ESCOLHA O TURNO",
+		`A maioria da equipe decide. Com {Config.Campaign.minPlayers} ou mais pessoas, a contagem começa.`,
+	},
 	perks = { "MELHORIAS E CONSUMÍVEIS", "Vantagens que valem em todas as partidas. Compre com Fichas ou Créditos." },
 	servers = { "SERVIDORES", "Entre num lobby aberto ou numa partida com vaga." },
 	friends = { "AMIGOS", "Entre no servidor de um amigo ou chame a equipe." },

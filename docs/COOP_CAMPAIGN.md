@@ -25,7 +25,7 @@ não pode bloquear a saída, um item obrigatório ou todas as rotas de uma sala.
 randomiza conexões secundárias e pontos de atividade dentro da planta validada; isso não equivale
 a gerar prédios inteiramente novos. Novos layouts modulares entram após uma suíte de conectividade.
 
-## Regras para 3–8 pessoas
+## Regras para 2–8 pessoas
 
 - Progresso de campanha compartilhado; estado de vida, especialidade e contribuições por jogador.
 - Captura derruba só a vítima. Outro jogador pode resgatá-la; derrota só quando não restar ninguém

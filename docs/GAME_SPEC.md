@@ -1,14 +1,14 @@
 # GAME_SPEC — SUBESTAÇÃO 9
 
 > **Dois modos (16/10/2026):** menu inicial com **Modo História — O Último Turno** e
-> **Modo Padrão — partidas aleatórias**, ambos cooperativos de **3–8 jogadores**.
+> **Modo Padrão — partidas aleatórias**, ambos cooperativos de **2–8 jogadores**.
 > A maioria absoluta da equipe escolhe o modo deste servidor antes da contagem de início;
 > empate aguarda votos. História tem mapa autoral fixo, três capítulos, nove objetivos em ordem,
 > gravações legendadas e cenas cinematográficas. Padrão preserva os mapas/tarefas sorteados existentes.
 > Roteiro e implementação: [STORY_MODE.md](STORY_MODE.md). A descrição da campanha aleatória
 > e do protótipo solo abaixo continua como referência dos respectivos modos.
 
-> Direção atual (16/10/2026): campanha cooperativa de **3–8 jogadores**, três estágios,
+> Direção atual (16/10/2026): campanha cooperativa de **2–8 jogadores**, três estágios,
 > seed, atividades, atalhos e uma ala norte modular reconstruída por rodada/estágio.
 > A geração física está descrita em [MAP_RANDOMIZATION.md](MAP_RANDOMIZATION.md).
 > Especificação e estado de validação em

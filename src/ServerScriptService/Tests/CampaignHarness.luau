@@ -78,7 +78,7 @@ function Harness.run(runtime: any, args: any)
 		table.sort(players, function(a, b)
 			return a.UserId < b.UserId
 		end)
-		-- O lobby normal inicia com 3+. O setup de carga forma o lote inteiro antes da campanha medida.
+		-- O setup de carga forma o lote inteiro antes da campanha medida.
 		if runtime.snapshot().stage ~= 0 or runtime.snapshot().active ~= expected then
 			runtime.restart()
 		end

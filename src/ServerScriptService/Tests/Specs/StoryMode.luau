@@ -1,5 +1,6 @@
 --!strict
 local Session = require("@game/ServerScriptService/Server/Campaign/CoopSession")
+local Config = require("@game/ReplicatedStorage/Shared/Config")
 local Plan = require("@game/ServerScriptService/Server/Campaign/StoryPlan")
 local Generator = require("@game/ServerScriptService/Server/Campaign/CampaignGenerator")
 local Story = require("@game/ReplicatedStorage/Shared/Game/StoryCatalog")
@@ -11,6 +12,15 @@ local TableUtil = require("@game/ReplicatedStorage/Shared/Util/TableUtil")
 return {
 	name = "StoryMode",
 	run = function(t: TestKit.Context)
+		t.it("starts either mode only when both partners agree, and waits for a solo player", function()
+			local members = { [1] = {}, [2] = {} }
+			local minimum = Config.Campaign.minPlayers
+			t.expect((Modes.winner({ [1] = "Story" }, { [1] = {} }, minimum))).toBe(nil)
+			t.expect((Modes.winner({ [1] = "Story" }, members, minimum))).toBe(nil)
+			t.expect((Modes.winner({ [1] = "Story", [2] = "Standard" }, members, minimum))).toBe(nil)
+			t.expect((Modes.winner({ [1] = "Story", [2] = "Story" }, members, minimum))).toBe("Story")
+			t.expect((Modes.winner({ [1] = "Standard", [2] = "Standard" }, members, minimum))).toBe("Standard")
+		end)
 		t.it("requires the minimum team and an absolute majority; ignores outsider votes", function()
 			local votes: Modes.Votes = { [1] = "Story", [2] = "Story", [99] = "Standard" }
 			t.expect((Modes.winner(votes, { [1] = {}, [2] = {} }, 3))).toBe(nil)
@@ -28,7 +38,7 @@ return {
 		end)
 		t.it("keeps every room route objective and code fixed across chapters and party sizes", function()
 			local first = Plan.create(1, 3).sector
-			for players = 3, 8 do
+			for players = 2, 8 do
 				for stage = 1, 3 do
 					local plan = Plan.create(stage, players)
 					t.expect((Generator.validate(plan))).toBe(true)
@@ -38,12 +48,8 @@ return {
 			end
 		end)
 		t.it("plays all story chapters in order and reaches cooperative extraction", function()
-			for players = 3, 8 do
-				local state = Session.new(
-					Story.MapSeed,
-					{ minPlayers = 3, maxPlayers = 8, downedSeconds = 45, relayWindow = 12 },
-					"Story"
-				)
+			for players = 2, 8 do
+				local state = Session.new(Story.MapSeed, Config.Campaign, "Story")
 				for id = 1, players do
 					Session.join(state, id)
 				end

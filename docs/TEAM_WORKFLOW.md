@@ -1,5 +1,9 @@
 # Equipe de três pessoas — código, mundo e testes
 
+> Para o teste atual com duas pessoas e publicação de uma versão, seguir
+> [TESTAR_EM_DUPLA.md](TESTAR_EM_DUPLA.md). O mínimo atual é 2 em História e Padrão.
+> Os registros de implantação abaixo descrevem a configuração anterior; conferir acesso e sync atuais.
+
 Preparado em 15/10/2026. Fluxo recomendado para este repositório.
 
 ## Onde cada coisa fica

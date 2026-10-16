@@ -1,9 +1,10 @@
 --!strict
 local Session = require("@game/ServerScriptService/Server/Campaign/CoopSession")
+local Config = require("@game/ReplicatedStorage/Shared/Config")
 local TestKit = require("../TestKit")
 
 local function party(count: number, stage: number?): Session.State
-	local state = Session.new(9009, { minPlayers = 3, maxPlayers = 8, downedSeconds = 45, relayWindow = 12 })
+	local state = Session.new(9009, Config.Campaign)
 	for id = 1, count do
 		Session.join(state, id)
 	end
@@ -34,12 +35,12 @@ end
 local spec: TestKit.Spec = {
 	name = "CoopSession",
 	run = function(t)
-		t.it("waits for 3 players and refuses a ninth member", function()
-			local s = party(2)
+		t.it("waits for a partner, starts with two players and refuses a ninth member", function()
+			local s = party(1)
 			t.expect(s.phase).toBe("Lobby")
-			Session.join(s, 3)
+			Session.join(s, 2)
 			t.expect((Session.beginStage(s))).toBe(true)
-			for id = 4, 8 do
+			for id = 3, 8 do
 				t.expect((Session.join(s, id))).toBe(true)
 			end
 			t.expect((Session.join(s, 9))).toBe(false)
@@ -146,8 +147,8 @@ local spec: TestKit.Spec = {
 			t.expect((Session.voteRestart(s, 1))).toBe(false)
 			t.expect((Session.voteRestart(s, 2))).toBe(true)
 		end)
-		t.it("runs all stages for each party size from 3 to 8", function()
-			for size = 3, 8 do
+		t.it("runs all stages for each party size from 2 to 8", function()
+			for size = 2, 8 do
 				local s = party(size)
 				for stage = 1, 3 do
 					t.expect(s.stage).toBe(stage)

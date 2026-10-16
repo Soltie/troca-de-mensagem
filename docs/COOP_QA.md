@@ -1,5 +1,9 @@
 # Como testar a campanha cooperativa
 
+> Desde 16/10/2026, o mínimo é 2. A receita abaixo também aceita os dois valores `2`
+> no lugar de `3`, com marcador `CampaignQAResult2`. Para testar o menu História,
+> adicionar `storyQA = true, modeMenuQA = true` aos argumentos.
+
 Fonte: `src/ServerScriptService/Tests/CampaignHarness.luau` e documentação de
 [StudioTestService](https://create.roblox.com/docs/reference/engine/classes/StudioTestService).
 
@@ -42,7 +46,7 @@ marcador final, sem misturar avisos do UIBlox/CoreScripts com erros do projeto.
 ## O que o roteiro verifica
 
 - 3 ou 8 clientes do engine conectados, roster correspondente e posições de spawn distintas.
-- Setup forma o lote completo antes de reiniciar a campanha medida; o mínimo normal continua 3.
+- Setup forma o lote completo antes de reiniciar a campanha medida; o mínimo normal é 2.
 - Captura individual não encerra a rodada da equipe; outro cliente resgata via Interact e tempo real.
 - Pedido remoto distante é recusado sem alterar progresso.
 - Uma desconexão real de cliente **simulado** não perde a rodada; `AddPlayers(1)` substitui a vaga.
@@ -55,7 +59,7 @@ marcador final, sem misturar avisos do UIBlox/CoreScripts com erros do projeto.
 ## Testes que continuam separados
 
 `Specs/CampaignGenerator` verifica 3.600 planos, seed, conectividade lógica e rejeição de planos inválidos.
-`Specs/CoopSession` verifica grupos 3–8, resgate expirado, wipe, votos, concorrência/repetição,
+`Specs/CoopSession` verifica grupos 2–8, resgate expirado, wipe, votos, concorrência/repetição,
 desconexão, fallback do último sobrevivente e limpeza de uma equipe vazia.
 Esses testes puros não substituem a simulação com clientes.
 

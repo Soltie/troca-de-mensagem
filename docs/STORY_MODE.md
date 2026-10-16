@@ -1,12 +1,12 @@
 # Modo História — O Último Turno
 
 Direção e implementação inicial: 16/10/2026. SUBESTAÇÃO 9 continua com o **Modo Padrão**
-cooperativo aleatório existente e recebe um **Modo História**, ambos para **3–8 jogadores**.
+cooperativo aleatório existente e recebe um **Modo História**, ambos para **2–8 jogadores**.
 
 ## Entrada e escolha
 
 O menu aparece antes de a rodada começar. Cada integrante escolhe História ou Padrão;
-o servidor guarda um voto por pessoa. Com ao menos três integrantes e maioria absoluta,
+o servidor guarda um voto por pessoa. Com ao menos dois integrantes e maioria absoluta,
 começa a contagem de cinco segundos. Empate ou ausência de maioria aguarda votos.
 O voto pode mudar antes do início; repetição do mesmo voto não reinicia a contagem.
 Durante a partida, o servidor recusa trocas de modo. Ao terminar, a maioria vota com R
@@ -65,7 +65,7 @@ No rádio, uma última palavra: “Obrigado.”
 
 StoryPlan define explicitamente as nove salas da ala norte, suas orientações e onze
 conexões. Não chama o gerador aleatório. Usa o núcleo existente da subestação e a mesma
-planta em todos os capítulos e replays, para qualquer grupo de 3–8.
+planta em todos os capítulos e replays, para qualquer grupo de 2–8.
 As estações e códigos também são constantes. A reconstrução entre capítulos restaura
 o estado físico da mesma planta; não sorteia uma planta diferente. A semente de estado
 é fixa, 90312. O lobby anterior à escolha ainda usa o mundo base do servidor.
