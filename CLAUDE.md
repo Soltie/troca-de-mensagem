@@ -30,7 +30,16 @@ default.project.json                layout Rojo SÓ para `rojo sourcemap` e `roj
 scripts/*.luau                      tarefas em Lune (check, test, build, format, sourcemap)
 ```
 
-## Jogo atual: SUBESTAÇÃO 9 (protótipo de terror)
+## Jogo atual: TUNG TUNG SAHUR — THE CURSED HOUSE (terror leve para crianças)
+
+Estado e entrega do polish final: [docs/FINAL_POLISH.md](docs/FINAL_POLISH.md). A casa vem de
+`World/HouseBuilder`; cenário, terreno e móveis em `World/HouseScenery` e `World/HouseFurniture`.
+O Tung Tung é `ReplicatedStorage/Assets/TungTung.rbxm` animado por `Client/Creature/TungTungRig`
+(clipes gerados por `tools/tungtung/bake.js`; não editar `TungTungClips.luau` à mão).
+Moedas: `Server/Game/CoinPlan` (puro) + `CoinService` + `CoinController`. UI: `UI/Theme`, `UI/Juice`, `UI/FieldHud`.
+O `.rbxm` só entra em builds Rojo (`tools/reopen_qa.ps1` gera e abre `build/FinalPolish.rbxlx`).
+
+## Referência antiga: SUBESTAÇÃO 9 (protótipo de terror)
 
 Comece por `docs/HANDOFF.md` (estado, como jogar, problemas conhecidos) e `docs/GAME_SPEC.md`.
 

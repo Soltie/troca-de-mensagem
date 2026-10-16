@@ -1,4 +1,11 @@
-# GAME_SPEC — SUBESTAÇÃO 9
+# GAME_SPEC — TUNG TUNG SAHUR: THE CURSED HOUSE
+
+> **Versão atual (16/10/2026):** terror leve e cooperativo para crianças, 1–6 jogadores, numa casa
+> amaldiçoada de quatro níveis com jardim, floresta e cinco capítulos. O Tung Tung (modelo com esqueleto
+> e animações) patrulha, persegue a luz e bate "TUM TUM TUM" com o bastão. Moedas e uma gema por capítulo
+> dão Fichas e XP na hora; capítulos e vitória têm comemoração. A derrota repete o capítulo de graça.
+> Entrega e validação do polish final: [FINAL_POLISH.md](FINAL_POLISH.md).
+> O texto abaixo é a especificação histórica da Subestação 9, base de código reaproveitada.
 
 > **Dois modos (16/10/2026):** menu inicial com **Modo História — O Último Turno** e
 > **Modo Padrão — partidas aleatórias**, ambos cooperativos de **2–8 jogadores**.

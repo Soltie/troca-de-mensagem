@@ -20,7 +20,6 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
 local CinematicShots = require("@game/ReplicatedStorage/Shared/Game/CinematicShots")
-local PixelText = require("@game/ReplicatedStorage/Shared/Game/PixelText")
 local SettingsController = require("./SettingsController")
 local Create = require("../UI/Create")
 local Theme = require("../UI/Theme")
@@ -503,7 +502,7 @@ function TransitionController.stamp(label: string?, mode: StampMode?, clock: num
 	if clock then
 		stampClock = clock
 	end
-	ui.stampCamera.Text = PixelText.normalize(label)
+	ui.stampCamera.Text = label
 	ui.stamp.Visible = true
 end
 
@@ -516,8 +515,8 @@ function TransitionController.title(title: string?, subtitle: string?)
 		ui.subtitle.Visible = false
 		return
 	end
-	ui.title.Text = PixelText.normalize(title)
-	ui.subtitle.Text = if subtitle then PixelText.normalize(subtitle) else ""
+	ui.title.Text = title
+	ui.subtitle.Text = subtitle or ""
 	task.spawn(function()
 		local offsets: { number } = { 6, -3, 1, 0 }
 		if not SettingsController.motionEnabled() then
@@ -549,7 +548,7 @@ function TransitionController.caption(value: string?)
 		ui.caption.Visible = false
 		return
 	end
-	local normalized = PixelText.normalize(value)
+	local normalized = value
 	ui.caption.Visible = true
 	task.spawn(function()
 		local length = utf8.len(normalized) or #normalized

@@ -1,3 +1,8 @@
+**CLAUDE — POLISH FINAL TUNG TUNG (16/10/2026), branch `claude/final-polish` (worktree `.cache/final-polish`, base `codex/cursed-house` 20bf296).**
+Pedido do humano: polish geral para crianças + Tung Tung novo do zip. Relatório: `docs/FINAL_POLISH.md` (no branch).
+Studio próprio: `build/FinalPolish.rbxlx` do worktree (não uso Dev/Test/CasaAmaldicoada de outros). Sem push/publicação.
+Assets enviados com autorização: malha 111005002149644 + 4 texturas (ver tools/tungtung/README.md).
+
 **CLAUDE PAROU POR LIMITE (16/10/2026) — TRAILER DO JOGO: CODEX CONCLUI.** Tudo em [TRAILER.md](docs/TRAILER.md).
 Commitado: `TrailerController` (só Studio) + `Client/Trailer/TrailerActors` + `tools/trailer/*` + 1 linha no `Main.client`.
 Estado: janela do `build/Test.rbxlx` visível no 2º monitor; OBS fechado (perfil/coleção S9Trailer criados; os do usuário
