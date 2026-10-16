@@ -35,6 +35,9 @@ export type Interactable = FeatureBuilder.Interactable
 
 local log = Logger.new("WorldService")
 
+local HouseBuilder = require("../World/HouseBuilder")
+local House = require("@game/ReplicatedStorage/Shared/Game/HouseCatalog")
+local houseStage = 0
 local world: MapBuilder.World? = nil
 local features: FeatureBuilder.Built? = nil
 local fuseFolder: Instance? = nil
@@ -295,11 +298,15 @@ function WorldService.Init()
 	end
 	PhysicsService:CollisionGroupSetCollidable(MapBuilder.NAV_GROUP, "Default", false)
 	local started = os.clock()
-	world = MapBuilder.build(workspace)
+	if Config.House.Enabled then
+		world, features = HouseBuilder.build(workspace)
+	else
+		world = MapBuilder.build(workspace)
+		features = FeatureBuilder.build(getWorld().root)
+		ArtBuilder.build(getWorld().root)
+		WorldService.rebuildSector(ProceduralLayout.create(1, 1))
+	end
 	local built = getWorld()
-	features = FeatureBuilder.build(built.root)
-	ArtBuilder.build(built.root)
-	WorldService.rebuildSector(ProceduralLayout.create(1, 1))
 	local pickups = built.root:FindFirstChild("Pickups")
 	fuseFolder = if pickups then pickups:FindFirstChild("Fuses") else nil
 
@@ -336,11 +343,24 @@ function WorldService.features(): FeatureBuilder.Built
 end
 
 function WorldService.rebuildSector(plan: ProceduralLayout.Plan)
+	if Config.House.Enabled then
+		return
+	end
 	SectorBuilder.build(getWorld().root, plan)
 	sectorPlan = plan
 end
 
 function WorldService.patrolNodes(): { Layout.Point }
+	if Config.House.Enabled then
+		local points: { Layout.Point } = {}
+		for _, room in House.Rooms do
+			local accessible = room.y == 0 or (room.y > 0 and houseStage >= 3) or (room.y < 0 and houseStage >= 4)
+			if accessible and room.id ~= "Exterior" then
+				table.insert(points, { x = room.x, y = room.y, z = room.z })
+			end
+		end
+		return points
+	end
 	local nodes = table.clone(Layout.PatrolNodes)
 	if sectorPlan then
 		for _, point in ProceduralLayout.patrolPoints(sectorPlan) do
@@ -351,6 +371,9 @@ function WorldService.patrolNodes(): { Layout.Point }
 end
 
 function WorldService.creatureSpawns(): { Layout.Point }
+	if Config.House.Enabled then
+		return WorldService.patrolNodes()
+	end
 	local nodes = table.clone(Layout.CreatureSpawns)
 	if sectorPlan then
 		for _, room in sectorPlan.rooms do
@@ -365,6 +388,9 @@ function WorldService.spawnCFrame(): CFrame
 end
 
 function WorldService.checkpointCFrame(): CFrame
+	if Config.House.Enabled then
+		return WorldService.spawnCFrame()
+	end
 	local spot = Features.CheckpointSpawn
 	return CFrame.lookAt(vec(spot.position), vec(spot.lookAt))
 end
@@ -391,6 +417,21 @@ end
 function WorldService.resetRound(rng: Random, plan: ProceduralLayout.Plan?)
 	local w = getWorld()
 	local f = getFeatures()
+	if Config.House.Enabled then
+		for _, locker in f.lockers do
+			locker.occupant = nil
+			locker.door.CFrame = locker.doorClosed
+		end
+		for _, door in w.doors do
+			setLocked(door, false)
+			door.busy = false
+			animateDoor(door, "open", true)
+		end
+		w.gate.busy, w.gate.isOpen = false, false
+		w.gate.model:PivotTo(w.gate.closedPivot)
+		WorldService.setPower(false)
+		return
+	end
 	WorldService.rebuildSector(plan or ProceduralLayout.create(rng:NextInteger(1, 2147483646), 1))
 	for id, model in w.fuseModels do
 		local spots = Layout.FuseSpots[id]
@@ -669,7 +710,7 @@ function WorldService.closedDoorNear(position: Vector3, range: number): MapBuild
 	for _, door in getWorld().doors do
 		if not door.isOpen and not door.busy and not locked[door.id] then
 			local delta = door.center - position
-			if Vector3.new(delta.X, 0, delta.Z).Magnitude <= range then
+			if math.abs(delta.Y) < 10 and Vector3.new(delta.X, 0, delta.Z).Magnitude <= range then
 				return door
 			end
 		end
@@ -682,7 +723,7 @@ function WorldService.lockedDoorNear(position: Vector3, range: number): MapBuild
 	for _, door in getWorld().doors do
 		if locked[door.id] then
 			local delta = door.center - position
-			if Vector3.new(delta.X, 0, delta.Z).Magnitude <= range then
+			if math.abs(delta.Y) < 10 and Vector3.new(delta.X, 0, delta.Z).Magnitude <= range then
 				return door
 			end
 		end
@@ -740,12 +781,143 @@ function WorldService.openGate(): boolean
 end
 
 function WorldService.isInsideBuilding(position: Vector3): boolean
+	if Config.House.Enabled then
+		return math.abs(position.X) < 45
+			and position.Z > -85
+			and position.Z < 60
+			and position.Y > -18
+			and position.Y < 48
+	end
 	local inSector = sectorPlan ~= nil and ProceduralLayout.isIndoor(sectorPlan, position.X, position.Z)
 	return (Layout.isIndoor(position.X, position.Z) or inSector) and position.Y < Layout.CEILING
 end
 
 function WorldService.isInExitZone(position: Vector3): boolean
+	if Config.House.Enabled then
+		return math.abs(position.X) < 12
+			and position.Z > 101
+			and position.Z < 116
+			and position.Y > -1
+			and position.Y < 10
+	end
 	return Layout.inRect(Layout.ExitZone, position.X, position.Z)
+end
+
+function WorldService.setHouseStage(chapter: number)
+	houseStage = chapter
+	local architecture = getWorld().root:FindFirstChild("Architecture")
+	if architecture then
+		for _, part in architecture:GetChildren() do
+			if
+				part:IsA("BasePart")
+				and (string.find(part.Name, "Roof") or string.find(part.Name, "Facade") or part.Name == "RoomCeiling")
+			then
+				part.Transparency, part.CanCollide, part.CanQuery = 0, true, true
+			end
+		end
+	end
+	local gates = getWorld().root:FindFirstChild("MissionGates")
+	if gates then
+		for _, gate in gates:GetChildren() do
+			if gate:IsA("BasePart") then
+				local open = (gate.Name == "entry" and chapter == 1)
+					or (gate.Name == "corridor" and chapter >= 2)
+					or (gate.Name == "upstairs" and chapter >= 3)
+					or (gate.Name == "basement" and chapter >= 4)
+					or (gate.Name == "ritual" and chapter >= 5)
+				gate.CanCollide, gate.CanQuery, gate.Transparency = not open, not open, if open then 1 else 0
+				for _, child in gate:GetDescendants() do
+					if child:IsA("SurfaceGui") then
+						child.Enabled = not open
+					end
+				end
+			end
+		end
+	end
+	getWorld().spawnCFrame = CFrame.lookAt(Vector3.new(0, 3, if chapter == 1 then 77 else 2), Vector3.new(0, 3, -20))
+	WorldService.setHouseDestruction(false)
+end
+function WorldService.upperNoise()
+	local source = Build.part(
+		getWorld().root,
+		"UpperKnock",
+		Vector3.new(0.1, 0.1, 0.1),
+		CFrame.new(26, 21, 9),
+		Color3.new(0, 0, 0),
+		{ transparency = 1, collide = false, query = false }
+	)
+	local knock = Build.sound(source, "Knock", Audio.DoorBang.id, 0.7)
+	knock:Play()
+	game:GetService("Debris"):AddItem(source, 5)
+end
+function WorldService.houseEvent(event: string?)
+	if not event then
+		return
+	end
+	if event == "power" then
+		WorldService.setPower(true)
+	end
+	local gates = getWorld().root:FindFirstChild("MissionGates")
+	if gates and event == "destruction" then
+		local entry = gates:FindFirstChild("entry")
+		if entry and entry:IsA("BasePart") then
+			entry.CanCollide, entry.CanQuery, entry.Transparency = false, false, 1
+		end
+	end
+	local gate = gates and gates:FindFirstChild(event)
+	if gate and gate:IsA("BasePart") then
+		local closing = event == "entry"
+		gate.CanCollide, gate.CanQuery, gate.Transparency = closing, closing, if closing then 0 else 1
+		for _, child in gate:GetDescendants() do
+			if child:IsA("SurfaceGui") then
+				child.Enabled = false
+			end
+		end
+	end
+end
+function WorldService.houseRuins()
+	local architecture = getWorld().root:FindFirstChild("Architecture")
+	if architecture then
+		for _, part in architecture:GetChildren() do
+			if
+				part:IsA("BasePart")
+				and (string.find(part.Name, "Roof") or string.find(part.Name, "Facade") or part.Name == "RoomCeiling")
+			then
+				part.Transparency = 1
+				part.CanCollide, part.CanQuery = false, false
+			end
+		end
+	end
+end
+function WorldService.setHouseDestruction(on: boolean)
+	local w = getWorld()
+	local old = w.root:FindFirstChild("Destruction")
+	if old then
+		old:Destroy()
+	end
+	if not on then
+		return
+	end
+	local folder = Build.folder(w.root, "Destruction")
+	-- Fogo/entulho sao cenicos nas alas; a espinha de fuga nao e bloqueada.
+	for _, x in { -40, 40 } do
+		for _, z in { -72, -40, -8 } do
+			local ember = Build.block(
+				folder,
+				"BurningDebris",
+				Vector3.new(x, 0, z),
+				Vector3.new(3, 1, 3),
+				20,
+				Color3.fromRGB(85, 30, 20),
+				{ collide = false, query = false }
+			)
+			local fire = Instance.new("Fire")
+			fire.Size = 7
+			fire.Heat = 4
+			fire.Parent = ember
+			Build.light(ember, "Emergency", Color3.fromRGB(235, 65, 25), 30, 1.5, true)
+		end
+	end
 end
 
 return WorldService

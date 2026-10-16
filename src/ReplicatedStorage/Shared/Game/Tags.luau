@@ -29,7 +29,7 @@ local Tags = {
 	},
 
 	-- Nomes de instâncias criadas pelo servidor no Workspace.
-	WorldFolder = "Substation9",
+	WorldFolder = "CursedHouse",
 	CreatureModel = "Vigia",
 	CreatureRoot = "Root",
 }

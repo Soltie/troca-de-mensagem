@@ -2,9 +2,11 @@
 local Session = require("@game/ServerScriptService/Server/Campaign/CoopSession")
 local Config = require("@game/ReplicatedStorage/Shared/Config")
 local TestKit = require("../TestKit")
+local LegacyPolicy = table.clone(Config.Campaign)
+LegacyPolicy.minPlayers, LegacyPolicy.maxPlayers = 2, 8
 
 local function party(count: number, stage: number?): Session.State
-	local state = Session.new(9009, Config.Campaign)
+	local state = Session.new(9009, LegacyPolicy)
 	for id = 1, count do
 		Session.join(state, id)
 	end

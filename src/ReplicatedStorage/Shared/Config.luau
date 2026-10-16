@@ -12,8 +12,8 @@ local Config = {
 	Campaign = {
 		Enabled = true,
 		Seed = nil :: number?,
-		minPlayers = 2,
-		maxPlayers = 8,
+		minPlayers = 1,
+		maxPlayers = 6,
 		downedSeconds = 45,
 		relayWindow = 12,
 		LobbySeconds = 5,
@@ -31,6 +31,7 @@ local Config = {
 		ScoutRange = 40,
 	},
 	-- Nível mínimo de log exibido.
+	House = { Enabled = true, EscapeSeconds = 150, BreathKey = "Z", FalseExitChance = 0.2, FalseExitCooldown = 35 },
 	LogLevel = "Info" :: Types.LogLevel,
 
 	Net = {
@@ -45,13 +46,13 @@ local Config = {
 	Data = {
 		-- Nome base do DataStore. No Studio (modo real) recebe o sufixo "_Studio".
 		StoreName = "PlayerData_v1",
-		SchemaVersion = 4,
+		SchemaVersion = 5,
 		AutosaveInterval = 120,
 		RetryAttempts = 3,
 		RetryBaseDelay = 1,
 		-- Só afeta o Studio. "auto": usa DataStore real se houver acesso, senão mock.
 		-- "mock": sempre mock. "real": exige acesso (erro se não houver).
-		StudioMode = "auto" :: "auto" | "mock" | "real",
+		StudioMode = "mock" :: "auto" | "mock" | "real",
 		KickOnLoadFailure = true,
 		-- BindToClose tem ~30s no total; deixamos folga.
 		ShutdownTimeout = 25,
@@ -80,8 +81,8 @@ local Config = {
 	},
 
 	Player = {
-		WalkSpeed = 10,
-		SprintSpeed = 16,
+		WalkSpeed = 14,
+		SprintSpeed = 21,
 		CrouchSpeed = 5.5,
 		JumpHeight = 2.4,
 		FieldOfView = 72,
@@ -240,16 +241,16 @@ local Config = {
 		-- Agente de pathfinding (raio/altura). O corredor e as portas foram medidos para isto.
 		AgentRadius = 1.3,
 		AgentHeight = 7.6,
-		PatrolSpeed = 6,
+		PatrolSpeed = 9,
 		PatrolSpeedPerFuse = 0.7,
 		InvestigateSpeed = 9,
-		ChaseSpeed = 12.5,
+		ChaseSpeed = 17,
 		ChaseSpeedPerFuse = 0.5,
-		HuntSpeed = 13.5,
+		HuntSpeed = 17,
 		-- Visão: alcance no escuro / com a lanterna do jogador ligada; campo de visão (graus).
-		SightRange = 30,
-		SightRangeFlashlight = 55,
-		SightFov = 120,
+		SightRange = 35,
+		SightRangeFlashlight = 50,
+		SightFov = 100,
 		-- Abaixo desta distância ele percebe o jogador mesmo de costas (se houver linha de visão).
 		CloseSenseRange = 7,
 		-- Perde o rastro após este tempo (s) sem ver; segue a última posição por GraceTime (s).

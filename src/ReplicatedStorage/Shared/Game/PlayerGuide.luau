@@ -9,6 +9,7 @@ export type Activity = {
 	title: string?,
 	solved: boolean,
 	progress: number,
+	required: number?,
 	relayUntil: number?,
 	x: number?,
 	z: number?,
@@ -25,7 +26,21 @@ function Guide.current(tasks: { Activity }): (Activity?, number)
 end
 
 function Guide.instruction(activity: Activity, now: number, activePlayers: number?): string
-	if activity.kind == "repair" then
+	if activity.kind == "collect" then
+		return "Mire no objeto dourado e aperte E. A coleta vale para toda a equipe."
+	elseif activity.kind == "clue" then
+		return "Leia a pista no objeto e aperte E. Ela orienta o próximo puzzle."
+	elseif activity.kind == "explore" then
+		return "Atravesse o hall. A presença é confirmada pelo servidor."
+	elseif activity.kind == "hide" then
+		return "Mire no armário da biblioteca e aperte E. Apenas uma pessoa por esconderijo."
+	elseif activity.kind == "breath" then
+		return "No armário: segure Espaço ou Z/LB por 2s. Solte antes de O₂ zerar. E para sair."
+	elseif activity.kind == "puzzle" then
+		return `Leia a pista anterior. Aperte E nos símbolos, na ordem. {activity.progress}/{activity.required or 4}. Erros preservam os acertos.`
+	elseif activity.kind == "activate" then
+		return "Mire no mecanismo dourado e aperte E. Os itens essenciais já estão com a equipe."
+	elseif activity.kind == "repair" then
 		local actions = { "isolar circuito", "encaixar fusível", "testar energia" }
 		return `Mire no botão {activity.progress + 1} ({actions[activity.progress + 1] or "concluído"}) e aperte E. Progresso: {activity.progress}/3.`
 	elseif activity.kind == "sequence" then
@@ -45,12 +60,12 @@ end
 
 function Guide.objective(phase: string, status: string?, activity: Activity?): (string, string)
 	if phase == "Briefing" then
-		return "Prepare-se para o turno",
+		return "Prepare-se para entrar",
 			"Aguarde o fim da apresentação da equipe. O objetivo fica disponível após a contagem."
 	elseif phase == "Won" then
-		return "Equipe evacuada", "Turno encerrado. Aperte R para votar a volta ao menu com a equipe."
+		return "Equipe evacuada", "A casa ficou para trás. Aperte R para votar a volta ao menu com a equipe."
 	elseif phase == "Lost" then
-		return "O turno foi interrompido", "A equipe ficou fora de combate. Aperte R para votar uma nova tentativa."
+		return "Checkpoint em recuperação", "A equipe ficou fora de combate. Aperte R para votar uma nova tentativa."
 	elseif phase == "Intermission" then
 		return "Etapa concluída", "Aguarde o próximo setor. Colegas fora de combate retornam nesta transição."
 	elseif status == "Downed" then
@@ -63,7 +78,7 @@ function Guide.objective(phase: string, status: string?, activity: Activity?): (
 		return "Aguarde a equipe", "Você entra no próximo estágio. Use as setas para acompanhar os colegas ativos."
 	elseif phase == "Extracting" then
 		return "Reúnam a equipe no portão",
-			"O portão está liberado. Resgatem os colegas caídos e atravessem a saída no pátio de entrada."
+			"O portão está liberado. Resgatem os colegas caídos e atravessem a saída da floresta depois do hall."
 	elseif activity then
 		return activity.title or `Concluir {Catalog.KindNames[activity.kind] or "estação"}`,
 			`Vá até {Catalog.RoomNames[activity.room] or "o setor indicado"}.`
@@ -72,12 +87,14 @@ function Guide.objective(phase: string, status: string?, activity: Activity?): (
 end
 
 Guide.StageTips = {
-	"Reconexão: concluam as estações para avançar. A lanterna ajuda a enxergar, mas sua luz atrai o Vigia.",
-	"Sincronização: combinem quem confirma os relés. Corrida e outros ruídos podem atrair o Vigia.",
-	"Evacuação: concluam as últimas estações. Depois, reúnam os sobreviventes e saiam juntos pelo portão.",
+	"A Entrada: pegue a lanterna, encontre três chaves e abra a biblioteca.",
+	"Ele Acordou: restaure energia, aprenda a esconder e respirar antes de abrir os andares.",
+	"A Maldição: explore o sótão. O livro explica os quatro símbolos.",
+	"O Porão: leia as pistas antes de tentar o cofre. O código muda com a seed.",
+	"A Última Noite: coloque o artefato, ative o ritual e fuja em 150 segundos.",
 }
 Guide.SurvivalTips = {
-	"F alterna a lanterna. Se ouvir o Vigia, apague a luz e procure cobertura.",
+	"F alterna a lanterna. Se ouvir Tung Tung, apague a luz e procure cobertura.",
 	"C agacha. Shift corre e gasta fôlego; solte para recuperar. Correr faz mais barulho.",
 	"Colega caído? Aproxime-se, mire nele e aperte E. Fique perto e com visão até terminar o resgate.",
 	"As portas também usam E. Abra a passagem, procure as placas dos setores e acompanhe o objetivo marcado.",

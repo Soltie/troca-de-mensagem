@@ -2,7 +2,8 @@
 -- Estado puro da equipe. Só o adaptador do servidor verifica distância/visão e aplica efeitos físicos.
 local Catalog = require("@game/ReplicatedStorage/Shared/Game/CampaignCatalog")
 local Generator = require("./CampaignGenerator")
-local StoryPlan = require("./StoryPlan")
+local HousePlan = require("./HousePlan")
+local House = require("@game/ReplicatedStorage/Shared/Game/HouseCatalog")
 
 export type Status = "Active" | "Downed" | "Waiting" | "Escaped"
 export type Phase = "Lobby" | "Playing" | "Intermission" | "Extracting" | "Won" | "Lost"
@@ -25,6 +26,9 @@ export type TaskState = {
 }
 export type Policy = { minPlayers: number, maxPlayers: number, downedSeconds: number, relayWindow: number }
 export type State = {
+	house: boolean,
+	inventory: { [string]: number },
+	checkpointInventory: { [string]: number },
 	mode: string,
 	seed: number,
 	stage: number,
@@ -42,7 +46,7 @@ local function finite(n: number): boolean
 	return n == n and math.abs(n) < math.huge
 end
 
-function Session.new(seed: number, policy: Policy, mode: string?): State
+function Session.new(seed: number, policy: Policy, mode: string?, house: boolean?): State
 	assert(mode == nil or mode == "Standard" or mode == "Story", "Invalid game mode")
 	assert(finite(seed) and seed % 1 == 0, "Invalid campaign seed")
 	assert(
@@ -51,6 +55,9 @@ function Session.new(seed: number, policy: Policy, mode: string?): State
 	)
 	assert(policy.downedSeconds > 0 and policy.relayWindow > 0, "Invalid timer policy")
 	return {
+		house = house == true,
+		inventory = {},
+		checkpointInventory = {},
 		mode = mode or "Standard",
 		seed = seed,
 		stage = 0,
@@ -135,13 +142,19 @@ function Session.beginStage(state: State): (boolean, string?)
 	if count == 0 or (state.stage == 0 and count < state.policy.minPlayers) then
 		return false, "need_players"
 	end
-	if state.stage >= #Catalog.Stages then
+	if state.stage >= (if state.house then #House.Chapters else #Catalog.Stages) then
 		return false, "campaign_complete"
 	end
-	local plan = if state.mode == "Story"
-		then StoryPlan.create(state.stage + 1, count)
+	local plan = if state.house
+		then HousePlan.create(state.seed, state.stage + 1, count, state.mode)
 		else Generator.create(state.seed, state.stage + 1, count)
-	local valid, reason = Generator.validate(plan)
+	local valid: boolean, reason: string? = false, nil
+	if state.house then
+		valid, reason = HousePlan.validate(plan)
+	else
+		valid, reason = Generator.validate(plan)
+	end
+	state.checkpointInventory = table.clone(state.inventory)
 	if not valid then
 		return false, reason
 	end
@@ -176,14 +189,20 @@ function Session.act(state: State, id: number, taskId: string, button: number, n
 	if not member or member.status ~= "Active" then
 		return false, "not_active"
 	end
-	if not finite(now) or not finite(button) or button % 1 ~= 0 or button < 1 or button > 3 then
+	if
+		not finite(now)
+		or not finite(button)
+		or button % 1 ~= 0
+		or button < 1
+		or button > (if state.house then 4 else 3)
+	then
 		return false, "invalid_action"
 	end
 	local activity = state.tasks[taskId]
 	if not activity or activity.solved then
 		return false, "not_available"
 	end
-	if state.mode == "Story" and state.plan then
+	if (state.house or state.mode == "Story") and state.plan then
 		for _, previous in state.plan.activities do
 			if previous.id == taskId then
 				break
@@ -195,7 +214,23 @@ function Session.act(state: State, id: number, taskId: string, button: number, n
 	end
 	local kind = activity.spec.kind
 	local result = "progress"
-	if kind == "repair" then
+	if state.house then
+		if kind == "puzzle" then
+			if activity.spec.order[activity.progress + 1] ~= button then
+				return false, "wrong_sequence"
+			end
+			activity.progress += 1
+			activity.solved = activity.progress >= #activity.spec.order
+		else
+			if button ~= 1 then
+				return false, "invalid_action"
+			end
+			activity.progress, activity.solved = 1, true
+		end
+		if activity.solved and activity.spec.item then
+			state.inventory[activity.spec.item] = 1
+		end
+	elseif kind == "repair" then
 		if button ~= activity.progress + 1 then
 			return false, "repair_order"
 		end
@@ -235,7 +270,9 @@ function Session.act(state: State, id: number, taskId: string, button: number, n
 	end
 	local plan = state.plan
 	if plan and Session.solvedCount(state) == #plan.activities then
-		state.phase = if state.stage == #Catalog.Stages then "Extracting" else "Intermission"
+		state.phase = if state.stage == (if state.house then #House.Chapters else #Catalog.Stages)
+			then "Extracting"
+			else "Intermission"
 	end
 	return true, result
 end
@@ -256,6 +293,16 @@ function Session.capture(state: State, id: number, now: number, rising: number?)
 			activity.relayBy, activity.relayUntil, activity.progress = nil, 0, 0
 		end
 	end
+	evaluate(state)
+	return true
+end
+
+function Session.eliminate(state: State, id: number): boolean
+	local member = state.members[id]
+	if not member or member.status ~= "Active" then
+		return false
+	end
+	member.status, member.risingUntil = "Waiting", nil
 	evaluate(state)
 	return true
 end
@@ -297,6 +344,7 @@ function Session.retryStage(state: State): (boolean, string?)
 	if state.stage < 1 then
 		return false, "not_available"
 	end
+	state.inventory = table.clone(state.checkpointInventory)
 	state.stage -= 1
 	state.phase = "Intermission"
 	state.votes = {}

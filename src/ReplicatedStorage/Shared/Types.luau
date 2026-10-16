@@ -47,6 +47,13 @@ export type PlayerData = {
 	loadout: { [string]: boolean },
 	boosts: { fichasUntil: number, xpUntil: number },
 	-- v4: modo história (Shared/Game/StoryRewards): capítulo -> os.time da 1ª vitória / da 1ª sem quedas.
+	house: {
+		preferences: { [string]: number },
+		cleared: { [string]: number },
+		flawless: { [string]: number },
+		endings: { [string]: number },
+		achievements: { [string]: number },
+	},
 	story: { cleared: { [string]: number }, flawless: { [string]: number } },
 	-- Trava de sessão (um servidor por vez escreve os dados). Ver Server/Data/SessionLock.
 	sessionLock: { job: string, at: number }?,

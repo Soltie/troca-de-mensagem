@@ -8,8 +8,9 @@
 ]]
 
 local Poses = require("./Poses")
-local AdemirPortrait = require("./AdemirPortrait")
-local UniformDetails = require("./UniformDetails")
+
+local UniformDetails = table.clone(require("./UniformDetails"))
+table.clear(UniformDetails)
 
 export type Rig = {
 	model: Model,
@@ -21,22 +22,23 @@ export type Rig = {
 }
 
 local rgb = Color3.fromRGB
-local SKIN = rgb(150, 150, 140)
-local COAT = rgb(34, 38, 46)
-local PANTS = rgb(26, 26, 28)
+local SKIN = rgb(137, 82, 39)
+local COAT = rgb(105, 60, 29)
+local PANTS = rgb(89, 50, 26)
 local BOOT = rgb(14, 14, 14)
 local EYE = rgb(255, 244, 214)
 
 -- Nome -> tamanho, cor, material
 local PARTS: { [string]: { size: Vector3, color: Color3, neon: boolean? } } = {
+	Baton = { size = Vector3.new(0.45, 3.5, 0.45), color = rgb(76, 42, 20) },
 	Pelvis = { size = Vector3.new(1.3, 0.7, 0.75), color = COAT },
-	Torso = { size = Vector3.new(1.55, 2.5, 0.85), color = COAT },
-	Skirt = { size = Vector3.new(1.75, 1.9, 1.0), color = COAT },
+	Torso = { size = Vector3.new(1.8, 2.5, 1.2), color = COAT },
+	Skirt = { size = Vector3.new(1.2, 0.5, 0.8), color = COAT },
 	Collar = { size = Vector3.new(1.3, 0.35, 0.95), color = rgb(48, 52, 60) },
 	Neck = { size = Vector3.new(0.35, 0.55, 0.35), color = SKIN },
-	Head = { size = Vector3.new(0.85, 1.1, 0.85), color = SKIN },
-	EyeL = { size = Vector3.new(0.17, 0.08, 0.05), color = EYE, neon = true },
-	EyeR = { size = Vector3.new(0.17, 0.08, 0.05), color = EYE, neon = true },
+	Head = { size = Vector3.new(2.2, 1.5, 1.5), color = SKIN },
+	EyeL = { size = Vector3.new(0.23, 0.23, 0.1), color = EYE, neon = true },
+	EyeR = { size = Vector3.new(0.23, 0.23, 0.1), color = EYE, neon = true },
 	Mouth = { size = Vector3.new(0.07, 0.42, 0.05), color = rgb(8, 8, 8) },
 	UpperArmL = { size = Vector3.new(0.42, 1.8, 0.42), color = COAT },
 	UpperArmR = { size = Vector3.new(0.42, 1.8, 0.42), color = COAT },
@@ -67,7 +69,7 @@ function Rig.build(parent: Instance): Rig
 		part.Name = name
 		part.Size = spec.size
 		part.Color = spec.color
-		part.Material = if spec.neon then Enum.Material.Neon else Enum.Material.SmoothPlastic
+		part.Material = if spec.neon then Enum.Material.Neon else Enum.Material.Wood
 		part.Anchored = true
 		part.CanCollide = false
 		part.CanQuery = false
@@ -89,7 +91,9 @@ function Rig.build(parent: Instance): Rig
 	light.Brightness = 0.9
 	light.Shadows = false
 	light.Parent = head
-	AdemirPortrait.applyToRig(parts, light)
+	local woodenHead = parts.Head :: Part
+	woodenHead.Shape = Enum.PartType.Cylinder
+	parts.Mouth.Size = Vector3.new(0.6, 0.55, 0.08)
 	for _, detail in UniformDetails do
 		local part = Instance.new("Part")
 		part.Name = detail.name
@@ -126,10 +130,10 @@ function Rig.solve(rig: Rig, base: CFrame, pose: Poses.Pose, extraNeckYaw: numbe
 		* CFrame.Angles(rad(pose.neck), rad(pose.neckYaw + extraNeckYaw), rad(pose.neckRoll))
 	cf.Neck = neck * CFrame.new(0, 0.2, 0)
 	local head = neck * CFrame.new(0, 0.9, -0.12)
-	cf.Head = head
-	cf.EyeL = head * CFrame.new(-0.2, 0.12, -0.43)
-	cf.EyeR = head * CFrame.new(0.2, 0.12, -0.43)
-	cf.Mouth = head * CFrame.new(0, -0.27, -0.43)
+	cf.Head = head * CFrame.Angles(0, 0, math.rad(90))
+	cf.EyeL = head * CFrame.new(-0.2, 0.12, -0.8)
+	cf.EyeR = head * CFrame.new(0.2, 0.12, -0.8)
+	cf.Mouth = head * CFrame.new(0, -0.27, -0.8)
 
 	for _, side in { "L", "R" } do
 		local sign = if side == "L" then -1 else 1
@@ -157,6 +161,7 @@ function Rig.solve(rig: Rig, base: CFrame, pose: Poses.Pose, extraNeckYaw: numbe
 	for _, detail in UniformDetails do
 		cf[detail.name] = cf[detail.anchor] * detail.offset
 	end
+	cf.Baton = cf.HandR * CFrame.new(0, -0.4, -1.1) * CFrame.Angles(math.rad(40), 0, 0)
 	local list = table.create(#rig.order)
 	for index, part in rig.order do
 		list[index] = cf[part.Name] or base

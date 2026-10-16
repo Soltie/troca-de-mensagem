@@ -194,12 +194,13 @@ local function publish(player: Player)
 	player:SetAttribute("BoostXpUntil", data.boosts.xpUntil)
 	local cleared: { number } = {}
 	local flawless: { number } = {}
-	for key in data.story.cleared do
+	for key in data.house.cleared do
 		table.insert(cleared, tonumber(key) or 0)
 	end
-	for key in data.story.flawless do
+	for key in data.house.flawless do
 		table.insert(flawless, tonumber(key) or 0)
 	end
+	player:SetAttribute("HousePreferences", HttpService:JSONEncode(data.house.preferences))
 	player:SetAttribute("StoryProgress", HttpService:JSONEncode({ cleared = cleared, flawless = flawless }))
 	player:SetAttribute("StoryPass", ownsPass(player, StoreCatalog.StoryPassKey))
 	player:SetAttribute("StoreReady", true)

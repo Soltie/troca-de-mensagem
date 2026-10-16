@@ -17,8 +17,8 @@ local Character = require("./CharacterController")
 local player = Players.LocalPlayer
 local Controller = { Name = "CampaignController" }
 local messages: { [string]: string } = {
-	progress = "ETAPA CONFIRMADA. SIGA O PRÓXIMO BOTÃO NA ESTAÇÃO.",
-	solved = "ESTAÇÃO CONCLUÍDA. OBJETIVO ATUALIZADO.",
+	progress = "SÍMBOLO CONFIRMADO. SIGA A PISTA.",
+	solved = "OBJETIVO CONCLUÍDO.",
 	need_partner = "CHAME UM COLEGA: ELE PRECISA CONFIRMAR NESTE MESMO RELÉ.",
 	wrong_sequence = "BOTÃO INCORRETO. SEUS ACERTOS CONTINUAM SALVOS; SIGA A PLACA.",
 	repair_order = "SIGA O BOTÃO ACESO: ISOLAR, ENCAIXAR FUSÍVEL E TESTAR.",
@@ -32,6 +32,9 @@ local messages: { [string]: string } = {
 	party_full = "EQUIPE COMPLETA. AGUARDE UMA VAGA.",
 	restarting = "NOVA CAMPANHA.",
 	wait = "AGUARDE UM INSTANTE.",
+	occupied = "ESCONDERIJO OCUPADO.",
+	hide_enter = "E: SAIR · ESPAÇO/Z/LB: RESPIRAÇÃO",
+	hide_exit = "VOCÊ SAIU DO ESCONDERIJO.",
 	not_available = "AÇÃO INDISPONÍVEL NESTE MOMENTO.",
 	not_playing = "AGUARDE O PRÓXIMO ESTÁGIO.",
 	door_opened = "PASSAGEM LIBERADA.",
@@ -48,6 +51,15 @@ function Controller.Start()
 	assert(state, "[CampaignUI] missing campaign state")
 	local ui = Hud.build(player:WaitForChild("PlayerGui"))
 	local helpOpen, teamHeld = false, false
+	local actions = game:GetService("ContextActionService")
+	actions:BindAction("HouseGuideTouch", function(_, inputState)
+		if inputState == Enum.UserInputState.Begin then
+			helpOpen = not helpOpen
+		end
+		return Enum.ContextActionResult.Sink
+	end, true, Enum.KeyCode.ButtonSelect)
+	actions:SetTitle("HouseGuideTouch", "GUIA / EQUIPE")
+	actions:SetPosition("HouseGuideTouch", UDim2.new(1, -175, 0, 55))
 	ui.close.Activated:Connect(function()
 		helpOpen, teamHeld = false, false
 	end)
@@ -140,16 +152,16 @@ function Controller.Start()
 				roleTitle, roleDescription = role.title, role.description
 			end
 		end
-		ui.chapter.Text = `{if story then "HISTÓRIA / CAPÍTULO" else "PADRÃO / ETAPA"} {stage}/3  ·  {roleTitle}`
+		ui.chapter.Text = `{if story then "HISTÓRIA / CAPÍTULO" else "PADRÃO / ETAPA"} {stage}/5  ·  {roleTitle}`
 		ui.title.Text = title
 		ui.destination.Text = if active and activity
 			then `SETOR / {Catalog.RoomNames[activity.room] or activity.room}`
-			else "SUBESTAÇÃO 9 / ORDEM DE SERVIÇO"
+			else "CASA AMALDIÇOADA"
 		ui.action.Text = if active and activity then Guide.instruction(activity, now, activePlayers) else detail
 		ui.progress.Text = if active
-			then `{state:GetAttribute("Solved") or 0}/{state:GetAttribute("Total") or 0} ESTAÇÕES  ·  {if story
+			then `{state:GetAttribute("Solved") or 0}/{state:GetAttribute("Total") or 0} OBJETIVOS  ·  {if story
 				then "SIGA A ORDEM"
-				else "ORDEM LIVRE"}`
+				else "ITENS VARIÁVEIS"}`
 			else detail
 		if phase == "Intermission" then
 			local remaining = math.max(
@@ -176,7 +188,7 @@ function Controller.Start()
 		ui.tipPanel.Visible = active and not ui.dossier.Visible and camera.ViewportSize.Y / factor >= 570
 		local tipAge = os.clock() - stageAt
 		ui.tip.Text = if tipAge < 16
-			then Guide.StageTips[math.clamp(stage, 1, 3)]
+			then Guide.StageTips[math.clamp(stage, 1, #Guide.StageTips)]
 			else Guide.SurvivalTips[(math.floor((tipAge - 16) / 18) % #Guide.SurvivalTips) + 1]
 		if downed and active then
 			ui.tip.Text =
@@ -185,19 +197,34 @@ function Controller.Start()
 		local stamina, maximum = Character.getStamina()
 		local battery = player:GetAttribute("Battery")
 		local percent = math.floor(math.clamp(if type(battery) == "number" then battery else 0, 0, 1) * 100)
-		ui.equipment.Text =
-			`LUZ {percent}%  ·  FÔLEGO {math.floor(math.clamp(stamina / maximum, 0, 1) * 100)}%  ·  {if player:GetAttribute(
-					"Stance"
-				) == "Crouch"
-				then "AGACHADO"
-				else "EM PÉ"}`
+		ui.equipment.Text = `O₂ {player:GetAttribute("Oxygen") or 100}% · LUZ {percent}%  ·  FÔLEGO {math.floor(
+			math.clamp(stamina / maximum, 0, 1) * 100
+		)}%  ·  {if player:GetAttribute("Stance") == "Crouch" then "AGACHADO" else "EM PÉ"}`
+		if phase == "Extracting" then
+			ui.action.Text = `FUJA PELO HALL / FLORESTA · {math.max(
+				0,
+				math.ceil(((state:GetAttribute("EscapeEndsAt") or 0) :: number) - now)
+			)}s`
+		end
+		ui.equipment.TextColor3 = if (tonumber(player:GetAttribute("Oxygen")) or 100) < 25
+			then Color3.fromRGB(255, 100, 80)
+			else Color3.fromRGB(230, 216, 180)
+		local inventory = HttpService:JSONDecode((state:GetAttribute("Inventory") or "{}") :: string)
+		local stock = HttpService:JSONDecode((player:GetAttribute("HouseSupplies") or "{}") :: string)
+		local keys = (inventory.key_living or 0) + (inventory.key_kitchen or 0) + (inventory.key_dining or 0)
+		local fuses = (inventory.fuse_1 or 0) + (inventory.fuse_2 or 0) + (inventory.fuse_3 or 0)
+		ui.inventory.Text =
+			`CHAVES {keys}/3 · FUSÍVEIS {fuses}/3 · ARTEFATO {inventory.artifact or 0}\n1 PILHA {stock.battery or 0} · 2 O₂ {stock.oxygen or 0} · 3 ISCA {stock.decoy or 0}`
+		if (tonumber(player:GetAttribute("Oxygen")) or 100) < 15 then
+			ui.progress.Text = "OXIGÊNIO CRÍTICO / SOLTE A RESPIRAÇÃO"
+		end
 		ui.footer.Visible = status == "Active"
 		if ui.dossier.Visible then
 			local lines = {
 				`SEU PAPEL / {roleTitle}\n{roleDescription}`,
 				if story
-					then "MISSÃO\nConcluam as estações na ordem abaixo. O objetivo marcado é o próximo passo. São três capítulos; no último, saiam pelo portão."
-					else "MISSÃO\nConcluam todas as estações do setor em qualquer ordem. O marcador sugere uma delas. São três etapas; no final, saiam pelo portão.",
+					then "MISSÃO\nConcluam os objetivos na ordem abaixo. O objetivo marcado é o próximo passo. São cinco capítulos; no último, saiam pelo portão."
+					else "MISSÃO\nExplorem a casa e concluam os objetivos marcados. O marcador sugere uma delas. São cinco capítulos; no final, saiam pelo portão.",
 				"PROCEDIMENTO DA EQUIPE",
 			}
 			for n, item in tasks do
@@ -218,7 +245,7 @@ function Controller.Start()
 				table.insert(lines, `{member.name}: {statusTitles[member.status] or member.status}{remaining}`)
 			end
 			if roleId == "scout" and active then
-				local world = workspace:FindFirstChild("Substation9")
+				local world = workspace:FindFirstChild("CursedHouse")
 				local stations = world and world:FindFirstChild("CampaignActivities")
 				local character = player.Character
 				if stations and character then
@@ -238,7 +265,7 @@ function Controller.Start()
 			table.insert(lines, "SOBREVIVÊNCIA\n" .. table.concat(Guide.SurvivalTips, "\n\n"))
 			table.insert(
 				lines,
-				"CONTROLES\nWASD mover · E interagir · F lanterna\nShift correr · C agachar\nH abrir/fechar guia · segure TAB para equipe\nSetas: trocar colega no modo espectador"
+				"CONTROLES\nWASD mover · E interagir · F lanterna\nShift correr · C agachar · Z/LB respirar\n1 pilha · 2 oxigênio · 3 isca\nH abrir/fechar guia · segure TAB para equipe\nSetas: trocar colega no modo espectador"
 			)
 			ui.pages.Text = table.concat(lines, "\n\n")
 			local bounds =
@@ -247,7 +274,7 @@ function Controller.Start()
 		end
 		ui.waypoint.Visible = active and activity ~= nil and not ui.dossier.Visible
 		if ui.waypoint.Visible and activity then
-			local world = workspace:FindFirstChild("Substation9")
+			local world = workspace:FindFirstChild("CursedHouse")
 			local stations = world and world:FindFirstChild("CampaignActivities")
 			local model = stations and stations:FindFirstChild(activity.id)
 			local station = model and model:FindFirstChild("Station")
@@ -301,7 +328,17 @@ function Controller.Start()
 				end
 				local request = HttpService:JSONDecode(command)
 				task.spawn(function()
-					Remotes.clientFunction("Interact", 10):InvokeServer(request.id)
+					local result: any
+					if request.breath ~= nil then
+						Remotes.clientEvent("SetHoldBreath", 10):FireServer(request.breath)
+						result = { ok = true }
+					else
+						result = Remotes.clientFunction("Interact", 10):InvokeServer(request.id)
+					end
+					player:SetAttribute(
+						"CampaignQAResponse",
+						HttpService:JSONEncode({ serial = request.serial, result = result })
+					)
 				end)
 			end
 			player:GetAttributeChangedSignal("CampaignQARequest"):Connect(qaRequest)

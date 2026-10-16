@@ -16,7 +16,11 @@ return {
 			state.stage = stage - 1
 			Session.beginStage(state)
 			local ok, reason = pcall(function()
-				local built = Builder.build(root, state.plan :: any, 9)
+				local plan = state.plan :: any
+				if mode == "Story" then
+					plan.mode = "Story"
+				end
+				local built = Builder.build(root, plan, 9)
 				run(built, state)
 			end)
 			root:Destroy()

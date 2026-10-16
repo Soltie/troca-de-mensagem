@@ -59,7 +59,7 @@ local NAV: { { id: TabId, label: string } } = {
 local STORE_TABS: { [string]: string } = { store = "shop", season = "season", daily = "daily" }
 local TIPS = {
 	"APAGUE A LANTERNA QUANDO OUVIR OS PASSOS.",
-	"AGACHADO VOCÊ FAZ MENOS BARULHO E O VIGIA TE VÊ DE MAIS PERTO.",
+	"AGACHADO VOCÊ FAZ MENOS BARULHO E TUNG TUNG TE VÊ DE MAIS PERTO.",
 	"UM COLEGA CAÍDO PODE SER RESGATADO: FIQUE PERTO E COM VISÃO.",
 	"SEGUNDA CHANCE NO KIT: VOCÊ LEVANTA SOZINHO UMA VEZ POR ETAPA.",
 	"FITAS VHS DÃO FICHAS PARA A EQUIPE TODA.",
@@ -256,6 +256,11 @@ local function store(action: string, arg: string?): any
 end
 
 local function buyProduct(key: string)
+	local product = StoreCatalog.ProductByKey[key]
+	if not product or product.id <= 0 then
+		say("INDISPONÍVEL NESTA BUILD")
+		return
+	end
 	store("buy_product", key)
 end
 
@@ -422,14 +427,14 @@ local function buildPlay(b: Frame)
 		1,
 		"Story",
 		"01 · MODO HISTÓRIA",
-		"O ÚLTIMO TURNO",
-		"A origem do Vigia em 3 capítulos. Mapa fixo, cenas e objetivos em ordem.",
+		"THE CURSED HOUSE",
+		"Uma casa amaldiçoada em 5 capítulos. Solo ou equipe de até 6.",
 		function(card)
 			for chapter = 1, #StoryRewards.Chapters do
 				local done = cleared[chapter] == true
 				local box = frame({
-					Position = UDim2.fromOffset((chapter - 1) * 92, 104),
-					Size = UDim2.fromOffset(84, 40),
+					Position = UDim2.new((chapter - 1) / 5, 0, 0, 104),
+					Size = UDim2.new(1 / 5, -6, 0, 40),
 					BackgroundColor3 = if done then Color3.fromRGB(46, 40, 22) else Color3.fromRGB(24, 28, 30),
 					Parent = card,
 				}, { stroke(if done then Theme.Hazard else Theme.TextDim, 1, if done then 0 else 0.6) })
@@ -475,7 +480,9 @@ local function buildPlay(b: Frame)
 					Name = "StoryPass",
 					Position = UDim2.fromOffset(0, 186),
 					Size = UDim2.new(1, 0, 0, 22),
-					Text = `PASSE DA HISTÓRIA: RECOMPENSAS x2 · R$ {pass.robux}`,
+					Text = if pass.id > 0
+						then `PASSE DA HISTÓRIA: RECOMPENSAS x2 · R$ {pass.robux}`
+						else "PASSE INDISPONÍVEL",
 					TextSize = Theme.SizeSmall,
 					BackgroundTransparency = 0.4,
 					Parent = card,
@@ -491,7 +498,7 @@ local function buildPlay(b: Frame)
 		"Standard",
 		"02 · MODO CO-OP",
 		"MAIS UMA NOITE",
-		"Mapas e tarefas sorteados a cada etapa. 3 etapas, papéis na equipe e o Vigia caçando.",
+		"A mesma casa, com itens e códigos variáveis. 5 capítulos, 1–6 jogadores.",
 		function(card)
 			local lines = {
 				"RECOMPENSA: FICHAS E XP POR ETAPA, FUGA E AJUDA À EQUIPE",
@@ -536,7 +543,9 @@ local function buildPlay(b: Frame)
 				Name = "Boost",
 				Position = UDim2.fromOffset(0, 186),
 				Size = UDim2.new(1, 0, 0, 22),
-				Text = `FICHAS E XP x2 POR 3 HORAS · R$ {product.robux}`,
+				Text = if product.id > 0
+					then `FICHAS E XP x2 POR 3 HORAS · R$ {product.robux}`
+					else "BÔNUS INDISPONÍVEL",
 				TextSize = Theme.SizeSmall,
 				BackgroundTransparency = 0.4,
 				Parent = card,
@@ -895,7 +904,7 @@ local function buildPerks(b: Frame)
 				AnchorPoint = Vector2.new(0.5, 1),
 				Position = UDim2.new(0.5, 0, 1, -8),
 				Size = UDim2.new(1, -20, 0, 24),
-				Text = `R$ {product.robux}`,
+				Text = if product.id > 0 then `R$ {product.robux}` else "INDISPONÍVEL",
 				TextSize = Theme.SizeSmall,
 				BackgroundColor3 = Color3.fromRGB(28, 44, 30),
 				Accent = GREEN,
@@ -1140,7 +1149,7 @@ local function buildFriends(b: Frame)
 		label({
 			Position = UDim2.fromOffset(58, 26),
 			Size = UDim2.new(1, -230, 0, 18),
-			Text = if here then "NA SUBESTAÇÃO 9" else tostring(friend.LastLocation or "ONLINE"),
+			Text = if here then "NA TUNG TUNG SAHUR" else tostring(friend.LastLocation or "ONLINE"),
 			TextSize = Theme.SizeSmall,
 			TextColor3 = if here then GREEN else Theme.TextDim,
 			Parent = row,
@@ -1165,7 +1174,7 @@ end
 
 local TITLES: { [string]: { string } } = {
 	play = {
-		"ESCOLHA O TURNO",
+		"ESCOLHA A CAMPANHA",
 		`A maioria da equipe decide. Com {Config.Campaign.minPlayers} ou mais pessoas, a contagem começa.`,
 	},
 	perks = { "MELHORIAS E CONSUMÍVEIS", "Vantagens que valem em todas as partidas. Compre com Fichas ou Créditos." },
@@ -1272,14 +1281,14 @@ local function build(): ScreenGui
 	label({
 		Position = UDim2.fromOffset(0, 26),
 		Size = UDim2.new(1, 0, 0, 58),
-		Text = "SUBESTAÇÃO 9",
+		Text = "TUNG TUNG SAHUR",
 		TextSize = 52,
 		Parent = left,
 	})
 	label({
 		Position = UDim2.fromOffset(0, 86),
 		Size = UDim2.new(1, 0, 0, 18),
-		Text = "O VIGIA AINDA ESTÁ NO TURNO",
+		Text = "A CASA ESTÁ ESPERANDO",
 		TextSize = Theme.SizeSmall,
 		TextColor3 = Theme.Hazard,
 		Parent = left,
@@ -1386,7 +1395,7 @@ local function build(): ScreenGui
 		AnchorPoint = Vector2.new(1, 1),
 		Position = UDim2.new(1, -12, 1, -12),
 		Size = UDim2.fromOffset(124, 40),
-		Text = `R$ {kitProduct.robux}`,
+		Text = if kitProduct.id > 0 then `R$ {kitProduct.robux}` else "INDISPONÍVEL",
 		TextSize = Theme.SizeLarge,
 		Accent = GREEN,
 		BackgroundColor3 = Color3.fromRGB(28, 44, 30),

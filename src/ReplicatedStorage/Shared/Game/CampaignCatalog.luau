@@ -90,4 +90,9 @@ local Catalog = {
 	} :: { Link },
 }
 
+local House = require("./HouseCatalog")
+local roomNames: { [string]: string } = Catalog.RoomNames
+for _, room in House.Rooms do
+	roomNames[room.id] = room.title
+end
 return TableUtil.deepFreeze(Catalog)

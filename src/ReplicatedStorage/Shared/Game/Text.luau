@@ -8,7 +8,7 @@
 local PixelText = require("./PixelText")
 
 local Text = {
-	Title = "SUBESTAÇÃO 9",
+	Title = "TUNG TUNG SAHUR: THE CURSED HOUSE",
 
 	Intro = {
 		"03:12 - QUEDA TOTAL DE ENERGIA.",
@@ -50,7 +50,7 @@ local Text = {
 	},
 	-- Tecla da ação alternativa das portas.
 	AltKey = "[Q]",
-	HiddenHint = "[E] SAIR   ·   [ESPAÇO] PRENDER A RESPIRAÇÃO",
+	HiddenHint = "[E] SAIR   ·   [ESPAÇO/Z/LB] PRENDER A RESPIRAÇÃO",
 	HoldingBreath = "PRENDENDO A RESPIRAÇÃO...",
 
 	-- Mensagens que o servidor devolve no Result (chave -> texto).

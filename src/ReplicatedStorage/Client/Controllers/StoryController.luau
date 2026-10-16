@@ -65,15 +65,22 @@ function Controller.Start()
 		Text = "",
 		TextWrapped = true,
 	}) :: TextLabel
+	local endingAt = 0
+	local ending = text("Continues", 0, 1)
+	ending.Position, ending.Size = UDim2.fromScale(0, 0), UDim2.fromScale(1, 1)
+	ending.BackgroundColor3, ending.BackgroundTransparency, ending.TextSize = Color3.new(0, 0, 0), 0, 32
+	ending.Text, ending.Visible = "CONTINUA...", false
 	local previous = ""
 	local lastSolved = 0
 	local revealUntil = 0
 	local lastLine = 0
 	RunService:BindToRenderStep("S9Story", Enum.RenderPriority.Camera.Value - 1, function()
-		local active = state:GetAttribute("GameMode") == "Story" and state:GetAttribute("Phase") ~= "Lobby"
+		local active = state:GetAttribute("Phase") ~= "Lobby"
 		gui.Enabled = active and player:GetAttribute("CinematicActive") ~= true
 		subtitleGui.Enabled = false
+		ending.Visible = false
 		if not active then
+			endingAt = 0
 			previous, lastSolved = "", 0
 			return
 		end
@@ -111,9 +118,15 @@ function Controller.Start()
 		end
 		lastSolved = solved
 		if phase == "Won" then
+			if endingAt == 0 then
+				endingAt = now
+			end
+			ending.Visible = now - endingAt >= 12
 			revelation.Text = Story.Ending
 		end
-		revelation.Visible = (phase == "Won" or now < revealUntil) and player:GetAttribute("FieldGuideOpen") ~= true
+		revelation.Visible = not ending.Visible
+			and (phase == "Won" or now < revealUntil)
+			and player:GetAttribute("FieldGuideOpen") ~= true
 		if endsAt <= now and phase == "Playing" and string.sub(Cinema.debugState().sequence, 1, 5) == "Story" then
 			Cinema.stop()
 		end

@@ -166,7 +166,7 @@ local function mote(part: Instance)
 end
 
 local function setupSparks()
-	local world = workspace:FindFirstChild("Substation9")
+	local world = workspace:FindFirstChild("CursedHouse")
 	local features = world and world:FindFirstChild("Features")
 	local breakers = features and features:FindFirstChild("Breakers")
 	local box = breakers and breakers:FindFirstChild("Box")

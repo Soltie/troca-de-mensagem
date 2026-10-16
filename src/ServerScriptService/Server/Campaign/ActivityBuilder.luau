@@ -18,10 +18,14 @@ export type Built = {
 	meters: { [string]: { BasePart } },
 	plan: Generator.Plan,
 }
+local HouseActivities = require("./HouseActivities")
 local Builder = {}
 local repairNames = { "ISOLAR CIRCUITO", "ENCAIXAR FUSIVEL", "TESTAR ENERGIA" }
 
 function Builder.build(parent: Instance, plan: Generator.Plan, distance: number): Built
+	if plan.house then
+		return HouseActivities.build(parent, plan, distance)
+	end
 	local valid, reason = Generator.validate(plan)
 	assert(valid, `[CampaignBuilder] invalid plan: {reason}`)
 	local previous = parent:FindFirstChild("CampaignActivities")
@@ -143,6 +147,10 @@ function Builder.build(parent: Instance, plan: Generator.Plan, distance: number)
 end
 
 function Builder.refresh(built: Built, tasks: { [string]: Session.TaskState }, now: number?, activePlayers: number?)
+	if built.plan.house then
+		HouseActivities.refresh(built, tasks)
+		return
+	end
 	local clock = now or workspace:GetServerTimeNow()
 	local active = activePlayers or built.plan.players
 	local current: string? = nil

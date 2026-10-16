@@ -38,6 +38,8 @@ StoryRewards.Chapters = table.freeze({
 		again = { fichas = 200, xp = 200 },
 		flawless = { creditos = 60, consumables = { continuar = 1 } },
 	},
+	{ first = { fichas = 450, xp = 350 }, again = { fichas = 100, xp = 100 }, flawless = { creditos = 20 } },
+	{ first = { fichas = 600, xp = 450 }, again = { fichas = 150, xp = 150 }, flawless = { creditos = 30 } },
 } :: { ChapterReward })
 
 StoryRewards.CompletionItem = "titulo_ultimo_turno"
@@ -58,7 +60,7 @@ local function scaled(reward: Reward, multiplier: number): Reward
 end
 
 function StoryRewards.cleared(data: Data, chapter: number): boolean
-	return data.story.cleared[tostring(chapter)] ~= nil
+	return data.house.cleared[tostring(chapter)] ~= nil
 end
 
 -- Quantos capítulos a conta já venceu (para o menu).
@@ -102,14 +104,14 @@ function StoryRewards.award(
 	end
 	local key = tostring(chapter)
 	local multiplier = if hasPass then StoryRewards.PassMultiplier else 1
-	local first = data.story.cleared[key] == nil
+	local first = data.house.cleared[key] == nil
 	local granted = Economy.applyReward(data, scaled(if first then def.first else def.again, multiplier))
 	if first then
-		data.story.cleared[key] = now
+		data.house.cleared[key] = now
 	end
-	local firstFlawless = flawless and data.story.flawless[key] == nil
+	local firstFlawless = flawless and data.house.flawless[key] == nil
 	if firstFlawless then
-		data.story.flawless[key] = now
+		data.house.flawless[key] = now
 		Economy.applyReward(data, scaled(def.flawless, multiplier), granted)
 	end
 	local completed = false

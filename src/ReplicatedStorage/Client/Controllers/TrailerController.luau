@@ -366,7 +366,7 @@ local SOUNDS: { SoundCue } = {
 }
 
 local function sectorCenter(): Vector3
-	local world = workspace:FindFirstChild("Substation9")
+	local world = workspace:FindFirstChild("CursedHouse")
 	local sector = world and world:FindFirstChild("ProceduralSector")
 	local cell = sector and sector:FindFirstChild("Cell_5")
 	if cell and cell:IsA("Model") then

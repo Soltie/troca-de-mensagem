@@ -157,7 +157,12 @@ local function update(dt: number)
 		local pose = frames[poseIndex]
 		local distance = if camera then (root.Position - camera.CFrame.Position).Magnitude else math.huge
 		if pose.step then
-			AudioController.playAt("CreatureStep", r.emitter, 1, 0.42 + rng:NextNumber(-0.04, 0.04))
+			AudioController.playAt(
+				"CreatureStep",
+				r.emitter,
+				if root:GetAttribute("FalseExit") then 0.25 else 1,
+				0.42 + rng:NextNumber(-0.04, 0.04)
+			)
 			-- Tremor dos passos pela distância (o compositor respeita a opção de conforto).
 			if distance < 30 then
 				local k = (30 - distance) / 30

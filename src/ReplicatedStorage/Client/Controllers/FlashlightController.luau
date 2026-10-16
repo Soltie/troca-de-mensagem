@@ -529,7 +529,8 @@ function FlashlightController.Start()
 				math.rad(reach * -8)
 			)
 		end
-		local visible = not motion.hidden
+		local visible = player:GetAttribute("HasFlashlight") == true
+			and not motion.hidden
 			and player:GetAttribute("CinematicActive") ~= true
 			and (player:GetAttribute("CampaignStatus") == nil or player:GetAttribute("CampaignStatus") == "Active")
 			and phase ~= "Won"

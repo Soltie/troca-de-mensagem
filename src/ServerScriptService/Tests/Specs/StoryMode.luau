@@ -1,103 +1,158 @@
 --!strict
 local Session = require("@game/ServerScriptService/Server/Campaign/CoopSession")
 local Config = require("@game/ReplicatedStorage/Shared/Config")
-local Plan = require("@game/ServerScriptService/Server/Campaign/StoryPlan")
-local Generator = require("@game/ServerScriptService/Server/Campaign/CampaignGenerator")
+local Plan = require("@game/ServerScriptService/Server/Campaign/HousePlan")
 local Story = require("@game/ReplicatedStorage/Shared/Game/StoryCatalog")
 local Modes = require("@game/ReplicatedStorage/Shared/Game/GameModes")
 local Shots = require("@game/ReplicatedStorage/Shared/Game/CinematicShots")
+local Schema = require("@game/ServerScriptService/Server/Data/PlayerDataSchema")
+local Oxygen = require("@game/ServerScriptService/Server/Game/Oxygen")
 local TestKit = require("../TestKit")
-local TableUtil = require("@game/ReplicatedStorage/Shared/Util/TableUtil")
-
 return {
 	name = "StoryMode",
 	run = function(t: TestKit.Context)
-		t.it("starts either mode only when both partners agree, and waits for a solo player", function()
-			local members = { [1] = {}, [2] = {} }
-			local minimum = Config.Campaign.minPlayers
-			t.expect((Modes.winner({ [1] = "Story" }, { [1] = {} }, minimum))).toBe(nil)
-			t.expect((Modes.winner({ [1] = "Story" }, members, minimum))).toBe(nil)
-			t.expect((Modes.winner({ [1] = "Story", [2] = "Standard" }, members, minimum))).toBe(nil)
-			t.expect((Modes.winner({ [1] = "Story", [2] = "Story" }, members, minimum))).toBe("Story")
-			t.expect((Modes.winner({ [1] = "Standard", [2] = "Standard" }, members, minimum))).toBe("Standard")
+		t.it("solo starts with one vote, ties wait, outsiders do not vote", function()
+			t.expect((Modes.winner({ [1] = "Story" }, { [1] = {} }, Config.Campaign.minPlayers))).toBe("Story")
+			t.expect((Modes.winner({ [1] = "Story", [2] = "Standard" }, { [1] = {}, [2] = {} }, 1))).toBe(nil)
+			t.expect((Modes.winner({ [99] = "Story" }, { [1] = {} }, 1))).toBe(nil)
 		end)
-		t.it("requires the minimum team and an absolute majority; ignores outsider votes", function()
-			local votes: Modes.Votes = { [1] = "Story", [2] = "Story", [99] = "Standard" }
-			t.expect((Modes.winner(votes, { [1] = {}, [2] = {} }, 3))).toBe(nil)
-			t.expect((Modes.winner(votes, { [1] = {}, [2] = {}, [3] = {} }, 3))).toBe("Story")
-			t.expect(
-				(
-					Modes.winner(
-						{ [1] = "Story", [2] = "Story", [3] = "Standard", [4] = "Standard" },
-						{ [1] = {}, [2] = {}, [3] = {}, [4] = {} },
-						3
-					)
-				)
-			).toBe(nil)
-			t.expect((Modes.winner({}, { [1] = {}, [2] = {}, [3] = {} }, 3))).toBe(nil)
-		end)
-		t.it("keeps every room route objective and code fixed across chapters and party sizes", function()
-			local first = Plan.create(1, 3).sector
-			for players = 2, 8 do
-				for stage = 1, 3 do
-					local plan = Plan.create(stage, players)
-					t.expect((Generator.validate(plan))).toBe(true)
-					t.expect(plan.sector).toEqual(first)
-					t.expect(plan.activities).toEqual(Plan.create(stage, 3).activities)
+		t.it("finishes all five chapters with 1, 2 and 6 survivors and no duplicated pickups", function()
+			for _, count in { 1, 2, 6 } do
+				for _, mode in { "Story", "Standard" } do
+					local s = Session.new(90312, Config.Campaign, mode, true)
+					for id = 1, count do
+						t.expect((Session.join(s, id))).toBe(true)
+					end
+					for chapter = 1, 5 do
+						t.expect((Session.beginStage(s))).toBe(true)
+						local plan = s.plan
+						assert(plan, "Expected house plan")
+						t.expect((Plan.validate(plan))).toBe(true)
+						t.expect((Session.act(s, 1, plan.activities[2].id, 1, 1))).toBe(false)
+						for _, spec in plan.activities do
+							if spec.kind == "puzzle" then
+								local wrong = spec.order[1] % 4 + 1
+								t.expect((Session.act(s, 1, spec.id, wrong, 1))).toBe(false)
+								for _, button in spec.order do
+									t.expect((Session.act(s, 1, spec.id, button, 1))).toBe(true)
+								end
+							else
+								t.expect((Session.act(s, 1, spec.id, 1, 1))).toBe(true)
+							end
+							t.expect((Session.act(s, 1, spec.id, 1, 1))).toBe(false)
+						end
+						t.expect(s.phase).toBe(if chapter == 5 then "Extracting" else "Intermission")
+					end
+					t.expect(s.inventory.artifact).toBe(1)
+					for id = 1, count do
+						Session.escape(s, id)
+					end
+					t.expect(s.phase).toBe("Won")
 				end
 			end
 		end)
-		t.it("plays all story chapters in order and reaches cooperative extraction", function()
-			for players = 2, 8 do
-				local state = Session.new(Story.MapSeed, Config.Campaign, "Story")
-				for id = 1, players do
-					Session.join(state, id)
-				end
-				for stage = 1, 3 do
-					t.expect((Session.beginStage(state))).toBe(true)
-					t.expect((Session.act(state, 1, "task_3", 1, 1))).toBe(false)
-					local plan = state.plan :: Generator.Plan
-					for _, activity in plan.activities do
-						if activity.kind == "sequence" then
-							for _, button in activity.order do
-								Session.act(state, 1, activity.id, button, 1)
+		t.it("many seeds retain prerequisites, room bounds and reproducible four-symbol solutions", function()
+			for seed = 1, 120 do
+				for chapter = 1, 5 do
+					local a = Plan.create(seed, chapter, 1, "Standard")
+					local b = Plan.create(seed, chapter, 6, "Standard")
+					t.expect((Plan.validate(a))).toBe(true)
+					t.expect(a.activities).toEqual(b.activities)
+					local occupied: { [string]: boolean } = {}
+					for _, activity in a.activities do
+						if activity.kind ~= "hide" and activity.kind ~= "breath" then
+							local point = `{activity.x}:{activity.y}:{activity.z}`
+							t.expect(occupied[point]).toBe(nil)
+							occupied[point] = true
+						end
+						t.expect(math.abs(activity.x) <= 40).toBe(true)
+						t.expect(activity.y == -16 or activity.y == 0 or activity.y == 16 or activity.y == 32)
+							.toBe(true)
+						if activity.kind == "puzzle" then
+							local seen = {}
+							for _, symbol in activity.order do
+								seen[symbol] = true
 							end
-						elseif activity.kind == "relay" then
-							Session.act(state, 1, activity.id, 1, 1)
-							Session.act(state, 2, activity.id, 1, 2)
-						else
-							while not state.tasks[activity.id].solved do
-								Session.act(state, 1, activity.id, state.tasks[activity.id].progress + 1, 1)
+							for symbol = 1, 4 do
+								t.expect(seen[symbol]).toBe(true)
 							end
 						end
 					end
-					t.expect(state.phase).toBe(if stage == 3 then "Extracting" else "Intermission")
 				end
-				for id = 1, players do
-					Session.escape(state, id)
-				end
-				t.expect(state.phase).toBe("Won")
 			end
 		end)
-		t.it("retains a changing map and unordered tasks in standard mode", function()
-			local a = Generator.create(123, 1, 3)
-			local b = Generator.create(124, 1, 3)
-			t.expect(TableUtil.deepEqual(a.sector.rooms, b.sector.rooms)).toBe(false)
-			local state = Session.new(123, { minPlayers = 3, maxPlayers = 8, downedSeconds = 45, relayWindow = 12 })
-			for id = 1, 3 do
-				Session.join(state, id)
-			end
-			Session.beginStage(state)
-			local plan = state.plan :: Generator.Plan
-			local activity = plan.activities[3]
-			t.expect(
-				(Session.act(state, 1, activity.id, if activity.kind == "sequence" then activity.order[1] else 1, 1))
-			)
-				.toBe(true)
+		t.it("checkpoint restores the same code and removes unfinished chapter items", function()
+			local s = Session.new(123, Config.Campaign, "Standard", true)
+			Session.join(s, 1)
+			Session.beginStage(s)
+			local before = s.plan
+			Session.act(s, 1, "task_1", 1, 1)
+			Session.act(s, 1, "task_2", 1, 1)
+			t.expect(s.inventory.flashlight).toBe(1)
+			Session.eliminate(s, 1)
+			t.expect(s.phase).toBe("Lost")
+			Session.retryStage(s)
+			Session.beginStage(s)
+			t.expect(s.plan).toEqual(before)
+			t.expect(s.inventory.flashlight).toBe(nil)
 		end)
-		t.it("fits each cinematic inside the server's protected interval", function()
-			for _, sequence in Story.Scenes do
-				t.expect(Shots.duration(sequence)).toBe(Story.SceneSeconds)
+		t.it("oxygen consumes eight seconds, cancels with cooldown, and cannot spam silence", function()
+			local o = Oxygen.new()
+			t.expect(Oxygen.request(o, true, 0)).toBe(true)
+			Oxygen.step(o, 6, 6)
+			t.expect(o.value).toBe(25)
+			Oxygen.request(o, false, 6)
+			t.expect(Oxygen.request(o, true, 6.1)).toBe(false)
+			Oxygen.step(o, 1, 7)
+			t.expect(o.value).toBe(25)
+			Oxygen.step(o, 1, 9)
+			t.expect(o.value).toBe(45)
+			t.expect(Oxygen.request(o, true, 9)).toBe(true)
+			t.expect(Oxygen.step(o, 8, 17)).toBe(true)
+			t.expect(o.dead).toBe(true)
+			t.expect(Oxygen.request(o, true, 18)).toBe(false)
+		end)
+		t.it("v4 migration preserves wallet purchases and old story separately from new house", function()
+			local old: any = Schema.template()
+			old.schemaVersion, old.house = 4, nil
+			old.wallet.fichas, old.owned.lanterna_elias = 1234, true
+			old.story.cleared["1"] = 100
+			old.purchases.receipt = 200
+			local migrated = Schema.migrate(old)
+			t.expect(migrated.wallet.fichas).toBe(1234)
+			t.expect(migrated.owned.lanterna_elias).toBe(true)
+			t.expect(migrated.story.cleared["1"]).toBe(100)
+			t.expect(migrated.house.cleared["1"]).toBe(nil)
+			t.expect(migrated.purchases.receipt).toBe(200)
+		end)
+		t.it("preferences reject corruption and preserve fractional audio volumes", function()
+			local Prefs = require("@game/ReplicatedStorage/Shared/Game/HousePreferences")
+			local migrated = Schema.migrate({
+				house = { preferences = { music = 0.75, master = 1, bad = 1, ambient = 0 / 0, effects = 2 } },
+			})
+			t.expect(migrated.house.preferences.music).toBe(0.75)
+			t.expect(migrated.house.preferences.bad).toBe(nil)
+			t.expect(migrated.house.preferences.ambient).toBe(nil)
+			t.expect(Prefs.category("Breath1")).toBe("breathing")
+			t.expect(Prefs.category("MusicChase")).toBe("music")
+		end)
+		t.it("house rejects seventh player and disconnect cannot lose essential team items", function()
+			local s = Session.new(42, Config.Campaign, "Story", true)
+			for id = 1, 6 do
+				t.expect((Session.join(s, id))).toBe(true)
+			end
+			t.expect((Session.join(s, 7))).toBe(false)
+			Session.beginStage(s)
+			Session.act(s, 1, "task_1", 1, 0)
+			Session.act(s, 1, "task_2", 1, 0)
+			Session.leave(s, 1)
+			t.expect(s.inventory.flashlight).toBe(1)
+			t.expect(s.phase).toBe("Playing")
+		end)
+		t.it("five chapter scenes fit their shared server interval", function()
+			t.expect(#Story.Chapters).toBe(5)
+			for _, scene in Story.Scenes do
+				t.expect(Shots.duration(scene)).toBe(Story.SceneSeconds)
 			end
 		end)
 	end,

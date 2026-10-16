@@ -25,6 +25,8 @@ local Perks = require("@game/ReplicatedStorage/Shared/Game/Perks")
 local Guard = require("@game/ReplicatedStorage/Shared/Net/Guard")
 local Logger = require("@game/ReplicatedStorage/Shared/Logger")
 local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
+local Oxygen = require("../Game/Oxygen")
+local CreatureService: any = nil
 local PlayerRules = require("../Game/PlayerRules")
 local ServerNet = require("../Net/ServerNet")
 
@@ -36,6 +38,9 @@ type PlayerState = {
 	wantsLight: boolean,
 	publishedBattery: number,
 	breath: PlayerRules.Breath,
+	oxygen: Oxygen.State,
+	breathNoiseAt: number,
+	movementNoiseAt: number,
 	hidden: string?,
 	hideExit: CFrame?,
 	lastExitAt: number,
@@ -59,6 +64,9 @@ local function newState(): PlayerState
 		wantsLight = true,
 		publishedBattery = -1,
 		breath = PlayerRules.newBreath(),
+		oxygen = Oxygen.new(),
+		breathNoiseAt = 0,
+		movementNoiseAt = 0,
 		hidden = nil,
 		hideExit = nil,
 		lastExitAt = -math.huge,
@@ -158,6 +166,9 @@ end
 
 local function setFlashlight(player: Player, on: boolean)
 	local state = stateOf(player)
+	if Config.House.Enabled and player:GetAttribute("HasFlashlight") ~= true then
+		on = false
+	end
 	state.wantsLight = on
 	BatteryModel.setOn(state.battery, on)
 	publishLight(player, state)
@@ -165,17 +176,20 @@ end
 
 local function setHoldBreath(player: Player, hold: boolean)
 	local state = stateOf(player)
-	local now = os.clock()
-	if not state.hidden then
-		player:SetAttribute("HoldBreath", false)
+	local _, _, humanoid = parts(player)
+	if
+		hold
+		and (
+			not isPlaying()
+			or player:GetAttribute("CampaignStatus") ~= "Active"
+			or not humanoid
+			or humanoid.Health <= 0
+		)
+	then
 		return
 	end
-	if hold then
-		PlayerRules.holdBreath(state.breath, now)
-	else
-		PlayerRules.releaseBreath(state.breath, now)
-	end
-	player:SetAttribute("HoldBreath", state.breath.holding)
+	Oxygen.request(state.oxygen, hold, os.clock())
+	player:SetAttribute("HoldBreath", state.oxygen.holding)
 end
 
 local function validateSpeed(player: Player, state: PlayerState, now: number)
@@ -217,7 +231,10 @@ local function tick()
 				player:SetAttribute("SpareBattery", false)
 				BatteryModel.addPickup(state.battery, Perks.EXTRA_BATTERY)
 				if state.wantsLight then
-					BatteryModel.setOn(state.battery, true)
+					BatteryModel.setOn(
+						state.battery,
+						not Config.House.Enabled or player:GetAttribute("HasFlashlight") == true
+					)
 				end
 				log.info("%s spare battery kicked in", player.Name)
 			else
@@ -228,14 +245,47 @@ local function tick()
 		end
 		publishBattery(player, state)
 
-		if PlayerRules.stepBreath(state.breath, now) == "gasp" then
-			player:SetAttribute("HoldBreath", false)
-			state.gasps += 1
-			player:SetAttribute("Gasps", state.gasps)
-			local _, root = parts(player)
-			local handler = noiseHandler
-			if handler and root then
-				handler(root.Position, P.GaspNoiseRadius)
+		local _, root, humanoid = parts(player)
+		local active = isPlaying()
+			and player:GetAttribute("CampaignStatus") == "Active"
+			and humanoid
+			and humanoid.Health > 0
+		if not active then
+			Oxygen.request(state.oxygen, false, now)
+		end
+		if active and Oxygen.step(state.oxygen, TICK, now) then
+			player:SetAttribute("DeathCause", "oxygen")
+			if humanoid then
+				humanoid.Health = 0
+			end
+		end
+		player:SetAttribute("Oxygen", math.floor(state.oxygen.value))
+		player:SetAttribute("HoldBreath", state.oxygen.holding)
+		local creature = CreatureService and CreatureService.state()
+		local distance = if creature
+				and creature.active
+				and root
+			then (root.Position - creature.position).Magnitude
+			else math.huge
+		local intensity = if distance < 18 then 1 elseif distance < 35 then 0.7 elseif distance < 65 then 0.3 else 0
+		player:SetAttribute("BreathIntensity", if state.oxygen.holding then 0 else intensity)
+		if active and root and not state.oxygen.holding and intensity >= 0.7 and now >= state.breathNoiseAt then
+			state.breathNoiseAt = now + 1.2
+			if noiseHandler then
+				noiseHandler(root.Position, 18)
+			end
+		end
+		if active and root and not state.hidden and now >= state.movementNoiseAt then
+			local velocity = root.AssemblyLinearVelocity
+			local speed = Vector3.new(velocity.X, 0, velocity.Z).Magnitude
+			if speed > 1 then
+				state.movementNoiseAt = now + 0.4
+				local radius = if state.stance == "Crouch" then 3 elseif speed > P.WalkSpeed + 2 then 35 else 8
+				local factor =
+					math.max(0.5, Perks.factor("silencio", tonumber(player:GetAttribute("PerkSilencio")) or 0))
+				if noiseHandler then
+					noiseHandler(root.Position, radius * factor)
+				end
 			end
 		end
 		validateSpeed(player, state, now)
@@ -247,6 +297,7 @@ local PlayerStateService = {
 }
 
 function PlayerStateService.Start()
+	CreatureService = require("./CreatureService")
 	ServerNet.onEvent("SetFlashlight", {
 		args = { Guard.boolean() },
 		rateLimit = { capacity = 10, refillPerSecond = 5 },
@@ -298,7 +349,7 @@ function PlayerStateService.resetForSpawn(player: Player, battery: number?)
 		standHipHeight(character, humanoid)
 	end
 	applyStance(player, state, "Stand")
-	BatteryModel.setOn(state.battery, true)
+	BatteryModel.setOn(state.battery, not Config.House.Enabled or player:GetAttribute("HasFlashlight") == true)
 	publishLight(player, state)
 	publishBattery(player, state, true)
 	player:SetAttribute("Hidden", "")
@@ -356,7 +407,7 @@ function PlayerStateService.enterHide(
 	end
 	state.hidden = id
 	state.hideExit = exit
-	state.breath = PlayerRules.newBreath()
+	Oxygen.request(state.oxygen, false, os.clock())
 	root.Anchored = true
 	character:PivotTo(inside)
 	player:SetAttribute("HiddenAt", front)
@@ -378,7 +429,7 @@ function PlayerStateService.exitHide(player: Player): boolean
 	state.hidden = nil
 	state.hideExit = nil
 	state.lastExitAt = os.clock()
-	PlayerRules.releaseBreath(state.breath, os.clock())
+	Oxygen.request(state.oxygen, false, os.clock())
 	if character and root then
 		if exit then
 			character:PivotTo(exit)
@@ -401,12 +452,24 @@ function PlayerStateService.addBattery(player: Player, amount: number?)
 	BatteryModel.addPickup(state.battery, amount)
 	-- Se o jogador queria luz e ela tinha apagado, volta a acender.
 	if state.wantsLight and not state.battery.on then
-		BatteryModel.setOn(state.battery, true)
+		BatteryModel.setOn(state.battery, not Config.House.Enabled or player:GetAttribute("HasFlashlight") == true)
 		publishLight(player, state)
 	end
 	publishBattery(player, state, true)
 end
 
+function PlayerStateService.addOxygen(player: Player, amount: number): boolean
+	local state = stateOf(player).oxygen
+	if state.dead then
+		return false
+	end
+	state.value = math.min(100, state.value + amount)
+	return true
+end
+function PlayerStateService.grantFlashlight(player: Player)
+	player:SetAttribute("HasFlashlight", true)
+	setFlashlight(player, true)
+end
 function PlayerStateService.snapshot(player: Player): { [string]: any }
 	local state = stateOf(player)
 	return {

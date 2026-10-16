@@ -119,12 +119,16 @@ local function breathe(motion: CharacterController.Motion, now: number)
 		return
 	end
 	local hidden = isHidden()
-	if hidden and holding then
+	if holding then
 		nextBreathAt = now + 0.3
 		return
 	end
 	-- Intensidade: o maior entre exaustão e medo (escondido o medo pesa mais).
-	local intensity = math.max(motion.exhaustion, (fear - 0.25) / 0.75 * (if hidden then 1.2 else 1))
+	local intensity = math.max(
+		tonumber(player:GetAttribute("BreathIntensity")) or 0,
+		motion.exhaustion,
+		(fear - 0.25) / 0.75 * (if hidden then 1.2 else 1)
+	)
 	if intensity <= 0.05 then
 		nextBreathAt = now + 1
 		return

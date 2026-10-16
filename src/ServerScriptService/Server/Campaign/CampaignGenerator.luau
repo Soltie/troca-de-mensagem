@@ -6,6 +6,10 @@ local ProceduralLayout = require("../World/ProceduralLayout")
 local SeededRandom = require("./SeededRandom")
 
 export type Activity = {
+	house: boolean?,
+	y: number?,
+	item: string?,
+	event: string?,
 	id: string,
 	slot: string,
 	room: string,
@@ -16,6 +20,7 @@ export type Activity = {
 	title: string?,
 }
 export type Plan = {
+	house: boolean?,
 	mode: string?,
 	seed: number,
 	stage: number,

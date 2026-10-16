@@ -46,6 +46,8 @@ local muffleOverride = 0
 local nextCreakAt = 0
 local rng = Random.new()
 
+local Preferences = require("@game/ReplicatedStorage/Shared/Game/HousePreferences")
+local mixer: { [string]: SoundGroup } = {}
 local LOOPS = {
 	"AmbExterior",
 	"AmbInterior",
@@ -81,7 +83,7 @@ local function make(name: string, clipName: string, parent: Instance, looped: bo
 	sound.Name = name
 	applyClip(sound, clipName)
 	sound.Looped = looped
-	sound.SoundGroup = if ui then uiGroup else getGroup()
+	sound.SoundGroup = if ui then uiGroup else mixer[Preferences.category(clipName)] or getGroup()
 	sound.Parent = parent
 	return sound
 end
@@ -297,6 +299,23 @@ function AudioController.Init()
 	uiGroup = ui
 	SoundService.AmbientReverb = Enum.ReverbType.StoneCorridor
 
+	for _, category in { "music", "effects", "breathing", "ambient" } do
+		local channel = Instance.new("SoundGroup")
+		channel.Name = category
+		channel.Parent = g
+		mixer[category] = channel
+		local function update()
+			channel.Volume = tonumber(player:GetAttribute("Mix_" .. category)) or 1
+		end
+		player:GetAttributeChangedSignal("Mix_" .. category):Connect(update)
+		update()
+	end
+	local function master()
+		g.Volume = tonumber(player:GetAttribute("Mix_master")) or 1
+		ui.Volume = g.Volume
+	end
+	player:GetAttributeChangedSignal("Mix_master"):Connect(master)
+	master()
 	for _, name in LOOPS do
 		local sound = make(name, name, SoundService, true)
 		targets[name] = 0
@@ -307,6 +326,16 @@ function AudioController.Init()
 end
 
 function AudioController.Start()
+	local function spatial(instance: Instance)
+		if instance:IsA("Sound") and not instance.SoundGroup then
+			instance.SoundGroup = mixer.effects
+		end
+	end
+	for _, instance in workspace:GetDescendants() do
+		spatial(instance)
+	end
+	workspace.DescendantAdded:Connect(spatial)
+
 	for _, sound in loops do
 		sound:Play()
 	end

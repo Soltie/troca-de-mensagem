@@ -63,7 +63,7 @@ local spec: TestKit.Spec = {
 			CreatureBrain.step(brain, perception({ canSee = true, lineOfSight = true, now = 10 }))
 			local grace = CreatureBrain.step(brain, perception({ now = 10 + C.GraceTime * 0.5, targetPos = NOISE }))
 			t.expect(grace.mode).toBe("Chase")
-			t.expect(grace.target).toBe(NOISE) -- ainda segue a posição real logo após perder de vista
+			t.expect(grace.target).toBe(PLAYER) -- segue somente a memória de visão válida
 			local memory = CreatureBrain.step(brain, perception({ now = 10 + C.GraceTime + 0.5 }))
 			t.expect(memory.mode).toBe("Chase")
 			t.expect(memory.target).toBe(PLAYER) -- último lugar visto

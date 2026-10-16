@@ -110,7 +110,18 @@ local function payChapter(state: Instance)
 		local player = Players:GetPlayerByUserId(member.id)
 		-- Quem só esperou o capítulo (entrou tarde) não recebe o capítulo.
 		if player and member.status ~= "Waiting" then
-			StoreService.awardStory(player, chapter, flawless)
+			task.spawn(function()
+				for _ = 1, 30 do
+					if not player.Parent then
+						return
+					end
+					if StoreService.awardStory(player, chapter, flawless) then
+						return
+					end
+					task.wait(1)
+				end
+				log.warn("chapter reward unavailable: player=%s chapter=%d", player.Name, chapter)
+			end)
 		end
 	end
 	log.info("story chapter %d paid (flawless=%s)", chapter, tostring(flawless))

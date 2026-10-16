@@ -26,7 +26,11 @@ local FlashlightController = require("./FlashlightController")
 local ScreenFxController = require("./ScreenFxController")
 local GameUiController = require("./GameUiController")
 
+local ContextActionService = game:GetService("ContextActionService")
+local GuiService = game:GetService("GuiService")
+local Config = require("@game/ReplicatedStorage/Shared/Config")
 local player = Players.LocalPlayer
+local breathRequested = false
 local CONE_DEGREES = 24
 local CONE_CLOSE_DEGREES = 40
 
@@ -46,6 +50,8 @@ end
 
 local function allowed(): boolean
 	return player:GetAttribute("FieldGuideOpen") ~= true
+		and player:GetAttribute("ComfortMenuOpen") ~= true
+		and player:GetAttribute("CinematicActive") ~= true
 		and Rules.allowed(phase, player:GetAttribute("CampaignStatus") :: string?)
 end
 
@@ -60,6 +66,10 @@ local function clearTarget()
 end
 
 local function holdBreath(value: boolean)
+	if value == breathRequested then
+		return
+	end
+	breathRequested = value
 	task.spawn(function()
 		local ok, remote = pcall(Remotes.clientEvent, "SetHoldBreath", 5)
 		if ok then
@@ -253,26 +263,98 @@ function InteractionController.Start()
 		if processed or not allowed() then
 			return
 		end
-		if input.KeyCode == Enum.KeyCode.Space and hiddenId() then
-			holdBreath(true)
-			return
-		end
 		if input.KeyCode ~= Enum.KeyCode.E and input.KeyCode ~= Enum.KeyCode.Q then
 			return
 		end
 		InteractionController.activate(if input.KeyCode == Enum.KeyCode.Q then "alt" else nil)
 	end)
 	UserInputService.InputEnded:Connect(function(input)
-		if input.KeyCode == Enum.KeyCode.Space and hiddenId() then
+		if input.KeyCode == Enum.KeyCode.Space then
 			holdBreath(false)
 		end
 	end)
 	UserInputService.WindowFocusReleased:Connect(function()
-		if hiddenId() then
-			holdBreath(false)
-		end
+		holdBreath(false)
 	end)
 
+	local function breathAction(_: string, state: Enum.UserInputState, input: InputObject)
+		if state == Enum.UserInputState.End or state == Enum.UserInputState.Cancel then
+			holdBreath(false)
+			return Enum.ContextActionResult.Sink
+		end
+		if input.KeyCode == Enum.KeyCode.Space and not hiddenId() then
+			return Enum.ContextActionResult.Pass
+		end
+		if state == Enum.UserInputState.Begin and allowed() and not UserInputService:GetFocusedTextBox() then
+			holdBreath(true)
+		end
+		return Enum.ContextActionResult.Sink
+	end
+	ContextActionService:BindAction(
+		"HouseBreath",
+		breathAction,
+		true,
+		(Enum.KeyCode :: any)[Config.House.BreathKey],
+		Enum.KeyCode.ButtonL1,
+		Enum.KeyCode.Space
+	)
+	ContextActionService:SetTitle("HouseBreath", "RESPIRAR")
+	ContextActionService:SetPosition("HouseBreath", UDim2.new(1, -180, 1, -200))
+	ContextActionService:BindAction("HouseInteract", function(_, state)
+		if state == Enum.UserInputState.Begin then
+			InteractionController.activate()
+		end
+		return Enum.ContextActionResult.Sink
+	end, true, Enum.KeyCode.ButtonX)
+	ContextActionService:SetTitle("HouseInteract", "AÇÃO / SAIR")
+	ContextActionService:SetPosition("HouseInteract", UDim2.new(1, -90, 1, -210))
+	ContextActionService:BindAction("HouseLightTouch", function(_, state)
+		if state == Enum.UserInputState.Begin and allowed() then
+			FlashlightController.set(not FlashlightController.isWanted())
+		end
+		return Enum.ContextActionResult.Sink
+	end, true)
+	ContextActionService:SetTitle("HouseLightTouch", "LUZ")
+	ContextActionService:SetPosition("HouseLightTouch", UDim2.new(1, -180, 1, -110))
+	local function cancelBreath()
+		holdBreath(false)
+	end
+	GuiService.MenuOpened:Connect(cancelBreath)
+	for _, attr in { "CampaignStatus", "CinematicActive", "FieldGuideOpen", "ComfortMenuOpen", "Hidden" } do
+		player:GetAttributeChangedSignal(attr):Connect(cancelBreath)
+	end
+	player.CharacterAdded:Connect(cancelBreath)
+	local function useItem(item: string)
+		if allowed() and player:GetAttribute("ComfortMenuOpen") ~= true then
+			task.spawn(function()
+				Remotes.clientFunction("UseHouseItem", 5):InvokeServer(item)
+			end)
+		end
+	end
+	ContextActionService:BindAction("HouseBattery", function(_, state)
+		if state == Enum.UserInputState.Begin then
+			useItem("battery")
+		end
+		return Enum.ContextActionResult.Sink
+	end, true, Enum.KeyCode.One, Enum.KeyCode.DPadLeft)
+	ContextActionService:SetTitle("HouseBattery", "PILHA")
+	ContextActionService:SetPosition("HouseBattery", UDim2.new(0, 30, 1, -250))
+	ContextActionService:BindAction("HouseOxygen", function(_, state)
+		if state == Enum.UserInputState.Begin then
+			useItem("oxygen")
+		end
+		return Enum.ContextActionResult.Sink
+	end, true, Enum.KeyCode.Two, Enum.KeyCode.DPadUp)
+	ContextActionService:SetTitle("HouseOxygen", "O₂ +25")
+	ContextActionService:SetPosition("HouseOxygen", UDim2.new(0, 120, 1, -250))
+	ContextActionService:BindAction("HouseDecoy", function(_, state)
+		if state == Enum.UserInputState.Begin then
+			useItem("decoy")
+		end
+		return Enum.ContextActionResult.Sink
+	end, true, Enum.KeyCode.Three, Enum.KeyCode.DPadRight)
+	ContextActionService:SetTitle("HouseDecoy", "ISCA")
+	ContextActionService:SetPosition("HouseDecoy", UDim2.new(0, 210, 1, -250))
 	local accumulator = 0
 	RunService.RenderStepped:Connect(function(dt: number)
 		accumulator += dt

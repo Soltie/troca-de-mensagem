@@ -1,344 +1,181 @@
 --!strict
--- Harness opt-in do StudioTestService: clientes reais pedem interações pelos remotes normais.
+-- QA opt-in: clientes reais usam remotes normais; teleporte/congelamento só preparam o cenário.
 local Players = game:GetService("Players")
-local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
+local HttpService = game:GetService("HttpService")
 local StudioTestService = game:GetService("StudioTestService")
-local Config = require("@game/ReplicatedStorage/Shared/Config")
+local Creature = require("../Server/Services/CreatureService")
+local Body = require("../Server/Services/PlayerStateService")
+local World = require("../Server/Services/WorldService")
 local Logger = require("@game/ReplicatedStorage/Shared/Logger")
-local CreatureService = require("../Server/Services/CreatureService")
-local PathfindingService = game:GetService("PathfindingService")
-local log = Logger.new("CampaignQA")
+local log = Logger.new("HouseQA")
 local Harness = {}
-
 function Harness.run(runtime: any, args: any)
-	assert(RunService:IsStudio(), "Campaign harness is Studio-only")
-	local expected = args.players
-	local checks = {}
-	local spawnPositions = {}
-	local completed = false
-	local commandId = 0
-	local previousSector: Instance? = nil
-	local previousMap = ""
-	local function mapSignature(plan: any): string
-		local signature = {}
-		for _, room in plan.rooms do
-			table.insert(signature, `{room.kind}:{room.turn}`)
-		end
-		for _, edge in plan.links do
-			table.insert(signature, `{edge.a}-{edge.b}`)
-		end
-		return table.concat(signature, "/")
+	assert(RunService:IsStudio(), "Studio-only QA")
+	local done = false
+	local checks: { string } = {}
+	local serial = 0
+	local function check(value: boolean, name: string)
+		assert(value, name)
+		table.insert(checks, name)
+		log.info("PASS %s", name)
 	end
-	local deadline = os.clock() + (if args.storyQA then 350 else 220)
-	task.delay(if args.storyQA then 360 else 230, function()
-		if not completed then
-			StudioTestService:EndTest({ success = false, error = "watchdog timeout", players = expected })
-		end
-	end)
-	task.spawn(function()
-		while not completed do
-			CreatureService.setFrozen(true)
-			task.wait(0.1)
-		end
-	end)
-	local function waitFor(predicate: () -> boolean, label: string, timeout: number?)
-		local untilTime = math.min(deadline, os.clock() + (timeout or 12))
+	local function waitFor(predicate: () -> boolean, name: string, timeout: number?)
+		local deadline = os.clock() + (timeout or 15)
 		repeat
 			if predicate() then
 				return
 			end
 			task.wait(0.1)
-		until os.clock() >= untilTime
-		error(`timeout: {label}`, 0)
+		until os.clock() > deadline
+		error(`Timeout: {name}`)
 	end
-	local function check(value: boolean, label: string)
-		assert(value, label)
-		table.insert(checks, label)
-		log.info("PASS %s", label)
-	end
-	local function teleport(player: Player, position: Vector3)
-		local character = player.Character
-		assert(character, "QA character missing")
-		local root = character:FindFirstChild("HumanoidRootPart") :: BasePart
-		root.Anchored = true
-		character:PivotTo(CFrame.new(position))
+	local function move(player: Player, position: Vector3)
+		assert(player.Character, "Missing QA character")
+		player.Character:PivotTo(CFrame.new(position))
+		Body.markTeleported(player)
 		task.wait(0.25)
-		root.Anchored = false
 	end
-	local function request(player: Player, id: string)
-		commandId += 1
-		player:SetAttribute("CampaignQARequest", HttpService:JSONEncode({ serial = commandId, id = id }))
-	end
-	local ok, reason = pcall(function()
+	local function request(player: Player, command: any): any
+		serial += 1
+		command.serial = serial
+		local before = tonumber(player:GetAttribute("CampaignFeedbackSerial")) or 0
+		player:SetAttribute("CampaignQARequest", HttpService:JSONEncode(command))
 		waitFor(function()
-			return #Players:GetPlayers() == expected
-		end, "all clients connected", 35)
+			if command.breath ~= nil then
+				return player:GetAttribute("HoldBreath") == command.breath
+			end
+			return (tonumber(player:GetAttribute("CampaignFeedbackSerial")) or 0) > before
+		end, "client remote response")
+		task.wait(0.6)
+		return {
+			ok = true,
+			data = {
+				accepted = player:GetAttribute("CampaignAccepted") == true,
+				message = tostring(player:GetAttribute("CampaignFeedback")),
+			},
+		}
+	end
+
+	task.delay(330, function()
+		if not done then
+			done = true
+			StudioTestService:EndTest({ success = false, error = "House QA watchdog" })
+		end
+	end)
+	task.spawn(function()
+		while not done do
+			Creature.setFrozen(true)
+			task.wait(0.1)
+		end
+	end)
+	local ok, failure = pcall(function()
+		waitFor(function()
+			return #Players:GetPlayers() == args.players
+		end, "all clients", 40)
 		local players = Players:GetPlayers()
 		table.sort(players, function(a, b)
 			return a.UserId < b.UserId
 		end)
-		-- O setup de carga forma o lote inteiro antes da campanha medida.
-		if runtime.snapshot().stage ~= 0 or runtime.snapshot().active ~= expected then
-			runtime.restart()
-		end
-		local choiceSerial = 0
-		local function chooseStory()
-			if args.modeMenuQA then
-				choiceSerial += 1
-				check(runtime.snapshot().phase == "Lobby", "menu waits for a mode vote")
-				for _, player in Players:GetPlayers() do
-					player:SetAttribute("ModeQARequest", `Story:{choiceSerial}`)
-				end
-				waitFor(function()
-					return runtime.snapshot().mode == "Story"
-				end, "story selected through client remote")
-				check(runtime.snapshot().mode == "Story", "server accepts the team's story majority")
-			end
-		end
-		chooseStory()
-		waitFor(function()
-			local s = runtime.snapshot()
-			return s.stage == 1 and not s.building and s.phase == "Playing"
-		end, "first stage", 60)
-		check(#players == expected and runtime.snapshot().players == expected, `{expected} real clients in roster`)
-		local firstSeed = runtime.snapshot().seed
-		local firstMap = mapSignature(runtime.snapshot().plan.sector)
 		runtime.restart()
-		chooseStory()
 		waitFor(function()
 			local s = runtime.snapshot()
-			return s.stage == 1 and not s.building and s.phase == "Playing"
-		end, "fresh match rebuild", 60)
-		if args.storyQA then
-			check(runtime.snapshot().seed == firstSeed, "story keeps the same seed on replay")
-			check(
-				mapSignature(runtime.snapshot().plan.sector) == firstMap,
-				"story keeps the same physical map on replay"
-			)
-		elseif Config.Campaign.Seed == nil then
-			check(runtime.snapshot().seed ~= firstSeed, "new match receives a new seed")
-			check(mapSignature(runtime.snapshot().plan.sector) ~= firstMap, "new match changes physical map")
-		end
-		for _, player in players do
+			return s.stage == 1 and not s.building and s.active == args.players
+		end, "chapter 1", 60)
+		local actor = players[1]
+		check(
+			actor:GetAttribute("HasFlashlight") == false and actor:GetAttribute("Flashlight") == false,
+			"no flashlight before collection"
+		)
+		local distant = request(actor, { id = "task_2_1" })
+		check(distant.ok and not distant.data.accepted, "reject remote collection from forest")
+		if #players >= 2 then
+			runtime.lose(players[2])
+			check(runtime.snapshot().downed == 1 and runtime.snapshot().phase == "Playing", "capture is individual")
+			local beacon = World.get().root:FindFirstChild(`Rescue_{players[2].UserId}`) :: BasePart
+			assert(beacon, "Rescue beacon missing")
+			move(actor, beacon.Position + Vector3.new(0, -3, 4))
+			request(actor, { id = `rescue_{players[2].UserId}` })
 			waitFor(function()
-				return player.Character ~= nil
-			end, "character spawned")
-			local p = (player.Character :: Model):GetPivot().Position
-			table.insert(spawnPositions, { id = player.UserId, position = { p.X, p.Y, p.Z } })
+				return runtime.snapshot().downed == 0
+			end, "rescue", 10)
+			check(players[2]:GetAttribute("CampaignStatus") == "Active", "rescue returns teammate")
 		end
-		for i, a in players do
-			for j = i + 1, #players do
-				local b = players[j]
-				check(
-					((a.Character :: Model):GetPivot().Position - (b.Character :: Model):GetPivot().Position).Magnitude
-						> 2,
-					`separate spawn {i}-{j}`
-				)
-			end
-		end
-		-- Uma captura real na API do runtime deve deixar os outros ativos; resgate passa pelo remote.
-		runtime.lose(players[1])
-		check(runtime.snapshot().phase == "Playing" and runtime.snapshot().downed == 1, "capture is individual")
-		local rescue = workspace.Substation9:FindFirstChild(`Rescue_{players[1].UserId}`) :: BasePart
-		assert(rescue, "QA rescue beacon missing")
-		teleport(players[2], rescue.Position + Vector3.new(0, -3.2, 3))
-		request(players[2], `rescue_{players[1].UserId}`)
-		waitFor(function()
-			return runtime.snapshot().downed == 0
-		end, "remote rescue", 12)
-		check(runtime.snapshot().members[players[1].UserId].status == "Active", "teammate rescued by another client")
-		local firstTask = runtime.snapshot().plan.activities[1]
-		teleport(players[1], Vector3.new(0, 3.2, 30))
-		request(players[1], `{firstTask.id}_1`)
-		waitFor(function()
-			return players[1]:GetAttribute("CampaignFeedback") == "too_far"
-		end, "distant request rejected")
-		check(
-			runtime.snapshot().tasks[firstTask.id].progress == 0,
-			"server rejects a valid remote used from too far away"
-		)
-		local departed = players[#players]
-		check(departed.UserId < 0, "disconnect target is a simulated Studio client")
-		departed:Kick("Campaign QA: simulated disconnect")
-		waitFor(function()
-			return runtime.snapshot().players == expected - 1
-		end, "disconnect applied")
-		check(runtime.snapshot().phase == "Playing", "disconnect preserves the remaining team's stage")
-		StudioTestService:AddPlayers(1)
-		waitFor(function()
-			return #Players:GetPlayers() == expected and runtime.snapshot().players == expected
-		end, "late client joins", 40)
-		local incoming: Player? = nil
-		for _, candidate in Players:GetPlayers() do
-			if not table.find(players, candidate) then
-				incoming = candidate
-			end
-		end
-		assert(incoming, "Late client missing")
-		check(
-			runtime.snapshot().members[incoming.UserId].status == "Waiting",
-			"late join waits without changing current puzzles"
-		)
-		for stageIndex = 1, 3 do
+		for chapter = 1, 5 do
 			waitFor(function()
 				local s = runtime.snapshot()
-				return s.stage == stageIndex and not s.building and s.phase == "Playing"
-			end, `stage {stageIndex} start`, if args.storyQA then 40 else 20)
+				return s.stage == chapter and not s.building and s.phase == "Playing"
+			end, `chapter {chapter}`, 50)
 			local snapshot = runtime.snapshot()
-			check(snapshot.plan.players == expected, `stage {stageIndex} scales to party`)
-			players = {}
-			for _, candidate in Players:GetPlayers() do
-				if snapshot.members[candidate.UserId].status == "Active" then
-					table.insert(players, candidate)
-				end
-			end
-			table.sort(players, function(a, b)
-				return a.UserId < b.UserId
-			end)
-			if stageIndex == 2 then
-				check(#players == expected, "late join becomes active at the next stage")
-			end
-			local plan = snapshot.plan
-			local sector = workspace.Substation9:FindFirstChild("ProceduralSector")
-			assert(sector, "Generated sector missing")
-			check(
-				sector:GetAttribute("Seed") == plan.seed
-					and sector:GetAttribute("Stage") == (if args.storyQA then 1 else stageIndex),
-				`stage {stageIndex} builds its seeded physical map`
-			)
-			if previousSector then
-				check(
-					previousSector.Parent == nil and previousSector ~= sector,
-					`stage {stageIndex} destroys the old sector`
-				)
-				check(
-					if args.storyQA
-						then mapSignature(plan.sector) == previousMap
-						else mapSignature(plan.sector) ~= previousMap,
-					`stage {stageIndex} {if args.storyQA then "preserves the story map" else "changes rooms and routes"}`
-				)
-			end
-			for _, room in plan.sector.rooms do
-				local model = sector:FindFirstChild(`Cell_{room.cell}`)
-				assert(model and model:GetAttribute("RoomKind") == room.kind, "Physical room differs from plan")
-			end
-			previousSector, previousMap = sector, mapSignature(plan.sector)
-			for _, activity in plan.activities do
-				for name, params in
-					{
-						player = { AgentRadius = 1.2, AgentHeight = 5, AgentCanJump = false, Costs = { Door = 2 } },
-						creature = {
-							AgentRadius = Config.Creature.AgentRadius,
-							AgentHeight = Config.Creature.AgentHeight,
-							AgentCanJump = false,
-							Costs = { Door = 2 },
-						},
-					}
-				do
-					local path = PathfindingService:CreatePath(params)
-					path:ComputeAsync(Vector3.new(14, 0, 34), Vector3.new(activity.x, 0, activity.z + 3.2))
-					check(path.Status == Enum.PathStatus.Success, `stage {stageIndex} {name} reaches {activity.slot}`)
-				end
-			end
-			for index, activity in plan.activities do
-				local owner = players[(index - 1) % #players + 1]
-				local balances: { [number]: { fichas: number, xp: number } } = {}
-				if args.taskQA then
-					for _, player in players do
-						balances[player.UserId] = {
-							fichas = (player:GetAttribute("Fichas") or 0) :: number,
-							xp = (player:GetAttribute("Xp") or 0) :: number,
-						}
-					end
-				end
-				local function press(player: Player, button: number)
-					local before = runtime.snapshot().tasks[activity.id].progress
-					local station = workspace.Substation9.CampaignActivities:FindFirstChild(activity.id)
-					assert(station, "QA station missing")
-					local focus = station:FindFirstChild(`{activity.id}_{button}`) :: BasePart
-					assert(focus, "QA station button missing")
-					teleport(player, Vector3.new(focus.Position.X, 3.2, focus.Position.Z + 3.2))
-					task.wait(Config.Campaign.ActionCooldown + 0.1)
-					request(player, `{activity.id}_{button}`)
-					waitFor(function()
-						local s = runtime.snapshot()
-						return s.tasks[activity.id].progress ~= before or s.tasks[activity.id].solved
-					end, `remote {activity.id}/{button}`, 6)
-				end
-				if activity.kind == "sequence" then
-					for _, button in activity.order do
-						press(owner, button)
-					end
-				elseif activity.kind == "relay" then
-					press(owner, 1)
-					local helper = players[index % #players + 1]
-					press(helper, 1)
+			for _, spec in snapshot.plan.activities do
+				if spec.kind == "explore" then
+					move(actor, Vector3.new(spec.x, (spec.y or 0) + 3.2, spec.z))
+				elseif spec.kind == "hide" then
+					local locker = World.locker("hide_Library")
+					assert(locker, "Tutorial hide missing")
+					move(actor, locker.front + Vector3.new(0, 3, 0))
+					local result = request(actor, { id = "hide_Library" })
+					check(result.ok and result.data.accepted, "enter physical hide through remote")
+				elseif spec.kind == "breath" then
+					request(actor, { breath = true })
 				else
-					while not runtime.snapshot().tasks[activity.id].solved do
-						press(owner, runtime.snapshot().tasks[activity.id].progress + 1)
+					for _, button in (if spec.kind == "puzzle" then spec.order else { 1 }) do
+						local model = (World.get().root:FindFirstChild("CampaignActivities") :: Folder):FindFirstChild(
+							spec.id
+						)
+						local target = model and model:FindFirstChild(`{spec.id}_{button}`) :: BasePart
+						assert(target, "Objective target missing")
+						move(actor, target.Position + Vector3.new(0, 1.4, 5))
+						local result = request(actor, { id = target.Name })
+						check(
+							result.ok and result.data.accepted,
+							`chapter {chapter} {spec.id} button {button}: {result.data.message}`
+						)
 					end
 				end
-				check(
-					runtime.snapshot().tasks[activity.id].solved,
-					`stage {stageIndex} task {index} solved through client remote`
-				)
-				if args.taskQA then
-					local solved = runtime.snapshot().tasks[activity.id]
-					for _, player in players do
-						local before = balances[player.UserId]
-						local helped = solved.contributors[player.UserId] == true
-						local fichas, xp = if helped then 20 else 12, if helped then 40 else 24
-						check(
-							(player:GetAttribute("Fichas") :: number) >= before.fichas + fichas,
-							`task {stageIndex}/{index} pays Fichas to {player.UserId}`
-						)
-						check(
-							(player:GetAttribute("Xp") :: number) >= before.xp + xp,
-							`task {stageIndex}/{index} pays XP to {player.UserId}`
-						)
-					end
-					if index == 1 then
-						local xp = owner:GetAttribute("Xp")
-						task.wait(Config.Campaign.ActionCooldown + 0.1)
-						request(owner, `{activity.id}_1`)
-						task.wait(0.3)
-						check(owner:GetAttribute("Xp") == xp, `stage {stageIndex} rejects duplicate task rewards`)
+				waitFor(function()
+					return runtime.snapshot().tasks[spec.id].solved
+				end, `solve {spec.id}`)
+				if spec.kind == "breath" then
+					request(actor, { breath = false })
+					check((tonumber(actor:GetAttribute("Oxygen")) or 100) < 100, "tutorial consumes real oxygen")
+					request(actor, { id = "hide_Library" })
+					check(actor:GetAttribute("Hidden") == "", "exit restores hide state")
+				end
+				if spec.kind == "collect" and runtime.snapshot().phase == "Playing" then
+					local duplicate = request(actor, { id = `{spec.id}_1` })
+					check(duplicate.ok and not duplicate.data.accepted, `no duplicate {spec.item}`)
+				end
+				if spec.item == "flashlight" then
+					for _, teammate in players do
+						check(teammate:GetAttribute("HasFlashlight") == true, "shared flashlight")
 					end
 				end
 			end
 			check(
-				runtime.snapshot().phase == (if stageIndex == 3 then "Extracting" else "Intermission"),
-				`stage {stageIndex} completes`
+				runtime.snapshot().phase == (if chapter == 5 then "Extracting" else "Intermission"),
+				`chapter {chapter} transition`
 			)
 		end
-		teleport(players[1], Vector3.new(0, 3.2, 52))
-		waitFor(function()
-			return runtime.snapshot().members[players[1].UserId].status == "Escaped"
-		end, "first survivor exits")
-		check(runtime.snapshot().phase == "Extracting", "first survivor does not end others' game")
-		for index = 2, #players do
-			teleport(players[index], Vector3.new(0, 3.2, 52))
+		check(runtime.snapshot().stage == 5, "all five chapters")
+		for _, player in players do
+			move(player, Vector3.new(0, 3.2, 106))
 		end
 		waitFor(function()
 			return runtime.snapshot().phase == "Won"
-		end, "team extraction")
-		check(runtime.snapshot().phase == "Won", "team wins after all survivors extract")
+		end, "forest extraction")
+		check(runtime.snapshot().phase == "Won", "main ending after real exit zone")
 	end)
-	completed = true
+	done = true
 	local result = {
 		success = ok,
-		error = if ok then nil else tostring(reason),
-		players = expected,
-		spawnPositions = spawnPositions,
-		checks = checks,
+		error = if ok then nil else tostring(failure),
+		checks = #checks,
+		players = args.players,
 		stage = runtime.snapshot().stage,
 		phase = runtime.snapshot().phase,
-		seed = runtime.snapshot().seed,
-		mode = runtime.snapshot().mode,
 	}
 	log.info("RESULT %s", HttpService:JSONEncode(result))
 	StudioTestService:EndTest(result)
 end
-
 return Harness

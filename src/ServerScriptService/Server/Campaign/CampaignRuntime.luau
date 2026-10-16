@@ -28,9 +28,12 @@ local Builder = require("./ActivityBuilder")
 local Build = require("../World/Build")
 local Session = require("./CoopSession")
 
+local Endings = require("./Endings")
+local PlayerData = require("../Services/PlayerDataService")
+
 local C = Config.Campaign
 local log = Logger.new("Campaign")
-local session = Session.new(1, C)
+local session = Session.new(1, C, nil, true)
 local taskPayments: TaskRewards.Ledger = {}
 local pendingTaskPayments: { [string]: { [number]: boolean } } = {}
 local rewardCampaign = 0
@@ -42,6 +45,12 @@ local nextStageAt = 0
 local nextThreatAt = 0
 local blackoutUntil = 0
 local building = false
+local escapeEndsAt = 0
+local lostRetryAt = 0
+local tutorialHeld: { [number]: number } = {}
+local supplies: { [number]: { [string]: number } } = {}
+local endingPaid: { [number]: boolean } = {}
+local endingShown = false
 local spawning: { [Player]: boolean } = {}
 local spawnedVersion: { [Player]: number } = {}
 local spawnSlots: { [number]: number } = {}
@@ -139,16 +148,15 @@ local function publish()
 				title = spec.title,
 				solved = state.solved,
 				progress = state.progress,
-				nextButton = if spec.kind == "repair"
-					then state.progress + 1
-					elseif spec.kind == "sequence" then spec.order[state.progress + 1]
-					else 1,
+				required = #spec.order,
 				relayUntil = state.relayUntil,
 			})
 		end
 	end
 	replicated:SetAttribute("Roster", HttpService:JSONEncode(roster))
 	replicated:SetAttribute("Tasks", HttpService:JSONEncode(tasks))
+	replicated:SetAttribute("Inventory", HttpService:JSONEncode(session.inventory))
+	replicated:SetAttribute("EscapeEndsAt", escapeEndsAt)
 	replicated:SetAttribute("Stage", session.stage)
 	replicated:SetAttribute("Seed", session.seed)
 	replicated:SetAttribute("Title", if plan then plan.title else "REUNINDO A EQUIPE")
@@ -179,14 +187,8 @@ local function publish()
 	GameState.set("Phase", phase)
 	GameState.set("PowerOn", WorldService.isPowered())
 	GameState.set("CreatureActive", CreatureService.isActive())
-	if built then
+	if built and session.plan then
 		Builder.refresh(built, session.tasks)
-		if selectedMode == "Story" and session.plan then
-			local current = Session.solvedCount(session) + 1
-			for _, target in built.targets do
-				target.focus:SetAttribute(Tags.Attr.InteractEnabled, not building and target.taskId == `task_{current}`)
-			end
-		end
 	end
 end
 
@@ -241,14 +243,23 @@ local function spawnMember(player: Player)
 				if thisVersion == version then
 					local member = session.members[player.UserId]
 					if member and member.status == "Active" then
-						Session.capture(session, player.UserId, workspace:GetServerTimeNow())
-						member.status = "Waiting"
+						local id = playerAdapter and playerAdapter.hiddenId(player)
+						local locker = id and WorldService.locker(id)
+						if locker then
+							locker.occupant = nil
+						end
+						if playerAdapter then
+							playerAdapter.exitHide(player)
+						end
+						Session.eliminate(session, player.UserId)
 						publish()
 					end
 				end
 			end)
 		end
-		player:SetAttribute(Tags.Attr.Flashlight, true)
+		player:SetAttribute("HasFlashlight", session.inventory.flashlight == 1)
+		player:SetAttribute("DeathCause", "")
+		player:SetAttribute(Tags.Attr.Flashlight, session.inventory.flashlight == 1)
 		if playerAdapter then
 			playerAdapter.resetForSpawn(player)
 		end
@@ -280,7 +291,8 @@ local function stage()
 	for _, player in Players:GetPlayers() do
 		freeze(player, true)
 	end
-	channels, nextActionAt = {}, {}
+	channels, nextActionAt, tutorialHeld = {}, {}, {}
+	escapeEndsAt, lostRetryAt = 0, 0
 	clearRescues()
 	CreatureService.reset()
 	local plan = session.plan
@@ -289,6 +301,7 @@ local function stage()
 		Random.new(if selectedMode == "Story" then Story.MapSeed else session.seed + session.stage),
 		plan.sector
 	)
+	WorldService.setHouseStage(session.stage)
 	local world = WorldService.get()
 	-- As trancas da missão solo não podem invalidar o grafo da campanha.
 	local worldAdapter: any = WorldService
@@ -305,7 +318,7 @@ local function stage()
 		WorldService.setInteractEnabled(id, world.interactables[id].kind == "Door")
 	end
 	built = Builder.build(world.root, plan, Config.Game.InteractDistance)
-	WorldService.setPower(session.stage >= 2)
+	WorldService.setPower(session.stage >= 3)
 	startedAt = if session.stage == 1 then workspace:GetServerTimeNow() else startedAt
 	nextStageAt, nextThreatAt, blackoutUntil = 0, workspace:GetServerTimeNow() + C.ThreatInterval, 0
 	for _, player in Players:GetPlayers() do
@@ -356,8 +369,10 @@ local function stage()
 			local member = session.members[player.UserId]
 			freeze(player, not member or member.status ~= "Active")
 		end
-		CreatureService.activate(nil)
-		CreatureService.setHunt(session.stage == 3)
+		if session.stage >= 3 then
+			CreatureService.activate(nil)
+		end
+		CreatureService.setHunt(false)
 		publish()
 	end)
 	publish()
@@ -413,6 +428,14 @@ local function selfRevive(player: Player, expectedVersion: number)
 end
 
 local function capture(player: Player)
+	if playerAdapter then
+		local id = playerAdapter.hiddenId(player)
+		local locker = id and WorldService.locker(id)
+		if locker then
+			locker.occupant = nil
+		end
+		playerAdapter.exitHide(player)
+	end
 	local now = workspace:GetServerTimeNow()
 	local member = session.members[player.UserId]
 	if not member or member.status ~= "Active" or (session.phase ~= "Playing" and session.phase ~= "Extracting") then
@@ -452,7 +475,7 @@ local function capture(player: Player)
 			CreatureService.reset()
 			CreatureService.activate(nil)
 			CreatureService.setFuses(math.min(2, session.stage - 1))
-			CreatureService.setHunt(session.stage == 3)
+			CreatureService.setHunt(false)
 		end
 	end)
 end
@@ -488,7 +511,11 @@ local function afterActivity(previous: Session.Phase)
 				freeze(player, true)
 			end
 		elseif session.phase == "Extracting" then
-			WorldService.setPower(selectedMode ~= "Story")
+			escapeEndsAt = workspace:GetServerTimeNow() + Config.House.EscapeSeconds
+			WorldService.setHouseDestruction(true)
+			CreatureService.makeNoise(Vector3.new(26, -16, -68), 500)
+			CreatureService.setFrozen(false)
+			WorldService.setPower(false)
 			WorldService.openGate()
 		end
 	end
@@ -503,6 +530,7 @@ local function interact(player: Player, id: string, _action: string?): { accepte
 	local member = session.members[player.UserId]
 	local now = workspace:GetServerTimeNow()
 	local function response(ok: boolean, message: string)
+		player:SetAttribute("CampaignAccepted", ok)
 		feedback(player, message)
 		return { accepted = ok, message = message }
 	end
@@ -541,6 +569,10 @@ local function interact(player: Player, id: string, _action: string?): { accepte
 			return response(true, "rescuing")
 		end
 		assert(station, "[Campaign] missing activity target")
+		local spec = session.tasks[station.taskId].spec
+		if spec.kind == "explore" or spec.kind == "hide" or spec.kind == "breath" then
+			return response(false, "not_available")
+		end
 		local previous: Session.Phase = session.phase
 		local ok, message = Session.act(session, player.UserId, station.taskId, station.button, now)
 		if message == "wrong_sequence" then
@@ -550,6 +582,23 @@ local function interact(player: Player, id: string, _action: string?): { accepte
 			CreatureService.makeNoise(focus.Position, 22)
 		end
 		if ok and message == "solved" then
+			WorldService.houseEvent(spec.event)
+			if spec.event == "silhouette" then
+				CreatureService.silhouette()
+				WorldService.upperNoise()
+			end
+			if spec.item == "flashlight" and playerAdapter then
+				for _, teammate in Players:GetPlayers() do
+					playerAdapter.grantFlashlight(teammate)
+				end
+			end
+			if spec.kind == "clue" then
+				local clue = station.focus.Parent and station.focus.Parent:FindFirstChild("Clue")
+				local text = clue and clue:FindFirstChildWhichIsA("TextLabel", true)
+				if text and replicated then
+					replicated:SetAttribute("LastClue", text.Text)
+				end
+			end
 			local activity = session.tasks[station.taskId]
 			local key = `{rewardCampaign}:{session.stage}:{station.taskId}`
 			local recipients: { [number]: boolean } = {}
@@ -579,6 +628,37 @@ local function interact(player: Player, id: string, _action: string?): { accepte
 		afterActivity(previous)
 		return response(ok, message)
 	end
+	if playerAdapter then
+		local currentHide = playerAdapter.hiddenId(player)
+		if currentHide then
+			if currentHide ~= id then
+				return response(false, "not_available")
+			end
+			local locker = WorldService.locker(currentHide)
+			playerAdapter.exitHide(player)
+			if locker then
+				locker.occupant = nil
+			end
+			return response(true, "hide_exit")
+		end
+		local locker = WorldService.locker(id)
+		if locker then
+			if locker.occupant and locker.occupant ~= player then
+				return response(false, "occupied")
+			end
+			if
+				not hasSight(player, locker.door, 10.5)
+				or playerAdapter.sinceExit(player) < Config.Hide.ExitCooldown
+			then
+				return response(false, "too_far")
+			end
+			local seen = CreatureService.sawEntry(player)
+			if playerAdapter.enterHide(player, id, locker.inside, locker.eye, locker.exit, locker.front, seen) then
+				locker.occupant = player
+				return response(true, "hide_enter")
+			end
+		end
+	end
 	local item = WorldService.interactable(id)
 	if
 		item
@@ -588,7 +668,8 @@ local function interact(player: Player, id: string, _action: string?): { accepte
 		nextActionAt[player.UserId] = now + C.ActionCooldown
 		local door = WorldService.door(id)
 		if door then
-			WorldService.forceOpenDoor(door)
+			WorldService.useDoor(id)
+			CreatureService.makeNoise(door.center, 30)
 			return response(true, "door_opened")
 		end
 	end
@@ -620,8 +701,14 @@ local function retryStage(player: Player): (boolean, string?)
 end
 
 local function restartCampaign()
+	if built then
+		built.root:Destroy()
+		built = nil
+	end
 	rewardCampaign += 1
-	taskPayments = {}
+	taskPayments, supplies, endingPaid = {}, {}, {}
+	endingShown = false
+	escapeEndsAt, lostRetryAt = 0, 0
 	version += 1
 	building = false
 	clearRescues()
@@ -631,17 +718,22 @@ local function restartCampaign()
 	local seed = if selectedMode == "Story"
 		then Story.MapSeed
 		else C.Seed or ((os.time() + version * 7919) % 2147483646)
-	session = Session.new(seed, C, selectedMode)
+	session = Session.new(seed, C, selectedMode, true)
 	spawnSlots = {}
 	for _, player in Players:GetPlayers() do
 		Session.join(session, player.UserId)
 		player:SetAttribute("GameModeVote", "")
+		supplies[player.UserId] = { battery = 1, oxygen = 1, decoy = 1 }
 		slotFor(player.UserId)
 		freeze(player, true)
 	end
 	nextStageAt, startedAt = 0, 0
 	GameState.set("RoundId", version)
 	GameState.set("RoundEndedAt", 0)
+	if replicated then
+		replicated:SetAttribute("Ending", "")
+		replicated:SetAttribute("LastClue", "")
+	end
 	publish()
 end
 
@@ -728,6 +820,46 @@ local function tick()
 			end
 		end
 	end
+	if session.phase == "Playing" and not building and session.plan then
+		for _, spec in session.plan.activities do
+			if session.tasks[spec.id].solved then
+				continue
+			end
+			for _, player in Players:GetPlayers() do
+				local member = session.members[player.UserId]
+				local _, root = parts(player)
+				if not member or member.status ~= "Active" or not root then
+					continue
+				end
+				local hidden = playerAdapter and playerAdapter.hiddenId(player)
+				local complete = spec.kind == "explore"
+					and (root.Position - Vector3.new(spec.x, spec.y or 0, spec.z)).Magnitude < 9
+				if spec.kind == "hide" then
+					complete = hidden == "hide_Library"
+				end
+				if spec.kind == "breath" then
+					if hidden == "hide_Library" and player:GetAttribute("HoldBreath") == true then
+						tutorialHeld[player.UserId] = (tutorialHeld[player.UserId] or 0) + 0.2
+						complete = tutorialHeld[player.UserId] >= 2
+					else
+						tutorialHeld[player.UserId] = 0
+					end
+				end
+				if complete then
+					local previous: Session.Phase = session.phase
+					Session.act(session, player.UserId, spec.id, 1, now)
+					WorldService.houseEvent(spec.event)
+					if spec.event == "awaken" then
+						CreatureService.activate(Vector3.new(0, 0, -68))
+						CreatureService.holdOff(10)
+					end
+					afterActivity(previous)
+					break
+				end
+			end
+			break
+		end
+	end
 	if session.phase == "Playing" and not building then
 		if built then
 			Builder.refresh(built, session.tasks, now, Session.count(session, "Active"))
@@ -745,10 +877,53 @@ local function tick()
 					local point = plan.activities[(math.floor(now) % #plan.activities) + 1]
 					CreatureService.makeNoise(Vector3.new(point.x, 0, point.z), 100)
 				end
-			elseif session.stage == 3 then
+			elseif session.stage >= 3 then
 				WorldService.setPower(false)
 				blackoutUntil = now + C.BlackoutSeconds
 				publish()
+			end
+		end
+	end
+	if session.phase == "Extracting" and escapeEndsAt > 0 and now >= escapeEndsAt then
+		for _, member in session.members do
+			if member.status == "Active" or member.status == "Downed" then
+				member.status, member.risingUntil = "Waiting", nil
+			end
+		end
+		Session.tick(session, now)
+		publish()
+	end
+	if session.phase == "Lost" and not building then
+		if lostRetryAt == 0 then
+			lostRetryAt = now + C.IntermissionSeconds
+		end
+		if now >= lostRetryAt then
+			retryStage(Players:GetPlayers()[1])
+			lostRetryAt = 0
+		end
+	end
+	if
+		session.phase == "Won"
+		and Endings.resolve(Session.count(session, "Escaped"), math.min(now, escapeEndsAt), escapeEndsAt)
+	then
+		if not endingShown then
+			endingShown = true
+			WorldService.houseRuins()
+			CreatureService.endingPose()
+		end
+		if replicated then
+			replicated:SetAttribute("Ending", "house_fire")
+		end
+		for _, player in Players:GetPlayers() do
+			if
+				not endingPaid[player.UserId]
+				and session.members[player.UserId]
+				and session.members[player.UserId].status == "Escaped"
+			then
+				endingPaid[player.UserId] = PlayerData.update(player, function(data)
+					data.house.endings.house_fire = os.time()
+					data.house.achievements.escaped = os.time()
+				end)
 			end
 		end
 	end
@@ -783,6 +958,74 @@ function Runtime.Init()
 end
 
 function Runtime.Start()
+	ServerNet.onEvent("SetHousePreference", {
+		args = {
+			Guard.literal(
+				"bob",
+				"tilt",
+				"shake",
+				"fov",
+				"flashes",
+				"retro",
+				"vhs",
+				"haptics",
+				"master",
+				"music",
+				"effects",
+				"breathing",
+				"ambient"
+			),
+			Guard.number({ min = 0, max = 1 }),
+		},
+		rateLimit = { capacity = 12, refillPerSecond = 4 },
+	}, function(player: Player, key: string, value: number)
+		if PlayerData.update(player, function(data)
+			data.house.preferences[key] = value
+		end) then
+			local data = PlayerData.get(player)
+			if data then
+				player:SetAttribute("HousePreferences", HttpService:JSONEncode(data.house.preferences))
+			end
+		end
+	end)
+
+	if playerAdapter then
+		playerAdapter.setNoiseHandler(CreatureService.makeNoise)
+	end
+	ServerNet.onInvoke(
+		"UseHouseItem",
+		{ args = { Guard.literal("battery", "oxygen", "decoy") }, rateLimit = { capacity = 3, refillPerSecond = 0.5 } },
+		function(player: Player, item: string)
+			local member = session.members[player.UserId]
+			if
+				building
+				or not member
+				or member.status ~= "Active"
+				or (session.phase ~= "Playing" and session.phase ~= "Extracting")
+			then
+				return false
+			end
+			local stock = supplies[player.UserId]
+			if not stock or (stock[item] or 0) <= 0 or not playerAdapter then
+				return false
+			end
+			local _, root = parts(player)
+			if not root then
+				return false
+			end
+			stock[item] -= 1
+			if item == "battery" then
+				playerAdapter.addBattery(player, 0.5)
+			elseif item == "oxygen" then
+				playerAdapter.addOxygen(player, 25)
+			else
+				CreatureService.makeNoise(root.Position + root.CFrame.LookVector * 6, 50)
+			end
+			player:SetAttribute("HouseSupplies", HttpService:JSONEncode(stock))
+			return true
+		end
+	)
+
 	StoreService.setContinueHandler(retryStage)
 	ServerNet.onInvoke("SelectGameMode", {
 		args = { Guard.literal("Standard", "Story") },
@@ -840,6 +1083,10 @@ function Runtime.Start()
 			return
 		end
 		slotFor(player.UserId)
+		if not supplies[player.UserId] then
+			supplies[player.UserId] = { battery = 1, oxygen = 1, decoy = 1 }
+		end
+		player:SetAttribute("HouseSupplies", HttpService:JSONEncode(supplies[player.UserId]))
 		player:SetAttribute("GameModeVote", "")
 		player.CharacterAdded:Connect(function(character)
 			local function assign(instance: Instance)
@@ -857,6 +1104,13 @@ function Runtime.Start()
 	end
 	Players.PlayerAdded:Connect(join)
 	Players.PlayerRemoving:Connect(function(player)
+		if playerAdapter then
+			local id = playerAdapter.hiddenId(player)
+			local locker = id and WorldService.locker(id)
+			if locker then
+				locker.occupant = nil
+			end
+		end
 		modeVotes[player.UserId] = nil
 		Session.leave(session, player.UserId)
 		if Session.count(session) == 0 then
@@ -868,7 +1122,8 @@ function Runtime.Start()
 			session = Session.new(
 				if qaMode == "Story" then Story.MapSeed else C.Seed or ((os.time() + version * 7919) % 2147483646),
 				C,
-				qaMode
+				qaMode,
+				true
 			)
 			selectedMode, modeVotes = qaMode, {}
 			sceneStartedAt, sceneEndsAt = 0, 0

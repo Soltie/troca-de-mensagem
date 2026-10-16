@@ -23,6 +23,7 @@ local StoreCatalog = require("@game/ReplicatedStorage/Shared/Game/StoreCatalog")
 local TableUtil = require("@game/ReplicatedStorage/Shared/Util/TableUtil")
 local Types = require("@game/ReplicatedStorage/Shared/Types")
 
+local Preferences = require("@game/ReplicatedStorage/Shared/Game/HousePreferences")
 local TEMPLATE: Types.PlayerData = TableUtil.deepFreeze({
 	schemaVersion = Config.Data.SchemaVersion,
 	sessions = 0,
@@ -49,6 +50,7 @@ local TEMPLATE: Types.PlayerData = TableUtil.deepFreeze({
 	loadout = {},
 	boosts = { fichasUntil = 0, xpUntil = 0 },
 	story = { cleared = {}, flawless = {} },
+	house = { cleared = {}, flawless = {}, endings = {}, achievements = {}, preferences = {} },
 })
 
 -- Mapa { [string]: number } saneado (lixo vira vazio; números inválidos somem).
@@ -82,6 +84,17 @@ function PlayerDataSchema.migrate(raw: unknown): Types.PlayerData
 	end
 	-- v1 -> v2 -> v3 -> v4: os campos novos vêm do template (reconcile preenche o que falta).
 	local data = TableUtil.reconcile(raw, TEMPLATE)
+	local h = data.house :: any
+	if type(h) ~= "table" then
+		h = {}
+	end
+	data.house = {
+		preferences = Preferences.sanitize(h.preferences),
+		cleared = numberMap(h.cleared, 2147483647),
+		flawless = numberMap(h.flawless, 2147483647),
+		endings = numberMap(h.endings, 2147483647),
+		achievements = numberMap(h.achievements, 2147483647),
+	}
 	-- Valores corrompidos não podem travar a economia.
 	for _, currency in StoreCatalog.CURRENCIES do
 		local value = (data.wallet :: any)[currency]

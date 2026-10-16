@@ -223,7 +223,8 @@ local function update(dt: number)
 	local stance: Stance = currentStance()
 
 	local moving = h.MoveDirection.Magnitude > 0.1
-	local wantsSprint = UserInputService:IsKeyDown(Enum.KeyCode.LeftShift)
+	local wantsSprint = player:GetAttribute("TouchSprint") == true
+		or UserInputService:IsKeyDown(Enum.KeyCode.LeftShift)
 		or UserInputService:IsKeyDown(Enum.KeyCode.RightShift)
 		or UserInputService:IsKeyDown(Enum.KeyCode.ButtonL3)
 	if stamina <= 0 and exhaustedUntil < now then
@@ -311,6 +312,25 @@ function CharacterController.Init()
 end
 
 function CharacterController.Start()
+	local actions = game:GetService("ContextActionService")
+	actions:BindAction("HouseSprintTouch", function(_, state)
+		player:SetAttribute("TouchSprint", state == Enum.UserInputState.Begin)
+		return Enum.ContextActionResult.Sink
+	end, true)
+	actions:SetTitle("HouseSprintTouch", "CORRER")
+	actions:SetPosition("HouseSprintTouch", UDim2.new(1, -270, 1, -190))
+	actions:BindAction("HouseCrouchTouch", function(_, state)
+		if state == Enum.UserInputState.Begin then
+			CharacterController.requestStance(if serverStance() == "Stand" then "Crouch" else "Stand")
+		end
+		return Enum.ContextActionResult.Sink
+	end, true)
+	actions:SetTitle("HouseCrouchTouch", "AGACHAR")
+	actions:SetPosition("HouseCrouchTouch", UDim2.new(1, -270, 1, -100))
+	UserInputService.WindowFocusReleased:Connect(function()
+		player:SetAttribute("TouchSprint", false)
+	end)
+
 	GameState.observe(function(snapshot)
 		if snapshot.phase ~= phase and snapshot.phase == "Intro" then
 			stamina = P.StaminaMax

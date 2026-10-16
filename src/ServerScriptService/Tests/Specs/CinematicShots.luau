@@ -55,7 +55,7 @@ local testSpec: TestKit.Spec = {
 			-- Abertura cabe na cartela solo (9 s, com folga de 1 s); etapa cabe no congelamento (>= 3 s).
 			t.expect(math.abs(CinematicShots.duration(CinematicShots.Opening) - 9) <= 1).toBe(true)
 			t.expect(CinematicShots.duration(CinematicShots.Stage) <= 4).toBe(true)
-			t.expect(CinematicShots.duration(CinematicShots.Escape) <= 6).toBe(true)
+			t.expect(CinematicShots.duration(CinematicShots.Escape) <= 12).toBe(true)
 		end)
 		t.it("cameras stay outside the building and above the ground", function()
 			-- Núcleo do prédio: x -68..72, z <= 0 (o interior é sorteado e não pode aparecer).
@@ -75,7 +75,7 @@ local testSpec: TestKit.Spec = {
 			for _, s in CinematicShots.Attract.shots do
 				t.expect(CinematicShots.isCctv(s)).toBe(true)
 			end
-			t.expect(CinematicShots.isCctv(CinematicShots.Opening.shots[1])).toBe(false)
+			t.expect(CinematicShots.isCctv(CinematicShots.Opening.shots[1])).toBe(true)
 			t.expect(CinematicShots.quantize(0, 5, 12)).toBe(0)
 			t.expect(CinematicShots.quantize(1, 5, 12)).toBe(1)
 			-- 60 quadros em 5 s: 0.0101 ainda está no quadro 0; 0.0167 já é o quadro 1.

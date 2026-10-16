@@ -118,7 +118,7 @@ function CreatureBrain.step(brain: Brain, p: Perception): Command
 		local unseen = p.now - brain.lastSeenAt
 		if unseen <= C.GraceTime and p.targetPos ~= nil then
 			-- "Intuição" curta: ainda segue o jogador logo após virar uma esquina.
-			return command(brain, p.targetPos, p.hunt, nil)
+			return command(brain, brain.lastKnownPos, p.hunt, nil)
 		end
 		if unseen <= C.LoseSightTime and not p.arrived then
 			return command(brain, brain.lastKnownPos, p.hunt, nil)

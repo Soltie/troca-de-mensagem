@@ -14,7 +14,7 @@ local RunService = game:GetService("RunService")
 
 local Config = require("@game/ReplicatedStorage/Shared/Config")
 local Logger = require("@game/ReplicatedStorage/Shared/Logger")
-local Perks = require("@game/ReplicatedStorage/Shared/Game/Perks")
+
 local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
 local CreatureBrain = require("../Game/CreatureBrain")
 local HideRules = require("../Game/HideRules")
@@ -48,11 +48,15 @@ local pendingNoise: Vector3? = nil
 local lastStalkAt = 0
 local lastSeenFlag = false
 local lastSeenAt = -math.huge
+local seenPlayers: { [number]: number } = {}
 -- Tempo que ele está perto do armário com o jogador respirando (HideRules.exposure).
 local exposure = 0
 -- Trégua (checkpoint): parado até este instante.
 local holdUntil = 0
 local nextBangAt = 0
+local feintUntil = 0
+local nextFeintAt = 0
+local feintDestination: Vector3? = nil
 
 -- Movimento
 local waypoints: { Vector3 } = {}
@@ -152,11 +156,15 @@ local function perceiveHidden(target: Target, now: number): CreatureBrain.Percep
 	local origin = feet()
 	local at = player:GetAttribute("HiddenAt")
 	local spot = if typeof(at) == "Vector3" then at else target.root.Position
-	local spotFeet = Vector3.new(spot.X, origin.Y, spot.Z)
+	local spotFeet = Vector3.new(spot.X, spot.Y, spot.Z)
 	local distance = (spotFeet - origin).Magnitude
 	-- Lanterna acesa dentro do armário vaza pelas frestas: conta como respirar.
 	local quiet = player:GetAttribute("HoldBreath") == true and player:GetAttribute(Tags.Attr.Flashlight) ~= true
-	exposure = HideRules.exposure(exposure, distance, quiet, C.BrainInterval)
+	local ray = RaycastParams.new()
+	ray.FilterType = Enum.RaycastFilterType.Exclude
+	ray.FilterDescendantsInstances = { target.character, getRoot().Parent :: Instance }
+	local blocked = workspace:Raycast(origin + UP * 3, spotFeet + UP * 3 - (origin + UP * 3), ray) ~= nil
+	exposure = HideRules.exposure(exposure, if blocked then math.huge else distance, quiet, C.BrainInterval)
 	local seen = player:GetAttribute("HiddenSeen") == true
 	if
 		not seen
@@ -185,7 +193,7 @@ local function perceiveHidden(target: Target, now: number): CreatureBrain.Percep
 			distance = distance,
 			targetPos = spotFeet,
 			noisePos = nil,
-			hunt = hunt,
+			hunt = hunt and not Config.House.Enabled,
 			arrived = arrived,
 		}
 	end
@@ -197,7 +205,7 @@ local function perceiveHidden(target: Target, now: number): CreatureBrain.Percep
 		distance = distance,
 		targetPos = nil,
 		noisePos = noise,
-		hunt = hunt,
+		hunt = hunt and not Config.House.Enabled,
 		arrived = arrived,
 	}
 end
@@ -226,20 +234,20 @@ local function perceive(target: Target?, now: number): CreatureBrain.Perception
 		or math.deg(math.acos(math.clamp(forward:Dot(flat.Unit), -1, 1))) <= C.SightFov / 2
 	local canSee = los and distance <= range and (inFov or distance <= C.CloseSenseRange * crouch)
 	if canSee then
+		seenPlayers[target.player.UserId] = now
 		lastSeenAt = now
 	end
 
 	local targetFeet = target.root.Position - UP * 3
 	local noise = pendingNoise
 	pendingNoise = nil
-	local velocity = target.root.AssemblyLinearVelocity
-	local horizontalSpeed = Vector3.new(velocity.X, 0, velocity.Z).Magnitude
-	-- Melhoria "Passos Leves" (StoreService publica o nível): o raio do barulho de corrida encolhe.
-	local quiet = Perks.factor("silencio", tonumber(target.player:GetAttribute("PerkSilencio")) or 0)
-	if horizontalSpeed > Config.Player.NoiseSpeed and distance <= Config.Player.NoiseRadius * quiet then
-		noise = targetFeet
-	end
-	if brain.fuses >= C.StalkFromFuses and brain.mode == "Patrol" and now - lastStalkAt >= C.StalkInterval then
+
+	if
+		not Config.House.Enabled
+		and brain.fuses >= C.StalkFromFuses
+		and brain.mode == "Patrol"
+		and now - lastStalkAt >= C.StalkInterval
+	then
 		lastStalkAt = now
 		noise = targetFeet + Vector3.new(rng:NextNumber(-6, 6), 0, rng:NextNumber(-6, 6))
 	end
@@ -251,7 +259,7 @@ local function perceive(target: Target?, now: number): CreatureBrain.Perception
 		distance = distance,
 		targetPos = targetFeet,
 		noisePos = noise,
-		hunt = hunt,
+		hunt = hunt and not Config.House.Enabled,
 		arrived = arrived,
 	}
 end
@@ -354,7 +362,24 @@ local function brainTick()
 	end
 	local target = findTarget()
 	local perception = perceive(target, now)
+	if
+		brain.mode == "Search"
+		and now >= brain.searchUntil
+		and now >= nextFeintAt
+		and not perception.canSee
+		and not perception.noisePos
+		and rng:NextNumber() < Config.House.FalseExitChance
+	then
+		feintUntil, nextFeintAt = now + 6, now + Config.House.FalseExitCooldown
+		feintDestination = nextPatrolNode()
+	end
 	local command = CreatureBrain.step(brain, perception)
+	if feintUntil > now and not perception.canSee and not perception.noisePos then
+		command = { mode = "Investigate", target = feintDestination, speed = 5 }
+	else
+		feintUntil = 0
+	end
+	getRoot():SetAttribute("FalseExit", feintUntil > now)
 	if command.mode == "Chase" or command.event == "capture" then
 		getRoot():SetAttribute(Tags.Attr.ThreatTargetUserId, if target then target.player.UserId else 0)
 	end
@@ -505,9 +530,10 @@ function CreatureService.reset()
 	pendingNoise = nil
 	lastSeenFlag = false
 	lastSeenAt = -math.huge
+	table.clear(seenPlayers)
 	exposure = 0
 	holdUntil = 0
-	nextBangAt = 0
+	nextBangAt, feintUntil, nextFeintAt = 0, 0, 0
 	arrived = true
 	pathBusy = false
 	pauseUntil = 0
@@ -556,11 +582,36 @@ end
 
 -- Barulho em `position` (ouvido se estiver dentro de `radius`).
 function CreatureService.makeNoise(position: Vector3, radius: number)
-	if active and not frozen and (position - feet()).Magnitude <= radius then
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	local excluded: { Instance } = {}
+	for _, player in Players:GetPlayers() do
+		if player.Character then
+			table.insert(excluded, player.Character)
+		end
+	end
+	if model then
+		table.insert(excluded, model)
+	end
+	params.FilterDescendantsInstances = excluded
+	local origin = feet() + UP * 3
+	local blocked = workspace:Raycast(origin, position + UP * 2 - origin, params) ~= nil
+	local audible = radius * (if blocked then 0.2 else 1)
+	if active and not frozen and (position - feet()).Magnitude <= audible then
 		pendingNoise = position
 	end
 end
 
+function CreatureService.silhouette()
+	active, frozen = true, true
+	placeAt(Vector3.new(26, 16, 8), Vector3.new(0, 0, 1))
+	setAttributes("Search")
+end
+function CreatureService.endingPose()
+	active, frozen = true, true
+	placeAt(Vector3.new(0, 0, 30), Vector3.new(0, 0, 1))
+	setAttributes("Search")
+end
 function CreatureService.freeze()
 	frozen = true
 	stopMoving()
@@ -580,6 +631,9 @@ function CreatureService.holdOff(seconds: number)
 end
 
 -- Segundos desde a última vez que viu o jogador (esconderijo: "viu entrar?").
+function CreatureService.sawEntry(player: Player): boolean
+	return os.clock() - (seenPlayers[player.UserId] or -math.huge) < Config.Hide.SawEntryWindow
+end
 function CreatureService.secondsSinceSeen(): number
 	return os.clock() - lastSeenAt
 end
@@ -600,7 +654,7 @@ function CreatureService.state(): { [string]: any }
 	return {
 		active = active,
 		frozen = frozen,
-		hunt = hunt,
+		hunt = hunt and not Config.House.Enabled,
 		mode = brain.mode,
 		fuses = brain.fuses,
 		position = feet(),
