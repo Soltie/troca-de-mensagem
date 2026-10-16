@@ -13,9 +13,12 @@ local RunService = game:GetService("RunService")
 local Config = require("@game/ReplicatedStorage/Shared/Config")
 local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
 local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
+local SettingsController = require("./SettingsController")
 
 local rng = Random.new()
 local surgeUntil = 0
+local surgeOrigin: Vector3? = nil
+local surgeRadius = math.huge
 local snapshot: GameState.Snapshot? = nil
 
 local function lightOf(part: BasePart): Light?
@@ -24,7 +27,8 @@ end
 
 local function step()
 	local now = os.clock()
-	local surging = now < surgeUntil
+	local flashes = SettingsController.get("flashes")
+	local surging = flashes and now < surgeUntil
 	local s = snapshot
 	for _, instance in CollectionService:GetTagged(Tags.PowerLight) do
 		if instance:IsA("BasePart") then
@@ -33,17 +37,21 @@ local function step()
 				local base = (instance:GetAttribute("BaseBrightness") :: number?) or light.Brightness
 				local kind = instance:GetAttribute(Tags.Attr.LightKind)
 				local factor = 1
-				if instance:GetAttribute(Tags.Attr.Flicker) == true and rng:NextNumber() < 0.18 then
+				if flashes and instance:GetAttribute(Tags.Attr.Flicker) == true and rng:NextNumber() < 0.18 then
 					factor = rng:NextNumber(0.05, 0.5)
 				end
-				if kind == "Lamp" and rng:NextNumber() < 0.01 then
+				if flashes and kind == "Lamp" and rng:NextNumber() < 0.01 then
 					factor = 0.2 -- lâmpadas velhas falham de vez em quando
 				end
-				if surging and kind ~= "Exit" then
+				if
+					surging
+					and kind ~= "Exit"
+					and (surgeOrigin == nil or (instance.Position - surgeOrigin).Magnitude <= surgeRadius)
+				then
 					factor = if rng:NextNumber() < 0.5 then rng:NextNumber(0, 0.25) else rng:NextNumber(0.8, 1.6)
 				end
 				if kind == "Beacon" then
-					local on = s ~= nil and s.powerOn and (now * 2.5) % 2 < 1
+					local on = s ~= nil and s.powerOn and (not flashes or (now * 2.5) % 2 < 1)
 					instance.Transparency = if on then 0 else 0.6
 					factor = if on then 1 else 0
 				end
@@ -58,8 +66,10 @@ local WorldFxController = {
 }
 
 -- Pico de falha nas luzes por `duration` segundos.
-function WorldFxController.surge(duration: number)
+function WorldFxController.surge(duration: number, origin: Vector3?, radius: number?)
 	surgeUntil = math.max(surgeUntil, os.clock() + duration)
+	surgeOrigin = origin
+	surgeRadius = radius or math.huge
 end
 
 function WorldFxController.Start()

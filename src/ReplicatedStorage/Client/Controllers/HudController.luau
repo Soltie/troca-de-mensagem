@@ -13,6 +13,8 @@ local Config = require("@game/ReplicatedStorage/Shared/Config")
 local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
 local Create = require("../UI/Create")
 local CreatureVisualController = require("./CreatureVisualController")
+local FearController = require("./FearController")
+local TensionController = require("./TensionController")
 
 local GUI_NAME = "DebugHud"
 
@@ -105,6 +107,17 @@ function HudController.Start()
 					position.X,
 					position.Y,
 					position.Z
+				)
+				local tension = TensionController.debugState()
+				local lines: { string } = {}
+				for i = math.max(1, #tension.log - 4), #tension.log do
+					table.insert(lines, tension.log[i])
+				end
+				label.Text ..= string.format(
+					"\nmedo %.2f | diretor %s\n%s",
+					FearController.get(),
+					tension.state,
+					table.concat(lines, "\n")
 				)
 			end
 		end

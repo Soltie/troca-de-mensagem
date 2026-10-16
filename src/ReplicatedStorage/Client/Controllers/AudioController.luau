@@ -21,6 +21,7 @@ local SoundService = game:GetService("SoundService")
 
 local Audio = require("@game/ReplicatedStorage/Shared/Game/Audio")
 local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
+local Presentation = require("@game/ReplicatedStorage/Shared/Game/ThreatPresentation")
 local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
 
 export type MusicState = "none" | "calm" | "tension" | "chase" | "relief"
@@ -388,7 +389,7 @@ function AudioController.Start()
 		targets.Machinery = if playing and s.powerOn then Audio.Machinery.volume else 0
 
 		local music = musicState
-		local inPlay = s.phase == "Playing"
+		local inPlay = Presentation.playing(s.phase, player:GetAttribute("CampaignStatus") :: string?)
 		targets.Music = if inPlay and music == "calm" then Audio.Music.volume else 0
 		targets.MusicTension = if inPlay and music == "tension"
 			then Audio.MusicTension.volume * (0.7 + near * 0.6)

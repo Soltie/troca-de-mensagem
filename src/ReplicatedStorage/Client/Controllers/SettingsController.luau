@@ -13,8 +13,11 @@
 ]]
 
 local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
 
 local Config = require("@game/ReplicatedStorage/Shared/Config")
+local Text = require("@game/ReplicatedStorage/Shared/Game/Text")
+local Create = require("../UI/Create")
 
 export type Key = "retro" | "vhs" | "bob" | "tilt" | "shake" | "fov" | "flashes" | "haptics"
 
@@ -27,6 +30,24 @@ for _, key in KEYS do
 	values[key] = (Config.Comfort :: any)[key] ~= false
 end
 local listeners: { (key: Key, value: boolean) -> () } = {}
+local menu: TextLabel? = nil
+
+local function refreshMenu()
+	if not menu then
+		return
+	end
+	local lines = { Text.Options.title, "" }
+	-- Haptics ainda não tem executor: só expor as sete opções que já funcionam.
+	for i = 1, 7 do
+		local key = KEYS[i]
+		table.insert(
+			lines,
+			string.format("[%d] %s: %s", i, (Text.Options :: any)[key], if values[key] then Text.On else Text.Off)
+		)
+	end
+	table.insert(lines, "\n[1-7] ALTERNAR   [O] FECHAR")
+	menu.Text = table.concat(lines, "\n")
+end
 
 local SettingsController = {
 	Name = "SettingsController",
@@ -42,6 +63,7 @@ function SettingsController.set(key: Key, value: boolean)
 		return
 	end
 	values[key] = value
+	refreshMenu()
 	for _, listener in listeners do
 		task.spawn(listener, key, value)
 	end
@@ -69,6 +91,31 @@ function SettingsController.onChanged(listener: (key: Key, value: boolean) -> ()
 	table.insert(listeners, listener)
 end
 
+function SettingsController.Init()
+	local gui = Create("ScreenGui", {
+		Name = "ComfortOptions",
+		ResetOnSpawn = false,
+		DisplayOrder = 90,
+		Parent = Players.LocalPlayer:WaitForChild("PlayerGui"),
+	}) :: ScreenGui
+	menu = Create("TextLabel", {
+		Name = "Options",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromOffset(520, 310),
+		BackgroundColor3 = Color3.fromRGB(15, 19, 17),
+		BackgroundTransparency = 0.08,
+		TextColor3 = Color3.fromRGB(215, 225, 205),
+		TextSize = 16,
+		Font = Enum.Font.Code,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextYAlignment = Enum.TextYAlignment.Center,
+		Visible = false,
+		Parent = gui,
+	}, { Create("UIPadding", { PaddingLeft = UDim.new(0, 18) }) }) :: TextLabel
+	refreshMenu()
+end
+
 function SettingsController.Start()
 	UserInputService.InputBegan:Connect(function(input: InputObject, processed: boolean)
 		if processed then
@@ -78,6 +125,22 @@ function SettingsController.Start()
 			SettingsController.toggle("retro")
 		elseif input.KeyCode == Enum.KeyCode.B then
 			SettingsController.toggleMotion()
+		elseif input.KeyCode == Enum.KeyCode.O and menu then
+			menu.Visible = not menu.Visible
+		elseif menu and menu.Visible then
+			local numberKeys = {
+				Enum.KeyCode.One,
+				Enum.KeyCode.Two,
+				Enum.KeyCode.Three,
+				Enum.KeyCode.Four,
+				Enum.KeyCode.Five,
+				Enum.KeyCode.Six,
+				Enum.KeyCode.Seven,
+			}
+			local index = table.find(numberKeys, input.KeyCode)
+			if index then
+				SettingsController.toggle(KEYS[index])
+			end
 		end
 	end)
 end

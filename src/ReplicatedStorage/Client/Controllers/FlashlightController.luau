@@ -20,6 +20,7 @@ local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
 local Remotes = require("@game/ReplicatedStorage/Shared/Net/Remotes")
 local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
 local AudioController = require("./AudioController")
+local SettingsController = require("./SettingsController")
 local CharacterController = require("./CharacterController")
 
 local player = Players.LocalPlayer
@@ -230,6 +231,9 @@ end
 
 -- Falha forte por `duration` s (diretor de tensão, susto).
 function FlashlightController.flicker(duration: number)
+	if not SettingsController.get("flashes") then
+		return
+	end
 	forcedFlickerUntil = math.max(forcedFlickerUntil, os.clock() + duration)
 end
 
@@ -468,7 +472,9 @@ function FlashlightController.Start()
 			if now < forcedFlickerUntil then
 				chance = 0.6
 			end
-			flickerFactor = if rng:NextNumber() < chance then rng:NextNumber(0, 0.4) else 1
+			flickerFactor = if SettingsController.get("flashes") and rng:NextNumber() < chance
+				then rng:NextNumber(0, 0.4)
+				else 1
 		end
 		local brightness = BASE_BRIGHTNESS * BatteryModel.brightness(charge()) * flickerFactor
 		if spot then

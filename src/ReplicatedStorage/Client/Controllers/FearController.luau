@@ -18,6 +18,7 @@ local RunService = game:GetService("RunService")
 local FearModel = require("@game/ReplicatedStorage/Shared/Game/FearModel")
 local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
 local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
+local Presentation = require("@game/ReplicatedStorage/Shared/Game/ThreatPresentation")
 local AudioController = require("./AudioController")
 local BodyAudioController = require("./BodyAudioController")
 local CameraController = require("./CameraController")
@@ -154,7 +155,17 @@ function FearController.Start()
 		local active = root ~= nil and s.creatureActive and root.Position.Y > -100
 		local position = camera.CFrame.Position
 		local distance = if active and root then (root.Position - position).Magnitude else math.huge
-		local mode = if root then (root:GetAttribute(Tags.Attr.CreatureMode) :: string?) or "Dormant" else "Dormant"
+		local status = player:GetAttribute("CampaignStatus") :: string?
+		local playing = Presentation.playing(s.phase, status)
+		local globalMode = if root
+			then (root:GetAttribute(Tags.Attr.CreatureMode) :: string?) or "Dormant"
+			else "Dormant"
+		local mode = Presentation.mode(
+			globalMode,
+			if root then root:GetAttribute(Tags.Attr.ThreatTargetUserId) :: number? else nil,
+			player.UserId,
+			status
+		)
 
 		if active and root and distance < 70 and now - lastVisibilityCheck > 0.2 then
 			lastVisibilityCheck = now
@@ -164,7 +175,7 @@ function FearController.Start()
 		end
 
 		-- Picos de susto: ele te viu / te ouviu no armário.
-		if mode == "Chase" and lastMode ~= "Chase" then
+		if playing and mode == "Chase" and lastMode ~= "Chase" then
 			FearModel.spike(state, 0.35)
 		end
 		lastMode = mode
@@ -179,7 +190,6 @@ function FearController.Start()
 		local lit = s.powerOn or nearLight(position)
 		local flashlight = FlashlightController.isOn()
 		darkness = if lit then 0 elseif flashlight then 0.35 else 1
-		local playing = s.phase == "Playing"
 		local changed = FearModel.step(state, {
 			creatureDistance = if playing then distance else math.huge,
 			creatureVisible = playing and visible,

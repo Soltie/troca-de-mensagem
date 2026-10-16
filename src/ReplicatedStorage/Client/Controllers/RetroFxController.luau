@@ -13,6 +13,7 @@ local RunService = game:GetService("RunService")
 
 local Config = require("@game/ReplicatedStorage/Shared/Config")
 local SettingsController = require("./SettingsController")
+local FearController = require("./FearController")
 
 local E = Config.Effects
 local player = Players.LocalPlayer
@@ -154,7 +155,7 @@ function RetroFxController.Start()
 			dot.Position = UDim2.fromScale(rng:NextNumber(), rng:NextNumber())
 			local light = rng:NextNumber() < 0.5
 			dot.BackgroundColor3 = if light then Color3.new(1, 1, 1) else Color3.new(0, 0, 0)
-			dot.BackgroundTransparency = rng:NextNumber(0.55, 0.85)
+			dot.BackgroundTransparency = math.clamp(rng:NextNumber(0.75, 0.95) - FearController.get() * 0.2, 0.4, 1)
 		end
 		-- Linha de tracking de VHS descendo de vez em quando.
 		local track = tracking
@@ -164,7 +165,7 @@ function RetroFxController.Start()
 			end
 			if trackingY >= 0 then
 				trackingY += 0.06
-				track.Visible = trackingY <= 1
+				track.Visible = false -- tracking VHS pertence ao ScreenFxController
 				track.Position = UDim2.fromScale(0, trackingY)
 				if trackingY > 1 then
 					trackingY = -10
