@@ -26,6 +26,7 @@ local controllers: { any } = {
 	require("./Controllers/BodyAudioController"),
 	require("./Controllers/FlashlightController"),
 	require("./Controllers/FearController"),
+	require("./Controllers/LightingController"),
 	require("./Controllers/RetroFxController"),
 	require("./Controllers/WorldFxController"),
 	require("./Controllers/ArtController"),

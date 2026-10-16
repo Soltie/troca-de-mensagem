@@ -286,6 +286,6 @@ Escopo: novo LightingProfile + LightingController; WorldService.applyLighting, B
 RetroFxController (somente pós/VHS), WorldFxController, ScreenFxController (névoa), FlashlightController (luz),
 CosmeticController (integração de filtro), Main.client (registro), project JSON de Lighting, testes e docs.
 Não editar menu, ModeMenuController, StoryController, UI de escolhas, mapa, materiais, texturas ou props.
-DEV LIBERADO EM EDIT; outro agente faz o menu. Check isolado 213, integrado 234; runner Dev 255 aprovados.
+DEV LIBERADO EM EDIT; outro agente faz o menu. Check isolado 213, integrado 234; runner Dev final 257 aprovados.
 Evidências e limites: docs/LIGHTING_POLISH.md e docs/evidence/lighting-polish. Sem push/publicação/Creator Hub.
-ÍNDICE RESERVADO BREVEMENTE ao commit desta frente; Main.client e Config serão staged só com os hunks de iluminação.
+ÍNDICE LIBERADO APÓS COMMIT desta frente; Main.client e Config incluem somente os hunks de iluminação.

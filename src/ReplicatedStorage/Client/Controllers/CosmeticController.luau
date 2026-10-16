@@ -9,13 +9,13 @@
 	  (intro/intervalo/fim) ou para quem está esperando/assistindo; no escuro do turno, nada flutua.
 ]]
 
-local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
 local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
 local StoreCatalog = require("@game/ReplicatedStorage/Shared/Game/StoreCatalog")
 local FlashlightController = require("./FlashlightController")
+local LightingController = require("./LightingController")
 
 local player = Players.LocalPlayer
 
@@ -61,15 +61,8 @@ local function applyUniform()
 end
 
 local function applyFilter()
-	local grade = Lighting:FindFirstChild("RetroGrade")
-	if not grade or not grade:IsA("ColorCorrectionEffect") then
-		return
-	end
 	local item = equippedItem("EquipFilter", "filter")
-	grade.TintColor = rgb(item.tint, Color3.fromRGB(214, 228, 210))
-	grade.Saturation = item.saturation or -0.32
-	grade.Contrast = item.contrast or 0.16
-	grade.Brightness = item.brightness or -0.01
+	LightingController.setFilter(item)
 end
 
 local function titlesVisible(): boolean

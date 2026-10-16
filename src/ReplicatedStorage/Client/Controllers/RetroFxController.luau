@@ -1,13 +1,11 @@
 --!strict
 --[[
 	"Filtro retrô" (o Roblox não tem shader de tela nem pixelização de render, validado):
-	- Gradação de cor (contraste alto, saturação baixa, tom esverdeado) + bloom leve: sempre ligados,
-	  fazem parte da direção de arte.
+	- Gradação, bloom e exposição são compostos somente pelo LightingController.
 	- Sobreposição 2D (scanlines, vinheta, granulação animada a 12 quadros/s e uma "linha de
 	  tracking" ocasional): liga/desliga com V (conforto).
 ]]
 
-local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
@@ -43,6 +41,7 @@ local function edge(parent: Instance, anchor: Vector2, position: UDim2, size: UD
 	local f = Instance.new("Frame")
 	f.BorderSizePixel = 0
 	f.BackgroundColor3 = Color3.new(0, 0, 0)
+	f.BackgroundTransparency = 0.36
 	f.AnchorPoint = anchor
 	f.Position = position
 	f.Size = size
@@ -65,10 +64,10 @@ local function buildOverlay(): ScreenGui
 	gui.Enabled = SettingsController.get("retro")
 
 	-- Vinheta (4 bordas com gradiente).
-	edge(gui, Vector2.new(0, 0), UDim2.fromScale(0, 0), UDim2.fromScale(0.2, 1), 0)
-	edge(gui, Vector2.new(1, 0), UDim2.fromScale(1, 0), UDim2.fromScale(0.2, 1), 180)
-	edge(gui, Vector2.new(0, 0), UDim2.fromScale(0, 0), UDim2.fromScale(1, 0.18), 90)
-	edge(gui, Vector2.new(0, 1), UDim2.fromScale(0, 1), UDim2.fromScale(1, 0.18), 270)
+	edge(gui, Vector2.new(0, 0), UDim2.fromScale(0, 0), UDim2.fromScale(0.16, 1), 0)
+	edge(gui, Vector2.new(1, 0), UDim2.fromScale(1, 0), UDim2.fromScale(0.16, 1), 180)
+	edge(gui, Vector2.new(0, 0), UDim2.fromScale(0, 0), UDim2.fromScale(1, 0.14), 90)
+	edge(gui, Vector2.new(0, 1), UDim2.fromScale(0, 1), UDim2.fromScale(1, 0.14), 270)
 
 	local lines = Instance.new("Frame")
 	lines.Name = "Scanlines"
@@ -99,29 +98,11 @@ local function buildOverlay(): ScreenGui
 	return gui
 end
 
-local function buildPostFx()
-	local grade = Instance.new("ColorCorrectionEffect")
-	grade.Name = "RetroGrade"
-	grade.Contrast = 0.16
-	grade.Saturation = -0.32
-	grade.Brightness = -0.01
-	grade.TintColor = Color3.fromRGB(214, 228, 210)
-	grade.Parent = Lighting
-
-	local bloom = Instance.new("BloomEffect")
-	bloom.Name = "RetroBloom"
-	bloom.Intensity = 0.5
-	bloom.Size = 18
-	bloom.Threshold = 1.3
-	bloom.Parent = Lighting
-end
-
 local RetroFxController = {
 	Name = "RetroFxController",
 }
 
 function RetroFxController.Init()
-	buildPostFx()
 	overlay = buildOverlay()
 end
 
@@ -155,7 +136,7 @@ function RetroFxController.Start()
 			dot.Position = UDim2.fromScale(rng:NextNumber(), rng:NextNumber())
 			local light = rng:NextNumber() < 0.5
 			dot.BackgroundColor3 = if light then Color3.new(1, 1, 1) else Color3.new(0, 0, 0)
-			dot.BackgroundTransparency = math.clamp(rng:NextNumber(0.75, 0.95) - FearController.get() * 0.2, 0.4, 1)
+			dot.BackgroundTransparency = math.clamp(rng:NextNumber(0.88, 0.98) - FearController.get() * 0.06, 0.8, 1)
 		end
 		-- Linha de tracking de VHS descendo de vez em quando.
 		local track = tracking

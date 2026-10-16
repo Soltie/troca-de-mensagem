@@ -1,7 +1,7 @@
 --!strict
 --[[
 	Helpers para montar o mundo com primitivas (Part/Wedge/Cylinder), placas com texto e luzes.
-	Tudo nasce ancorado, sem sombra (estética PS1 e desempenho) e com superfícies lisas.
+	Tudo nasce ancorado e com superfícies lisas. Geometria opaca sólida projeta sombra.
 ]]
 
 local CollectionService = game:GetService("CollectionService")
@@ -64,8 +64,8 @@ function Build.part(
 	part.Material = opts.material or Enum.Material.SmoothPlastic
 	part.TopSurface = Enum.SurfaceType.Smooth
 	part.BottomSurface = Enum.SurfaceType.Smooth
-	part.CastShadow = false
 	part.Transparency = opts.transparency or 0
+	part.CastShadow = part.Transparency < 0.5 and opts.collide ~= false
 	part.Reflectance = opts.reflectance or 0
 	if opts.collide ~= nil then
 		part.CanCollide = opts.collide

@@ -29,6 +29,7 @@ local PropService = require("./PropService")
 local RoundService = require("./RoundService")
 local StoreService = require("./StoreService")
 local TelemetryService = require("./TelemetryService")
+local WorldService = require("./WorldService")
 
 local log = Logger.new("DebugService")
 
@@ -46,6 +47,10 @@ local function encode(value: any): any
 end
 
 local commands: { [string]: (...any) -> any } = {
+	lightingPower = function(on: boolean)
+		WorldService.setPower(on)
+		return "ok"
+	end,
 	state = function()
 		local players = {}
 		for _, player in Players:GetPlayers() do

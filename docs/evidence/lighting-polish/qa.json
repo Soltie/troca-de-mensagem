@@ -1,0 +1,92 @@
+{
+  "base": "b01d4fb",
+  "date": "2026-10-16",
+  "studioId": "cac08fd1-61f0-4a24-bb55-0018c2449664",
+  "luneIsolated": {
+    "skippedRobloxOnly": 4,
+    "passed": 213,
+    "failed": 0
+  },
+  "luneIntegrated": {
+    "skippedRobloxOnly": 4,
+    "passed": 234,
+    "failed": 0
+  },
+  "studioIntegrated": {
+    "skipped": 0,
+    "passed": 257,
+    "failed": 0
+  },
+  "runtime": {
+    "bloomIntensity": 0.19,
+    "interiorOffExposure": 0.16,
+    "interiorOnExposure": 0.1,
+    "dofOutsideCinema": 0,
+    "fogOn": 164,
+    "artisticContrastWithSepia": 0.1,
+    "globalShadows": true,
+    "comfortTestedLights": 52,
+    "comfortNonSteadyLights": 0,
+    "fogOff": 142,
+    "cosmeticSepiaContrast": 0.18,
+    "lightingStyle": "Realistic",
+    "shadowFixtures": 2,
+    "enabledLightsPowered": 53,
+    "defaultCosmeticContrast": 0,
+    "flashlight": {
+      "enabled": true,
+      "range": 48,
+      "shadows": true,
+      "brightness": 2.25,
+      "angle": 42
+    },
+    "fogRecovery": {
+      "setup": "Client-only threat and phase for presentation QA",
+      "peakSample": 66.38023376464844,
+      "recoveredBlur": 0,
+      "recovered": 141.99996948242188
+    }
+  },
+  "evidence": {
+    "hudHidden": true,
+    "after": "Dev with parallel uncommitted changes present",
+    "before": "LightingBefore build from base commit",
+    "poweredCapture": "Local client visual setup using profile and existing fixture values; real server power separately verified",
+    "sameViewportAspect": false,
+    "cameras": {
+      "reception": {
+        "eye": [
+          -4,
+          4,
+          -8
+        ],
+        "look": [
+          -4,
+          3,
+          -22
+        ]
+      },
+      "fov": 65,
+      "exterior": {
+        "eye": [
+          2,
+          4,
+          30
+        ],
+        "look": [
+          -8,
+          4,
+          -8
+        ]
+      }
+    },
+    "cctvDisabled": true
+  },
+  "limits": [
+    "No representative mobile/low-end FPS measurement",
+    "Final isolated Studio launch required login; engine runner used authenticated Dev",
+    "Core UI, avatar download and monetization policy warnings observed"
+  ],
+  "finalState": "Dev Edit; own QA launches closed; no push or publication",
+  "integrationBase": "7a69977"
+}

@@ -10,6 +10,7 @@
 
 local CollectionService = game:GetService("CollectionService")
 local Lighting = game:GetService("Lighting")
+local LightingProfile = require("@game/ReplicatedStorage/Shared/Game/LightingProfile")
 local PhysicsService = game:GetService("PhysicsService")
 
 local Audio = require("@game/ReplicatedStorage/Shared/Game/Audio")
@@ -86,17 +87,23 @@ local function applyLighting(power: boolean)
 		sky.MoonAngularSize = 9
 		sky.Parent = Lighting
 	end
-	Lighting.ClockTime = 0.3
-	Lighting.Brightness = 0.4
-	Lighting.GlobalShadows = false
-	Lighting.EnvironmentDiffuseScale = 0
-	Lighting.EnvironmentSpecularScale = 0
+	local visual = LightingProfile.World
+	Lighting.ClockTime = visual.clock
+	Lighting.Brightness = visual.brightness
+	Lighting.GlobalShadows = true
+	Lighting.ShadowSoftness = visual.shadowSoftness
+	Lighting.EnvironmentDiffuseScale = visual.diffuse
+	Lighting.EnvironmentSpecularScale = visual.specular
 	Lighting.ExposureCompensation = 0
-	Lighting.Ambient = if power then Palette.AmbientPower else Palette.Ambient
-	Lighting.OutdoorAmbient = Palette.OutdoorAmbient
-	Lighting.FogColor = if power then Palette.FogPower else Palette.Fog
-	Lighting.FogStart = 4
-	Lighting.FogEnd = if power then 115 else 90
+	local function rgb(v: { number }): Color3
+		return Color3.fromRGB(v[1], v[2], v[3])
+	end
+	Lighting.Ambient = rgb(if power then visual.ambientPower else visual.ambient)
+	Lighting.OutdoorAmbient = rgb(visual.outdoor)
+	Lighting.FogColor = rgb(if power then visual.fogPower else visual.fog)
+	Lighting.FogStart = visual.fogStart
+	Lighting.FogEnd = if power then visual.fogEndPower else visual.fogEnd
+	Lighting:SetAttribute("S9PowerOn", power)
 	-- Base para a névoa dinâmica do cliente (perigo encurta a névoa localmente).
 	Lighting:SetAttribute("BaseFogEnd", Lighting.FogEnd)
 end

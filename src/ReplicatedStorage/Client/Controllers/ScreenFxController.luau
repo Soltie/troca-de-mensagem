@@ -4,13 +4,13 @@ local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
-local Config = require("@game/ReplicatedStorage/Shared/Config")
 local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
 local PixelText = require("@game/ReplicatedStorage/Shared/Game/PixelText")
 local Presentation = require("@game/ReplicatedStorage/Shared/Game/ThreatPresentation")
 local Create = require("../UI/Create")
 local FearController = require("./FearController")
 local SettingsController = require("./SettingsController")
+local LightingController = require("./LightingController")
 
 local player = Players.LocalPlayer
 local snapshot: GameState.Snapshot? = nil
@@ -48,7 +48,7 @@ function ScreenFxController.reset()
 	if puzzlePulse then
 		puzzlePulse.Visible = false
 	end
-	Lighting.FogEnd = baseFog
+	LightingController.setDanger(0)
 	if blur then
 		blur.Size = 0
 	end
@@ -209,7 +209,7 @@ function ScreenFxController.Start()
 		if blur then
 			blur.Size = fx.blur
 		end
-		Lighting.FogEnd = baseFog + (math.min(baseFog, Config.Effects.DangerFogEnd) - baseFog) * fx.fog
+		LightingController.setDanger(fx.fog)
 		local elapsed = os.clock() - captureAt
 		local captured = flashes and elapsed < 0.15
 		local glitch = math.max(fx.glitch, if flashes and elapsed < 0.8 then 1 - elapsed / 0.8 else 0)

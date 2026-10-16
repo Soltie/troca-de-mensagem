@@ -295,11 +295,11 @@ local Config = {
 
 	Effects = {
 		ScanlineSpacing = 3,
-		ScanlineTransparency = 0.84,
-		GrainDots = 70,
+		ScanlineTransparency = 0.91,
+		GrainDots = 48,
 		-- Desfoque máximo (pânico) e névoa mínima/máxima (studs) conforme o perigo.
-		PanicBlur = 6,
-		DangerFogEnd = 52,
+		PanicBlur = 3.5,
+		DangerFogEnd = 64,
 	},
 
 	-- Valores iniciais das opções de conforto (menu O; V e B são atalhos).

@@ -3,6 +3,10 @@
 	"emitLegacyScripts": false,
 	"tree": {
 		"$className": "DataModel",
+		"Lighting": {
+			"$className": "Lighting",
+			"$properties": { "LightingStyle": "Realistic", "PrioritizeLightingQuality": true }
+		},
 		"ReplicatedStorage": {
 			"$path": "src/ReplicatedStorage"
 		},

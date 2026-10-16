@@ -1,0 +1,134 @@
+{
+  "base": "b01d4fb",
+  "snapshot": ".cache/lighting-polish/candidate",
+  "check": {
+    "robloxOnlySkipped": 4,
+    "passed": 213,
+    "failed": 0
+  },
+  "files": [
+    {
+      "sha256": "ea9ee166b593f953ab515433f35d18ef53c219d540d0fa53cf7e83c56bed2284",
+      "path": "default.project.json"
+    },
+    {
+      "sha256": "a1837c1e8ef37bb2e6d8533dd858b5ef9f8c8cd8ea10c3cd935bc136f1a6f5d5",
+      "path": "places/Dev.project.json"
+    },
+    {
+      "sha256": "fdcfb33ff9fd147541a67526af16e9ced24f024b1e880190d5263a1c5cb0719f",
+      "path": "src/ReplicatedStorage/Shared/Game/LightingProfile.luau"
+    },
+    {
+      "sha256": "787793bb7a0c9308acaf519d07ece0e48310dcb835dead953659756bf51e9082",
+      "path": "src/ReplicatedStorage/Client/Controllers/LightingController.luau"
+    },
+    {
+      "sha256": "29d671e04c685535127889d260b42ebbf9fc02439cf1ecfa832b8d181e61b4d9",
+      "path": "src/ReplicatedStorage/Client/Main.client.luau"
+    },
+    {
+      "sha256": "8a75097533ee036d7add1c52972b84ac169e0445acd4cd37bba9739f24f669ad",
+      "path": "src/ReplicatedStorage/Shared/Config.luau"
+    },
+    {
+      "sha256": "8f3cfefb052a4d002198a7d6810ab96deffd193209001cac35cbfb845a28f138",
+      "path": "src/ReplicatedStorage/Client/Controllers/CosmeticController.luau"
+    },
+    {
+      "sha256": "9a81a357ff31b18d1dcd479e14142e83d3135fd2552b7da991a9e91271d14cad",
+      "path": "src/ReplicatedStorage/Client/Controllers/FlashlightController.luau"
+    },
+    {
+      "sha256": "0b87e36e56659ac024447749f2d5c3eddc6c23c04ef42b67076f8a5c24985e01",
+      "path": "src/ReplicatedStorage/Client/Controllers/RetroFxController.luau"
+    },
+    {
+      "sha256": "1ac0b96e572c4bb75f2ed8a4541f60f7ddd9933fb5cb117ff1ac26a4b41e79d0",
+      "path": "src/ReplicatedStorage/Client/Controllers/ScreenFxController.luau"
+    },
+    {
+      "sha256": "e4a33b864866bb00a5826464245ffb5957cb9c2eeba59e52b8175a3e774e2984",
+      "path": "src/ReplicatedStorage/Client/Controllers/WorldFxController.luau"
+    },
+    {
+      "sha256": "8b5c10e974374ffd3b793793116319ddd550f377af11995c2dd8e60bbb92174b",
+      "path": "src/ServerScriptService/Server/Services/WorldService.luau"
+    },
+    {
+      "sha256": "c4fb255dd081b34de52e0cc57af2d014f69c22339300ab959a02384a03e0f2f7",
+      "path": "src/ServerScriptService/Server/Services/DebugService.luau"
+    },
+    {
+      "sha256": "2025f634c85b8287090279da0b2a25f31042bb13a1135592bea20d61150c50af",
+      "path": "src/ServerScriptService/Server/World/Build.luau"
+    },
+    {
+      "sha256": "9768e9081e1b5ab7ab7e9fea8e5c7212efd258e97908facc859063f9b324548c",
+      "path": "src/ServerScriptService/Tests/Specs/LightingProfile.luau"
+    }
+  ],
+  "integrationBase": "7a69977",
+  "integratedFiles": [
+    {
+      "path": "default.project.json",
+      "sha256": "ea9ee166b593f953ab515433f35d18ef53c219d540d0fa53cf7e83c56bed2284"
+    },
+    {
+      "path": "places/Dev.project.json",
+      "sha256": "a1837c1e8ef37bb2e6d8533dd858b5ef9f8c8cd8ea10c3cd935bc136f1a6f5d5"
+    },
+    {
+      "path": "src/ReplicatedStorage/Shared/Game/LightingProfile.luau",
+      "sha256": "fdcfb33ff9fd147541a67526af16e9ced24f024b1e880190d5263a1c5cb0719f"
+    },
+    {
+      "path": "src/ReplicatedStorage/Client/Controllers/LightingController.luau",
+      "sha256": "787793bb7a0c9308acaf519d07ece0e48310dcb835dead953659756bf51e9082"
+    },
+    {
+      "path": "src/ReplicatedStorage/Client/Main.client.luau",
+      "sha256": "c4f3ddba7c9b06333612da841f79d3bdc1cc8e1f2c3b0405d6f123ad1ecca183"
+    },
+    {
+      "path": "src/ReplicatedStorage/Shared/Config.luau",
+      "sha256": "3abefe4c8f833cf6914a358632712fb9dbcf82984b8f1aebde7c6e897cbb1045"
+    },
+    {
+      "path": "src/ReplicatedStorage/Client/Controllers/CosmeticController.luau",
+      "sha256": "8f3cfefb052a4d002198a7d6810ab96deffd193209001cac35cbfb845a28f138"
+    },
+    {
+      "path": "src/ReplicatedStorage/Client/Controllers/FlashlightController.luau",
+      "sha256": "9a81a357ff31b18d1dcd479e14142e83d3135fd2552b7da991a9e91271d14cad"
+    },
+    {
+      "path": "src/ReplicatedStorage/Client/Controllers/RetroFxController.luau",
+      "sha256": "0b87e36e56659ac024447749f2d5c3eddc6c23c04ef42b67076f8a5c24985e01"
+    },
+    {
+      "path": "src/ReplicatedStorage/Client/Controllers/ScreenFxController.luau",
+      "sha256": "1ac0b96e572c4bb75f2ed8a4541f60f7ddd9933fb5cb117ff1ac26a4b41e79d0"
+    },
+    {
+      "path": "src/ReplicatedStorage/Client/Controllers/WorldFxController.luau",
+      "sha256": "e4a33b864866bb00a5826464245ffb5957cb9c2eeba59e52b8175a3e774e2984"
+    },
+    {
+      "path": "src/ServerScriptService/Server/Services/WorldService.luau",
+      "sha256": "8b5c10e974374ffd3b793793116319ddd550f377af11995c2dd8e60bbb92174b"
+    },
+    {
+      "path": "src/ServerScriptService/Server/Services/DebugService.luau",
+      "sha256": "c4fb255dd081b34de52e0cc57af2d014f69c22339300ab959a02384a03e0f2f7"
+    },
+    {
+      "path": "src/ServerScriptService/Server/World/Build.luau",
+      "sha256": "2025f634c85b8287090279da0b2a25f31042bb13a1135592bea20d61150c50af"
+    },
+    {
+      "path": "src/ServerScriptService/Tests/Specs/LightingProfile.luau",
+      "sha256": "9768e9081e1b5ab7ab7e9fea8e5c7212efd258e97908facc859063f9b324548c"
+    }
+  ]
+}

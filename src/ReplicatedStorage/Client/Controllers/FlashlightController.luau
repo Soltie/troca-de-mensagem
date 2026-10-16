@@ -19,12 +19,13 @@ local Config = require("@game/ReplicatedStorage/Shared/Config")
 local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
 local Remotes = require("@game/ReplicatedStorage/Shared/Net/Remotes")
 local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
+local LightingProfile = require("@game/ReplicatedStorage/Shared/Game/LightingProfile")
 local AudioController = require("./AudioController")
 local SettingsController = require("./SettingsController")
 local CharacterController = require("./CharacterController")
 
 local player = Players.LocalPlayer
-local BASE_BRIGHTNESS = 2.6
+local BASE_BRIGHTNESS = LightingProfile.Flashlight.brightness
 local WARM = Color3.fromRGB(255, 232, 196)
 
 type Viewmodel = {
@@ -380,16 +381,16 @@ function FlashlightController.Init()
 
 	local light = Instance.new("SpotLight")
 	light.Face = Enum.NormalId.Front
-	light.Angle = 46
+	light.Angle = LightingProfile.Flashlight.angle
 	light.Range = 48
 	light.Brightness = BASE_BRIGHTNESS
 	light.Color = WARM
-	light.Shadows = false
+	light.Shadows = true
 	light.Parent = part
 
 	local glow = Instance.new("PointLight")
-	glow.Range = 7
-	glow.Brightness = 0.25
+	glow.Range = 5
+	glow.Brightness = LightingProfile.Flashlight.spill
 	glow.Color = WARM
 	glow.Shadows = false
 	glow.Parent = part
@@ -565,7 +566,7 @@ function FlashlightController.Start()
 			spot.Range = 48 * (0.6 + 0.4 * BatteryModel.brightness(charge()))
 		end
 		if spill then
-			spill.Brightness = 0.25 * flickerFactor
+			spill.Brightness = LightingProfile.Flashlight.spill * flickerFactor
 		end
 	end)
 end
