@@ -17,6 +17,7 @@ local Expansion = require("./Expansion")
 local Layout = require("./Layout")
 local Palette = require("./Palette")
 local Props = require("./Props")
+local ProceduralLayout = require("./ProceduralLayout")
 local WallMath = require("./WallMath")
 
 export type Kind = "Fuse" | "Panel" | "Door" | "Gate" | "Note"
@@ -583,7 +584,7 @@ local function buildCourtyard(world: World, parent: Instance)
 	Build.box(
 		parent,
 		"Ground",
-		V3(-160, -2, -160),
+		V3(-160, -2, -190),
 		V3(160, -0.05, 180),
 		Palette.Grass,
 		{ material = Enum.Material.Ground }
@@ -704,13 +705,15 @@ local function buildCourtyard(world: World, parent: Instance)
 	-- Mata em volta (determinístico).
 	local rng = Random.new(9)
 	local placed = 0
-	while placed < 42 do
+	while placed < 60 do
 		local x = rng:NextNumber(-110, 110)
-		local z = rng:NextNumber(-100, 130)
+		local z = rng:NextNumber(-185, 130)
 		local bounds = Layout.Compound
 		local insideCompound = x > bounds.x0 - 5 and x < bounds.x1 + 5 and z > bounds.z0 - 5 and z < bounds.z1 + 4
+		local north = ProceduralLayout.Bounds
+		local insideSector = x > north.x0 - 8 and x < north.x1 + 8 and z > north.z0 - 8 and z < north.z1 + 5
 		local onRoad = math.abs(x) < 10 and z > c.z1
-		if not insideCompound and not onRoad then
+		if not insideCompound and not insideSector and not onRoad then
 			Props.tree(parent, V3(x, 0, z), rng:NextNumber(14, 24), rng)
 			placed += 1
 		end

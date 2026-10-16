@@ -302,9 +302,10 @@ local function stopMoving()
 end
 
 local function nextPatrolNode(): Vector3
+	local nodes = WorldService.patrolNodes()
 	if patrolCursor >= #patrolOrder then
 		patrolOrder = {}
-		for i = 1, #Layout.PatrolNodes do
+		for i = 1, #nodes do
 			table.insert(patrolOrder, i)
 		end
 		for i = #patrolOrder, 2, -1 do
@@ -314,7 +315,7 @@ local function nextPatrolNode(): Vector3
 		patrolCursor = 0
 	end
 	patrolCursor += 1
-	return vec(Layout.PatrolNodes[patrolOrder[patrolCursor]])
+	return vec(nodes[patrolOrder[patrolCursor]])
 end
 
 -- urgent (perseguição): recalcula a rota a cada RepathInterval; senão só quando o destino muda.
@@ -493,6 +494,7 @@ end
 -- Volta ao estado inicial (escondido e dormente).
 function CreatureService.reset()
 	token += 1
+	patrolOrder, patrolCursor = {}, 0
 	brain = CreatureBrain.new()
 	active = false
 	frozen = false
@@ -522,7 +524,7 @@ function CreatureService.activate(at: Vector3?)
 		local target = findTarget()
 		local reference = if target then target.root.Position else Vector3.zero
 		local best, bestDistance = nil, -1
-		for _, p in Layout.CreatureSpawns do
+		for _, p in WorldService.creatureSpawns() do
 			local position = vec(p)
 			local distance = (position - reference).Magnitude
 			if distance > bestDistance then

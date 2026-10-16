@@ -228,10 +228,15 @@ local function stage()
 	end
 	building = true
 	version += 1
+	for _, player in Players:GetPlayers() do
+		freeze(player, true)
+	end
 	channels, nextActionAt = {}, {}
 	clearRescues()
 	CreatureService.reset()
-	WorldService.resetRound(Random.new(session.seed + session.stage))
+	local plan = session.plan
+	assert(plan, "[Campaign] missing stage plan")
+	WorldService.resetRound(Random.new(session.seed + session.stage), plan.sector)
 	local world = WorldService.get()
 	-- As trancas da missão solo não podem invalidar o grafo da campanha.
 	local worldAdapter: any = WorldService
@@ -247,8 +252,6 @@ local function stage()
 	for id in world.interactables do
 		WorldService.setInteractEnabled(id, world.interactables[id].kind == "Door")
 	end
-	local plan = session.plan
-	assert(plan, "[Campaign] missing stage plan")
 	built = Builder.build(world.root, plan, Config.Game.InteractDistance)
 	WorldService.setPower(session.stage >= 2)
 	startedAt = if session.stage == 1 then workspace:GetServerTimeNow() else startedAt
@@ -644,6 +647,10 @@ function Runtime.Start()
 		if Session.count(session) == 0 then
 			version += 1
 			building = false
+			-- Servidor vazio também encerra a partida: a próxima equipe recebe outro mapa.
+			session = Session.new(C.Seed or ((os.time() + version * 7919) % 2147483646), C)
+			nextStageAt, startedAt = 0, 0
+			clearRescues()
 			CreatureService.reset()
 		end
 		channels[player.UserId], nextActionAt[player.UserId], spawning[player] = nil, nil, nil

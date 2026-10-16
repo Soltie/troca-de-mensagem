@@ -7,6 +7,15 @@ export type Link = { id: string, a: string, b: string, x: number, z: number, axi
 
 local Catalog = {
 	RoomNames = {
+		RelayHall = "SALA DE RELÉS",
+		Cooling = "RESFRIAMENTO",
+		BatteryBank = "BANCO DE BATERIAS",
+		Radio = "COMUNICAÇÕES",
+		MachineShop = "USINAGEM",
+		Inspection = "INSPEÇÃO",
+		CableDepot = "ALMOXARIFADO DE CABOS",
+		Turbine = "TURBINA AUXILIAR",
+		WaterTreatment = "TRATAMENTO DE ÁGUA",
 		Lobby = "RECEPÇÃO",
 		Office = "ESCRITÓRIO",
 		Pump = "BOMBAS",

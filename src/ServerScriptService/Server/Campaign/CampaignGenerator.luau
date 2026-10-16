@@ -2,6 +2,7 @@
 -- Sorteia conteúdo e conexões secundárias; nunca remove a espinha de circulação validada.
 local Catalog = require("@game/ReplicatedStorage/Shared/Game/CampaignCatalog")
 local Layout = require("../World/Layout")
+local ProceduralLayout = require("../World/ProceduralLayout")
 local SeededRandom = require("./SeededRandom")
 
 export type Activity = { id: string, slot: string, room: string, kind: string, order: { number }, x: number, z: number }
@@ -13,6 +14,7 @@ export type Plan = {
 	players: number,
 	activities: { Activity },
 	closedLinks: { string },
+	sector: ProceduralLayout.Plan,
 }
 
 local Generator = {}
@@ -22,8 +24,17 @@ function Generator.create(seed: number, stage: number, players: number): Plan
 	assert(players % 1 == 0 and players >= 1 and players <= 8, "Invalid party size")
 	local rng = SeededRandom.new(seed + stage * 7919)
 	local definition = Catalog.Stages[stage]
-	local slots = rng.shuffle(Catalog.Slots)
-	local count = math.min(#slots, math.max(3, players) + stage - 1)
+	local sector = ProceduralLayout.create(seed, stage)
+	local oldSlots = rng.shuffle(Catalog.Slots)
+	local newSlots = rng.shuffle(ProceduralLayout.slots(sector))
+	local count = math.max(3, players) + stage - 1
+	local slots = {}
+	-- A maioria das estações explora a ala sorteada; mantém tarefas no núcleo e o retorno à saída.
+	local newCount = math.ceil(count * 0.6)
+	for i = 1, count do
+		table.insert(slots, if i <= newCount then newSlots[i] else oldSlots[i - newCount])
+	end
+	slots = rng.shuffle(slots)
 	local activities: { Activity } = {}
 	for i = 1, count do
 		local slot = slots[i]
@@ -57,10 +68,22 @@ function Generator.create(seed: number, stage: number, players: number): Plan
 		players = players,
 		activities = activities,
 		closedLinks = closed,
+		sector = sector,
 	}
 end
 
 function Generator.validate(plan: Plan): (boolean, string?)
+	local valid, reason = ProceduralLayout.validate(plan.sector)
+	if not valid then
+		return false, reason
+	end
+	if plan.sector.seed ~= plan.seed or plan.sector.stage ~= plan.stage then
+		return false, "map_identity_mismatch"
+	end
+	local slots = table.clone(Catalog.Slots)
+	for _, slot in ProceduralLayout.slots(plan.sector) do
+		table.insert(slots, slot)
+	end
 	local closed: { [string]: boolean } = {}
 	for _, id in plan.closedLinks do
 		local found = false
@@ -99,12 +122,8 @@ function Generator.validate(plan: Plan): (boolean, string?)
 			return false, "duplicate_activity"
 		end
 		occupied[activity.slot], ids[activity.id] = true, true
-		local room = Layout.roomAt(activity.x, activity.z)
-		if not room or room.id ~= activity.room then
-			return false, "invalid_slot"
-		end
 		local known = false
-		for _, slot in Catalog.Slots do
+		for _, slot in slots do
 			if
 				slot.id == activity.slot
 				and slot.x == activity.x

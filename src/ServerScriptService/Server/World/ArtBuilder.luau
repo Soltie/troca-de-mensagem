@@ -5,6 +5,7 @@ local Config = require("@game/ReplicatedStorage/Shared/Config")
 local Build = require("./Build")
 local Layout = require("./Layout")
 local Palette = require("./Palette")
+local ProceduralLayout = require("./ProceduralLayout")
 
 local Art = {}
 local V3 = Vector3.new
@@ -178,7 +179,8 @@ function Art.build(world: Instance)
 		end
 		return ap.Y < bp.Y
 	end)
-	for i = 1, math.min(#surfaces, Config.Art.SurfacePartLimit) do
+	-- A ala reconstruída por rodada usa o mesmo atlas e respeita o orçamento global.
+	for i = 1, math.min(#surfaces, Config.Art.SurfacePartLimit - ProceduralLayout.SurfaceBudget) do
 		CollectionService:AddTag(surfaces[i], "ArtSurface")
 	end
 	root:SetAttribute("SurfaceCandidates", #surfaces)

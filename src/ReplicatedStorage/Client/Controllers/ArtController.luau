@@ -13,6 +13,7 @@ local Settings = require("./SettingsController")
 local log = Logger.new("ArtController")
 local images: { [string]: EditableImage } = {}
 local textures = 0
+local textured: { [Instance]: number } = {}
 local snapshot: GameState.Snapshot? = nil
 local indicators: { BasePart } = {}
 local screens: { { part: BasePart, gui: SurfaceGui, label: TextLabel } } = {}
@@ -83,8 +84,19 @@ local function surface(part: Instance)
 		if ok then
 			texture.Parent = part
 			textures += 1
+			textured[part] = (textured[part] or 0) + 1
 		else
 			texture:Destroy()
+		end
+	end
+end
+
+local function removeSurface(part: Instance)
+	textures -= textured[part] or 0
+	textured[part] = nil
+	for _, child in part:GetChildren() do
+		if child.Name == "ArtTexture" then
+			child:Destroy()
 		end
 	end
 end
@@ -268,6 +280,23 @@ function Controller.Start()
 	CollectionService:GetInstanceAddedSignal("ArtSurface"):Connect(surface)
 	CollectionService:GetInstanceAddedSignal("ArtScreen"):Connect(screen)
 	CollectionService:GetInstanceAddedSignal("ArtDust"):Connect(mote)
+	CollectionService:GetInstanceRemovedSignal("ArtSurface"):Connect(removeSurface)
+	CollectionService:GetInstanceRemovedSignal("ArtScreen"):Connect(function(part: Instance)
+		for index = #screens, 1, -1 do
+			if screens[index].part == part then
+				screens[index].gui:Destroy()
+				table.remove(screens, index)
+			end
+		end
+	end)
+	CollectionService:GetInstanceRemovedSignal("ArtDust"):Connect(function(part: Instance)
+		for index = #dust, 1, -1 do
+			if dust[index].part == part then
+				dust[index].emitter:Destroy()
+				table.remove(dust, index)
+			end
+		end
+	end)
 	setupSparks()
 	local elapsed = 0
 	RunService.RenderStepped:Connect(function(dt)

@@ -24,6 +24,8 @@ local Features = require("../World/Features")
 local Layout = require("../World/Layout")
 local MapBuilder = require("../World/MapBuilder")
 local Palette = require("../World/Palette")
+local ProceduralLayout = require("../World/ProceduralLayout")
+local SectorBuilder = require("../World/SectorBuilder")
 
 export type DoorState = "open" | "crack" | "closed"
 
@@ -45,6 +47,7 @@ local latches: { [string]: Sound } = {}
 local bangs: { [string]: Sound } = {}
 local taken: { [string]: boolean } = {}
 local sparkCount = 0
+local sectorPlan: ProceduralLayout.Plan? = nil
 
 local function getWorld(): MapBuilder.World
 	assert(world, "[WorldService] used before Init")
@@ -289,6 +292,7 @@ function WorldService.Init()
 	local built = getWorld()
 	features = FeatureBuilder.build(built.root)
 	ArtBuilder.build(built.root)
+	WorldService.rebuildSector(ProceduralLayout.create(1, 1))
 	local pickups = built.root:FindFirstChild("Pickups")
 	fuseFolder = if pickups then pickups:FindFirstChild("Fuses") else nil
 
@@ -324,6 +328,31 @@ function WorldService.features(): FeatureBuilder.Built
 	return getFeatures()
 end
 
+function WorldService.rebuildSector(plan: ProceduralLayout.Plan)
+	SectorBuilder.build(getWorld().root, plan)
+	sectorPlan = plan
+end
+
+function WorldService.patrolNodes(): { Layout.Point }
+	local nodes = table.clone(Layout.PatrolNodes)
+	if sectorPlan then
+		for _, room in sectorPlan.rooms do
+			table.insert(nodes, { x = room.x, y = 0, z = room.z })
+		end
+	end
+	return nodes
+end
+
+function WorldService.creatureSpawns(): { Layout.Point }
+	local nodes = table.clone(Layout.CreatureSpawns)
+	if sectorPlan then
+		for _, room in sectorPlan.rooms do
+			table.insert(nodes, { x = room.x, y = 0, z = room.z })
+		end
+	end
+	return nodes
+end
+
 function WorldService.spawnCFrame(): CFrame
 	return getWorld().spawnCFrame
 end
@@ -352,9 +381,10 @@ function WorldService.setInteractEnabled(id: string, enabled: boolean)
 end
 
 -- Restaura o mundo para o início de uma rodada. `rng` sorteia fusíveis, chave e pilhas.
-function WorldService.resetRound(rng: Random)
+function WorldService.resetRound(rng: Random, plan: ProceduralLayout.Plan?)
 	local w = getWorld()
 	local f = getFeatures()
+	WorldService.rebuildSector(plan or ProceduralLayout.create(rng:NextInteger(1, 2147483646), 1))
 	for id, model in w.fuseModels do
 		local spots = Layout.FuseSpots[id]
 		local spot = spots[rng:NextInteger(1, #spots)]
@@ -702,7 +732,8 @@ function WorldService.openGate(): boolean
 end
 
 function WorldService.isInsideBuilding(position: Vector3): boolean
-	return Layout.isIndoor(position.X, position.Z) and position.Y < Layout.CEILING
+	local inSector = sectorPlan ~= nil and Layout.inRect(ProceduralLayout.Bounds, position.X, position.Z)
+	return (Layout.isIndoor(position.X, position.Z) or inSector) and position.Y < Layout.CEILING
 end
 
 function WorldService.isInExitZone(position: Vector3): boolean

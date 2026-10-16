@@ -18,6 +18,18 @@ function Harness.run(runtime: any, args: any)
 	local spawnPositions = {}
 	local completed = false
 	local commandId = 0
+	local previousSector: Instance? = nil
+	local previousMap = ""
+	local function mapSignature(plan: any): string
+		local signature = {}
+		for _, room in plan.rooms do
+			table.insert(signature, `{room.kind}:{room.turn}`)
+		end
+		for _, edge in plan.links do
+			table.insert(signature, `{edge.a}-{edge.b}`)
+		end
+		return table.concat(signature, "/")
+	end
 	local deadline = os.clock() + 220
 	task.delay(230, function()
 		if not completed then
@@ -75,6 +87,17 @@ function Harness.run(runtime: any, args: any)
 			return s.stage == 1 and not s.building and s.phase == "Playing"
 		end, "first stage", 60)
 		check(#players == expected and runtime.snapshot().players == expected, `{expected} real clients in roster`)
+		local firstSeed = runtime.snapshot().seed
+		local firstMap = mapSignature(runtime.snapshot().plan.sector)
+		runtime.restart()
+		waitFor(function()
+			local s = runtime.snapshot()
+			return s.stage == 1 and not s.building and s.phase == "Playing"
+		end, "fresh match rebuild", 60)
+		if Config.Campaign.Seed == nil then
+			check(runtime.snapshot().seed ~= firstSeed, "new match receives a new seed")
+			check(mapSignature(runtime.snapshot().plan.sector) ~= firstMap, "new match changes physical map")
+		end
 		for _, player in players do
 			waitFor(function()
 				return player.Character ~= nil
@@ -155,6 +178,24 @@ function Harness.run(runtime: any, args: any)
 				check(#players == expected, "late join becomes active at the next stage")
 			end
 			local plan = snapshot.plan
+			local sector = workspace.Substation9:FindFirstChild("ProceduralSector")
+			assert(sector, "Generated sector missing")
+			check(
+				sector:GetAttribute("Seed") == plan.seed and sector:GetAttribute("Stage") == stageIndex,
+				`stage {stageIndex} builds its seeded physical map`
+			)
+			if previousSector then
+				check(
+					previousSector.Parent == nil and previousSector ~= sector,
+					`stage {stageIndex} destroys the old sector`
+				)
+				check(mapSignature(plan.sector) ~= previousMap, `stage {stageIndex} changes rooms and routes`)
+			end
+			for _, room in plan.sector.rooms do
+				local model = sector:FindFirstChild(`Cell_{room.cell}`)
+				assert(model and model:GetAttribute("RoomKind") == room.kind, "Physical room differs from plan")
+			end
+			previousSector, previousMap = sector, mapSignature(plan.sector)
 			for _, activity in plan.activities do
 				for name, params in
 					{

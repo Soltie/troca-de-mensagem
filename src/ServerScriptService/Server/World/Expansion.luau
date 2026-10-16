@@ -95,13 +95,13 @@ local function control(parent: Instance)
 	end
 	Props.chair(room, V3(-24, 0, -70), 0)
 	Props.chair(room, V3(-16, 0, -70), 15, true)
-	Props.cabinet(room, V3(-1, 0, -74), 0)
+	Props.cabinet(room, V3(-36, 0, -54), 0)
 	Props.counter(room, V3(-12, 0, -55), 0, 8)
 	Build.sign(
 		room,
 		"ElectricalDiagram",
-		V3(-26, 7.5, -77.4),
-		Vector3.zAxis,
+		V3(-20, 7.5, -50.6),
+		-Vector3.zAxis,
 		Vector2.new(14, 2),
 		"SUBESTAÇÃO 9\nLINHA A --- [09] --- LINHA B",
 		{
@@ -117,7 +117,7 @@ local function archive(parent: Instance)
 	local room = Build.model(parent, "TechnicalArchive")
 	-- Duas ilhas afastadas da travessia central e da conexão sul com o depósito.
 	for _, x in { 12, 28 } do
-		Props.shelf(room, V3(x, 0, -74), 0, 9)
+		Props.shelf(room, V3(if x == 28 then 34 else x, 0, -74), 0, 9)
 		Props.cabinet(room, V3(x, 0, -54), 0)
 	end
 	Props.desk(room, V3(34, 0, -56), 0)
@@ -127,7 +127,7 @@ local function archive(parent: Instance)
 	Build.sign(
 		room,
 		"ArchiveWarning",
-		V3(20, 6, -77.4),
+		V3(10, 6, -77.4),
 		Vector3.zAxis,
 		Vector2.new(10, 2),
 		"REGISTROS DO TURNO\nNÃO REMOVER",
