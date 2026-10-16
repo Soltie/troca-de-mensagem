@@ -30,6 +30,7 @@ export type TungRig = {
 	head: Bone,
 	emitter: Attachment,
 	eyeLight: PointLight,
+	headPart: BasePart,
 	current: Track?,
 	previous: Track?,
 	fade: number,
@@ -86,7 +87,8 @@ function TungTungRig.build(parent: Instance?): TungRig?
 	end
 	local template = (ReplicatedStorage :: any).Assets.TungTung :: Model
 	local model = template:Clone()
-	model.Name = "TungTungVisual"
+	-- Nome antigo mantido: medo, tensão e câmera de captura procuram "VigiaVisual" no workspace.
+	model.Name = "VigiaVisual"
 	local body = model:FindFirstChild("Body") :: BasePart
 	body.Anchored = true
 	body.CanCollide = false
@@ -109,6 +111,17 @@ function TungTungRig.build(parent: Instance?): TungRig?
 	light.Brightness = 1.2
 	light.Shadows = false
 	light.Parent = emitter
+	-- Peça invisível que segue o osso da cabeça (alvo da câmera de captura e dos raycasts de visão).
+	local headPart = Instance.new("Part")
+	headPart.Name = "Head"
+	headPart.Size = Vector3.new(1.4, 1.4, 1.4)
+	headPart.Transparency = 1
+	headPart.Anchored = true
+	headPart.CanCollide = false
+	headPart.CanQuery = false
+	headPart.CanTouch = false
+	headPart.CastShadow = false
+	headPart.Parent = model
 	model.Parent = parent
 	local rig: TungRig = {
 		model = model,
@@ -117,6 +130,7 @@ function TungTungRig.build(parent: Instance?): TungRig?
 		head = head,
 		emitter = emitter,
 		eyeLight = light,
+		headPart = headPart,
 		current = nil,
 		previous = nil,
 		fade = 1,
@@ -216,7 +230,9 @@ function TungTungRig.step(rig: TungRig, dt: number, lookYaw: number?)
 		end
 		bone.Transform = target
 	end
-	rig.emitter.WorldPosition = rig.head.TransformedWorldCFrame.Position
+	local head = rig.head.TransformedWorldCFrame
+	rig.emitter.WorldPosition = head.Position
+	rig.headPart.CFrame = head
 end
 
 -- Coloca o pivô (entre os pés) em `base`.

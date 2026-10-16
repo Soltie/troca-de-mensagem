@@ -1,5 +1,6 @@
 --!strict
 -- Apresentação pura: usa só o progresso publicado, nunca revela a solução das sequências.
+-- Textos curtos e diretos, pensados para crianças lerem no meio da ação.
 local Catalog = require("./CampaignCatalog")
 
 export type Activity = {
@@ -27,77 +28,74 @@ end
 
 function Guide.instruction(activity: Activity, now: number, activePlayers: number?): string
 	if activity.kind == "collect" then
-		return "Mire no objeto dourado e aperte E. A coleta vale para toda a equipe."
+		return "Ache o objeto brilhando e aperte E para pegar. Vale para o time todo!"
 	elseif activity.kind == "clue" then
-		return "Leia a pista no objeto e aperte E. Ela orienta o próximo puzzle."
+		return "Chegue perto da pista e aperte E para ler. Ela ensina o próximo desafio."
 	elseif activity.kind == "explore" then
-		return "Atravesse o hall. A presença é confirmada pelo servidor."
+		return "Siga a seta amarela e entre na casa."
 	elseif activity.kind == "hide" then
-		return "Mire no armário da biblioteca e aperte E. Apenas uma pessoa por esconderijo."
+		return "Entre no armário com E. Cabe só uma pessoa em cada esconderijo."
 	elseif activity.kind == "breath" then
-		return "No armário: segure Espaço ou Z/LB por 2s. Solte antes de O₂ zerar. E para sair."
+		return "Escondido? Segure Espaço (ou Z) para prender o ar. Solte antes do ar acabar!"
 	elseif activity.kind == "puzzle" then
-		return `Leia a pista anterior. Aperte E nos símbolos, na ordem. {activity.progress}/{activity.required or 4}. Erros preservam os acertos.`
+		return `Aperte E nos símbolos na ordem da pista: {activity.progress}/{activity.required or 4}. Errou? Os acertos ficam salvos.`
 	elseif activity.kind == "activate" then
-		return "Mire no mecanismo dourado e aperte E. Os itens essenciais já estão com a equipe."
+		return "Vá até o mecanismo brilhante e aperte E. O time já tem tudo o que precisa!"
 	elseif activity.kind == "repair" then
-		local actions = { "isolar circuito", "encaixar fusível", "testar energia" }
-		return `Mire no botão {activity.progress + 1} ({actions[activity.progress + 1] or "concluído"}) e aperte E. Progresso: {activity.progress}/3.`
+		local actions = { "desligar", "trocar o fusível", "ligar de novo" }
+		return `Aperte E no botão aceso {activity.progress + 1} ({actions[activity.progress + 1] or "pronto"}). Progresso: {activity.progress}/3.`
 	elseif activity.kind == "sequence" then
-		return `Leia a sequência na placa da estação. Mire em cada botão numerado e aperte E na ordem. {activity.progress}/3 confirmados.`
+		return `Olhe a ordem na placa e aperte E nos botões numerados. {activity.progress}/3 certos.`
 	elseif activity.kind == "relay" then
 		if activePlayers == 1 then
-			return "Você é o último ativo. Aperte E e confirme de novo no mesmo relé antes do tempo acabar."
+			return "Você é o último de pé: aperte E duas vezes no mesmo botão, rapidinho!"
 		end
 		local remaining = math.max(0, math.ceil((activity.relayUntil or 0) - now))
 		if activity.progress > 0 and remaining > 0 then
-			return `Outro colega precisa apertar E neste mesmo relé em {remaining}s. A mesma pessoa não confirma a dupla.`
+			return `Chame um amigo! Ele precisa apertar E neste mesmo botão em {remaining}s.`
 		end
-		return "Venham em dupla. Uma pessoa aperta E; a outra confirma no mesmo botão antes do tempo acabar."
+		return "Trabalho em dupla: um aperta E e o amigo confirma no mesmo botão logo depois."
 	end
-	return "Aproxime-se, mire no botão da estação e aperte E."
+	return "Chegue perto do objetivo brilhante e aperte E."
 end
 
 function Guide.objective(phase: string, status: string?, activity: Activity?): (string, string)
 	if phase == "Briefing" then
-		return "Prepare-se para entrar",
-			"Aguarde o fim da apresentação da equipe. O objetivo fica disponível após a contagem."
+		return "Prepare-se!", "A aventura começa em instantes. Fique junto do seu time."
 	elseif phase == "Won" then
-		return "Equipe evacuada", "A casa ficou para trás. Aperte R para votar a volta ao menu com a equipe."
+		return "Vocês escaparam!", "Que coragem! Aperte R para votar e voltar ao menu com o time."
 	elseif phase == "Lost" then
-		return "Checkpoint em recuperação", "A equipe ficou fora de combate. Aperte R para votar uma nova tentativa."
+		return "O Tung Tung pegou o time!", "Sem problema: aperte R para tentar de novo deste capítulo."
 	elseif phase == "Intermission" then
-		return "Etapa concluída", "Aguarde o próximo setor. Colegas fora de combate retornam nesta transição."
+		return "Capítulo concluído!", "Respire fundo. Amigos que caíram voltam no próximo capítulo."
 	elseif status == "Downed" then
-		return "Você precisa de resgate",
-			"Um colega deve chegar perto, mirar em você e apertar E. Ele precisa permanecer perto e com visão."
+		return "Você caiu!", "Espere um amigo chegar perto e apertar E em você."
 	elseif status == "Escaped" then
-		return "Você chegou à saída",
-			"Aguarde os sobreviventes. A partida termina quando a equipe concluir a evacuação."
+		return "Você está a salvo!", "Torça pelo seu time: a partida acaba quando todos escaparem."
 	elseif status == "Waiting" then
-		return "Aguarde a equipe", "Você entra no próximo estágio. Use as setas para acompanhar os colegas ativos."
+		return "Você entra no próximo capítulo", "Use as setas para assistir aos amigos enquanto isso."
 	elseif phase == "Extracting" then
-		return "Reúnam a equipe no portão",
-			"O portão está liberado. Resgatem os colegas caídos e atravessem a saída da floresta depois do hall."
+		return "FUJA PARA O PORTÃO!", "O portão abriu! Ajude quem caiu e corra para a floresta."
 	elseif activity then
-		return activity.title or `Concluir {Catalog.KindNames[activity.kind] or "estação"}`,
-			`Vá até {Catalog.RoomNames[activity.room] or "o setor indicado"}.`
+		return activity.title or `Concluir {Catalog.KindNames[activity.kind] or "desafio"}`,
+			`Vá até {Catalog.RoomNames[activity.room] or "o lugar marcado"}.`
 	end
-	return "Preparando a próxima etapa", "Aguarde o carregamento do setor."
+	return "Preparando o próximo capítulo", "Só um instante..."
 end
 
 Guide.StageTips = {
-	"A Entrada: pegue a lanterna, encontre três chaves e abra a biblioteca.",
-	"Ele Acordou: restaure energia, aprenda a esconder e respirar antes de abrir os andares.",
-	"A Maldição: explore o sótão. O livro explica os quatro símbolos.",
-	"O Porão: leia as pistas antes de tentar o cofre. O código muda com a seed.",
-	"A Última Noite: coloque o artefato, ative o ritual e fuja em 150 segundos.",
+	"Capítulo 1: pegue a lanterna, ache as três chaves e abra a biblioteca.",
+	"Capítulo 2: religue a energia e aprenda a se esconder no armário.",
+	"Capítulo 3: explore o sótão. O livro mostra os quatro símbolos.",
+	"Capítulo 4: leia as pistas do porão para descobrir o código do cofre.",
+	"Capítulo 5: use o artefato, ative o ritual e fuja antes do tempo acabar!",
 }
 Guide.SurvivalTips = {
-	"F alterna a lanterna. Se ouvir Tung Tung, apague a luz e procure cobertura.",
-	"C agacha. Shift corre e gasta fôlego; solte para recuperar. Correr faz mais barulho.",
-	"Colega caído? Aproxime-se, mire nele e aperte E. Fique perto e com visão até terminar o resgate.",
-	"As portas também usam E. Abra a passagem, procure as placas dos setores e acompanhe o objetivo marcado.",
+	"Ouviu TUM TUM TUM? Apague a lanterna (F) e se esconda!",
+	"Shift corre, mas cansa e faz barulho. C agacha e deixa você mais silencioso.",
+	"Amigo caiu? Chegue perto, mire nele e aperte E para ajudar.",
+	"Moedas brilhantes valem Fichas! Pegue todas que encontrar.",
+	"Portas abrem com E. Siga a seta amarela para não se perder.",
 }
 
 return table.freeze(Guide)

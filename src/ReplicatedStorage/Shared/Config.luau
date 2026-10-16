@@ -32,6 +32,17 @@ local Config = {
 	},
 	-- Nível mínimo de log exibido.
 	House = { Enabled = true, EscapeSeconds = 150, BreathKey = "Z", FalseExitChance = 0.2, FalseExitCooldown = 35 },
+	-- Moedas da casa (CoinService): espalhadas a cada capítulo; cada uma paga Fichas + XP na hora.
+	Coins = {
+		Enabled = true,
+		PerRoom = 2,
+		YardCoins = 8,
+		Value = 2,
+		Xp = 1,
+		GemValue = 15,
+		GemXp = 10,
+		PickupRadius = 4.5,
+	},
 	LogLevel = "Info" :: Types.LogLevel,
 
 	Net = {

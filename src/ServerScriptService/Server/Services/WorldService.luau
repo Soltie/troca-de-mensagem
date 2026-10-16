@@ -36,6 +36,7 @@ export type Interactable = FeatureBuilder.Interactable
 local log = Logger.new("WorldService")
 
 local HouseBuilder = require("../World/HouseBuilder")
+local HouseScenery = require("../World/HouseScenery")
 local House = require("@game/ReplicatedStorage/Shared/Game/HouseCatalog")
 local houseStage = 0
 local world: MapBuilder.World? = nil
@@ -325,6 +326,10 @@ function WorldService.Init()
 	end
 
 	applyLighting(false)
+	if Config.House.Enabled then
+		-- Terreno, floresta, quintal e decoração dos cômodos (só visual).
+		HouseScenery.build(built.root)
+	end
 	local count = 0
 	for _, d in built.root:GetDescendants() do
 		if d:IsA("BasePart") then

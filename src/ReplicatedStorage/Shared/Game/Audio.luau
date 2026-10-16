@@ -76,6 +76,7 @@ local Audio: { [string]: Clip } = {
 	Paper = { id = "rbxassetid://9114385821", volume = 0.6 }, -- PSE Fax Paper Flutter 13
 	Pickup = { id = "rbxassetid://9120880067", volume = 0.5, speed = 1.4, region = { 0, 0.35 } }, -- PSE Wood Grab Muted Thuds 15
 	UiBlip = { id = "rbxasset://sounds/volume_slider.ogg", volume = 0.35 }, -- Roblox (cliente)
+	Coin = { id = "rbxasset://sounds/electronicpingshort.wav", volume = 0.45, speed = 1.35 }, -- Roblox (cliente): moeda
 
 	-- Objetos que caem
 	Fall_bucket = { id = "rbxassetid://9116502787", volume = 0.9 }, -- PSE Metal 50 Gallon Drum

@@ -1,5 +1,5 @@
 --!strict
--- HUD cooperativo: objetivo acionável, orientação progressiva e dossiê sob demanda.
+-- HUD cooperativo: objetivo acionável, orientação progressiva, barras, inventário e guia sob demanda.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -12,7 +12,11 @@ local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
 local Guide = require("@game/ReplicatedStorage/Shared/Game/PlayerGuide")
 local Remotes = require("@game/ReplicatedStorage/Shared/Net/Remotes")
 local Hud = require("../UI/FieldHud")
+local Juice = require("../UI/Juice")
+local Theme = require("../UI/Theme")
 local Character = require("./CharacterController")
+
+type FieldSlot = Hud.Slot
 
 local player = Players.LocalPlayer
 local Controller = { Name = "CampaignController" }
@@ -23,31 +27,31 @@ function Controller.toggleGuide()
 	end
 end
 local messages: { [string]: string } = {
-	progress = "SÍMBOLO CONFIRMADO. SIGA A PISTA.",
-	solved = "OBJETIVO CONCLUÍDO.",
-	need_partner = "CHAME UM COLEGA: ELE PRECISA CONFIRMAR NESTE MESMO RELÉ.",
-	wrong_sequence = "BOTÃO INCORRETO. SEUS ACERTOS CONTINUAM SALVOS; SIGA A PLACA.",
-	repair_order = "SIGA O BOTÃO ACESO: ISOLAR, ENCAIXAR FUSÍVEL E TESTAR.",
-	story_order = "CONCLUA PRIMEIRO O OBJETIVO INDICADO NO HUD.",
-	rescuing = "RESGATANDO... FIQUE PERTO DO COLEGA E MANTENHA VISÃO.",
-	rescued = "COLEGA RESGATADO.",
-	rescue_cancelled = "RESGATE INTERROMPIDO. APROXIME-SE E TENTE NOVAMENTE.",
-	too_far = "CHEGUE MAIS PERTO E MIRE NO BOTÃO.",
-	vote_recorded = "VOTO REGISTRADO. AGUARDANDO MAIORIA.",
-	not_active = "AGUARDE RESGATE OU O PRÓXIMO ESTÁGIO.",
-	party_full = "EQUIPE COMPLETA. AGUARDE UMA VAGA.",
-	restarting = "NOVA CAMPANHA.",
-	wait = "AGUARDE UM INSTANTE.",
-	occupied = "ESCONDERIJO OCUPADO.",
-	hide_enter = "E: SAIR · ESPAÇO/Z/LB: RESPIRAÇÃO",
-	hide_exit = "VOCÊ SAIU DO ESCONDERIJO.",
-	not_available = "AÇÃO INDISPONÍVEL NESTE MOMENTO.",
-	not_playing = "AGUARDE O PRÓXIMO ESTÁGIO.",
-	door_opened = "PASSAGEM LIBERADA.",
-	spawn_failed = "VOCÊ ENTRA NO PRÓXIMO ESTÁGIO.",
-	second_chance = "SEGUNDA CHANCE: VOCÊ LEVANTOU.",
-	continue_used = "CONTINUAÇÃO USADA: A EQUIPE REPETE A ETAPA.",
-	checkpoint_restored = "CHECKPOINT RESTAURADO. A EQUIPE REPETE O CAPÍTULO.",
+	progress = "✨ Símbolo certo! Continue seguindo a pista.",
+	solved = "⭐ Objetivo concluído!",
+	need_partner = "👫 Chame um amigo para apertar este mesmo botão!",
+	wrong_sequence = "Ops! Botão errado, mas seus acertos continuam salvos.",
+	repair_order = "Aperte o botão aceso: desligar, trocar o fusível e ligar.",
+	story_order = "Primeiro faça o objetivo marcado lá em cima!",
+	rescuing = "Ajudando... fique pertinho do seu amigo!",
+	rescued = "🙌 Amigo de pé de novo!",
+	rescue_cancelled = "Ajuda interrompida. Chegue perto e tente de novo.",
+	too_far = "Chegue mais perto e mire no objeto.",
+	vote_recorded = "🗳️ Voto registrado! Esperando o time.",
+	not_active = "Espere um amigo te ajudar ou o próximo capítulo.",
+	party_full = "O time está cheio. Espere uma vaga.",
+	restarting = "🎬 Nova aventura!",
+	wait = "Só um instante...",
+	occupied = "Já tem alguém escondido aí!",
+	hide_enter = "🤫 Escondido! E para sair · Espaço/Z para prender o ar",
+	hide_exit = "Você saiu do esconderijo.",
+	not_available = "Isso não dá para fazer agora.",
+	not_playing = "Espere o próximo capítulo.",
+	door_opened = "🚪 Passagem aberta!",
+	spawn_failed = "Você entra no próximo capítulo.",
+	second_chance = "💖 Segunda chance: você levantou!",
+	continue_used = "O time volta para o começo deste capítulo.",
+	checkpoint_restored = "🔁 Tentando de novo deste capítulo!",
 }
 
 function Controller.Start()
@@ -85,9 +89,44 @@ function Controller.Start()
 	decodeRoster()
 	local feedbackUntil = 0
 	player:GetAttributeChangedSignal("CampaignFeedbackSerial"):Connect(function()
-		ui.feedback.Text = messages[tostring(player:GetAttribute("CampaignFeedback"))] or "AÇÃO INDISPONÍVEL."
+		ui.feedback.Text = messages[tostring(player:GetAttribute("CampaignFeedback"))]
+			or "Isso não dá para fazer agora."
 		feedbackUntil = os.clock() + 4
+		Juice.pop(ui.feedback, 0.25)
 	end)
+
+	-- Moedas e nível: animam quando sobem.
+	local shownCoins = (tonumber(player:GetAttribute("Fichas")) or 0) :: number
+	local function refreshCoins()
+		local value = (tonumber(player:GetAttribute("Fichas")) or 0) :: number
+		if value > shownCoins then
+			local gain = value - shownCoins
+			Juice.count(shownCoins, value, 0.6, function(current)
+				ui.coins.Text = `💰 {current}`
+			end)
+			Juice.pop(ui.wallet, 0.2)
+			Juice.floatText(ui.canvas, `+{gain}`, UDim2.new(1, -100, 0, 80), Theme.Coin, 30)
+		else
+			ui.coins.Text = `💰 {value}`
+		end
+		shownCoins = value
+	end
+	local shownLevel = (tonumber(player:GetAttribute("Level")) or 1) :: number
+	local function refreshLevel()
+		local value = (tonumber(player:GetAttribute("Level")) or 1) :: number
+		ui.level.Text = `⭐ NÍVEL {value}`
+		if value > shownLevel then
+			Juice.pop(ui.level.Parent :: GuiObject, 0.3)
+			Juice.confetti(ui.canvas, Vector2.new(0.5, 0.35), 48)
+			Juice.floatText(ui.canvas, `NÍVEL {value}!`, UDim2.fromScale(0.5, 0.4), Theme.Hazard, 44)
+		end
+		shownLevel = value
+	end
+	player:GetAttributeChangedSignal("Fichas"):Connect(refreshCoins)
+	player:GetAttributeChangedSignal("Level"):Connect(refreshLevel)
+	refreshCoins()
+	refreshLevel()
+
 	UserInputService.InputBegan:Connect(function(input, processed)
 		if processed or not ui.gui.Enabled then
 			return
@@ -106,7 +145,11 @@ function Controller.Start()
 	UserInputService.WindowFocusReleased:Connect(function()
 		teamHeld = false
 	end)
-	local elapsed, stageAt, lastStage = 0, 0, ""
+	local function setSlot(slot: FieldSlot, count: number, text: string)
+		slot.count.Text = text
+		slot.icon.TextTransparency = if count > 0 then 0 else 0.6
+	end
+	local elapsed, stageAt, lastStage, lastObjective, lastSolved = 0, 0, "", "", -1
 	RunService.RenderStepped:Connect(function(dt)
 		elapsed += dt
 		if elapsed < 0.1 then
@@ -154,101 +197,122 @@ function Controller.Start()
 			end
 		end
 		local roleId = player:GetAttribute("CampaignRole")
-		local roleTitle, roleDescription = "EQUIPE", ""
+		local roleTitle, roleDescription = "TIME", ""
 		for _, role in Catalog.Roles do
 			if role.id == roleId then
 				roleTitle, roleDescription = role.title, role.description
 			end
 		end
-		ui.chapter.Text = `{if story then "HISTÓRIA / CAPÍTULO" else "PADRÃO / ETAPA"} {stage}/5  ·  {roleTitle}`
+		ui.chapter.Text = `{if story then "CAPÍTULO" else "NOITE"} {stage}/5  ·  {roleTitle}`
 		ui.title.Text = title
+		if title ~= lastObjective then
+			lastObjective = title
+			Juice.pop(ui.order, 0.08)
+		end
 		ui.destination.Text = if active and activity
-			then `SETOR / {Catalog.RoomNames[activity.room] or activity.room}`
-			else "CASA AMALDIÇOADA"
+			then `📍 {Catalog.RoomNames[activity.room] or activity.room}`
+			else "🏚️ CASA DO TUNG TUNG"
 		ui.action.Text = if active and activity then Guide.instruction(activity, now, activePlayers) else detail
-		ui.progress.Text = if active
-			then `{state:GetAttribute("Solved") or 0}/{state:GetAttribute("Total") or 0} OBJETIVOS  ·  {if story
-				then "SIGA A ORDEM"
-				else "ITENS VARIÁVEIS"}`
-			else detail
+		local solved = (state:GetAttribute("Solved") or 0) :: number
+		local total = math.max(1, (state:GetAttribute("Total") or 1) :: number)
+		ui.progressFill.Size = UDim2.fromScale(math.clamp(solved / total, 0, 1), 1)
+		ui.progress.Text = `{solved}/{total}`
+		if solved > lastSolved and lastSolved >= 0 then
+			Juice.pop(ui.progress, 0.6)
+		end
+		lastSolved = solved
 		if phase == "Intermission" then
 			local remaining = math.max(
 				0,
 				math.ceil(((state:GetAttribute("NextStageAt") or 0) :: number) - workspace:GetServerTimeNow())
 			)
-			ui.progress.Text = `PRÓXIMO SETOR EM {remaining}s`
-		elseif not active then
-			ui.progress.Text = "H / REVER GUIA E EQUIPE"
+			ui.action.Text = `Próximo capítulo em {remaining}s`
 		end
 		if briefingRemaining > 0 then
-			ui.progress.Text = `INÍCIO EM {briefingRemaining}s`
+			ui.action.Text = `Começa em {briefingRemaining}s...`
 		end
 		if status == "Downed" then
 			for _, member in roster do
 				if member.id == player.UserId then
-					ui.progress.Text = `RESGATE DISPONÍVEL / {math.max(0, math.ceil(member.downedUntil - now))}s`
+					ui.action.Text = `Espere um amigo te levantar: {math.max(0, math.ceil(member.downedUntil - now))}s`
 				end
 			end
 		end
 		ui.dossier.Visible = helpOpen or teamHeld
 		player:SetAttribute("FieldGuideOpen", ui.dossier.Visible)
 		ui.order.Visible = not ui.dossier.Visible
-		ui.tipPanel.Visible = active and not ui.dossier.Visible and camera.ViewportSize.Y / factor >= 570
+		ui.tipPanel.Visible = active and not ui.dossier.Visible and camera.ViewportSize.Y / factor >= 560
 		local tipAge = os.clock() - stageAt
 		ui.tip.Text = if tipAge < 16
 			then Guide.StageTips[math.clamp(stage, 1, #Guide.StageTips)]
 			else Guide.SurvivalTips[(math.floor((tipAge - 16) / 18) % #Guide.SurvivalTips) + 1]
 		if downed and active then
-			ui.tip.Text =
-				`{downed.name} precisa de resgate! Aproxime-se, mire no colega e aperte E. Fique perto e com visão.`
+			ui.tip.Text = `🆘 {downed.name} caiu! Chegue perto, mire e aperte E para ajudar.`
 		end
+
+		-- Barras de fôlego, lanterna e ar.
 		local stamina, maximum = Character.getStamina()
 		local battery = player:GetAttribute("Battery")
-		local percent = math.floor(math.clamp(if type(battery) == "number" then battery else 0, 0, 1) * 100)
-		ui.equipment.Text = `O₂ {player:GetAttribute("Oxygen") or 100}% · LUZ {percent}%  ·  FÔLEGO {math.floor(
-			math.clamp(stamina / maximum, 0, 1) * 100
-		)}%  ·  {if player:GetAttribute("Stance") == "Crouch" then "AGACHADO" else "EM PÉ"}`
+		local light = math.clamp(if type(battery) == "number" then battery else 0, 0, 1)
+		local oxygen = math.clamp((tonumber(player:GetAttribute("Oxygen")) or 100) :: number, 0, 100)
+		local breath = math.clamp(stamina / math.max(maximum, 1e-3), 0, 1)
+		ui.setBar(ui.bars.stamina, breath, `FÔLEGO {math.floor(breath * 100)}%`, breath < 0.2)
+		ui.setBar(ui.bars.battery, light, `LANTERNA {math.floor(light * 100)}%`, light < 0.15)
+		ui.setBar(ui.bars.oxygen, oxygen / 100, `AR {math.floor(oxygen)}%`, oxygen < 25)
+		ui.equipment.Text = if player:GetAttribute("Stance") == "Crouch" then "🤫 AGACHADO (silencioso)" else ""
 		if phase == "Extracting" then
-			ui.action.Text = `FUJA PELO HALL / FLORESTA · {math.max(
+			ui.action.Text = `🏃 FUJA PARA O PORTÃO! {math.max(
 				0,
 				math.ceil(((state:GetAttribute("EscapeEndsAt") or 0) :: number) - now)
 			)}s`
 		end
-		ui.equipment.TextColor3 = if (tonumber(player:GetAttribute("Oxygen")) or 100) < 25
-			then Color3.fromRGB(255, 100, 80)
-			else Color3.fromRGB(230, 216, 180)
+		if oxygen < 15 then
+			ui.action.Text = "😮‍💨 O AR ESTÁ ACABANDO! Solte a respiração!"
+		end
+
+		-- Inventário do time e itens pessoais.
 		local inventory = HttpService:JSONDecode((state:GetAttribute("Inventory") or "{}") :: string)
 		local stock = HttpService:JSONDecode((player:GetAttribute("HouseSupplies") or "{}") :: string)
 		local keys = (inventory.key_living or 0) + (inventory.key_kitchen or 0) + (inventory.key_dining or 0)
 		local fuses = (inventory.fuse_1 or 0) + (inventory.fuse_2 or 0) + (inventory.fuse_3 or 0)
+		setSlot(ui.slots.keys, keys, `{keys}/3`)
+		setSlot(ui.slots.fuses, fuses, `{fuses}/3`)
+		setSlot(ui.slots.artifact, inventory.artifact or 0, `{inventory.artifact or 0}`)
+		setSlot(ui.slots.battery, stock.battery or 0, `{stock.battery or 0}`)
+		setSlot(ui.slots.oxygen, stock.oxygen or 0, `{stock.oxygen or 0}`)
+		setSlot(ui.slots.decoy, stock.decoy or 0, `{stock.decoy or 0}`)
 		ui.inventory.Text =
-			`CHAVES {keys}/3 · FUSÍVEIS {fuses}/3 · ARTEFATO {inventory.artifact or 0}\n1 PILHA {stock.battery or 0} · 2 O₂ {stock.oxygen or 0} · 3 ISCA {stock.decoy or 0}`
-		if (tonumber(player:GetAttribute("Oxygen")) or 100) < 15 then
-			ui.progress.Text = "OXIGÊNIO CRÍTICO / SOLTE A RESPIRAÇÃO"
-		end
+			`CHAVES {keys}/3 · FUSÍVEIS {fuses}/3 · ARTEFATO {inventory.artifact or 0}\n1 PILHA {stock.battery or 0} · 2 AR {stock.oxygen or 0} · 3 ISCA {stock.decoy or 0}`
 		ui.footer.Visible = status == "Active"
+		ui.tray.Visible = status == "Active" and not ui.dossier.Visible
+		ui.controls.Visible = active and not ui.dossier.Visible and camera.ViewportSize.X / factor >= 900
+
 		if ui.dossier.Visible then
 			local lines = {
-				`SEU PAPEL / {roleTitle}\n{roleDescription}`,
+				`🎭 SEU PAPEL: {roleTitle}\n{roleDescription}`,
 				if story
-					then "MISSÃO\nConcluam os objetivos na ordem abaixo. O objetivo marcado é o próximo passo. São cinco capítulos; no último, saiam pelo portão."
-					else "MISSÃO\nExplorem a casa e concluam os objetivos marcados. O marcador sugere uma delas. São cinco capítulos; no final, saiam pelo portão.",
-				"PROCEDIMENTO DA EQUIPE",
+					then "🗺️ MISSÃO\nFaçam os objetivos na ordem abaixo. O marcado é o próximo. São cinco capítulos; no último, fujam pelo portão!"
+					else "🗺️ MISSÃO\nExplorem a casa e façam os objetivos. A seta mostra uma sugestão. No final, fujam pelo portão!",
+				"✅ OBJETIVOS",
 			}
 			for n, item in tasks do
 				table.insert(
 					lines,
-					`{if item.solved then "[OK]" elseif n == index then ">>" else "[  ]"} {n}. {Catalog.RoomNames[item.room] or item.room}\n{item.title or Catalog.KindNames[item.kind]}{if item.solved
+					`{if item.solved then "✅" elseif n == index then "👉" else "⬜"} {n}. {Catalog.RoomNames[item.room] or item.room}\n{item.title or Catalog.KindNames[item.kind]}{if item.solved
 						then ""
 						else `\n{Guide.instruction(item, now, activePlayers)}`}`
 				)
 			end
-			table.insert(lines, "EQUIPE / RESGATE")
-			local statusTitles: { [string]: string } =
-				{ Active = "ATIVO", Downed = "PRECISA DE RESGATE", Waiting = "AGUARDA", Escaped = "NA SAÍDA" }
+			table.insert(lines, "👫 TIME")
+			local statusTitles: { [string]: string } = {
+				Active = "🟢 na ativa",
+				Downed = "🆘 precisa de ajuda",
+				Waiting = "⏳ esperando",
+				Escaped = "🏁 a salvo",
+			}
 			for _, member in roster do
 				local remaining = if member.status == "Downed"
-					then ` / {math.max(0, math.ceil(member.downedUntil - workspace:GetServerTimeNow()))}s`
+					then ` ({math.max(0, math.ceil(member.downedUntil - workspace:GetServerTimeNow()))}s)`
 					else ""
 				table.insert(lines, `{member.name}: {statusTitles[member.status] or member.status}{remaining}`)
 			end
@@ -265,20 +329,27 @@ function Controller.Start()
 							and (point.Position - character:GetPivot().Position).Magnitude
 								<= Config.Campaign.ScoutRange
 						then
-							table.insert(lines, `RADAR / {model:GetAttribute("RoomLabel") or "ESTAÇÃO"} PERTO`)
+							table.insert(
+								lines,
+								`🦅 RADAR: {model:GetAttribute("RoomLabel") or "objetivo"} por perto!`
+							)
 						end
 					end
 				end
 			end
-			table.insert(lines, "SOBREVIVÊNCIA\n" .. table.concat(Guide.SurvivalTips, "\n\n"))
+			table.insert(lines, "🛡️ COMO SOBREVIVER\n" .. table.concat(Guide.SurvivalTips, "\n\n"))
 			table.insert(
 				lines,
-				"CONTROLES\nWASD mover · E interagir · F lanterna\nShift correr · C agachar · Z/LB respirar\n1 pilha · 2 oxigênio · 3 isca\nH abrir/fechar guia · segure TAB para equipe\nSetas: trocar colega no modo espectador"
+				"🎮 CONTROLES\nWASD andar · E usar · F lanterna\nShift correr · C agachar · Z/LB prender o ar\n1 pilha · 2 ar extra · 3 isca\nH guia · segure TAB para ver o time\nSetas: trocar de amigo quando estiver assistindo"
 			)
 			ui.pages.Text = table.concat(lines, "\n\n")
-			local bounds =
-				TextService:GetTextSize(ui.pages.Text, ui.pages.TextSize, Enum.Font.Code, Vector2.new(296, 100000))
-			ui.pages.Size = UDim2.new(1, -16, 0, bounds.Y + 20)
+			local bounds = TextService:GetTextSize(
+				ui.pages.Text,
+				ui.pages.TextSize,
+				Enum.Font.GothamMedium,
+				Vector2.new(360, 100000)
+			)
+			ui.pages.Size = UDim2.new(1, -16, 0, bounds.Y + 24)
 		end
 		ui.waypoint.Visible = active and activity ~= nil and not ui.dossier.Visible
 		if ui.waypoint.Visible and activity then
@@ -293,18 +364,11 @@ function Controller.Start()
 				if point.Z < 0 then
 					x, y = width - x, height - y
 				end
-				x, y = math.clamp(x, 125, width - 125), math.clamp(y, 90, height - 160)
-				-- Não sobrepor a ordem de serviço: o marcador ocupa o lado livre da tela.
-				if x < 490 and y < 400 then
-					x = math.min(width - 125, 490)
-				end
+				x, y = math.clamp(x, 130, width - 130), math.clamp(y, 170, height - 170)
 				ui.waypoint.Position = UDim2.fromOffset(x, y)
 				local distance = math.floor((station.Position - camera.CFrame.Position).Magnitude / 3.57)
-				local direction = if onScreen then "◇" elseif x < width / 2 then "←" else "→"
-				ui.waypoint.Text =
-					`{direction} {Catalog.RoomNames[activity.room] or activity.room}\n{distance} m · {if story
-						then "OBJETIVO ATUAL"
-						else "SUGESTÃO"}`
+				local direction = if onScreen then "◆" elseif x < width / 2 then "◀" else "▶"
+				ui.waypoint.Text = `{direction} {Catalog.RoomNames[activity.room] or activity.room}\n{distance} m`
 			else
 				ui.waypoint.Visible = false
 			end

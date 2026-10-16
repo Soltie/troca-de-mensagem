@@ -709,6 +709,26 @@ function StoreService.awardTask(player: Player, contributed: boolean): Economy.G
 	return granted
 end
 
+-- Moeda pega na casa: paga na hora, sem aviso (o HUD anima a carteira). Retorna o que entrou.
+function StoreService.awardCoin(player: Player, fichas: number, xp: number): Economy.Granted?
+	local granted: Economy.Granted? = nil
+	local events: { EconomyEvents.Event } = {}
+	if
+		not PlayerDataService.update(player, function(data)
+			granted = Economy.applyReward(data, { fichas = fichas, xp = xp })
+			events = EconomyEvents.build(
+				data.wallet,
+				{ { transaction = TX.Gameplay, sku = "house_coin", granted = granted } }
+			)
+		end)
+	then
+		return nil
+	end
+	TelemetryService.economy(player, events)
+	publish(player)
+	return granted
+end
+
 function StoreService.awardRun(player: Player, summary: Economy.RunSummary, sku: string?): Economy.Granted?
 	local granted: Economy.Granted? = nil
 	local seasonResult: Season.SeasonGranted? = nil

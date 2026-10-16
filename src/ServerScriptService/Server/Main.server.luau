@@ -30,6 +30,7 @@ local services: { any } = {
 	require("./Services/RoundService"),
 	require("./Services/RewardService"),
 	require("./Services/PerkService"),
+	require("./Services/CoinService"),
 	require("./Services/DebugService"), -- só age no Studio
 }
 

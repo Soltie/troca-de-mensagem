@@ -34,15 +34,15 @@ local Catalog = {
 		{ id = "evacuate", title = "EVACUAÇÃO", kinds = { "relay", "repair", "sequence" }, threat = "blackout" },
 	},
 	Roles = {
-		{ id = "technician", title = "TÉCNICO", description = "Repara circuitos com menos etapas." },
-		{ id = "medic", title = "SOCORRISTA", description = "Resgata colegas mais rápido." },
-		{ id = "scout", title = "BATEDOR", description = "Enxerga estações próximas no painel de equipe." },
-		{ id = "operator", title = "OPERADOR", description = "Mantém relés ativos por mais tempo." },
+		{ id = "technician", title = "MESTRE DAS FERRAMENTAS", description = "Conserta as máquinas mais rápido." },
+		{ id = "medic", title = "SALVA-AMIGOS", description = "Levanta os amigos caídos mais rápido." },
+		{ id = "scout", title = "OLHO DE ÁGUIA", description = "Sente os objetivos por perto (veja no guia H)." },
+		{ id = "operator", title = "GUARDIÃO", description = "Segura os botões de dupla por mais tempo." },
 	},
 	Threats = {
-		watcher = { title = "O VIGIA", description = "Patrulha e persegue a luz." },
-		echo = { title = "ECO", description = "Eventos de ruído atraem o Vigia." },
-		blackout = { title = "APAGÃO", description = "Interrupções de energia pressionam a equipe." },
+		watcher = { title = "TUNG TUNG SAHUR", description = "Anda pela casa e corre atrás da luz." },
+		echo = { title = "ECO", description = "Barulhos chamam o Tung Tung." },
+		blackout = { title = "APAGÃO", description = "As luzes piscam e apagam de vez em quando." },
 	},
 	Slots = {
 		{ id = "lobby", room = "Lobby", x = -4, z = -12 },

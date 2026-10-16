@@ -5,40 +5,43 @@ local Profile = {}
 export type RGB = { number }
 export type Grade = { tint: RGB, contrast: number, saturation: number, brightness: number }
 
+-- Noite de lua cheia, legível para crianças: névoa lilás, ambiente azulado e contraste suave.
+-- O medo vem do Tung Tung e do som, não de tela preta.
 Profile.World = {
 	clock = 0.3,
-	brightness = 0.85,
-	ambient = { 17, 20, 29 },
-	ambientPower = { 25, 28, 33 },
-	outdoor = { 54, 65, 85 },
-	fog = { 25, 32, 43 },
-	fogPower = { 30, 36, 44 },
-	fogStart = 16,
-	fogEnd = 142,
-	fogEndPower = 164,
-	shadowSoftness = 0.35,
-	diffuse = 0.12,
-	specular = 0.2,
+	brightness = 2.1,
+	ambient = { 58, 54, 88 },
+	ambientPower = { 84, 76, 98 },
+	outdoor = { 96, 104, 152 },
+	fog = { 46, 40, 82 },
+	fogPower = { 60, 54, 92 },
+	fogStart = 28,
+	fogEnd = 240,
+	fogEndPower = 280,
+	shadowSoftness = 0.25,
+	diffuse = 0.35,
+	specular = 0.35,
 }
-Profile.Bloom = { intensity = 0.19, size = 14, threshold = 1.65 }
-Profile.Flashlight = { brightness = 2.25, spill = 0.16, angle = 42 }
+Profile.Bloom = { intensity = 0.34, size = 18, threshold = 1.25 }
+Profile.Flashlight = { brightness = 3.1, spill = 0.22, angle = 48 }
 Profile.ShadowBudget = 2 -- mais a lanterna própria; colegas nunca ganham sombras
-Profile.ShadowDistance = 55
+Profile.ShadowDistance = 60
 Profile.TransitionRate = 1.8
 
 function Profile.grade(indoor: number, power: number): Grade
 	local inside = math.clamp(indoor, 0, 1)
 	local on = math.clamp(power, 0, 1)
+	-- Cores vivas (saturação positiva); dentro de casa com energia, um toque quente.
 	return {
-		tint = { 237 + inside * on * 10, 244 + inside * on * 3, 255 - inside * on * 15 },
-		contrast = 0.075 + inside * 0.025,
-		saturation = -0.12 - inside * 0.035,
-		brightness = 0.005,
+		tint = { 240 + inside * on * 12, 238 + inside * on * 6, 255 - inside * on * 22 },
+		contrast = 0.06 + inside * 0.03,
+		saturation = 0.12 - inside * 0.04,
+		brightness = 0.02,
 	}
 end
 
 function Profile.exposure(indoor: number, power: number): number
-	return 0.08 + math.clamp(indoor, 0, 1) * (0.08 - 0.06 * math.clamp(power, 0, 1))
+	return 0.22 + math.clamp(indoor, 0, 1) * (0.14 - 0.08 * math.clamp(power, 0, 1))
 end
 
 function Profile.fogEnd(base: number, danger: number): number

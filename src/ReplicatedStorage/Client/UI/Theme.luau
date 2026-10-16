@@ -1,30 +1,39 @@
 --!strict
 --[[
-	Tema da interface: fonte pixel (Arcade), poucos tons, contorno escuro para leitura sobre a cena.
-	Tamanhos de fonte em múltiplos do corpo base para manter o pixel nítido.
+	Tema da interface: fonte arredondada e cores vivas (roxo da noite, amarelo de destaque, rosa de alerta).
+	Pensado para crianças: letras grandes, contraste alto e cantos arredondados.
+	Os nomes antigos (Hazard, Paper, Ink...) continuam válidos para as telas existentes.
 ]]
 
 local rgb = Color3.fromRGB
 
 local Theme = {
-	Font = Font.fromEnum(Enum.Font.Arcade),
-	FontNote = Font.fromEnum(Enum.Font.SpecialElite),
+	Font = Font.fromEnum(Enum.Font.FredokaOne),
+	FontNote = Font.fromEnum(Enum.Font.GothamMedium),
+	FontBody = Font.fromEnum(Enum.Font.GothamBold),
 
-	SizeSmall = 12,
-	SizeBody = 14,
-	SizeLarge = 22,
-	SizeTitle = 40,
+	SizeSmall = 13,
+	SizeBody = 16,
+	SizeLarge = 24,
+	SizeTitle = 44,
 
-	Text = rgb(226, 220, 198),
-	TextDim = rgb(150, 144, 126),
-	Accent = rgb(196, 54, 42),
-	Hazard = rgb(200, 164, 52),
-	Good = rgb(96, 206, 128),
+	Text = rgb(255, 250, 240),
+	TextDim = rgb(196, 186, 226),
+	Accent = rgb(255, 82, 122),
+	Hazard = rgb(255, 206, 64),
+	Good = rgb(96, 232, 140),
+	Info = rgb(92, 200, 255),
 	Black = rgb(0, 0, 0),
-	Panel = rgb(8, 8, 10),
-	Paper = rgb(214, 206, 178),
-	Ink = rgb(30, 26, 22),
-	Skin = rgb(146, 146, 136),
+	Panel = rgb(26, 16, 48),
+	PanelLight = rgb(48, 32, 86),
+	Stroke = rgb(255, 206, 64),
+	Paper = rgb(255, 242, 210),
+	Ink = rgb(44, 30, 66),
+	Skin = rgb(176, 112, 64),
+	Coin = rgb(255, 196, 40),
+
+	Corner = UDim.new(0, 14),
+	CornerSmall = UDim.new(0, 10),
 }
 
 return table.freeze(Theme)
