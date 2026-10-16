@@ -4,6 +4,12 @@ Atualizado: 2026-10-15. Máquina: Windows 11, PowerShell 5.1 / Git Bash. Projeto
 
 ## Estado atual / próximo passo
 
+**Polish visual — 16/10/2026:** materiais, cinco texturas autorais, props e detalhes do Vigia,
+efeitos locais. Check 151 testes / Studio 162 aprovados; mapa com 1.617 peças, 330 faces texturizadas
+na prévia. Capturas e recibos em [VISUAL_POLISH.md](VISUAL_POLISH.md), incluindo limites da medição.
+**Integração NOT READY:** 163 aprovados / 1 falha no teste novo do duto de `9e3931e`; arte isolada
+tem 162 aprovados e campanha de oito Won. Alterações posteriores de monetização exigem QA próprio.
+
 **Continuação vigente — 16/10/2026:** interações/feedback, câmera de armário solo, espectador coop
 e menu O corrigido. Check ALL GREEN (148 testes), build aprovado, runner Studio 156 aprovados.
 QA dirigido multiplayer confirmou troca/desconexão de alvo, entrada tardia e retorno Active após

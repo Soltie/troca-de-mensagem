@@ -42,7 +42,9 @@ Fazer QA humano das aparições e confirmar fisicamente O/1–7: o envio de O pe
 o menu no teste, embora a API de opções tenha sido validada.
 Feedback de itens/puzzles e câmera de armário solo foram integrados nesta continuação;
 o menu O recebeu correção de prioridade. Recibos em [INTERACTION_SPECTATOR_PROGRESS.md](INTERACTION_SPECTATOR_PROGRESS.md).
-Restam: adaptação dos armários ao coop, arte do Ademir/ambiente, haptics,
+Arte do Ademir/ambiente recebeu materiais, desgaste, props, uniforme e efeitos locais em 16/10;
+ver [VISUAL_POLISH.md](VISUAL_POLISH.md). Continuam QA humano de leitura/arte e desempenho sustentado.
+Restam: adaptação dos armários ao coop, haptics,
 menus de início/fim/checkpoint, duto e QA completo do polish solo. Algumas bases de servidor
 já existem; isso não comprova a experiência final no cliente nem sua adaptação ao coop.
 

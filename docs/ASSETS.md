@@ -1,5 +1,13 @@
 # ASSETS — origem, uso e licença
 
+**Atualização visual — 16/10/2026:** [VISUAL_POLISH.md](VISUAL_POLISH.md) registra a nova camada
+de arte. Texturas originais de desgaste são geradas em `Shared/Game/SurfacePatterns.luau`,
+cinco bitmaps RGBA de 32×32 (20 KiB) compartilhados localmente por cliente via EditableImage/Texture.
+`ArtBuilder`/`Props` e `UniformDetails` acrescentam modelos de primitivas; o rosto original continua
+preservado. Materiais Metal/Concrete/Wood e partículas embutidas da Roblox (`smoke_main.dds`,
+`sparkles_main.dds`) completam a camada. Nenhum modelo/textura externo foi importado ou publicado.
+As referências fotográficas foram apenas consultadas; nenhuma foi usada como asset.
+
 Princípio: **tudo que é visual é reconstruído a partir do repositório**. O mapa, os props, a luz, a
 UI e o Vigia são gerados por código com primitivas (`Part`/`Wedge`/`Cylinder`). Não foi inserido
 nenhum modelo de terceiros: nada de scripts externos para auditar. Nenhum asset foi comprado,
@@ -66,5 +74,5 @@ de origem incerta.
 - **Modelos do Creator Store (`insert_asset`)**: cada um traria estilo próprio (incoerente com o low
   poly da paleta curta) e viveria só na place, não no disco. Primitivas resolveram melhor.
 - **`generate_*`**: produziria assets enviados à conta e de estilo imprevisível. Não foi necessário.
-- **Texturas de imagem**: o "PS1" vem de cor por vértice (cor sólida por peça), xadrez de pisos,
-  névoa e luz. Não há pixelização de render no Roblox (ver DECISIONS).
+- **Texturas de imagem externas:** continuam sem uso. A versão de 16/10 acrescenta as máscaras
+  autorais de baixa resolução acima. Não há pixelização do render completo (ver DECISIONS).

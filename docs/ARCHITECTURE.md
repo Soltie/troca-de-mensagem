@@ -158,6 +158,12 @@ DebugService  ── ServerStorage.DebugBridge (só Studio)    GameUiController 
 
 ## Mapa
 
+`ArtBuilder.build` roda depois de MapBuilder/FeatureBuilder. Acrescenta somente decoração sem
+colisão/query, seleciona materiais e tags ArtSurface/ArtScreen/ArtDust. `ArtController` no cliente
+compartilha cinco EditableImages geradas por SurfacePatterns, respeita orçamento de texturas,
+anima indicadores e CRTs e limita partículas por distância. `UniformDetails` descreve adornos
+do Vigia anexados aos CFrames existentes do Rig; não altera sua simulação no servidor.
+
 `Server/World/Layout.luau` (dados puros, testados) define:
 
 - salas, paredes com aberturas, portas e portão;

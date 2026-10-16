@@ -226,6 +226,14 @@ READMEs/releases oficiais das ferramentas e docs do Claude Code).
   Armários/portas solo recebem polish, mas a adaptação de ocupação ao coop continua separada.
   Menu O usa ContextActionService com prioridade alta porque a câmera padrão consome a tecla.
 
+## D33. Arte industrial por código com texturas locais limitadas (16/10/2026)
+- **Escolha:** cinco máscaras autorais RGBA 32×32 em EditableImage/Texture, 160 peças/360 faces
+  como teto; fallback de materiais nativos. Props e detalhes de uniforme são primitivas versionadas.
+- **Alternativas:** importar modelos do Creator Store, gerar/publicar assets ou usar apenas cor sólida.
+- **Por quê:** manter proveniência, estilo retrô e reconstrução pelo repositório sem uploads; dar
+  textura e identidade ao cenário com custo previsível. Decoração não participa de colisão/raycast.
+  CRT/poeira usam distância; faíscas respeitam conforto. Renderer e QA humano são evidências separadas.
+
 ## D31. Rosto do Ademir (outra sessão)
 - **Contexto:** o humano pediu, em outra sessão de agente, para usar uma foto como rosto do Vigia.
   A integração (`AdemirPortrait.luau`, `EditableImage` local com fallback) foi preservada sem mudanças

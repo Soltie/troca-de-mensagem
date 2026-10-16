@@ -1,0 +1,2 @@
+[Tests] 163 passed, 1 failed, 0 skipped specs
+  FAIL Navigation > crawl duct: crouched agent goes through, creature never does: ServerScriptService.Tests.Specs.Navigation:132: expected true, got false

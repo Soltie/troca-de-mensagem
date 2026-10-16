@@ -1,5 +1,11 @@
 # HANDOFF — SUBESTAÇÃO 9 (protótipo de terror)
 
+**Polish visual — 16/10/2026:** texturas autorais, materiais, props/cenário e acabamento do Vigia,
+CRTs/indicadores/poeira/faíscas. Check 151 testes, Studio 162 aprovados. Capturas comparáveis e
+limites de desempenho em [VISUAL_POLISH.md](VISUAL_POLISH.md). Nenhuma colisão/rota nova.
+Integração com a frente do Claude (`9e3931e`): 163 aprovados / 1 falha no teste novo do duto;
+NOT READY para declarar essa integração totalmente verde. Arte isolada validada; recibos no relatório.
+
 **Continuação vigente — interações/espectador (15–16/10/2026):** destaque e feedback de itens/puzzles,
 armário solo, espectador coop e correção de O implementados. 148 testes locais/156 Studio aprovados;
 QA dirigido validou eliminação, setas, entrada tardia, desconexão e retorno após respawn.

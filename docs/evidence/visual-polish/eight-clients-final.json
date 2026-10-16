@@ -1,0 +1,203 @@
+{
+  "ok": true,
+  "result": {
+    "spawnPositions": [
+      {
+        "id": -8,
+        "position": [
+          20,
+          3.200000047683716,
+          38
+        ]
+      },
+      {
+        "id": -7,
+        "position": [
+          16,
+          3.200000047683716,
+          38
+        ]
+      },
+      {
+        "id": -6,
+        "position": [
+          12,
+          3.200000047683716,
+          38
+        ]
+      },
+      {
+        "id": -5,
+        "position": [
+          8,
+          3.200000047683716,
+          38
+        ]
+      },
+      {
+        "id": -4,
+        "position": [
+          20,
+          3.200000047683716,
+          34
+        ]
+      },
+      {
+        "id": -3,
+        "position": [
+          16,
+          3.200000047683716,
+          34
+        ]
+      },
+      {
+        "id": -2,
+        "position": [
+          12,
+          3.200000047683716,
+          34
+        ]
+      },
+      {
+        "id": -1,
+        "position": [
+          8,
+          3.200000047683716,
+          34
+        ]
+      }
+    ],
+    "success": true,
+    "seed": 1792136884,
+    "phase": "Won",
+    "players": 8,
+    "stage": 3,
+    "checks": [
+      "8 real clients in roster",
+      "separate spawn 1-2",
+      "separate spawn 1-3",
+      "separate spawn 1-4",
+      "separate spawn 1-5",
+      "separate spawn 1-6",
+      "separate spawn 1-7",
+      "separate spawn 1-8",
+      "separate spawn 2-3",
+      "separate spawn 2-4",
+      "separate spawn 2-5",
+      "separate spawn 2-6",
+      "separate spawn 2-7",
+      "separate spawn 2-8",
+      "separate spawn 3-4",
+      "separate spawn 3-5",
+      "separate spawn 3-6",
+      "separate spawn 3-7",
+      "separate spawn 3-8",
+      "separate spawn 4-5",
+      "separate spawn 4-6",
+      "separate spawn 4-7",
+      "separate spawn 4-8",
+      "separate spawn 5-6",
+      "separate spawn 5-7",
+      "separate spawn 5-8",
+      "separate spawn 6-7",
+      "separate spawn 6-8",
+      "separate spawn 7-8",
+      "capture is individual",
+      "teammate rescued by another client",
+      "server rejects a valid remote used from too far away",
+      "disconnect target is a simulated Studio client",
+      "disconnect preserves the remaining team's stage",
+      "late join waits without changing current puzzles",
+      "stage 1 scales to party",
+      "stage 1 creature reaches generator",
+      "stage 1 player reaches generator",
+      "stage 1 creature reaches yard_south",
+      "stage 1 player reaches yard_south",
+      "stage 1 creature reaches archive",
+      "stage 1 player reaches archive",
+      "stage 1 creature reaches workshop_south",
+      "stage 1 player reaches workshop_south",
+      "stage 1 creature reaches workshop_north",
+      "stage 1 player reaches workshop_north",
+      "stage 1 creature reaches lobby",
+      "stage 1 player reaches lobby",
+      "stage 1 creature reaches gallery",
+      "stage 1 player reaches gallery",
+      "stage 1 creature reaches storage",
+      "stage 1 player reaches storage",
+      "stage 1 task 1 solved through client remote",
+      "stage 1 task 2 solved through client remote",
+      "stage 1 task 3 solved through client remote",
+      "stage 1 task 4 solved through client remote",
+      "stage 1 task 5 solved through client remote",
+      "stage 1 task 6 solved through client remote",
+      "stage 1 task 7 solved through client remote",
+      "stage 1 task 8 solved through client remote",
+      "stage 1 completes",
+      "stage 2 scales to party",
+      "late join becomes active at the next stage",
+      "stage 2 creature reaches yard_north",
+      "stage 2 player reaches yard_north",
+      "stage 2 creature reaches pump",
+      "stage 2 player reaches pump",
+      "stage 2 creature reaches generator",
+      "stage 2 player reaches generator",
+      "stage 2 creature reaches lobby",
+      "stage 2 player reaches lobby",
+      "stage 2 creature reaches workshop_north",
+      "stage 2 player reaches workshop_north",
+      "stage 2 creature reaches gallery",
+      "stage 2 player reaches gallery",
+      "stage 2 creature reaches control",
+      "stage 2 player reaches control",
+      "stage 2 creature reaches workshop_south",
+      "stage 2 player reaches workshop_south",
+      "stage 2 creature reaches archive",
+      "stage 2 player reaches archive",
+      "stage 2 task 1 solved through client remote",
+      "stage 2 task 2 solved through client remote",
+      "stage 2 task 3 solved through client remote",
+      "stage 2 task 4 solved through client remote",
+      "stage 2 task 5 solved through client remote",
+      "stage 2 task 6 solved through client remote",
+      "stage 2 task 7 solved through client remote",
+      "stage 2 task 8 solved through client remote",
+      "stage 2 task 9 solved through client remote",
+      "stage 2 completes",
+      "stage 3 scales to party",
+      "stage 3 creature reaches archive",
+      "stage 3 player reaches archive",
+      "stage 3 creature reaches pump",
+      "stage 3 player reaches pump",
+      "stage 3 creature reaches office",
+      "stage 3 player reaches office",
+      "stage 3 creature reaches lobby",
+      "stage 3 player reaches lobby",
+      "stage 3 creature reaches yard_north",
+      "stage 3 player reaches yard_north",
+      "stage 3 creature reaches gallery",
+      "stage 3 player reaches gallery",
+      "stage 3 creature reaches workshop_south",
+      "stage 3 player reaches workshop_south",
+      "stage 3 creature reaches control",
+      "stage 3 player reaches control",
+      "stage 3 creature reaches workshop_north",
+      "stage 3 player reaches workshop_north",
+      "stage 3 creature reaches generator",
+      "stage 3 player reaches generator",
+      "stage 3 task 1 solved through client remote",
+      "stage 3 task 2 solved through client remote",
+      "stage 3 task 3 solved through client remote",
+      "stage 3 task 4 solved through client remote",
+      "stage 3 task 5 solved through client remote",
+      "stage 3 task 6 solved through client remote",
+      "stage 3 task 7 solved through client remote",
+      "stage 3 task 8 solved through client remote",
+      "stage 3 task 9 solved through client remote",
+      "stage 3 task 10 solved through client remote",
+      "stage 3 completes",
+      "first survivor does not end others' game",
+      "team wins after all survivors extract"
+    ]
+  }
+}

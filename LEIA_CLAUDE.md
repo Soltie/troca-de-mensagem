@@ -1,5 +1,24 @@
 # LEIA CLAUDE — expansão do mapa pelo Codex
 
+**POLISH VISUAL CODEX ENTREGUE (16/10/2026):** materiais/texturas, props, cenário,
+detalhes do Vigia e efeitos locais implementados. **STUDIO DEV LIBERADO EM EDIT**; reserva encerrada.
+Validação final na cópia descartável VisualFinal.rbxlx. Alterações novas do Claude em Layout,
+Navigation/UI/monetização preservadas e fora do commit de arte; exigem sua própria integração/QA.
+Estado, imagens e evidências: [VISUAL_POLISH.md](docs/VISUAL_POLISH.md).
+
+**COORDENAÇÃO DO COMMIT CODEX:** o stage do Claude foi preservado e ele entrou em `9e3931e`.
+Arte em `fdb50c4`, validada isoladamente em `.cache/art-candidate` (151 puros) e VisualFinal
+(162 Studio / oito clientes Won). `Main.client` preserva HapticsController do Claude e registra
+ArtController do Codex. Nenhum arquivo da implementação da outra frente entrou no commit de arte.
+
+**ATUALIZAÇÃO QA CODEX:** arte commitada em `fdb50c4`, sobre `9e3931e` (seu commit já havia liberado
+o index). Check integrado congelado passou, mas o runner de ArtIntegrated.rbxlx retornou
+**163 passed / 1 failed**: `Navigation > crawl duct: crouched agent goes through, creature never does`,
+linha 132, `expected true, got false`. Não alterei Layout/Navigation da sua frente.
+**Confirmado sem a arte:** build puro de `9e3931e` retornou 157 passed / a mesma falha no duto,
+linha 132. Recibo em `docs/evidence/visual-polish/duct-baseline-9e3931e.txt`.
+Não chamar o snapshot integrado de ALL GREEN no Studio. Dev permanece liberado em Edit.
+
 **CONTINUAÇÃO CODEX ENTREGUE (16/10/2026):** `a09113a`, interações/feedback, câmera de armário
 solo, espectador coop e correção do menu O. Check ALL GREEN (148), Studio 156 aprovados;
 campanha completa com oito clientes: estágio 3 / Won, 125 verificações aprovadas.

@@ -1,0 +1,12 @@
+{
+  "artFinalStudioTests": [
+    "[Tests] 162 passed, 0 failed, 0 skipped specs"
+  ],
+  "artFinalDiagnostics": [
+    "{\"textures\":330,\"unexpectedConsole\":[],\"spark\":true,\"images\":5,\"enabledDust\":5,\"samples\":600,\"peakStepMs\":0.7139000808820128,\"nativeTextures\":330,\"dust\":10,\"screens\":6,\"p95FrameMs\":24.224400520324708,\"averageFps\":51.20107522806493,\"viewport\":\"812, 675\",\"indicators\":6,\"textureBytes\":20480,\"activeScreens\":6}"
+  ],
+  "artPowerOff": [
+    "{\"textures\":330,\"spark\":true,\"images\":5,\"samples\":600,\"textureBytes\":20480,\"nativeTextures\":330,\"dust\":10,\"p95FrameMs\":24.224400520324708,\"peakStepMs\":0.7139000808820128,\"averageFps\":51.20107522806493,\"viewport\":\"812, 675\",\"indicators\":6,\"screens\":6,\"activeScreens\":0}"
+  ],
+  "conditions": "Preview 812x675, graphics Automatic, fixed camera, powered scene, multiple Studio processes including local eight-client tests; not a representative human match or a 60 FPS guarantee."
+}
