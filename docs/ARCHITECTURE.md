@@ -170,6 +170,13 @@ DebugService  ── ServerStorage.DebugBridge (só Studio)    GameUiController 
 
 ## Testes do jogo
 
+Continuação de interações/espectador: `InteractionController` mantém um único Highlight e envia
+somente o alvo atual ao Interact. `InteractionPresentation` concentra as regras puras de prompt e
+elegibilidade. Prompt/legenda/bilhete ficam em `InteractionUi`, independente do HUD solo/coop.
+`SpectatorController` escolhe colegas Active usando `SpectatorRules` e pede ao compositor único
+`CameraController` o modo spectate. Não há novos remotes. Captura tem prioridade; retorno ao jogo
+restaura Custom/CameraSubject local. As duas regras puras possuem specs próprios.
+
 - Lune (`lune run scripts/test`): `Objectives`, `RoundRules`, `CreatureBrain`, `Layout`/`WallMath` e
   `PixelText`, além dos do template.
 - Studio (`Tests.Run`): os mesmos, mais `Remotes` e `Navigation`. O `Navigation` calcula rotas reais com o

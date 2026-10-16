@@ -1,0 +1,71 @@
+{
+  "soloKeyResult": [
+    "{\"note\":\"Label\",\"spectator\":[],\"flashlight\":false,\"bannerVisible\":false,\"pulse\":{\"effects\":{\"glitch\":0,\"vignette\":0.05984072331931471,\"blur\":0,\"grain\":0.09206265126048417,\"fog\":0.008475531757109528,\"fear\":0.09206265126048417},\"puzzlePulse\":false,\"blur\":0,\"fog\":89.67793273925781,\"baseFog\":90,\"vhs\":true,\"bands\":6,\"impact\":false},\"camera\":{\"offset\":null,\"trauma\":0,\"fov\":71.87596893310547,\"mode\":\"hidden\",\"crouch\":0,\"fear\":0.07532183863745593},\"holding\":false,\"banner\":\"Label\",\"promptVisible\":true,\"prompt\":\"[E] SAIR   ·   [ESPAÇO] PRENDER A RESPIRAÇÃO\",\"noteOpen\":false,\"hidden\":\"locker_pump\"}"
+  ],
+  "soloHeld": [
+    "{\"note\":\"Label\",\"spectator\":[],\"flashlight\":false,\"bannerVisible\":false,\"pulse\":{\"effects\":{\"glitch\":0,\"vignette\":0.10399999979686915,\"blur\":0,\"grain\":0.15999999968749099,\"fog\":0.025599999899997118,\"fear\":0.15999999968749099},\"puzzlePulse\":false,\"blur\":0,\"fog\":89.0271987915039,\"baseFog\":90,\"vhs\":true,\"bands\":6,\"impact\":false},\"camera\":{\"offset\":null,\"trauma\":0,\"fov\":71.61600494384766,\"mode\":\"hidden\",\"crouch\":0,\"fear\":0.15999999942822466},\"holding\":true,\"banner\":\"Label\",\"promptVisible\":true,\"prompt\":\"[E] SAIR   ·   [ESPAÇO] PRENDER A RESPIRAÇÃO\\nPRENDENDO A RESPIRAÇÃO...\",\"noteOpen\":false,\"hidden\":\"locker_pump\"}"
+  ],
+  "soloExit": [
+    "{\"note\":\"Label\",\"spectator\":[],\"flashlight\":true,\"bannerVisible\":false,\"pulse\":{\"effects\":{\"glitch\":0,\"vignette\":0.10214197020191975,\"blur\":0,\"grain\":0.15714149261833808,\"fog\":0.0246934487023192,\"fear\":0.15714149261833808},\"puzzlePulse\":false,\"blur\":0,\"fog\":89.0616455078125,\"baseFog\":90,\"vhs\":true,\"bands\":6,\"impact\":false},\"camera\":{\"offset\":null,\"trauma\":0,\"fov\":71.61930084228516,\"mode\":\"normal\",\"crouch\":0,\"fear\":0.1590816755151099},\"holding\":false,\"banner\":\"Label\",\"promptVisible\":false,\"prompt\":\"[E] SAIR   ·   [ESPAÇO] PRENDER A RESPIRAÇÃO\\nPRENDENDO A RESPIRAÇÃO...\",\"noteOpen\":false,\"hidden\":\"\"}"
+  ],
+  "menuFixed": [
+    "{\"menuVisible\":true}"
+  ],
+  "menuToggle": [
+    "{\"text\":\"OPÇOES DE CONFORTO\\n\\n[1] BALANÇO AO ANDAR: DESLIGADO\\n[2] INCLINAÇÃO LATERAL: LIGADO\\n[3] TREMORES: LIGADO\\n[4] FOV DINAMICO: LIGADO\\n[5] CLAROES E FALHAS DE TELA: LIGADO\\n[6] FILTRO RETRO: LIGADO\\n[7] VHS (DATA, TRACKING, CORES): LIGADO\\n\\n[1-7] ALTERNAR   [O] FECHAR\",\"menuVisible\":false}"
+  ],
+  "soloDoor": [
+    "{\"door\":\"crack\"}"
+  ],
+  "soloKeyPickup": [
+    "{\"hasKey\":true}"
+  ],
+  "soloUnlock": [
+    "{\"keyFx\":true,\"prompt\":\"[E] DESTRANCAR\"}"
+  ],
+  "soloFuse": [
+    "{\"caption\":\"FUSIVEL GUARDADO.\",\"pickup\":true,\"target\":\"fuse_pump\"}"
+  ],
+  "soloNote": [
+    "{\"target\":\"note_breakers\",\"note\":\"PROCEDIMENTO DE RELIGAMENTO\\n\\nCom os 3 fusíveis no quadro, levantar os disjuntores NESTA ORDEM:\\n\\n        A - C - B\\n\\nFora de ordem o quadro desarma. E o barulho chama atenção.\",\"noteOpen\":true}"
+  ],
+  "soloWrong": [
+    "{\"target\":\"breaker_2\",\"caption\":\"ORDEM ERRADA! O QUADRO DESARMOU.\",\"trauma\":0.32658156827092169,\"pulse\":true}"
+  ],
+  "soloPulseComfort": [
+    "{\"on\":true,\"off\":false}"
+  ],
+  "soloSolvedFinal": [
+    "{\"caption\":\"SISTEMA RELIGADO...\",\"power\":false}"
+  ],
+  "soloCapture": [
+    "{\"during\":\"capture\",\"after\":\"normal\",\"promptVisible\":false}"
+  ],
+  "soloConsole": [
+    "[]"
+  ],
+  "spectatorDowned": [
+    "{\"mode\":\"normal\",\"status\":\"Downed\",\"prompt\":false,\"banner\":false,\"light\":true}"
+  ],
+  "spectatorWaiting": [
+    "{\"lights\":[],\"target\":-2,\"status\":\"Waiting\",\"prompt\":false,\"mode\":\"spectate\",\"bannerVisible\":true}"
+  ],
+  "spectatorRight": [
+    "{\"target\":-2,\"mode\":\"spectate\",\"banner\":\"ACOMPANHANDO Player2 · [← / →] TROCAR\\nVOCE RETORNA NO PROXIMO ESTAGIO.\"}"
+  ],
+  "spectatorLeft": [
+    "{\"target\":-3,\"prompt\":false}"
+  ],
+  "spectatorDisconnect": [
+    "{\"target\":-2,\"mode\":\"spectate\",\"lights\":{\"1\":{\"enabled\":false,\"n\":\"SpotLight\"},\"2\":{\"enabled\":false,\"n\":\"PointLight\"}}}"
+  ],
+  "spectatorNoTargets": [
+    "{\"banner\":\"ACOMPANHANDO Player2 · [← / →] TROCAR\\nVOCE RETORNA NO PROXIMO ESTAGIO.\",\"mode\":\"normal\"}"
+  ],
+  "studioFinalTests": [
+    "[Tests] 156 passed, 0 failed, 0 skipped specs"
+  ],
+  "spectatorConsole": [
+    "[]"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "returnFixture": [
+    "{\"target\":-3,\"mode\":\"spectate\"}"
+  ],
+  "spectatorReturn": [
+    "{\"cameraType\":\"Custom\",\"status\":\"Active\",\"mode\":\"normal\",\"localSubject\":true,\"bannerVisible\":false}"
+  ],
+  "studioFinalTests": [
+    "[Tests] 156 passed, 0 failed, 0 skipped specs"
+  ]
+}

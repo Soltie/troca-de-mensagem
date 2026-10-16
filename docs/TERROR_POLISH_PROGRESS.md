@@ -82,6 +82,10 @@ Studio principal devolvido em Edit; clientes de teste encerrados. Código commit
 
 ## Próximo agente: pendências reais
 
+**Continuação posterior:** interações, armário solo, espectador coop e correção de O estão em
+[INTERACTION_SPECTATOR_PROGRESS.md](INTERACTION_SPECTATOR_PROGRESS.md). Consultar esse documento
+antes dos itens históricos abaixo; o pacote de tensão desta página foi preservado.
+
 1. Confirmar O/1–7 com teclado físico e inspecionar o menu em diferentes tamanhos de viewport.
    Se o atalho não funcionar fora do MCP, investigar `InputBegan`/`processed`; não marcar como testado por inferência.
 2. Testar visualmente cada aparição/clone em salas elegíveis e o cancelamento durante o próprio

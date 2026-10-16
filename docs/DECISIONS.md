@@ -217,6 +217,15 @@ READMEs/releases oficiais das ferramentas e docs do Claude Code).
   Todos os sons do cliente e do mundo passam por um `SoundGroup` com EQ cortando agudos e reverb de
   corredor de pedra, para soar como hardware antigo. Detalhes em `docs/ASSETS.md`.
 
+## D32. Interações compartilhadas e espectador sem câmera livre (15/10/2026)
+- **Escolha:** apresentação das interações em InteractionUi; somente membros Active interagem.
+  Waiting/Escaped acompanham colegas Active pelo CameraController, com seleção determinística;
+  Downed mantém a própria visão enquanto pode ser resgatado. Nenhum novo remote.
+- **Alternativas:** câmera livre, permitir interações ao espectador ou reativar armários solo no coop.
+- **Por quê:** reduzir espera sem permitir ações após eliminação nem mudar as regras da campanha.
+  Armários/portas solo recebem polish, mas a adaptação de ocupação ao coop continua separada.
+  Menu O usa ContextActionService com prioridade alta porque a câmera padrão consome a tecla.
+
 ## D31. Rosto do Ademir (outra sessão)
 - **Contexto:** o humano pediu, em outra sessão de agente, para usar uma foto como rosto do Vigia.
   A integração (`AdemirPortrait.luau`, `EditableImage` local com fallback) foi preservada sem mudanças

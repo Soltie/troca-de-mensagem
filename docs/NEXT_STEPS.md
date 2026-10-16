@@ -1,6 +1,6 @@
 # Próximos passos — campanha e polish
 
-Atualizado em 15/10/2026 pelo Codex. Continuação a partir de `ca66ead`, sem reset ou troca de branch.
+Atualizado em 16/10/2026 pelo Codex. Continuação a partir de `ca66ead`, sem reset ou troca de branch.
 Estado verificável: [COOP_CAMPAIGN.md](COOP_CAMPAIGN.md), [COOP_QA.md](COOP_QA.md).
 Pedido/entrega do Claude: [CLAUDE_HANDOFF_REQUEST.md](CLAUDE_HANDOFF_REQUEST.md) e
 [CLAUDE_POLISH_HANDOFF.md](CLAUDE_POLISH_HANDOFF.md). Este é um backlog, não uma lista de entregas feitas.
@@ -18,7 +18,7 @@ novos modelos de personagens ou outros vilões completos nesta versão.
 | --- | --- | --- |
 | 1 | Playtest com pessoas em grupos de 3 e 8 | Registrar seed, tempo por estágio, distribuição de contribuições, mortes, espera e dúvidas; verificar perseguição normal, relés e resgate sem teleporte ou IA congelada. Ajustar parâmetros a partir das observações. |
 | 2 | Medir FPS, rede e acessibilidade | Medir cliente/servidor durante uma partida completa; testar atraso e desconexão, legibilidade, pistas sem voz/cor exclusiva, brilho e opções de conforto. Registrar dispositivo e condições; não inferir desempenho do roteiro automatizado. |
-| 3 | Reduzir espera de quem foi eliminado | Câmera de espectador e orientação clara de retorno; informações não devem revelar pistas restritas ou permitir ações de eliminado. Revalidar entrada tardia e transições. |
+| 3 | QA humano do espectador implementado | Waiting/Escaped acompanham colegas Active com setas; entrada tardia e desconexão testadas por automação. Conferir compreensão, câmera/arte e conforto com pessoas. Ver INTERACTION_SPECTATOR_PROGRESS.md. |
 | 4 | Portar polish relevante ao coop | Esconderijos exclusivos, portas e estado por jogador precisam de regras de ocupação, liberação na desconexão, alvos válidos e testes simultâneos. Decidir checkpoint por equipe antes de portar o checkpoint solo. |
 | 5 | Ampliar puzzles | Distribuição de energia e transporte em dupla; oferecer alternativa ao último sobrevivente, pistas acessíveis e resolução autoritativa. Validar concorrência, desistência e seed. |
 | 6 | Level 2: bombeamento | Nova planta versionada, válvulas/pressão, rotas alagadas seguras, catálogo de slots. Gerador deve garantir spawn→objetivos→saída; testar pathfinding real em várias seeds com 3/8 clientes. |
@@ -40,7 +40,9 @@ BodyAudio/Fear e Audio/Flashlight entraram em `31f6b59`. TensionController, Scre
 captura pessoal, opções de conforto e log F3 entraram em `ca18f17`/`fab121c`. Não reimplementar.
 Fazer QA humano das aparições e confirmar fisicamente O/1–7: o envio de O pelo MCP não abriu
 o menu no teste, embora a API de opções tenha sido validada.
-Restam: feedback de itens/puzzles e câmera de armário, arte do Ademir/ambiente, haptics,
+Feedback de itens/puzzles e câmera de armário solo foram integrados nesta continuação;
+o menu O recebeu correção de prioridade. Recibos em [INTERACTION_SPECTATOR_PROGRESS.md](INTERACTION_SPECTATOR_PROGRESS.md).
+Restam: adaptação dos armários ao coop, arte do Ademir/ambiente, haptics,
 menus de início/fim/checkpoint, duto e QA completo do polish solo. Algumas bases de servidor
 já existem; isso não comprova a experiência final no cliente nem sua adaptação ao coop.
 

@@ -1,5 +1,12 @@
 # LEIA CLAUDE — expansão do mapa pelo Codex
 
+**CONTINUAÇÃO CODEX ENTREGUE (16/10/2026):** `a09113a`, interações/feedback, câmera de armário
+solo, espectador coop e correção do menu O. Check ALL GREEN (148), Studio 156 aprovados;
+campanha completa com oito clientes: estágio 3 / Won, 125 verificações aprovadas.
+**STUDIO LIBERADO EM EDIT** no Dev.rbxlx, sem reservas; campanha ativada, sync íntegro.
+Recibos, limites e próxima tarefa: [INTERACTION_SPECTATOR_PROGRESS.md](docs/INTERACTION_SPECTATOR_PROGRESS.md).
+Código anterior preservado, sem reset/troca de branch, push ou publicação.
+
 **FRENTE CODEX (15/10/2026) ENTREGUE:** tensão/efeitos de medo/captura individual,
 commits locais `ca18f17` e `fab121c`.
 Estado e arquivos entregues: [TERROR_POLISH_PROGRESS.md](docs/TERROR_POLISH_PROGRESS.md).

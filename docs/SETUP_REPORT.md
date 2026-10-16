@@ -4,6 +4,14 @@ Atualizado: 2026-10-15. Máquina: Windows 11, PowerShell 5.1 / Git Bash. Projeto
 
 ## Estado atual / próximo passo
 
+**Continuação vigente — 16/10/2026:** interações/feedback, câmera de armário solo, espectador coop
+e menu O corrigido. Check ALL GREEN (148 testes), build aprovado, runner Studio 156 aprovados.
+QA dirigido multiplayer confirmou troca/desconexão de alvo, entrada tardia e retorno Active após
+reinício/respawn. `Campaign.Enabled=true` preservado. Estado, regressão de oito e pendências em
+[INTERACTION_SPECTATOR_PROGRESS.md](INTERACTION_SPECTATOR_PROGRESS.md).
+Código `a09113a`; oito clientes chegaram a Won no estágio 3 (125 verificações). Studio em Edit,
+clientes encerrados e duas raízes do sync íntegras, sem reservas.
+
 **Atualização mais recente — terror:** `ca18f17`/`fab121c`, 142 testes locais/150 Studio;
 três clientes validaram perseguição/captura pessoal e resgate; oito completaram a regressão de campanha.
 Studio devolvido em Edit. Continuação e limites: [TERROR_POLISH_PROGRESS.md](TERROR_POLISH_PROGRESS.md).

@@ -1,5 +1,12 @@
 # HANDOFF — SUBESTAÇÃO 9 (protótipo de terror)
 
+**Continuação vigente — interações/espectador (15–16/10/2026):** destaque e feedback de itens/puzzles,
+armário solo, espectador coop e correção de O implementados. 148 testes locais/156 Studio aprovados;
+QA dirigido validou eliminação, setas, entrada tardia, desconexão e retorno após respawn.
+Leia [INTERACTION_SPECTATOR_PROGRESS.md](INTERACTION_SPECTATOR_PROGRESS.md) para recibos,
+limites visuais e resultado da regressão com oito clientes (Won, estágio 3, 125 verificações).
+Código `a09113a`; campanha ativada, Studio em Edit e sem reservas.
+
 **Última entrega — terror:** commits `ca18f17`/`fab121c`: diretor de tensão, efeitos de medo,
 captura individual e conforto. 142 testes Lune/150 Studio; QA pessoal com três clientes e
 regressão da campanha com oito aprovados. Leia [TERROR_POLISH_PROGRESS.md](TERROR_POLISH_PROGRESS.md)
