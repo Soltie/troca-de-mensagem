@@ -21,11 +21,11 @@ function Plan.create(seed: number, chapter: number, players: number, mode: strin
 		assert(room, "Unknown house room")
 		local solution = if objective.kind == "puzzle" then rng.shuffle({ 1, 2, 3, 4 }) else { 1 }
 		-- Variação dentro da sala preserva todos os pré-requisitos e os corredores.
-		local offset = if mode == "Standard" and room.id ~= "Hall" then rng.integer(-3, 3) else 0
+		local offset = if mode == "Standard" and room.id ~= "Hall" then rng.integer(-2, 2) else 0
 		roomUses[room.id] = (roomUses[room.id] or 0) + 1
 		local use = roomUses[room.id]
-		local dx = if use % 2 == 1 then -7 else 7
-		local dz = if use <= 2 then -5 else 6
+		local dx = if use % 2 == 1 then -5 else 5
+		local dz = if use <= 2 then -3 else 6
 		if room.id == "Hall" then
 			dx, dz = 0, -(use - 1) * 14
 		end

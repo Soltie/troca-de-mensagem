@@ -37,6 +37,31 @@ return {
 					end
 				end
 				world.gate.model:PivotTo(world.gate.openPivot + offset)
+				local Plans = require("@game/ServerScriptService/Server/Campaign/HousePlan")
+				local overlap = OverlapParams.new()
+				overlap.RespectCanCollide = true
+				overlap.FilterType = Enum.RaycastFilterType.Include
+				overlap.FilterDescendantsInstances = { world.root }
+				for seed = 1, 20 do
+					for chapter = 1, 5 do
+						local plan = Plans.create(seed, chapter, 1, "Standard")
+						for _, spec in plan.activities do
+							if spec.kind == "hide" or spec.kind == "breath" or spec.kind == "explore" then
+								continue
+							end
+							local point = Vector3.new(spec.x, (spec.y or 0) + 3, spec.z) + offset
+							local hits =
+								workspace:GetPartBoundsInBox(CFrame.new(point), Vector3.new(1.4, 1, 1), overlap)
+							assert(#hits == 0, `Obstructed item: seed={seed} chapter={chapter} task={spec.id}`)
+							local approach = workspace:GetPartBoundsInBox(
+								CFrame.new(point + Vector3.new(0, 0, 5)),
+								Vector3.new(2.4, 5, 2.4),
+								overlap
+							)
+							assert(#approach == 0, `Obstructed approach: seed={seed} chapter={chapter} task={spec.id}`)
+						end
+					end
+				end
 				task.wait(2)
 				for _, agent in
 					{

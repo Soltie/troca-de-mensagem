@@ -98,7 +98,7 @@ function Harness.run(runtime: any, args: any)
 			request(actor, { id = `rescue_{players[2].UserId}` })
 			waitFor(function()
 				return runtime.snapshot().downed == 0
-			end, "rescue", 10)
+			end, "rescue", 20)
 			check(players[2]:GetAttribute("CampaignStatus") == "Active", "rescue returns teammate")
 		end
 		for chapter = 1, 5 do

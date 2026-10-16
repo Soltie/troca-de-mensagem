@@ -237,7 +237,7 @@ function Controller.stageCard()
 		Transition.closeEyes(0.12)
 		task.spawn(Transition.setLetterbox, true, 0.3)
 		Transition.title(
-			`ETAPA {stage}/{#CampaignCatalog.Stages} · {title}`,
+			`ETAPA {stage}/{#require("@game/ReplicatedStorage/Shared/Game/HouseCatalog").Chapters} · {title}`,
 			if threat ~= "" then `AMEAÇA: {threat}  ·  VOCÊ: {roleTitle()}` else `VOCÊ: {roleTitle()}`
 		)
 		-- Espera o renascimento da etapa (ou o fim do congelamento), no máximo ~3 s no escuro.
