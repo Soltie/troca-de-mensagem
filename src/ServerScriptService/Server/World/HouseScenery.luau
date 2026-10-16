@@ -274,7 +274,6 @@ local function forest(parent: Instance)
 				capShape.Shape = Enum.PartType.Cylinder
 				cap.CFrame = CFrame.new(x, 1.2, z) * CFrame.Angles(0, 0, math.rad(90))
 				decor(folder, "Stem", Vector3.new(0.5, 1, 0.5), CFrame.new(x, 0.4, z), rgb(236, 226, 210))
-				glow(cap, hue, 9, 0.8)
 			end
 		end
 	end

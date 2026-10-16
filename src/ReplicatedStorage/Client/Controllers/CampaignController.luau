@@ -140,6 +140,12 @@ function Controller.Start()
 		end)
 		AudioController.play("StingerWin", if big then 0.9 else 0.6, 1, true)
 	end
+	-- Legenda das batidas do Tung Tung (vem do CreatureVisualController quando ele está perto).
+	player:GetAttributeChangedSignal("TungKnockSerial"):Connect(function()
+		if ui.gui.Enabled then
+			Juice.floatText(ui.canvas, "🥁 TUM... TUM... TUM...", UDim2.fromScale(0.5, 0.3), Theme.Accent, 30, 1.2)
+		end
+	end)
 	player:GetAttributeChangedSignal("Fichas"):Connect(refreshCoins)
 	player:GetAttributeChangedSignal("Level"):Connect(refreshLevel)
 	refreshCoins()

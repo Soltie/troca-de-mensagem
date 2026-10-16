@@ -32,6 +32,7 @@ local Settings = require("./SettingsController")
 local Transition = require("./TransitionController")
 local Store = require("./StoreController")
 local Animator = require("./CharacterAnimatorController")
+local TungTungRig = require("../Creature/TungTungRig")
 local Create = require("../UI/Create")
 local Theme = require("../UI/Theme")
 
@@ -61,6 +62,70 @@ local cctvTint: ColorCorrectionEffect? = nil
 local revealed: { [BasePart]: number } = {}
 local cardToken = 0
 local Controller = { Name = "CinematicController" }
+
+-- Participação do Tung Tung nas cenas (só visual, só neste cliente).
+-- Abertura: surge na porta na última tomada e bate o bastão. Laço do lobby: anda pela varanda.
+local cameo: TungTungRig.TungRig? = nil
+local cameoClock = 0
+-- Junto à porta e virado para as câmeras do quintal (o modelo olha para -Z).
+local PORCH = CFrame.lookAt(Vector3.new(3, -0.5, 65.6), Vector3.new(8, -0.5, 74))
+
+local function dropCameo()
+	if cameo then
+		cameo.model:Destroy()
+		cameo = nil
+	end
+end
+
+local function ensureCameo(): TungTungRig.TungRig?
+	if not cameo then
+		cameo = TungTungRig.build(nil)
+		if cameo then
+			cameo.model.Name = "TungTungCameo"
+			cameo.model.Parent = workspace
+			cameoClock = 0
+		end
+	end
+	return cameo
+end
+
+local function updateCameo(current: Shots.Sequence, index: number, dt: number)
+	if current.name == "Opening" and not options.loop then
+		if index < #current.shots then
+			dropCameo()
+			return
+		end
+		local rig = ensureCameo()
+		if not rig then
+			return
+		end
+		cameoClock += dt
+		TungTungRig.place(rig, PORCH)
+		if cameoClock < 0.6 then
+			TungTungRig.play(rig, "idle", 0)
+		elseif TungTungRig.playing(rig) == "idle" and cameoClock < 1 then
+			TungTungRig.play(rig, "slash", 0.15, 0.9)
+		end
+		TungTungRig.step(rig, dt)
+	elseif current.name == "Attract" and options.loop then
+		local rig = ensureCameo()
+		if not rig then
+			return
+		end
+		cameoClock += dt
+		-- Vai e volta na varanda (12 s por volta), virando nas pontas.
+		local phase = (cameoClock % 12) / 12
+		local forward = phase < 0.5
+		local t = if forward then phase * 2 else (1 - phase) * 2
+		local x = -5 + t * 14
+		local facing = if forward then -math.pi / 2 else math.pi / 2
+		TungTungRig.place(rig, CFrame.new(x, -0.5, 66.2) * CFrame.Angles(0, facing, 0))
+		TungTungRig.play(rig, "walk", 0.3, 1.8)
+		TungTungRig.step(rig, dt)
+	else
+		dropCameo()
+	end
+end
 
 local function vec(v: Shots.Vec): Vector3
 	return Vector3.new(v.x, v.y, v.z)
@@ -105,6 +170,7 @@ local function setCctv(on: boolean)
 end
 
 function Controller.stop()
+	dropCameo()
 	local wasActive = sequence ~= nil
 	sequence = nil
 	options = {}
@@ -307,6 +373,7 @@ local function updateSequence(current: Shots.Sequence, dt: number)
 		return
 	end
 	local shot = current.shots[index]
+	updateCameo(current, index, dt)
 	local cctv = Shots.isCctv(shot)
 	if lastShot ~= index then
 		local first = lastShot == 0

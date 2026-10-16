@@ -8,6 +8,7 @@
 	Colisão, captura e controles não são afetados. Também cuida dos sons da criatura.
 ]]
 
+local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
 local Config = require("@game/ReplicatedStorage/Shared/Config")
@@ -260,11 +261,23 @@ local function update(dt: number)
 		updateLegacy(rig, root, dt, camera)
 	end
 
-	-- Rosnados ocasionais fora da perseguição.
+	-- Fora da perseguição: rosnados e o "TUM TUM TUM" do bastão (assinatura do Tung Tung).
 	local now = os.clock()
 	if now >= nextGrowlAt and mode ~= "Chase" and mode ~= "Capture" then
 		nextGrowlAt = now + rng:NextNumber(7, 14)
-		AudioController.playAt("Growl", emitter(), 0.9, rng:NextNumber(0.75, 0.95))
+		if tung and rng:NextNumber() < 0.6 then
+			AudioController.playAt("DoorBang", emitter(), 0.85, 0.72)
+			local distance = if camera then (root.Position - camera.CFrame.Position).Magnitude else math.huge
+			if distance < 60 then
+				-- Legenda no HUD (CampaignController): perto o bastante para ouvir.
+				Players.LocalPlayer:SetAttribute(
+					"TungKnockSerial",
+					((Players.LocalPlayer:GetAttribute("TungKnockSerial") :: number?) or 0) + 1
+				)
+			end
+		else
+			AudioController.playAt("Growl", emitter(), 0.9, rng:NextNumber(0.75, 0.95))
+		end
 	end
 end
 
