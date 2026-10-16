@@ -3,7 +3,14 @@
 local Random = require("./SeededRandom")
 export type Spot = { room: string, x: number, y: number, z: number }
 export type Passage = { x: number, y: number, z: number, width: number }
-export type Level = { outdoor: boolean, theme: string, spots: { Spot }, passages: { Passage }, stairSide: number }
+export type Level = {
+	outdoor: boolean,
+	theme: string,
+	spots: { Spot },
+	passages: { Passage },
+	stairSide: number,
+	serviceStair: boolean,
+}
 local Levels = {}
 
 function Levels.create(seed: number, chapter: number, mode: string): Level
@@ -25,10 +32,12 @@ function Levels.create(seed: number, chapter: number, mode: string): Level
 			for _, side in { -1, 1 } do
 				-- Salas unidas viram salões; outras recebem portas de serviço de dez studs.
 				for _, z in { -20, -52 } do
-					table.insert(
-						passages,
-						{ x = side * 26, y = y, z = z, width = if rng.integer(1, 3) == 1 then 24 else 10 }
-					)
+					local roll = rng.integer(1, 4)
+					local stairAccess = chapter >= 3 and y >= 16 and side == stairSide and z == -52
+					if roll == 1 and not stairAccess then
+						continue
+					end
+					table.insert(passages, { x = side * 26, y = y, z = z, width = if roll == 2 then 24 else 10 })
 				end
 			end
 		end
@@ -41,6 +50,7 @@ function Levels.create(seed: number, chapter: number, mode: string): Level
 		spots = if outdoor then rng.shuffle(spots) else {},
 		passages = passages,
 		stairSide = stairSide,
+		serviceStair = mode == "Standard" and chapter >= 3,
 	}
 end
 

@@ -11,6 +11,7 @@ return {
 			for chapter = 1, 5 do
 				local a, b = Levels.create(42, chapter, "Story"), Plan.create(42, chapter, 1, "Story")
 				t.expect(a.outdoor).toBe(false)
+				t.expect(a.serviceStair).toBe(false)
 				t.expect(#a.passages).toBe(0)
 				for _, spec in b.activities do
 					t.expect(math.abs(spec.x) < 44).toBe(true)
@@ -23,7 +24,7 @@ return {
 				local level = Levels.create(seed, 3, "Standard")
 				t.expect(level).toEqual(Levels.create(seed, 3, "Standard"))
 				t.expect(level.outdoor).toBe(true)
-				t.expect(#level.passages).toBe(16)
+				t.expect(#level.passages >= 2 and #level.passages <= 16).toBe(true)
 				variants[level.theme] = true
 				for _, passage in level.passages do
 					t.expect(passage.width >= 10 and passage.width <= 24).toBe(true)

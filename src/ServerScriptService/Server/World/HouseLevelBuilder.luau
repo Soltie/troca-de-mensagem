@@ -50,6 +50,8 @@ local function pavilion(parent: Instance, x: number, z: number, title: string, g
 		end
 	end
 	piece(parent, "PavilionRoof", V3(x, 12, z), V3(30, 0.7, 30), roof, true)
+	local lantern = piece(parent, "PavilionLantern", V3(x, 8, z + 10), V3(0.5, 0.7, 0.5), trim)
+	Build.light(lantern, "Street", Color3.fromRGB(255, 202, 137), 22, 0.55, true, false)
 	sign(parent, V3(x, 9, z + 12), title)
 end
 local function stairs(parent: Instance, side: number)
@@ -70,6 +72,37 @@ local function stairs(parent: Instance, side: number)
 		Build.part(parent, "GardenStairGuard", V3(0.3, 3.5, (to - from).Magnitude), cf * CFrame.new(dx, 2, 0), trim)
 	end
 	sign(parent, V3(x, 12.5, 47.5), "MIRANTE / A CASA OBSERVA")
+end
+local function suppress(part: BasePart)
+	if part:GetAttribute("LevelOriginalTransparency") == nil then
+		part:SetAttribute("LevelOriginalTransparency", part.Transparency)
+		part:SetAttribute("LevelOriginalCollide", part.CanCollide)
+		part:SetAttribute("LevelOriginalQuery", part.CanQuery)
+	end
+	part.Transparency, part.CanCollide, part.CanQuery = 1, false, false
+end
+local function serviceStairs(parent: Instance, side: number)
+	local x = side * 26
+	local from, to = V3(x, 16, -80), V3(x, 32, -54)
+	local cf = CFrame.lookAt((from + to) / 2 - V3(0, 0.5, 0), to - V3(0, 0.5, 0))
+	Build.part(parent, "ServiceStairRamp", V3(10, 1, (to - from).Magnitude + 1.5), cf, wood)
+	for _, dx in { -5.2, 5.2 } do
+		Build.part(parent, "ServiceStairGuard", V3(0.3, 3.5, (to - from).Magnitude), cf * CFrame.new(dx, 2, 0), trim)
+	end
+	for i = 1, 26 do
+		piece(parent, "ServiceStairTread", from:Lerp(to, i / 26) - V3(0, 0.15, 0), V3(10, 0.16, 1), trim)
+	end
+	-- Recorte só no cômodo superior vago, depois de a campanha liberar o andar.
+	for _, dx in { -12, 12 } do
+		piece(parent, "ServiceStairFloor", V3(x + dx, 31, -68), V3(12, 1, 32), wood, true)
+	end
+	for _, z in { -83, -53 } do
+		piece(parent, "ServiceStairLanding", V3(x, 31, z), V3(12, 1, 2), wood, true)
+	end
+	for _, dx in { -6, 6 } do
+		piece(parent, "ServiceStairLandingGuard", V3(x + dx, 32, -68), V3(0.3, 3.5, 28), trim, true)
+	end
+	sign(parent, V3(x, 25, -51.3), "ESCADA DE SERVIÇO / SÓTÃO")
 end
 function Builder.build(root: Instance, level: Levels.Level)
 	local previous = root:FindFirstChild("GeneratedEstate")
@@ -99,17 +132,47 @@ function Builder.build(root: Instance, level: Levels.Level)
 	sign(out, V3(0, 10, -112), "O RELÓGIO PAROU. A CASA, NÃO.")
 	stairs(out, level.stairSide)
 	-- Silhueta de telhado, cornijas, varanda e chaminés, vistas de todos os lados.
-	local angle = math.atan(10 / 48)
+	local angle = math.atan(20 / 48)
 	for _, side in { -1, 1 } do
 		Build.part(
 			out,
 			"EstatePitchedRoof",
-			V3(49.2, 0.8, 108),
-			CFrame.new(side * 24, 53, -36) * CFrame.Angles(0, 0, -side * angle),
-			roof
+			V3(53, 0.8, 108),
+			CFrame.new(side * 24, 58, -36) * CFrame.Angles(0, 0, -side * angle),
+			roof,
+			{ material = Enum.Material.Slate }
 		)
-		piece(out, "Chimney", V3(side * 29, 52, -62), V3(5, 12, 5), stone)
-		piece(out, "ChimneyCap", V3(side * 29, 64, -62), V3(6, 0.6, 6), trim)
+		for _, z in { -90, 18 } do
+			Build.part(
+				out,
+				"EstateGable",
+				V3(0.6, 20, 48),
+				CFrame.new(side * 24, 58, z) * CFrame.Angles(0, -side * math.pi / 2, 0),
+				Color3.fromRGB(113, 100, 122),
+				{ class = "WedgePart", material = Enum.Material.Plaster }
+			)
+		end
+		Build.part(
+			out,
+			"FoyerPitchedRoof",
+			V3(39, 0.8, 57),
+			CFrame.new(10.5 + side * 17.5, 56, 38) * CFrame.Angles(0, 0, -side * math.atan(16 / 35)),
+			roof,
+			{ material = Enum.Material.Slate }
+		)
+		Build.part(
+			out,
+			"EstateGable",
+			V3(0.6, 16, 35),
+			CFrame.new(10.5 + side * 17.5, 56, 66) * CFrame.Angles(0, -side * math.pi / 2, 0),
+			Color3.fromRGB(113, 100, 122),
+			{ class = "WedgePart", material = Enum.Material.Plaster }
+		)
+		piece(out, "Chimney", V3(side * 29, 58, -62), V3(5, 16, 5), stone)
+		piece(out, "ChimneyCap", V3(side * 29, 74, -62), V3(6, 0.6, 6), trim)
+		for _, z in { -84, 10 } do
+			piece(out, "FacadePilaster", V3(side * 44.65, 0, z), V3(1, 48, 1.4), trim)
+		end
 		for _, y in { 0, 16, 32, 47 } do
 			piece(out, "ExteriorCornice", V3(side * 44.7, y, -36), V3(0.8, 0.7, 100), trim)
 		end
@@ -133,7 +196,7 @@ function Builder.build(root: Instance, level: Levels.Level)
 		return
 	end
 	for _, wall in arch:GetChildren() do
-		if not wall:IsA("BasePart") or wall.Name ~= "RoomPartition" then
+		if not wall:IsA("BasePart") then
 			continue
 		end
 		-- Restaura primeiro: reiniciar ou voltar à História nunca acumula buracos.
@@ -141,6 +204,20 @@ function Builder.build(root: Instance, level: Levels.Level)
 			wall.Transparency = wall:GetAttribute("LevelOriginalTransparency") :: number
 			wall.CanCollide = wall:GetAttribute("LevelOriginalCollide") :: boolean
 			wall.CanQuery = wall:GetAttribute("LevelOriginalQuery") :: boolean
+		end
+		if
+			level.serviceStair
+			and math.abs(wall.Position.X - level.stairSide * 26) < 0.1
+			and math.abs(wall.Position.Z + 68) < 0.1
+			and (
+				(wall.Name == "RoomFloor" and math.abs(wall.Position.Y - 31.5) < 0.1)
+				or (wall.Name == "RoomCeiling" and math.abs(wall.Position.Y - 31.25) < 0.1)
+			)
+		then
+			suppress(wall)
+		end
+		if wall.Name ~= "RoomPartition" then
+			continue
 		end
 		for _, opening in level.passages do
 			if
@@ -150,12 +227,7 @@ function Builder.build(root: Instance, level: Levels.Level)
 			then
 				continue
 			end
-			if wall:GetAttribute("LevelOriginalTransparency") == nil then
-				wall:SetAttribute("LevelOriginalTransparency", wall.Transparency)
-				wall:SetAttribute("LevelOriginalCollide", wall.CanCollide)
-				wall:SetAttribute("LevelOriginalQuery", wall.CanQuery)
-			end
-			wall.Transparency, wall.CanCollide, wall.CanQuery = 1, false, false
+			suppress(wall)
 			local rest = (wall.Size.X - opening.width) / 2
 			for _, side in { -1, 1 } do
 				local p = piece(
@@ -178,6 +250,9 @@ function Builder.build(root: Instance, level: Levels.Level)
 			)
 		end
 	end
+	if level.serviceStair then
+		serviceStairs(out, level.stairSide)
+	end
 end
 function Builder.ruins(root: Instance)
 	local generated = root:FindFirstChild("GeneratedEstate")
@@ -193,6 +268,8 @@ function Builder.ruins(root: Instance)
 				or part.Name == "Chimney"
 				or part.Name == "ChimneyCap"
 				or part.Name == "PorchCanopy"
+				or part.Name == "EstateGable"
+				or part.Name == "FoyerPitchedRoof"
 			)
 		then
 			part.Transparency, part.CanCollide, part.CanQuery = 1, false, false

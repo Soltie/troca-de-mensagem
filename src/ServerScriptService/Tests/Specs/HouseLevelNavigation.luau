@@ -37,6 +37,19 @@ return {
 							},
 						}
 					do
+						local stairsPath = game:GetService("PathfindingService"):CreatePath(agent)
+						stairsPath:ComputeAsync(
+							Vector3.new(level.stairSide * 26, 16, -80) + offset,
+							Vector3.new(level.stairSide * 26, 32, -38) + offset
+						)
+						assert(stairsPath.Status == Enum.PathStatus.Success, "Blocked internal service stair")
+						local usedStair = false
+						for _, waypoint in stairsPath:GetWaypoints() do
+							if waypoint.Position.Y > 21 and waypoint.Position.Y < 28 and waypoint.Position.Z < -50 then
+								usedStair = true
+							end
+						end
+						assert(usedStair, "Internal service stair was not traversed")
 						for _, spot in level.spots do
 							local path = game:GetService("PathfindingService"):CreatePath(agent)
 							path:ComputeAsync(
@@ -70,7 +83,10 @@ return {
 				local architecture = world.root:FindFirstChild("Architecture")
 				assert(architecture, "Missing architecture")
 				for _, wall in architecture:GetChildren() do
-					if wall:IsA("BasePart") and wall.Name == "RoomPartition" then
+					if
+						wall:IsA("BasePart")
+						and (wall.Name == "RoomPartition" or wall:GetAttribute("LevelOriginalTransparency") ~= nil)
+					then
 						t.expect(wall.CanCollide and wall.CanQuery and wall.Transparency == 0).toBe(true)
 					end
 				end
