@@ -158,7 +158,7 @@ local function build(): Refs
 		Name = "Prompt",
 		AnchorPoint = Vector2.new(0.5, 0),
 		Position = UDim2.new(0.5, 0, 0.5, 18),
-		Size = UDim2.fromOffset(420, 24),
+		Size = UDim2.new(0.8, 0, 0, 60),
 		Text = "",
 		Visible = false,
 		Parent = gui,
@@ -709,7 +709,19 @@ local GameUiController = {
 }
 
 function GameUiController.Init()
-	refs = build()
+	local ui = build()
+	refs = ui
+	-- Interações/avisos também existem no coop, cujo HUD desliga somente o painel solo.
+	local shared = Create("ScreenGui", {
+		Name = "InteractionUi",
+		ResetOnSpawn = false,
+		IgnoreGuiInset = true,
+		DisplayOrder = 70,
+		Parent = player:WaitForChild("PlayerGui"),
+	})
+	ui.prompt.Parent = shared
+	ui.caption.Parent = shared
+	ui.note.Parent = shared
 	refreshHelp()
 end
 
@@ -773,7 +785,8 @@ end
 
 function GameUiController.showNote(id: string)
 	local ui = r()
-	ui.noteText.Text = (Text.Notes :: any)[id] or ""
+	local text = (Text.Notes :: any)[id] or ""
+	ui.noteText.Text = if id == "note_breakers" then string.format(text, GameState.snapshot().breakerOrder) else text
 	ui.note.Visible = true
 	noteOpen = true
 end

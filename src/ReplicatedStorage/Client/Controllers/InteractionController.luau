@@ -17,7 +17,13 @@ local Remotes = require("@game/ReplicatedStorage/Shared/Net/Remotes")
 local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
 local Text = require("@game/ReplicatedStorage/Shared/Game/Text")
 local Types = require("@game/ReplicatedStorage/Shared/Types")
+local Rules = require("@game/ReplicatedStorage/Shared/Game/InteractionPresentation")
 local AudioController = require("./AudioController")
+local CameraController = require("./CameraController")
+local CharacterController = require("./CharacterController")
+local FearController = require("./FearController")
+local FlashlightController = require("./FlashlightController")
+local ScreenFxController = require("./ScreenFxController")
 local GameUiController = require("./GameUiController")
 
 local player = Players.LocalPlayer
@@ -27,6 +33,37 @@ local CONE_CLOSE_DEGREES = 40
 local current: BasePart? = nil
 local busy = false
 local phase: GameState.Phase = "Loading"
+local roundId = -1
+local generation = 0
+local hasKey = false
+local campaign = false
+local highlight: Highlight? = nil
+
+local function hiddenId(): string?
+	local id = player:GetAttribute("Hidden")
+	return if type(id) == "string" and id ~= "" then id else nil
+end
+
+local function allowed(): boolean
+	return Rules.allowed(phase, player:GetAttribute("CampaignStatus") :: string?)
+end
+
+local function clearTarget()
+	current = nil
+	if highlight then
+		highlight.Adornee = nil
+	end
+	GameUiController.setPrompt(nil)
+end
+
+local function holdBreath(value: boolean)
+	task.spawn(function()
+		local ok, remote = pcall(Remotes.clientEvent, "SetHoldBreath", 5)
+		if ok then
+			remote:FireServer(value)
+		end
+	end)
+end
 
 local function visible(camera: Camera, part: BasePart): boolean
 	local origin = camera.CFrame.Position
@@ -71,16 +108,21 @@ local function messageFor(key: string): string
 	return (Text.Messages :: any)[key] or ""
 end
 
-local function interact(part: BasePart)
-	local id = part:GetAttribute(Tags.Attr.InteractId)
-	if type(id) ~= "string" or busy then
+local function interact(id: string, part: BasePart?, action: string?)
+	if busy or not allowed() then
 		return
 	end
 	busy = true
+	local token = generation
+	-- A coleta remove a peça no servidor; guardar a origem antes do pedido.
+	local origin = if part then part.Position else Vector3.zero
 	local ok, response = pcall(function()
-		return Remotes.clientFunction("Interact", 5):InvokeServer(id)
+		return Remotes.clientFunction("Interact", 5):InvokeServer(id, action)
 	end)
 	busy = false
+	if token ~= generation or not allowed() then
+		return
+	end
 	if not ok then
 		GameUiController.caption(messageFor("unknown"))
 		return
@@ -92,13 +134,27 @@ local function interact(part: BasePart)
 	local data = result.data
 	if data.accepted then
 		if data.note then
-			AudioController.play("UiBlip", 1, 0.8)
+			AudioController.play("Paper", 1, 0.8)
 			GameUiController.showNote(data.note)
-		elseif data.message == "fuse_taken" then
-			AudioController.play("Switch", 0.7, 1.7)
+		elseif Rules.pickup(data.kind) then
+			FlashlightController.showPickup(data.kind :: string, origin)
+		elseif data.kind == "Unlock" then
+			FlashlightController.playKeyUnlock()
+		elseif data.kind == "BreakerSolved" or (campaign and data.message == "solved") then
+			ScreenFxController.pulse(Color3.fromRGB(70, 170, 95))
+			AudioController.play("Switch", 0.6, 1.3)
+		elseif campaign and data.message == "progress" then
+			AudioController.play("Switch", 0.5, 1.2)
 		end
 	else
 		AudioController.play("UiBlip", 1, 0.55)
+		if data.kind == "BreakerWrong" or (campaign and data.message == "wrong_sequence") then
+			CameraController.addTrauma(0.5)
+			FearController.spike(0.15)
+			ScreenFxController.pulse(Color3.fromRGB(165, 25, 25))
+		elseif data.kind == "DoorLocked" then
+			CameraController.addTrauma(0.1)
+		end
 	end
 	local text = messageFor(data.message)
 	if text ~= "" then
@@ -110,22 +166,106 @@ local InteractionController = {
 	Name = "InteractionController",
 }
 
+-- Entrada única para teclado e outras interfaces; nunca aceita um ID arbitrário do chamador.
+function InteractionController.activate(action: string?)
+	if not allowed() then
+		return
+	end
+	local alt = action == "alt"
+	if GameUiController.isNoteOpen() then
+		if not alt then
+			GameUiController.closeNote()
+		end
+		return
+	end
+	local hidden = hiddenId()
+	if hidden then
+		if not alt then
+			task.spawn(interact, hidden, nil, nil)
+		end
+		return
+	end
+	local part = current
+	if part then
+		local id = part:GetAttribute(Tags.Attr.InteractId)
+		if
+			type(id) == "string" and (not alt or (not campaign and type(part:GetAttribute("InteractAlt")) == "string"))
+		then
+			task.spawn(interact, id, part, if alt then "alt" else nil)
+		end
+	end
+end
+
 function InteractionController.Start()
+	campaign = GameState.wait():GetAttribute("CampaignActive") == true
+	local focus = Instance.new("Highlight")
+	highlight = focus
+	focus.Name = "InteractionFocus"
+	focus.FillTransparency = 1
+	focus.OutlineTransparency = 0.55
+	focus.OutlineColor = Color3.fromRGB(205, 188, 144)
+	focus.DepthMode = Enum.HighlightDepthMode.Occluded
+	focus.Parent = workspace
 	GameState.observe(function(snapshot)
+		if roundId ~= snapshot.roundId or phase ~= snapshot.phase then
+			generation += 1
+			clearTarget()
+		end
+		roundId = snapshot.roundId
+		hasKey = snapshot.hasKey
 		phase = snapshot.phase
+	end)
+	player:GetAttributeChangedSignal("CampaignStatus"):Connect(function()
+		generation += 1
+		clearTarget()
+	end)
+	local function syncHidden()
+		local eye = player:GetAttribute("HideEye")
+		if hiddenId() and typeof(eye) == "CFrame" and allowed() then
+			CameraController.setHidden(eye :: CFrame)
+		else
+			CameraController.setHidden(nil)
+		end
+	end
+	player:GetAttributeChangedSignal("Hidden"):Connect(syncHidden)
+	player:GetAttributeChangedSignal("HideEye"):Connect(syncHidden)
+	player.CharacterAdded:Connect(function()
+		generation += 1
+		CameraController.setHidden(nil)
+		clearTarget()
+	end)
+	syncHidden()
+	CharacterController.onStandBlocked(function()
+		GameUiController.caption(Text.Hints.no_room)
+	end)
+	FlashlightController.onHint(function(key)
+		local text = (Text.Hints :: any)[key]
+		if text and allowed() then
+			GameUiController.caption(text)
+		end
 	end)
 
 	UserInputService.InputBegan:Connect(function(input: InputObject, processed: boolean)
-		if processed or input.KeyCode ~= Enum.KeyCode.E then
+		if processed or not allowed() then
 			return
 		end
-		if GameUiController.isNoteOpen() then
-			GameUiController.closeNote()
+		if input.KeyCode == Enum.KeyCode.Space and hiddenId() then
+			holdBreath(true)
 			return
 		end
-		local part = current
-		if part and phase == "Playing" then
-			task.spawn(interact, part)
+		if input.KeyCode ~= Enum.KeyCode.E and input.KeyCode ~= Enum.KeyCode.Q then
+			return
+		end
+		InteractionController.activate(if input.KeyCode == Enum.KeyCode.Q then "alt" else nil)
+	end)
+	UserInputService.InputEnded:Connect(function(input)
+		if input.KeyCode == Enum.KeyCode.Space and hiddenId() then
+			holdBreath(false)
+		end
+	end)
+	UserInputService.WindowFocusReleased:Connect(function()
+		if hiddenId() then
+			holdBreath(false)
 		end
 	end)
 
@@ -137,17 +277,35 @@ function InteractionController.Start()
 		end
 		accumulator = 0
 		local camera = workspace.CurrentCamera
-		if not camera or phase ~= "Playing" or GameUiController.isNoteOpen() then
-			current = nil
-			GameUiController.setPrompt(nil)
+		if not camera or not allowed() or GameUiController.isNoteOpen() then
+			clearTarget()
+			return
+		end
+		if hiddenId() then
+			clearTarget()
+			GameUiController.setPrompt(
+				Text.HiddenHint .. (if player:GetAttribute("HoldBreath") then "\n" .. Text.HoldingBreath else "")
+			)
 			return
 		end
 		current = findTarget(camera)
 		if current then
 			local prompt = current:GetAttribute(Tags.Attr.InteractPrompt)
-			GameUiController.setPrompt(`[E] {if type(prompt) == "string" then prompt else ""}`)
+			GameUiController.setPrompt(
+				Rules.prompt(
+					if type(prompt) == "string" then prompt else "",
+					current:GetAttribute("InteractAlt") :: string?,
+					current:GetAttribute("Locked") == true,
+					hasKey,
+					campaign
+				)
+			)
+			local parent = current.Parent
+			if highlight then
+				highlight.Adornee = if parent and parent:IsA("Model") then parent else current
+			end
 		else
-			GameUiController.setPrompt(nil)
+			clearTarget()
 		end
 	end)
 end

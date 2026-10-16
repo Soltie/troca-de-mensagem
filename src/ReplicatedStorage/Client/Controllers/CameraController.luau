@@ -30,7 +30,7 @@ local C = Config.Camera
 local P = Config.Player
 local player = Players.LocalPlayer
 
-type Mode = "normal" | "hidden" | "capture"
+type Mode = "normal" | "hidden" | "capture" | "spectate"
 
 local mode: Mode = "normal"
 local applied = CFrame.identity
@@ -56,6 +56,7 @@ local currentOffset = Vector3.zero
 local hiddenOrigin: CFrame? = nil
 local hiddenYaw = 0
 local hiddenPitch = 0
+local spectateTarget: Player? = nil
 
 -- Captura
 local captureStarted = 0
@@ -226,7 +227,28 @@ local function apply(dt: number)
 	local motion = CharacterController.getMotion()
 	fearSmooth = approach(fearSmooth, fear, 3, dt)
 
-	if mode == "hidden" then
+	if mode == "spectate" then
+		local character = spectateTarget and spectateTarget.Character
+		local head = character and character:FindFirstChild("Head")
+		if head and head:IsA("BasePart") then
+			-- Olho do colega, sem câmera livre, zoom ou visão através de paredes.
+			local forward = head.CFrame.LookVector
+			local offset = forward * (head.Size.Z / 2 + 0.05)
+			local params = RaycastParams.new()
+			params.FilterType = Enum.RaycastFilterType.Exclude
+			local exclude: { Instance } = { character :: Model }
+			if player.Character then
+				table.insert(exclude, player.Character)
+			end
+			params.FilterDescendantsInstances = exclude
+			local hit = workspace:Raycast(head.Position, offset, params)
+			local eye = if hit then hit.Position - forward * 0.1 else head.Position + offset
+			camera.CameraType = Enum.CameraType.Scriptable
+			camera.CFrame = CFrame.new(eye) * head.CFrame.Rotation
+			camera.FieldOfView = P.FieldOfView
+		end
+		return
+	elseif mode == "hidden" then
 		updateHidden(camera)
 		camera.FieldOfView = fieldOfView(dt, motion)
 		return
@@ -253,6 +275,19 @@ end
 local CameraController = {
 	Name = "CameraController",
 }
+
+function CameraController.setSpectator(target: Player?)
+	if target then
+		if mode == "capture" then
+			return
+		end
+		undo()
+		spectateTarget = target
+		mode = "spectate"
+	elseif mode == "spectate" then
+		CameraController.reset()
+	end
+end
 
 -- Tremor: soma trauma (0..1). O efeito é quadrático (pequenos valores quase não aparecem).
 function CameraController.addTrauma(amount: number)
@@ -316,7 +351,9 @@ end
 
 -- Volta tudo ao normal (nova rodada, checkpoint, saída de cena).
 function CameraController.reset()
+	undo()
 	mode = "normal"
+	spectateTarget = nil
 	hiddenOrigin = nil
 	captureTarget = nil
 	captureFrom = nil
@@ -332,6 +369,7 @@ function CameraController.reset()
 	local camera = workspace.CurrentCamera
 	if camera then
 		camera.CameraType = Enum.CameraType.Custom
+		camera.CameraSubject = humanoid()
 		camera.FieldOfView = P.FieldOfView
 	end
 	local h = humanoid()
@@ -344,6 +382,7 @@ end
 function CameraController.debugState(): { [string]: any }
 	return {
 		mode = mode,
+		spectating = if spectateTarget then spectateTarget.UserId else nil,
 		trauma = trauma,
 		fear = fearSmooth,
 		crouch = crouchAlpha,

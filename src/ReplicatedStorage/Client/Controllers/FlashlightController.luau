@@ -186,7 +186,8 @@ local function updateLeds(now: number)
 end
 
 local function applyVisible()
-	local on = serverOn() and phase ~= "Won" and not isHidden()
+	local status = player:GetAttribute("CampaignStatus")
+	local on = serverOn() and phase ~= "Won" and not isHidden() and (status == nil or status == "Active")
 	if spot then
 		spot.Enabled = on
 	end
@@ -208,7 +209,8 @@ local FlashlightController = {
 }
 
 function FlashlightController.isOn(): boolean
-	return serverOn()
+	local status = player:GetAttribute("CampaignStatus")
+	return serverOn() and (status == nil or status == "Active")
 end
 
 function FlashlightController.isWanted(): boolean
@@ -382,6 +384,7 @@ function FlashlightController.Init()
 end
 
 function FlashlightController.Start()
+	player:GetAttributeChangedSignal("CampaignStatus"):Connect(applyVisible)
 	UserInputService.InputBegan:Connect(function(input: InputObject, processed: boolean)
 		if processed then
 			return
@@ -389,7 +392,8 @@ function FlashlightController.Start()
 		if input.KeyCode ~= Enum.KeyCode.F and input.KeyCode ~= Enum.KeyCode.ButtonY then
 			return
 		end
-		if (phase == "Playing" or phase == "Intro") and not isHidden() then
+		local status = player:GetAttribute("CampaignStatus")
+		if (phase == "Playing" or phase == "Intro") and not isHidden() and (status == nil or status == "Active") then
 			FlashlightController.set(not wanted)
 		end
 	end)
@@ -448,6 +452,7 @@ function FlashlightController.Start()
 			* rotation
 			* CFrame.new(0.42 + bob * 0.02, -0.42 + math.abs(bob) * -0.025, -0.95)
 		local visible = not motion.hidden
+			and (player:GetAttribute("CampaignStatus") == nil or player:GetAttribute("CampaignStatus") == "Active")
 			and phase ~= "Won"
 			and (phase == "Playing" or phase == "Intro" or phase == "Lost")
 		vm.model.Parent = if visible then camera else nil

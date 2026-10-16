@@ -111,6 +111,11 @@ local function isHidden(): boolean
 	return type(hidden) == "string" and hidden ~= ""
 end
 
+local function active(): boolean
+	local status = player:GetAttribute("CampaignStatus")
+	return status == nil or status == "Active"
+end
+
 -- Há espaço acima da cabeça para levantar? (o servidor faz a mesma checagem)
 local function canStand(): boolean
 	local root = rootPart()
@@ -150,7 +155,7 @@ end
 
 -- Leva a postura pedida ao servidor. Levantar só com espaço (avisa a UI se faltar).
 local function syncStance(now: number)
-	if phase ~= "Playing" or isHidden() then
+	if phase ~= "Playing" or isHidden() or not active() then
 		return
 	end
 	local desired = desiredStance()
@@ -224,7 +229,13 @@ local function update(dt: number)
 		exhaustedUntil = now + P.ExhaustedTime
 	end
 	local exhausted = now < exhaustedUntil or (stamina < P.StaminaMinToSprint and exhaustedUntil > now - 2)
-	sprinting = phase == "Playing" and wantsSprint and moving and not exhausted and stance == "Stand" and not hidden
+	sprinting = phase == "Playing"
+		and active()
+		and wantsSprint
+		and moving
+		and not exhausted
+		and stance == "Stand"
+		and not hidden
 
 	if sprinting then
 		stamina = math.max(0, stamina - dt)
@@ -245,7 +256,7 @@ local function update(dt: number)
 	end
 	local rate = if target > currentSpeed then P.Acceleration else P.Deceleration
 	currentSpeed += math.clamp(target - currentSpeed, -rate * dt, rate * dt)
-	if phase == "Playing" and not hidden then
+	if phase == "Playing" and active() and not hidden then
 		h.WalkSpeed = math.max(currentSpeed, P.WalkSpeed * 0.45)
 		h.JumpHeight = if stance == "Crouch" then 0 else P.JumpHeight
 	end
@@ -320,7 +331,7 @@ function CharacterController.Start()
 	end)
 
 	UserInputService.InputBegan:Connect(function(input: InputObject, processed: boolean)
-		if processed then
+		if processed or not active() then
 			return
 		end
 		if input.KeyCode == Enum.KeyCode.C or input.KeyCode == Enum.KeyCode.ButtonB then

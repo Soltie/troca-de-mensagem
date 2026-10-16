@@ -5,15 +5,12 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local HttpService = game:GetService("HttpService")
-local CollectionService = game:GetService("CollectionService")
 local Config = require("@game/ReplicatedStorage/Shared/Config")
 local Catalog = require("@game/ReplicatedStorage/Shared/Game/CampaignCatalog")
 local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
 local PixelText = require("@game/ReplicatedStorage/Shared/Game/PixelText")
 local Remotes = require("@game/ReplicatedStorage/Shared/Net/Remotes")
-local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
 local Create = require("../UI/Create")
-local InteractionController = require("./InteractionController")
 
 local player = Players.LocalPlayer
 local Controller = { Name = "CampaignController" }
@@ -98,8 +95,6 @@ function Controller.Start()
 	}) :: Frame
 	local taskText = text(taskPanel, "Tasks", UDim2.fromOffset(10, 8), UDim2.new(1, -20, 1, -16), 14)
 	local roster = text(gui, "Roster", UDim2.new(0, 20, 1, -164), UDim2.fromOffset(420, 140), 13)
-	local prompt = text(gui, "Prompt", UDim2.new(0.15, 0, 0.5, 20), UDim2.new(0.7, 0, 0, 44), 17)
-	prompt.TextXAlignment = Enum.TextXAlignment.Center
 	local feedbackLabel = text(gui, "Feedback", UDim2.new(0.15, 0, 1, -215), UDim2.new(0.7, 0, 0, 48), 16)
 	feedbackLabel.TextColor3 = Color3.fromRGB(230, 190, 90)
 	feedbackLabel.TextXAlignment = Enum.TextXAlignment.Center
@@ -174,7 +169,7 @@ function Controller.Start()
 				`{if activity.solved then "[OK]" else "[ ]"} {Catalog.RoomNames[activity.room] or "SETOR"} / {Catalog.KindNames[activity.kind] or "ATIVIDADE"}`
 			)
 		end
-		if roleId == "scout" then
+		if roleId == "scout" and player:GetAttribute("CampaignStatus") == "Active" then
 			local character = player.Character
 			local root = character and character:FindFirstChild("HumanoidRootPart")
 			local world = workspace:FindFirstChild("Substation9")
@@ -193,17 +188,6 @@ function Controller.Start()
 			end
 		end
 		taskText.Text = PixelText.normalize(table.concat(lines, "\n"))
-		local target = InteractionController.currentTarget()
-		prompt.Text = ""
-		if target then
-			for _, part in CollectionService:GetTagged(Tags.Interactable) do
-				if part:GetAttribute(Tags.Attr.InteractId) == target then
-					prompt.Text =
-						PixelText.normalize(`[E] {part:GetAttribute(Tags.Attr.InteractPrompt) or "INTERAGIR"}`)
-					break
-				end
-			end
-		end
 		if os.clock() > feedbackUntil then
 			feedbackLabel.Text = ""
 		end

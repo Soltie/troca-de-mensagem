@@ -13,6 +13,7 @@
 ]]
 
 local UserInputService = game:GetService("UserInputService")
+local ContextActionService = game:GetService("ContextActionService")
 local Players = game:GetService("Players")
 
 local Config = require("@game/ReplicatedStorage/Shared/Config")
@@ -117,6 +118,16 @@ function SettingsController.Init()
 end
 
 function SettingsController.Start()
+	-- O também é zoom da câmera padrão; InputBegan chega processado e perdia o atalho.
+	ContextActionService:BindActionAtPriority("S9ComfortOptions", function(_, state)
+		if UserInputService:GetFocusedTextBox() then
+			return Enum.ContextActionResult.Pass
+		end
+		if state == Enum.UserInputState.Begin and menu then
+			menu.Visible = not menu.Visible
+		end
+		return Enum.ContextActionResult.Sink
+	end, false, Enum.ContextActionPriority.High.Value, Enum.KeyCode.O)
 	UserInputService.InputBegan:Connect(function(input: InputObject, processed: boolean)
 		if processed then
 			return
@@ -125,8 +136,6 @@ function SettingsController.Start()
 			SettingsController.toggle("retro")
 		elseif input.KeyCode == Enum.KeyCode.B then
 			SettingsController.toggleMotion()
-		elseif input.KeyCode == Enum.KeyCode.O and menu then
-			menu.Visible = not menu.Visible
 		elseif menu and menu.Visible then
 			local numberKeys = {
 				Enum.KeyCode.One,

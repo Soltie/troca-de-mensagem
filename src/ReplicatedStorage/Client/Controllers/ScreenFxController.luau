@@ -18,6 +18,8 @@ local edges: { Frame } = {}
 local bands: { Frame } = {}
 local overlay: ScreenGui? = nil
 local impact: Frame? = nil
+local puzzlePulse: Frame? = nil
+local pulseAt = -math.huge
 local stamp: TextLabel? = nil
 local tracking: Frame? = nil
 local blur: BlurEffect? = nil
@@ -33,8 +35,19 @@ function ScreenFxController.capture()
 	captureAt = os.clock()
 end
 
+function ScreenFxController.pulse(color: Color3)
+	if puzzlePulse and SettingsController.get("flashes") then
+		puzzlePulse.BackgroundColor3 = color
+		pulseAt = os.clock()
+	end
+end
+
 function ScreenFxController.reset()
 	captureAt = -math.huge
+	pulseAt = -math.huge
+	if puzzlePulse then
+		puzzlePulse.Visible = false
+	end
 	Lighting.FogEnd = baseFog
 	if blur then
 		blur.Size = 0
@@ -48,6 +61,7 @@ function ScreenFxController.debugState(): { [string]: any }
 		fog = Lighting.FogEnd,
 		baseFog = baseFog,
 		impact = if impact then impact.Visible else false,
+		puzzlePulse = if puzzlePulse then puzzlePulse.Visible else false,
 		vhs = if stamp then stamp.Visible else false,
 		bands = #bands,
 	}
@@ -142,6 +156,15 @@ function ScreenFxController.Init()
 		ZIndex = 5,
 		Parent = gui,
 	}) :: Frame
+	puzzlePulse = Create("Frame", {
+		Name = "PuzzlePulse",
+		BorderSizePixel = 0,
+		Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1,
+		Visible = false,
+		ZIndex = 4,
+		Parent = gui,
+	}) :: Frame
 	blur = Create("BlurEffect", { Name = "PanicBlur", Size = 0, Parent = Lighting }) :: BlurEffect
 end
 
@@ -173,6 +196,11 @@ function ScreenFxController.Start()
 		end
 		local playing = Presentation.playing(s.phase, player:GetAttribute("CampaignStatus") :: string?)
 		local flashes = SettingsController.get("flashes")
+		if puzzlePulse then
+			local age = os.clock() - pulseAt
+			puzzlePulse.Visible = playing and flashes and age < 0.3
+			puzzlePulse.BackgroundTransparency = math.clamp(0.8 + age / 0.3 * 0.2, 0.8, 1)
+		end
 		local fx = Presentation.effects(FearController.get(), playing, flashes, SettingsController.get("retro"))
 		lastEffects = fx
 		for _, edge in edges do
