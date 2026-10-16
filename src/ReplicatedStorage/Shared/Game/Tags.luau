@@ -25,6 +25,7 @@ local Tags = {
 		-- Criatura (na peça Root): modo atual do cérebro e se está ativa.
 		CreatureMode = "Mode",
 		CreatureActive = "Active",
+		ThreatTargetUserId = "ThreatTargetUserId",
 	},
 
 	-- Nomes de instâncias criadas pelo servidor no Workspace.

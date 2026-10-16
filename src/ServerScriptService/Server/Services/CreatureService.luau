@@ -80,6 +80,9 @@ local function setAttributes(mode: string)
 	local r = getRoot()
 	r:SetAttribute(Tags.Attr.CreatureMode, mode)
 	r:SetAttribute(Tags.Attr.CreatureActive, active)
+	if mode ~= "Chase" and mode ~= "Capture" then
+		r:SetAttribute(Tags.Attr.ThreatTargetUserId, 0)
+	end
 end
 
 local function placeAt(position: Vector3, look: Vector3?)
@@ -348,6 +351,9 @@ local function brainTick()
 	local target = findTarget()
 	local perception = perceive(target, now)
 	local command = CreatureBrain.step(brain, perception)
+	if command.mode == "Chase" or command.event == "capture" then
+		getRoot():SetAttribute(Tags.Attr.ThreatTargetUserId, if target then target.player.UserId else 0)
+	end
 
 	if command.event == "capture" and target then
 		frozen = true
