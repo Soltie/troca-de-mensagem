@@ -55,7 +55,8 @@ Os passos ficam com o humano: os agentes não criam produtos nem mexem no Creato
 Lista completa em `docs/MONETIZATION.md`, seção 5.
 
 1. Publicar a experiência.
-2. Criar os 5 Developer Products e o Game Pass VIP.
+2. Criar os Developer Products e Game Passes listados em `docs/MONETIZATION.md` (seções 5 e 11: créditos,
+   pacote inicial, kit sobrevivente, segundas chances, continuações, pilhas, bônus x2, VIP e Arquivo do Elias).
 3. Colar os IDs em `src/ReplicatedStorage/Shared/Game/StoreCatalog.luau` (`Products`, campo `id`).
 4. Ativar preços gerenciados e servidores privados, se desejado.
 5. Testar uma compra real de cada tipo.

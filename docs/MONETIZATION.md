@@ -202,6 +202,8 @@ Os agentes não criam produtos, não publicam e não mexem no Creator Hub.
    - nomes e descrições como na tabela da seção 3;
    - copiar o ID de cada um para o campo `id` em `StoreCatalog.Products`.
 3. **Criar o Game Pass "Crachá de Supervisor (VIP)"** e copiar o ID para a entrada `vip`.
+   **Novos (seção 11):** 8 Developer Products (`kit_sobrevivente`, `segunda_chance_3`, `segunda_chance_10`,
+   `continuar_1`, `continuar_5`, `pilhas_10`, `bonus_fichas_1h`, `bonus_duplo_3h`) e o Game Pass `arquivo_elias`.
 4. **Ativar *managed pricing* / *price optimization*** para os produtos (preços regionais), se desejado.
 5. **Ativar servidores privados** (grátis ou baratos): ajuda grupos de amigos, que é o público do coop.
 6. **Fazer o questionário de maturidade/conformidade.** É necessário para anúncios e alguns recursos.
@@ -324,3 +326,95 @@ QA integrado com animações: 224 testes no Studio; trilha grátis/paga, compra 
 do nível 5, recompra bloqueada e funil de três passos conferidos no Dev. Nenhuma compra real.
 Relatório consolidado e fronteira com o modo história: [TWO_CHATS_RESUME.md](TWO_CHATS_RESUME.md).
 API verificada na [documentação oficial de AnalyticsService](https://create.roblox.com/docs/reference/engine/classes/AnalyticsService).
+
+## 11. Vantagens pagas, menu inicial e modo história (16/10/2026)
+
+**Decisão do humano:** o jogo passa a vender vantagem de jogo ("pay to win"), além dos cosméticos.
+Isso substitui a parte "só cosmética" da D34 (ver D37 em DECISIONS). Limites mantidos no código:
+nenhuma vantagem deixa alguém invencível ou tira o Vigia do jogo; tudo continua ganhável sem pagar;
+a única compra aleatória paga continua sendo o Baú Lacrado (regras da seção 2).
+
+### Melhorias permanentes (Shared/Game/Perks, 5 níveis)
+
+| Melhoria | Efeito no nível 5 | Fichas (níveis 1–5) | Créditos (níveis 1–5) | Onde vale |
+| --- | --- | --- | --- | --- |
+| Bateria de Lítio | lanterna dura 1,75x | 300 / 600 / 1000 / 1600 / 2500 | 60 / 120 / 200 / 320 / 500 | servidor (PlayerStateService) |
+| Fôlego de Maratona | fôlego e recarga 1,75x | igual | igual | cliente (CharacterController; o fôlego já era local) |
+| Mãos de Socorrista | resgate em 50% do tempo | 250 / 500 / 850 / 1300 / 2000 | 50 / 100 / 170 / 260 / 400 | servidor (CampaignRuntime) |
+| Passos Leves | raio do barulho de corrida 0,6x | 350 / 700 / 1150 / 1800 / 2800 | 70 / 140 / 230 / 360 / 560 | servidor (CreatureService) |
+
+Maximizar uma melhoria custa ~1.200 Créditos (≈ R$ 750 no pacote de 1.200) ou ~6.000 Fichas (dezenas de partidas).
+
+### Consumíveis (estoque na conta, máx. 99)
+
+| Consumível | O que faz | Preço no jogo | Uso |
+| --- | --- | --- | --- |
+| Segunda Chance | levanta sozinho 3 s depois de ser pego (uma por etapa); se era o último de pé, a derrota espera | 900 Fichas ou 60 Créditos | automático, se estiver no kit |
+| Pilha Extra (x3) | pilha reserva: quando a lanterna apaga, entra sozinha com +60% (uma por etapa) | 300 Fichas ou 30 Créditos | automático, se estiver no kit |
+| Continuação | depois da derrota, a equipe repete a etapa perdida em vez de recomeçar | 120 Créditos (sem Fichas) | botão na tela de derrota |
+
+### Produtos Robux novos (IDs = 0 até o humano criar)
+
+| Chave | Tipo | Conteúdo | R$ sugerido |
+| --- | --- | --- | --- |
+| `kit_sobrevivente` | Developer Product (1x por conta) | 500 Créditos + 3 Segundas Chances + 5 Pilhas + 2 Continuações | 199 |
+| `segunda_chance_3` / `segunda_chance_10` | Developer Product | 3 / 10 Segundas Chances | 99 / 249 |
+| `continuar_1` / `continuar_5` | Developer Product | 1 / 5 Continuações | 49 / 199 |
+| `pilhas_10` | Developer Product | 10 Pilhas Extras | 79 |
+| `bonus_fichas_1h` | Developer Product | Fichas x2 por 1 hora de relógio | 99 |
+| `bonus_duplo_3h` | Developer Product | Fichas x2 e XP x2 por 3 horas | 299 |
+| `arquivo_elias` | Game Pass | recompensas da história x2 + lanterna, farda e título exclusivos | 249 |
+
+Bônus de tempo somam (comprar de novo estende o fim). Todos passam pelo mesmo ProcessReceipt idempotente.
+
+### Modo história (Shared/Game/StoryRewards)
+
+| Capítulo | 1ª vitória | Repetição | 1ª sem quedas |
+| --- | --- | --- | --- |
+| 1 | 400 Fichas, 20 Créditos, 300 XP | 120 Fichas, 120 XP | 30 Créditos + 2 Pilhas |
+| 2 | 550 Fichas, 30 Créditos, 400 XP, Farda de Ronda | 150 Fichas, 150 XP | 40 Créditos + 1 Segunda Chance |
+| 3 | 800 Fichas, 50 Créditos, 600 XP, Lanterna do Elias | 200 Fichas, 200 XP | 60 Créditos + 1 Continuação |
+
+Os 3 capítulos vencidos dão o título "O Último Turno". O passe Arquivo do Elias dobra Fichas, XP e
+Créditos dos capítulos. O pagamento sai no fim de cada capítulo (RewardService), só para quem jogou.
+
+### Menu inicial (MainMenuController, substitui o ModeMenuController)
+
+Duas colunas sobre as câmeras de segurança ao vivo do lobby:
+- **Esquerda:** logo, navegação (JOGAR, MELHORIAS, LOJA, PASSE, RECOMPENSAS, SERVIDORES, AMIGOS),
+  oferta única do Kit Sobrevivente (some depois da compra) e cartão do jogador (nível, Fichas, Créditos, + CRÉDITOS).
+- **JOGAR:** cartões de voto (História com progresso dos capítulos e próxima recompensa; Co-op com bônus ativos),
+  equipe do servidor com rosto e voto, contagem e o kit do turno (liga/desliga a Segunda Chance e a Pilha).
+- **MELHORIAS:** as 4 melhorias com níveis, efeito atual e próximo; consumíveis; grade de pacotes Robux.
+- **SERVIDORES:** lista do MemoryStore (LobbyService) com ENTRAR (teleporte validado no servidor).
+- **AMIGOS:** amigos online (GetFriendsOnline), ENTRAR no servidor deles (o servidor confere amizade e
+  onde o amigo está) e CONVIDAR (SocialService).
+- LOJA, PASSE e RECOMPENSAS abrem a loja existente na aba certa; o menu some enquanto ela está aberta.
+
+### Arquitetura nova
+
+- Puros: `Shared/Game/{Perks,StoryRewards,ServerList}` + specs (`Perks`, `StoryRewards`, `ServerList`, `CampaignPerks`).
+- Dados v4 (`PlayerDataSchema`): `perks`, `consumables`, `loadout`, `boosts`, `story`; migração saneia lixo.
+- Servidor: `StoreService` (ações `upgrade_*`, `consumable_*`, `loadout_on/off`, `use_continue`; atributos
+  `Perks`, `Perk<Id>`, `Consumables`, `Loadout`, `Boost*Until`, `StoryProgress`, `StoryPass`, `KitBought`),
+  `PerkService` (Segunda Chance e pilha reserva), `LobbyService` (remote `Lobby`), `RewardService` (capítulos),
+  ganchos em `CampaignRuntime`/`CoopSession` (`selfRevive`, `retryStage`, janela `risingUntil`).
+- Cliente: `MainMenuController`, `ContinueController` (oferta na derrota), fôlego no `CharacterController`.
+
+### QA (16/10/2026, place descartável Test.rbxlx com o código de src/, 1 cliente, minPlayers=1 só nessa place)
+
+- `lune run scripts/check`: ALL GREEN (234 testes puros).
+- Runner do Studio: 256 aprovados, 1 falha em `Navigation > creature: patrol route` (rota do mapa na place
+  descartável, mundo base antigo + etapa em andamento; nenhum arquivo de mapa foi alterado nesta frente).
+- Cliques reais no menu: abas, compra de nível (−300 Fichas), consumível (−60 Créditos), pacote Robux simulado
+  (+3 Segundas Chances), kit ligado, voto na história.
+- Partida: pilha reserva armada no começo da etapa e usada quando a bateria zerou (0,004 → 0,59, luz acesa);
+  Segunda Chance com o último de pé (Downed → Active, equipe continuou em jogo); derrota → oferta → compra
+  simulada → uso automático → intervalo → etapa 1 de novo com todos Active.
+- Capturas: `docs/evidence/main-menu/` (01 jogar, 02 voto e kit, 03 melhorias, 04 servidores, 05 amigos, 06 continuação).
+
+### Não verificado
+
+- Compras reais, teleporte e MemoryStore (só funcionam publicados); lista de amigos no Studio falhou (mensagem tratada).
+- Capítulo da história pago em partida real (coberto por testes puros); 3+ clientes; mobile/controle.
+- Equilíbrio: as vantagens deixam a partida mais fácil para quem paga; medir retenção e reclamações antes de subir preços.

@@ -54,6 +54,8 @@ Client/Creature/   Rig + Poses (Vigia em stop-motion), AdemirPortrait/AdemirFace
   em `StoreService` (+ Cosmetic/Reward/Collectible). Compras Robux com ID 0 são simuladas só no Studio.
   Nunca crie produtos nem mexa no Creator Hub: isso é passo humano. Depuração: `DebugBridge`
   `storeGrant(f, c)`, `endRound("Won"|"Lost")`, `tape`.
+- **Vantagens pagas e menu inicial** (`docs/MONETIZATION.md` seção 11): regras puras em `Shared/Game/{Perks,StoryRewards,ServerList}`,
+  jogo em `PerkService`/`LobbyService` + ganchos na campanha; menu em `MainMenuController`, derrota em `ContinueController`.
 
 ## Loop de desenvolvimento
 

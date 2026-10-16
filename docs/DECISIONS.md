@@ -281,6 +281,14 @@ READMEs/releases oficiais das ferramentas e docs do Claude Code).
   - O resto é sorteio grátis, mas mostra as chances do mesmo jeito.
   - Detalhes em `docs/MONETIZATION.md`.
 
+## D37. Vantagens pagas além dos cosméticos (16/10/2026, pedido do humano)
+- **Escolha:** vender melhorias permanentes (bateria, fôlego, resgate, silêncio), consumíveis (Segunda Chance,
+  Pilha Extra, Continuação), bônus de Fichas/XP e um passe da história; menu inicial com oferta em destaque.
+- **Substitui** a parte "só cosmética" da D34 (que tinha descartado exatamente estas vendas).
+- **Limites:** nada torna o jogador invencível, o Vigia continua caçando, tudo é alcançável com Fichas, a
+  Continuação é da equipe inteira (ajuda quem não pagou) e o único sorteio pago segue sendo o Baú Lacrado.
+- **Risco aceito:** partidas mais fáceis para quem paga e possível reação negativa; medir antes de subir preços.
+
 ## D35. Trava de sessão nos dados do jogador (16/10/2026)
 - **Escolha:**
   - `sessionLock = { job, at }` gravado no load por UpdateAsync.

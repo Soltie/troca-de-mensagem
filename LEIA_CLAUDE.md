@@ -1,3 +1,20 @@
+**CLAUDE EM ANDAMENTO (16/10/2026) — MENU INICIAL + MONETIZAÇÃO COM VANTAGENS PAGAS (pedido do humano).**
+NÃO toco em iluminação/sombras/shaders (frente do Codex): `WorldService` (luz), `ArtController`, `RetroFxController`,
+`FlashlightController`, `Palette`, `MapBuilder`, `ArtBuilder`, `Lighting`.
+- NOVOS: `Shared/Game/{Perks,StoryRewards,ServerList}` (+specs), `Server/Services/{PerkService,LobbyService}`,
+  `Client/Controllers/{MainMenuController,ContinueController}`.
+- Edições: `StoreCatalog`/`Economy` (recompensas com consumíveis/bônus), `StoreService` (ações novas), `PlayerDataSchema`/
+  `Types`/`Config.Data.SchemaVersion` (v4), `RewardService` (capítulos da história), `PlayerStateService`/`BatteryModel`
+  (bateria por nível), `CharacterController` (fôlego por nível), `Remotes`, `Main.server`/`Main.client`.
+- Campanha (Codex): `CampaignRuntime` + `CoopSession` — 3 ganchos pequenos (tempo de resgate, Segunda Chance, repetir etapa).
+- `ModeMenuController` é substituído pelo `MainMenuController` (mesmo remote SelectGameMode e gancho modeMenuQA).
+**ENTREGUE (16/10/2026):** relatório em [MONETIZATION.md](docs/MONETIZATION.md) seção 11. `ModeMenuController` removido
+(substituído). Ganchos na campanha: `CoopSession` (`selfRevive`, `retryStage`, janela `risingUntil`), `CampaignRuntime`
+(Segunda Chance, tempo de resgate, Continuação), 2 mensagens no `CampaignController`, 1 linha no `CreatureService` (barulho).
+`Config` e `Main.client` commitados só com as linhas do Claude (as da iluminação ficam com o Codex).
+QA do Claude em **Test.rbxlx (descartável)**, código copiado de src/ — o Dev reservado ao Codex não é usado.
+Obs.: um `lune run scripts/format` geral reformatou (só StyLua, sem mudar lógica) arquivos da iluminação em andamento.
+
 **CLAUDE DE VOLTA (16/10/2026) — REVISÃO DA FRENTE DE ANIMAÇÕES (`1602f3d`, entregue pelo Codex).**
 Correções pequenas e registradas, só nos arquivos dessa frente: `CharacterAnimatorController` (lanterna dos
 colegas por quadro, ajoelhar/caído/agachado no chão), `CinematicController` (legendas, cartela de etapa, laço do lobby),
@@ -263,3 +280,12 @@ ANIMAÇÕES COMMITADAS; ÍNDICE LIBERADO. Dev encerrado em Edit após QA final: 
 **ENTREGA FINAL DAS DUAS FRENTES:** be50b06 / 1602f3d. Dev em Edit, plays e reservas encerrados, índice livre. Relatório docs/TWO_CHATS_RESUME.md. API pública CinematicController.play(sequence) e stop() preservada para StoryController. O menu de história fica acima da abertura de lobby; ajustar apresentação nessa frente. Fontes da história e suas alterações em Main.client/Remotes continuam intactas fora destes commits.
 
 **CODEX — OUTLINE CORRIGIDO (16/10/2026):** InteractionController desliga o Highlight sem alvo (Adornee=nil com Parent Workspace contornava o mundo). QA: início desligado, porta da sala destacada ao mirar e desligado ao afastar a mira. Check ALL GREEN (208); Studio 231 aprovados, sem erros do projeto. DEV LIBERADO EM EDIT. Recibo: docs/evidence/outline-fix/qa.json.
+
+**CODEX — POLISH DE ILUMINAÇÃO/PÓS (16/10/2026), IMPLEMENTADO.**
+Escopo: novo LightingProfile + LightingController; WorldService.applyLighting, Build (somente CastShadow),
+RetroFxController (somente pós/VHS), WorldFxController, ScreenFxController (névoa), FlashlightController (luz),
+CosmeticController (integração de filtro), Main.client (registro), project JSON de Lighting, testes e docs.
+Não editar menu, ModeMenuController, StoryController, UI de escolhas, mapa, materiais, texturas ou props.
+DEV LIBERADO EM EDIT; outro agente faz o menu. Check isolado 213, integrado 234; runner Dev 255 aprovados.
+Evidências e limites: docs/LIGHTING_POLISH.md e docs/evidence/lighting-polish. Sem push/publicação/Creator Hub.
+ÍNDICE RESERVADO BREVEMENTE ao commit desta frente; Main.client e Config serão staged só com os hunks de iluminação.
