@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="784" height="828" viewBox="0 0 784 828">
+<rect width="784" height="828" fill="#101b22"/>
+<g font-family="Arial,sans-serif" text-anchor="middle" fill="#f0eadc">
+<text x="392" y="31" font-size="22">SUBESTAÇÃO 9 — PAVILHÕES E PÁTIOS</text>
+<text x="392" y="56" font-size="14">Gerador real / seed 9182 / estágio 1 / norte ↑</text>
+<rect x="56.0" y="92.0" width="128.0" height="616.0" fill="#364b40" stroke="#364b40" stroke-width="2"/>
+<rect x="184.0" y="92.0" width="544.0" height="80.0" fill="#364b40" stroke="#364b40" stroke-width="2"/>
+<rect x="648.0" y="172.0" width="80.0" height="536.0" fill="#364b40" stroke="#364b40" stroke-width="2"/>
+<rect x="184.0" y="636.0" width="464.0" height="72.0" fill="#b9a65f" stroke="#b9a65f" stroke-width="2"/>
+<rect x="296.0" y="560.0" width="64.0" height="40.0" fill="#648e79" stroke="#648e79" stroke-width="2"/>
+<rect x="220.0" y="460.0" width="40.0" height="64.0" fill="#648e79" stroke="#648e79" stroke-width="2"/>
+<rect x="472.0" y="560.0" width="64.0" height="40.0" fill="#b9a65f" stroke="#b9a65f" stroke-width="2"/>
+<rect x="396.0" y="460.0" width="40.0" height="64.0" fill="#b9a65f" stroke="#b9a65f" stroke-width="2"/>
+<rect x="572.0" y="460.0" width="40.0" height="64.0" fill="#648e79" stroke="#648e79" stroke-width="2"/>
+<rect x="296.0" y="384.0" width="64.0" height="40.0" fill="#b9a65f" stroke="#b9a65f" stroke-width="2"/>
+<rect x="220.0" y="284.0" width="40.0" height="64.0" fill="#b9a65f" stroke="#b9a65f" stroke-width="2"/>
+<rect x="472.0" y="384.0" width="64.0" height="40.0" fill="#648e79" stroke="#648e79" stroke-width="2"/>
+<rect x="572.0" y="284.0" width="40.0" height="64.0" fill="#648e79" stroke="#648e79" stroke-width="2"/>
+<rect x="296.0" y="208.0" width="64.0" height="40.0" fill="#b9a65f" stroke="#b9a65f" stroke-width="2"/>
+<rect x="472.0" y="208.0" width="64.0" height="40.0" fill="#b9a65f" stroke="#b9a65f" stroke-width="2"/>
+<rect x="184.0" y="524.0" width="112.0" height="112.0" fill="#365f61" stroke="#d9e1df" stroke-width="2"/>
+<text x="240.0" y="568.0" font-size="14">N-01</text>
+<text x="240.0" y="584.0" font-size="10">TRATAMENTO DE</text>
+<text x="240.0" y="600.0" font-size="10">ÁGUA</text>
+<text x="240.0" y="620.0" font-size="9">CÉU ABERTO</text>
+<rect x="360.0" y="524.0" width="112.0" height="112.0" fill="#354956" stroke="#d9e1df" stroke-width="2"/>
+<text x="416.0" y="568.0" font-size="14">N-02</text>
+<text x="416.0" y="592.0" font-size="10">COMUNICAÇÕES</text>
+<rect x="536.0" y="524.0" width="112.0" height="112.0" fill="#354956" stroke="#d9e1df" stroke-width="2"/>
+<text x="592.0" y="568.0" font-size="14">N-03</text>
+<text x="592.0" y="592.0" font-size="10">SALA DE RELÉS</text>
+<rect x="184.0" y="348.0" width="112.0" height="112.0" fill="#354956" stroke="#d9e1df" stroke-width="2"/>
+<text x="240.0" y="392.0" font-size="14">N-04</text>
+<text x="240.0" y="408.0" font-size="10">ALMOXARIFADO DE</text>
+<text x="240.0" y="424.0" font-size="10">CABOS</text>
+<rect x="360.0" y="348.0" width="112.0" height="112.0" fill="#354956" stroke="#d9e1df" stroke-width="2"/>
+<text x="416.0" y="392.0" font-size="14">N-05</text>
+<text x="416.0" y="416.0" font-size="10">USINAGEM</text>
+<rect x="536.0" y="348.0" width="112.0" height="112.0" fill="#365f61" stroke="#d9e1df" stroke-width="2"/>
+<text x="592.0" y="392.0" font-size="14">N-06</text>
+<text x="592.0" y="416.0" font-size="10">RESFRIAMENTO</text>
+<text x="592.0" y="444.0" font-size="9">CÉU ABERTO</text>
+<rect x="184.0" y="172.0" width="112.0" height="112.0" fill="#354956" stroke="#d9e1df" stroke-width="2"/>
+<text x="240.0" y="216.0" font-size="14">N-07</text>
+<text x="240.0" y="240.0" font-size="10">BANCO DE BATERIAS</text>
+<rect x="360.0" y="172.0" width="112.0" height="112.0" fill="#354956" stroke="#d9e1df" stroke-width="2"/>
+<text x="416.0" y="216.0" font-size="14">N-08</text>
+<text x="416.0" y="240.0" font-size="10">TURBINA AUXILIAR</text>
+<rect x="536.0" y="172.0" width="112.0" height="112.0" fill="#354956" stroke="#d9e1df" stroke-width="2"/>
+<text x="592.0" y="216.0" font-size="14">N-09</text>
+<text x="592.0" y="240.0" font-size="10">INSPEÇÃO</text>
+<rect x="180.0" y="560.0" width="8.0" height="40.0" fill="#d4ac55" stroke="#d4ac55" stroke-width="2"/>
+<rect x="180.0" y="384.0" width="8.0" height="40.0" fill="#d4ac55" stroke="#d4ac55" stroke-width="2"/>
+<rect x="180.0" y="208.0" width="8.0" height="40.0" fill="#d4ac55" stroke="#d4ac55" stroke-width="2"/>
+<rect x="644.0" y="560.0" width="8.0" height="40.0" fill="#d4ac55" stroke="#d4ac55" stroke-width="2"/>
+<rect x="644.0" y="384.0" width="8.0" height="40.0" fill="#d4ac55" stroke="#d4ac55" stroke-width="2"/>
+<rect x="644.0" y="208.0" width="8.0" height="40.0" fill="#d4ac55" stroke="#d4ac55" stroke-width="2"/>
+<rect x="396.0" y="168.0" width="40.0" height="8.0" fill="#d4ac55" stroke="#d4ac55" stroke-width="2"/>
+<text x="416.0" y="148.0" font-size="13">PÁTIO DE CARGA / DOCA 09</text>
+<text x="416.0" y="680.0" font-size="13">GALERIA DE ACESSO</text>
+<rect x="396.0" y="704.0" width="40.0" height="8.0" fill="#82c9a2" stroke="#82c9a2" stroke-width="2"/>
+<text x="416.0" y="736.0" font-size="12">↓ CONTROLE</text>
+<rect x="508.0" y="704.0" width="40.0" height="8.0" fill="#82c9a2" stroke="#82c9a2" stroke-width="2"/>
+<text x="528.0" y="736.0" font-size="12">↓ ARQUIVO</text>
+<text x="392" y="777" font-size="13">Cinza: pavilhão / azul: pátio aberto / amarelo: galeria coberta</text>
+<text x="392" y="800" font-size="13">Verde: circulação externa — anel liga oeste, norte e leste</text></g></svg>

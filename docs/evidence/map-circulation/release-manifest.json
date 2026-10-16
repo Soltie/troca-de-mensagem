@@ -1,0 +1,46 @@
+{
+  "baseCommit": "88aae72",
+  "integratedBuild": "build/MapCirculationIntegrated.rbxlx",
+  "integratedBuildSHA256": "71E344D9105F879E0626B45883B7CB899190629654D09AC90B595DE2FAC7BCAF",
+  "isolatedBuild": "build/MapCirculation.rbxlx",
+  "isolatedBuildSHA256": "8A5E9A53EC5C45B7481A0481053A6C0A823FE42601D9573DC688D459A0D956B9",
+  "integratedStudioId": "12801a21-dda1-49b6-ae48-cf3009156901",
+  "studioTests": 275,
+  "gameErrors": 0,
+  "standardPlayers": 8,
+  "standardChecks": 134,
+  "storyPlayers": 3,
+  "storyChecks": 59,
+  "studioReturnedToEdit": true,
+  "syncInSharedPlace": "NotSynced for both roots",
+  "mapSources": [
+    {
+      "Path": "C:\\Users\\xpg\\Documents\\roblox-teste\\src\\ServerScriptService\\Server\\World\\ProceduralLayout.luau",
+      "Hash": "9F382E58CFFBEAB2BF54EB6E7B7DD0DF4FE16CD5EF92DACA3E1E0353CC8EA4FC"
+    },
+    {
+      "Path": "C:\\Users\\xpg\\Documents\\roblox-teste\\src\\ServerScriptService\\Server\\World\\SectorBuilder.luau",
+      "Hash": "ADDE32F4BD8DA7412E64B3976C41CAE5CA66DB20FD150C6A4A62B23F97B88BC6"
+    },
+    {
+      "Path": "C:\\Users\\xpg\\Documents\\roblox-teste\\src\\ServerScriptService\\Server\\World\\SectorExterior.luau",
+      "Hash": "DBAFED88EF969EF05A963F510A35E3DD2DE57AA958D08F57DE9546908FF0BD8E"
+    },
+    {
+      "Path": "C:\\Users\\xpg\\Documents\\roblox-teste\\src\\ServerScriptService\\Server\\World\\MapBuilder.luau",
+      "Hash": "2F553194455EE9B80711981D9C78982921669BA4946B9710B98CC1C678AF57E2"
+    },
+    {
+      "Path": "C:\\Users\\xpg\\Documents\\roblox-teste\\src\\ServerScriptService\\Server\\Services\\WorldService.luau",
+      "Hash": "952E378B470D583DF844252083141CA9978EFF77BCF54E95F4A280401414E372"
+    },
+    {
+      "Path": "C:\\Users\\xpg\\Documents\\roblox-teste\\src\\ServerScriptService\\Tests\\Specs\\ProceduralLayout.luau",
+      "Hash": "1508B61E512553AADF59C962DDFC32343BD0BAB20E12BF24AA389BFFF249D85F"
+    },
+    {
+      "Path": "C:\\Users\\xpg\\Documents\\roblox-teste\\src\\ServerScriptService\\Tests\\Specs\\ProceduralNavigation.luau",
+      "Hash": "093795AF156F079FE0F2B05347C26D430B66C02216013D5164C48DB8B106AD3D"
+    }
+  ]
+}

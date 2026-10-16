@@ -37,12 +37,12 @@ local spec: TestKit.Spec = {
 									part.CFrame += shift
 								end
 							end
-							t.expect(parts < 650).toBe(true)
+							t.expect(parts < 800).toBe(true)
 							-- Fechar o lado sul da fixture: provas de acesso não podem contornar paredes pelo exterior.
 							local seal = Instance.new("Part")
 							seal.Anchored = true
-							seal.Size = Vector3.new(84, 11, 1)
-							seal.Position = Vector3.new(-6, 5.5, -78) + shift
+							seal.Size = Vector3.new(Layout.Bounds.x1 - Layout.Bounds.x0, 11, 1)
+							seal.Position = Vector3.new((Layout.Bounds.x0 + Layout.Bounds.x1) / 2, 5.5, -78) + shift
 							seal.Parent = fixture
 							local rayParams = RaycastParams.new()
 							rayParams.FilterType = Enum.RaycastFilterType.Include
@@ -56,6 +56,7 @@ local spec: TestKit.Spec = {
 							for _, room in plan.rooms do
 								local model = root:FindFirstChild(`Cell_{room.cell}`)
 								assert(model, "Missing room model")
+								t.expect(model:FindFirstChild("Roof_Sector") == nil).toBe(Layout.isOutdoorRoom(room))
 								local equipment = model:FindFirstChild("Equipment")
 								assert(equipment, "Missing room equipment")
 								for _, part in equipment:GetDescendants() do
@@ -94,6 +95,21 @@ local spec: TestKit.Spec = {
 										`{name}: unreachable cell {room.cell} seed={seed} stage={stage}`
 									)
 								end
+								-- O anel externo e as galerias também precisam estar na malha dos dois agentes.
+								for index, point in Layout.patrolPoints(plan) do
+									if point.x == x and point.z == z then
+										continue -- ComputeAsync não garante caminho entre dois pontos idênticos.
+									end
+									local path = PathfindingService:CreatePath(params)
+									path:ComputeAsync(
+										Vector3.new(x, 0, z) + shift,
+										Vector3.new(point.x, 0, point.z) + shift
+									)
+									assert(
+										path.Status == Enum.PathStatus.Success,
+										`{name}: patrol point {index} unreachable`
+									)
+								end
 							end
 						end)
 						fixture:Destroy()
@@ -109,12 +125,42 @@ local spec: TestKit.Spec = {
 			assert(sector, "Missing sector")
 			for name, params in agents do
 				for _, cell in Layout.Entrances do
-					local x, z = Layout.center(cell)
+					local roomX, z = Layout.center(cell)
+					local x = Layout.entranceX(cell)
 					local path = PathfindingService:CreatePath(params)
-					path:ComputeAsync(Vector3.new(x, 0, -68), Vector3.new(x, 0, z))
+					path:ComputeAsync(Vector3.new(x, 0, -68), Vector3.new(roomX, 0, z))
 					assert(path.Status == Enum.PathStatus.Success, `{name}: entry {cell} blocked`)
 				end
 			end
+		end)
+		t.it("outdoor loop bypasses the pavilions and stays inside the closed perimeter", function()
+			local blocker = Instance.new("Part")
+			blocker.Name = "NavigationTest_PavilionBlocker"
+			blocker.Anchored = true
+			blocker.Transparency = 1
+			blocker.Size = Vector3.new(114, 12, 116)
+			blocker.Position = Vector3.new(-6, 6, -154)
+			blocker.Parent = workspace
+			local ok, reason = pcall(function()
+				task.wait(1)
+				for name, params in agents do
+					local path = PathfindingService:CreatePath(params)
+					path:ComputeAsync(Vector3.new(-82, 0, -87), Vector3.new(62, 0, -198))
+					assert(path.Status == Enum.PathStatus.Success, `{name}: external bypass blocked`)
+					local outside = PathfindingService:CreatePath(params)
+					outside:ComputeAsync(Vector3.new(-82, 0, -154), Vector3.new(-108, 0, -154))
+					assert(outside.Status ~= Enum.PathStatus.Success, `{name}: perimeter can be bypassed`)
+				end
+				local roofParams = RaycastParams.new()
+				roofParams.FilterType = Enum.RaycastFilterType.Include
+				roofParams.FilterDescendantsInstances = { workspace.Substation9.ProceduralSector }
+				t.expect(workspace:Raycast(Vector3.new(-82, 2, -154), Vector3.new(0, 18, 0), roofParams) == nil)
+					.toBe(true)
+				t.expect(workspace:Raycast(Vector3.new(-6, 2, -87), Vector3.new(0, 18, 0), roofParams) ~= nil)
+					.toBe(true)
+			end)
+			blocker:Destroy()
+			assert(ok, tostring(reason))
 		end)
 	end,
 }

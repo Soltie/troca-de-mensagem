@@ -343,8 +343,8 @@ end
 function WorldService.patrolNodes(): { Layout.Point }
 	local nodes = table.clone(Layout.PatrolNodes)
 	if sectorPlan then
-		for _, room in sectorPlan.rooms do
-			table.insert(nodes, { x = room.x, y = 0, z = room.z })
+		for _, point in ProceduralLayout.patrolPoints(sectorPlan) do
+			table.insert(nodes, point)
 		end
 	end
 	return nodes
@@ -740,7 +740,7 @@ function WorldService.openGate(): boolean
 end
 
 function WorldService.isInsideBuilding(position: Vector3): boolean
-	local inSector = sectorPlan ~= nil and Layout.inRect(ProceduralLayout.Bounds, position.X, position.Z)
+	local inSector = sectorPlan ~= nil and ProceduralLayout.isIndoor(sectorPlan, position.X, position.Z)
 	return (Layout.isIndoor(position.X, position.Z) or inSector) and position.Y < Layout.CEILING
 end
 

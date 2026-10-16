@@ -1,19 +1,26 @@
 --!strict
--- Planta pura da ala norte: Kruskal sorteado garante circulação e atalhos criam circuitos.
+-- Pavilhões separados por galerias; pátios e anel externo fazem parte da circulação real.
 local Random = require("../Campaign/SeededRandom")
 
 export type Room = { cell: number, kind: string, x: number, z: number, turn: number }
 export type Link = { a: number, b: number }
 export type Plan = { seed: number, stage: number, rooms: { Room }, links: { Link } }
+export type Passage = { id: string, x0: number, x1: number, z0: number, z1: number, covered: boolean }
 
 local Layout = {}
 Layout.Columns = 3
 Layout.Rows = 3
-Layout.CellSize = 28
-Layout.Bounds = table.freeze({ x0 = -48, x1 = 36, z0 = -162, z1 = -78 })
+Layout.CellSize = 44
+Layout.RoomSize = 28
+Layout.Bounds = table.freeze({ x0 = -96, x1 = 72, z0 = -232, z1 = -78 })
 Layout.Entrances = table.freeze({ 2, 3 }) -- linha sul: controle e arquivo
 Layout.DoorWidth = 10
 Layout.SurfaceBudget = 16
+Layout.ExteriorZones = table.freeze({
+	{ id = "ServiceYard", x0 = -96, x1 = -64, z0 = -232, z1 = -78, covered = false },
+	{ id = "LoadingYard", x0 = -64, x1 = 72, z0 = -232, z1 = -212, covered = false },
+	{ id = "UtilityWalk", x0 = 52, x1 = 72, z0 = -212, z1 = -78, covered = false },
+})
 Layout.Kinds = table.freeze({
 	"RelayHall",
 	"Cooling",
@@ -29,7 +36,70 @@ Layout.Kinds = table.freeze({
 function Layout.center(cell: number): (number, number)
 	local column = (cell - 1) % Layout.Columns
 	local row = math.floor((cell - 1) / Layout.Columns)
-	return Layout.Bounds.x0 + (column + 0.5) * Layout.CellSize, Layout.Bounds.z1 - (row + 0.5) * Layout.CellSize
+	return -50 + column * Layout.CellSize, -110 - row * Layout.CellSize
+end
+
+-- Os vãos antigos continuam no controle e no arquivo; a galeria distribui o acesso aos pavilhões.
+function Layout.entranceX(cell: number): number
+	assert(table.find(Layout.Entrances, cell), "Invalid sector entrance")
+	return if cell == 2 then -6 else 22
+end
+
+function Layout.isOutdoorRoom(room: Room): boolean
+	return room.kind == "Cooling" or room.kind == "WaterTreatment"
+end
+
+function Layout.passages(plan: Plan): { Passage }
+	local passages: { Passage } = {
+		{ id = "AccessGallery", x0 = -64, x1 = 52, z0 = -96, z1 = -78, covered = true },
+	}
+	local half, width = Layout.RoomSize / 2, Layout.DoorWidth / 2
+	for _, link in plan.links do
+		local a, b = plan.rooms[link.a], plan.rooms[link.b]
+		local horizontal = a.z == b.z
+		table.insert(passages, {
+			id = `Passage_{link.a}_{link.b}`,
+			x0 = if horizontal then math.min(a.x, b.x) + half else a.x - width,
+			x1 = if horizontal then math.max(a.x, b.x) - half else a.x + width,
+			z0 = if horizontal then a.z - width else math.min(a.z, b.z) + half,
+			z1 = if horizontal then a.z + width else math.max(a.z, b.z) - half,
+			covered = not Layout.isOutdoorRoom(a) and not Layout.isOutdoorRoom(b),
+		})
+	end
+	return passages
+end
+
+function Layout.isIndoor(plan: Plan, x: number, z: number): boolean
+	local half = Layout.RoomSize / 2
+	for _, room in plan.rooms do
+		if math.abs(x - room.x) <= half and math.abs(z - room.z) <= half then
+			return not Layout.isOutdoorRoom(room)
+		end
+	end
+	for _, passage in Layout.passages(plan) do
+		if passage.covered and x >= passage.x0 and x <= passage.x1 and z >= passage.z0 and z <= passage.z1 then
+			return true
+		end
+	end
+	return false
+end
+
+function Layout.patrolPoints(plan: Plan): { { x: number, y: number, z: number } }
+	local points = {}
+	for _, room in plan.rooms do
+		table.insert(points, { x = room.x, y = 0, z = room.z })
+	end
+	for _, passage in Layout.passages(plan) do
+		table.insert(points, { x = (passage.x0 + passage.x1) / 2, y = 0, z = (passage.z0 + passage.z1) / 2 })
+	end
+	for _, z in { -110, -154, -198 } do
+		table.insert(points, { x = -82, y = 0, z = z })
+		table.insert(points, { x = 62, y = 0, z = z })
+	end
+	for _, x in { -82, -50, -6, 38, 62 } do
+		table.insert(points, { x = x, y = 0, z = -222 })
+	end
+	return points
 end
 
 function Layout.edges(): { Link }

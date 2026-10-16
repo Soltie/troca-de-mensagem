@@ -1,0 +1,2 @@
+[Tests] 261 passed, 0 failed, 0 skipped specs
+MapPavilionsQA.rbxlx; source: frozen 88aae72 + map files. Perimeter subsequently increased from 8 to 10 studs; final integration receives its own validation.

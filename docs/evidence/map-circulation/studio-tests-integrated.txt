@@ -1,0 +1,2 @@
+[Tests] 275 passed, 0 failed, 0 skipped specs
+MapCirculationIntegrated.rbxlx; embedded map sources include the final 10-stud perimeter and the 800-part navigation budget.

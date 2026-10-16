@@ -6,10 +6,11 @@ local Build = require("./Build")
 local Layout = require("./ProceduralLayout")
 local Palette = require("./Palette")
 local Props = require("./Props")
+local Exterior = require("./SectorExterior")
 
 local Builder = {}
 local V3 = Vector3.new
-local HALF = Layout.CellSize / 2
+local HALF = Layout.RoomSize / 2
 local HEIGHT = 11
 local DECOR = { collide = false, query = false, material = Enum.Material.Metal }
 
@@ -28,7 +29,7 @@ local function sign(parent: Instance, p: Vector3, facing: Vector3, text: string,
 	part.CanQuery = false
 end
 
-local function wall(parent: Instance, a: Vector3, b: Vector3, opening: boolean)
+local function wall(parent: Instance, a: Vector3, b: Vector3, opening: boolean, outdoor: boolean?)
 	local length = (b - a).Magnitude
 	local horizontal = math.abs(b.X - a.X) > 1
 	local function segment(offset: number, width: number, bottom: number, top: number)
@@ -43,6 +44,11 @@ local function wall(parent: Instance, a: Vector3, b: Vector3, opening: boolean)
 			{ material = Enum.Material.Concrete }
 		)
 		part:SetAttribute("SectorWall", true)
+		if outdoor then
+			part.Material = Enum.Material.Metal
+			part.Transparency = 0.55
+			part.CastShadow = false
+		end
 	end
 	if opening then
 		local side = (length - Layout.DoorWidth) / 2
@@ -184,6 +190,55 @@ local function dressing(parent: Instance, room: Layout.Room)
 	end
 end
 
+local function passage(parent: Instance, spec: Layout.Passage)
+	local model = Build.model(parent, spec.id)
+	model:SetAttribute("Covered", spec.covered)
+	local x, z = (spec.x0 + spec.x1) / 2, (spec.z0 + spec.z1) / 2
+	local sx, sz = spec.x1 - spec.x0, spec.z1 - spec.z0
+	Build.block(model, "PassageFloor", V3(x, -1, z), V3(sx, 1, sz), 0, Palette.MetalFloor, {
+		material = Enum.Material.DiamondPlate,
+	})
+	if spec.covered then
+		Build.block(model, "PassageRoof", V3(x, HEIGHT, z), V3(sx + 0.5, 0.5, sz + 0.5), 0, Palette.Ceiling)
+	end
+	if spec.id == "AccessGallery" then
+		-- Fecha só os intervalos entre pavilhões, sem paredes cruzando os três acessos.
+		for _, gapX in { -28, 16 } do
+			wall(model, V3(gapX - 8, 0, spec.z0), V3(gapX + 8, 0, spec.z0), false)
+		end
+		for _, lx in { -50, -6, 38 } do
+			local lamp = Build.block(model, "GalleryLamp", V3(lx, 9.8, z), V3(4, 0.2, 0.7), 0, Palette.LampOff, DECOR)
+			Build.light(lamp, "Lamp", Palette.Fluorescent, 26, 1, false)
+		end
+		sign(model, V3(-60, 8.5, -87), Vector3.xAxis, "< VIA EXTERNA / MANUTENÇÃO")
+		sign(model, V3(48, 8.5, -87), -Vector3.xAxis, "TUBULAÇÕES / PÁTIO NORTE >")
+	else
+		local horizontal = sx > sz
+		local height = if spec.covered then HEIGHT else 1.2
+		for _, side in { -1, 1 } do
+			Build.block(
+				model,
+				if spec.covered then "PassageWall" else "WalkwayRail",
+				V3(x + (if horizontal then 0 else side * sx / 2), 0, z + (if horizontal then side * sz / 2 else 0)),
+				if horizontal then V3(sx, height, 0.4) else V3(0.4, height, sz),
+				0,
+				Palette.WallLowerCold
+			)
+		end
+		Build.block(
+			model,
+			"OverheadTray",
+			V3(x, 9.8, z),
+			if horizontal then V3(sx, 0.2, 1) else V3(1, 0.2, sz),
+			0,
+			Palette.MetalDark,
+			DECOR
+		)
+		local lamp = Build.block(model, "PassageLamp", V3(x, 8.5, z), V3(0.6, 0.3, 0.6), 0, Palette.Red, DECOR)
+		Build.light(lamp, "Emergency", Palette.Emergency, 16, 0.45, true)
+	end
+end
+
 function Builder.build(parent: Instance, plan: Layout.Plan): Folder
 	local valid, reason = Layout.validate(plan)
 	assert(valid, `[SectorBuilder] invalid layout: {reason}`)
@@ -201,28 +256,53 @@ function Builder.build(parent: Instance, plan: Layout.Plan): Folder
 			model,
 			"Floor_Sector",
 			center - Vector3.yAxis,
-			V3(28, 1, 28),
+			V3(Layout.RoomSize, 1, Layout.RoomSize),
 			0,
 			Palette.Concrete,
 			{ material = Enum.Material.Concrete }
 		)
 		surface(floor, "concrete")
-		Build.block(model, "Roof_Sector", center + V3(0, HEIGHT, 0), V3(28.5, 1, 28.5), 0, Palette.Ceiling)
+		local outdoor = Layout.isOutdoorRoom(room)
+		model:SetAttribute("Outdoor", outdoor)
+		if not outdoor then
+			Build.block(model, "Roof_Sector", center + V3(0, HEIGHT, 0), V3(28.5, 1, 28.5), 0, Palette.Ceiling)
+		end
 		dressing(model, room)
 		local x0, x1 = room.x - HALF, room.x + HALF
 		local z0, z1 = room.z - HALF, room.z + HALF
-		if room.cell % 3 == 1 then
-			wall(structure, V3(x0, 0, z0), V3(x0, 0, z1), false)
-		end
-		wall(structure, V3(x1, 0, z0), V3(x1, 0, z1), Layout.connected(plan, room.cell, room.cell + 1))
-		if room.cell > 6 then
-			wall(structure, V3(x0, 0, z0), V3(x1, 0, z0), false)
-		end
-		-- A parede de ligação sul pertence ao núcleo antigo; não se sobrepõe à abertura.
-		if room.cell > 3 then
-			wall(structure, V3(x0, 0, z1), V3(x1, 0, z1), Layout.connected(plan, room.cell, room.cell - 3))
-		end
+		wall(
+			structure,
+			V3(x0, 0, z0),
+			V3(x0, 0, z1),
+			room.cell % 3 == 1 or Layout.connected(plan, room.cell, room.cell - 1),
+			outdoor
+		)
+		wall(
+			structure,
+			V3(x1, 0, z0),
+			V3(x1, 0, z1),
+			room.cell % 3 == 0 or Layout.connected(plan, room.cell, room.cell + 1),
+			outdoor
+		)
+		wall(
+			structure,
+			V3(x0, 0, z0),
+			V3(x1, 0, z0),
+			room.cell == 8 or Layout.connected(plan, room.cell, room.cell + 3),
+			outdoor
+		)
+		wall(
+			structure,
+			V3(x0, 0, z1),
+			V3(x1, 0, z1),
+			room.cell <= 3 or Layout.connected(plan, room.cell, room.cell - 3),
+			outdoor
+		)
 	end
+	for _, spec in Layout.passages(plan) do
+		passage(structure, spec)
+	end
+	Exterior.build(root)
 	local returns = Layout.returnRoutes(plan)
 	for _, link in plan.links do
 		local a, b = plan.rooms[link.a], plan.rooms[link.b]
@@ -243,8 +323,9 @@ function Builder.build(parent: Instance, plan: Layout.Plan): Folder
 	end
 	for _, cell in Layout.Entrances do
 		local room = plan.rooms[cell]
-		sign(root, V3(room.x, 9.5, -77.4), Vector3.zAxis, "ALA NORTE / " .. Catalog.RoomNames[room.kind])
-		sign(root, V3(room.x, 9.5, -78.6), -Vector3.zAxis, "RETORNO / SAÍDA SUL")
+		local x = Layout.entranceX(cell)
+		sign(root, V3(x, 9.5, -77.4), Vector3.zAxis, "GALERIA NORTE / " .. Catalog.RoomNames[room.kind])
+		sign(root, V3(x, 9.5, -78.6), -Vector3.zAxis, "RETORNO / SAÍDA SUL")
 	end
 	-- Diretório físico acompanha a distribuição real a cada rodada.
 	local lines = { "ALA NORTE / PLANTA DO TURNO", `TURNO {plan.stage} / LOTE {plan.seed}` }

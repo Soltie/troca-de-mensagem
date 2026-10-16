@@ -77,7 +77,7 @@ local spec: TestKit.Spec = {
 			local wall = Base.wallById("annexNorth")
 			assert(wall, "North wall missing")
 			for _, cell in Layout.Entrances do
-				local x = Layout.center(cell)
+				local x = Layout.entranceX(cell)
 				local found = false
 				for _, opening in wall.openings do
 					if opening.center == x and opening.width >= Layout.DoorWidth then
@@ -87,6 +87,37 @@ local spec: TestKit.Spec = {
 				t.expect(found).toBe(true)
 				local room = Base.roomAt(x, Layout.Bounds.z1 + 2)
 				t.expect(room ~= nil and (room.id == "Control" or room.id == "Archive")).toBe(true)
+			end
+		end)
+		t.it("separates every pavilion with sixteen studs of real circulation", function()
+			local plan = Layout.create(9182, 1)
+			for _, edge in Layout.edges() do
+				local a, b = plan.rooms[edge.a], plan.rooms[edge.b]
+				local distance = math.abs(a.x - b.x) + math.abs(a.z - b.z)
+				t.expect(distance - Layout.RoomSize).toBe(16)
+			end
+			local passages = Layout.passages(plan)
+			t.expect(#passages).toBe(#plan.links + 1)
+			for _, p in passages do
+				t.expect(p.x1 - p.x0 >= Layout.DoorWidth and p.z1 - p.z0 >= Layout.DoorWidth).toBe(true)
+			end
+		end)
+		t.it("recognizes roofs instead of treating the entire outdoor perimeter as a building", function()
+			for seed = 1, 50 do
+				local plan = Layout.create(seed, 1)
+				local outdoors = 0
+				for _, room in plan.rooms do
+					local open = Layout.isOutdoorRoom(room)
+					outdoors += if open then 1 else 0
+					t.expect(Layout.isIndoor(plan, room.x, room.z)).toBe(not open)
+				end
+				t.expect(outdoors).toBe(2)
+				for _, p in Layout.passages(plan) do
+					t.expect(Layout.isIndoor(plan, (p.x0 + p.x1) / 2, (p.z0 + p.z1) / 2)).toBe(p.covered)
+				end
+				for _, zone in Layout.ExteriorZones do
+					t.expect(Layout.isIndoor(plan, (zone.x0 + zone.x1) / 2, (zone.z0 + zone.z1) / 2)).toBe(false)
+				end
 			end
 		end)
 		t.it("rejects disconnected, duplicated or non-adjacent routes and invalid rooms", function()

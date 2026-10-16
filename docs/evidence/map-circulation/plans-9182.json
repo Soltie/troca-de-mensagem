@@ -1,0 +1,347 @@
+[
+  {
+    "links": [
+      {
+        "a": 1,
+        "b": 2
+      },
+      {
+        "a": 1,
+        "b": 4
+      },
+      {
+        "a": 2,
+        "b": 3
+      },
+      {
+        "a": 2,
+        "b": 5
+      },
+      {
+        "a": 3,
+        "b": 6
+      },
+      {
+        "a": 4,
+        "b": 5
+      },
+      {
+        "a": 4,
+        "b": 7
+      },
+      {
+        "a": 5,
+        "b": 6
+      },
+      {
+        "a": 6,
+        "b": 9
+      },
+      {
+        "a": 7,
+        "b": 8
+      },
+      {
+        "a": 8,
+        "b": 9
+      }
+    ],
+    "rooms": [
+      {
+        "cell": 1,
+        "kind": "WaterTreatment",
+        "turn": 0,
+        "x": -50,
+        "z": -110
+      },
+      {
+        "cell": 2,
+        "kind": "Radio",
+        "turn": 0,
+        "x": -6,
+        "z": -110
+      },
+      {
+        "cell": 3,
+        "kind": "RelayHall",
+        "turn": 1,
+        "x": 38,
+        "z": -110
+      },
+      {
+        "cell": 4,
+        "kind": "CableDepot",
+        "turn": 3,
+        "x": -50,
+        "z": -154
+      },
+      {
+        "cell": 5,
+        "kind": "MachineShop",
+        "turn": 0,
+        "x": -6,
+        "z": -154
+      },
+      {
+        "cell": 6,
+        "kind": "Cooling",
+        "turn": 2,
+        "x": 38,
+        "z": -154
+      },
+      {
+        "cell": 7,
+        "kind": "BatteryBank",
+        "turn": 1,
+        "x": -50,
+        "z": -198
+      },
+      {
+        "cell": 8,
+        "kind": "Turbine",
+        "turn": 3,
+        "x": -6,
+        "z": -198
+      },
+      {
+        "cell": 9,
+        "kind": "Inspection",
+        "turn": 3,
+        "x": 38,
+        "z": -198
+      }
+    ],
+    "seed": 9182,
+    "stage": 1
+  },
+  {
+    "links": [
+      {
+        "a": 1,
+        "b": 2
+      },
+      {
+        "a": 1,
+        "b": 4
+      },
+      {
+        "a": 2,
+        "b": 3
+      },
+      {
+        "a": 2,
+        "b": 5
+      },
+      {
+        "a": 4,
+        "b": 5
+      },
+      {
+        "a": 4,
+        "b": 7
+      },
+      {
+        "a": 5,
+        "b": 6
+      },
+      {
+        "a": 5,
+        "b": 8
+      },
+      {
+        "a": 6,
+        "b": 9
+      },
+      {
+        "a": 7,
+        "b": 8
+      },
+      {
+        "a": 8,
+        "b": 9
+      }
+    ],
+    "rooms": [
+      {
+        "cell": 1,
+        "kind": "WaterTreatment",
+        "turn": 1,
+        "x": -50,
+        "z": -110
+      },
+      {
+        "cell": 2,
+        "kind": "Radio",
+        "turn": 3,
+        "x": -6,
+        "z": -110
+      },
+      {
+        "cell": 3,
+        "kind": "MachineShop",
+        "turn": 1,
+        "x": 38,
+        "z": -110
+      },
+      {
+        "cell": 4,
+        "kind": "Inspection",
+        "turn": 2,
+        "x": -50,
+        "z": -154
+      },
+      {
+        "cell": 5,
+        "kind": "BatteryBank",
+        "turn": 3,
+        "x": -6,
+        "z": -154
+      },
+      {
+        "cell": 6,
+        "kind": "Cooling",
+        "turn": 0,
+        "x": 38,
+        "z": -154
+      },
+      {
+        "cell": 7,
+        "kind": "Turbine",
+        "turn": 3,
+        "x": -50,
+        "z": -198
+      },
+      {
+        "cell": 8,
+        "kind": "RelayHall",
+        "turn": 1,
+        "x": -6,
+        "z": -198
+      },
+      {
+        "cell": 9,
+        "kind": "CableDepot",
+        "turn": 3,
+        "x": 38,
+        "z": -198
+      }
+    ],
+    "seed": 9182,
+    "stage": 2
+  },
+  {
+    "links": [
+      {
+        "a": 1,
+        "b": 2
+      },
+      {
+        "a": 1,
+        "b": 4
+      },
+      {
+        "a": 2,
+        "b": 3
+      },
+      {
+        "a": 2,
+        "b": 5
+      },
+      {
+        "a": 3,
+        "b": 6
+      },
+      {
+        "a": 4,
+        "b": 5
+      },
+      {
+        "a": 4,
+        "b": 7
+      },
+      {
+        "a": 5,
+        "b": 8
+      },
+      {
+        "a": 6,
+        "b": 9
+      },
+      {
+        "a": 7,
+        "b": 8
+      },
+      {
+        "a": 8,
+        "b": 9
+      }
+    ],
+    "rooms": [
+      {
+        "cell": 1,
+        "kind": "BatteryBank",
+        "turn": 2,
+        "x": -50,
+        "z": -110
+      },
+      {
+        "cell": 2,
+        "kind": "Radio",
+        "turn": 1,
+        "x": -6,
+        "z": -110
+      },
+      {
+        "cell": 3,
+        "kind": "CableDepot",
+        "turn": 1,
+        "x": 38,
+        "z": -110
+      },
+      {
+        "cell": 4,
+        "kind": "MachineShop",
+        "turn": 1,
+        "x": -50,
+        "z": -154
+      },
+      {
+        "cell": 5,
+        "kind": "RelayHall",
+        "turn": 1,
+        "x": -6,
+        "z": -154
+      },
+      {
+        "cell": 6,
+        "kind": "WaterTreatment",
+        "turn": 3,
+        "x": 38,
+        "z": -154
+      },
+      {
+        "cell": 7,
+        "kind": "Inspection",
+        "turn": 1,
+        "x": -50,
+        "z": -198
+      },
+      {
+        "cell": 8,
+        "kind": "Cooling",
+        "turn": 3,
+        "x": -6,
+        "z": -198
+      },
+      {
+        "cell": 9,
+        "kind": "Turbine",
+        "turn": 3,
+        "x": 38,
+        "z": -198
+      }
+    ],
+    "seed": 9182,
+    "stage": 3
+  }
+]

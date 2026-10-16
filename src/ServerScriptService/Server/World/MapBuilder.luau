@@ -584,7 +584,7 @@ local function buildCourtyard(world: World, parent: Instance)
 	Build.box(
 		parent,
 		"Ground",
-		V3(-160, -2, -190),
+		V3(-160, -2, ProceduralLayout.Bounds.z0 - 30),
 		V3(160, -0.05, 180),
 		Palette.Grass,
 		{ material = Enum.Material.Ground }
@@ -706,8 +706,8 @@ local function buildCourtyard(world: World, parent: Instance)
 	local rng = Random.new(9)
 	local placed = 0
 	while placed < 60 do
-		local x = rng:NextNumber(-110, 110)
-		local z = rng:NextNumber(-185, 130)
+		local x = rng:NextNumber(-135, 125)
+		local z = rng:NextNumber(ProceduralLayout.Bounds.z0 - 25, 130)
 		local bounds = Layout.Compound
 		local insideCompound = x > bounds.x0 - 5 and x < bounds.x1 + 5 and z > bounds.z0 - 5 and z < bounds.z1 + 4
 		local north = ProceduralLayout.Bounds
