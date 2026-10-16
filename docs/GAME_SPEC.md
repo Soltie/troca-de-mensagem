@@ -1,5 +1,11 @@
 # GAME_SPEC — TUNG TUNG SAHUR: THE CURSED HOUSE
 
+> **Levels da propriedade (16/10/2026):** Desafio alterna interiores e exteriores: etapa 3 externa,
+> etapa 4 externa ou interna pela seed; até 16 passagens opcionais, salões conectados e escada de
+> serviço em uma ala sorteada. Jardim, estufa, mirante e pátio têm objetivos jogáveis. História mantém
+> seu percurso. Reparo de energia no Desafio tem três ações em ordem. Mapa e ambientação das outras
+> frentes estão integrados. Build e evidências: [HOUSE_LEVELS.md](HOUSE_LEVELS.md).
+
 > **Versão atual (16/10/2026):** terror leve e cooperativo para crianças, 1–6 jogadores, numa casa
 > amaldiçoada de quatro níveis com jardim, floresta e cinco capítulos. O Tung Tung (modelo com esqueleto
 > e animações) patrulha, persegue a luz e bate "TUM TUM TUM" com o bastão. Moedas e uma gema por capítulo

@@ -28,7 +28,7 @@ end
 
 function Guide.instruction(activity: Activity, now: number, activePlayers: number?): string
 	if activity.kind == "collect" then
-		return "Ache o objeto brilhando e aperte E para pegar. Vale para o time todo!"
+		return "Siga o marcador, encontre o objeto e aperte E para pegar. Vale para o time todo!"
 	elseif activity.kind == "clue" then
 		return "Chegue perto da pista e aperte E para ler. Ela ensina o próximo desafio."
 	elseif activity.kind == "explore" then
@@ -87,8 +87,8 @@ end
 Guide.StageTips = {
 	"Capítulo 1: pegue a lanterna, ache as três chaves e abra a biblioteca.",
 	"Capítulo 2: religue a energia e aprenda a se esconder no armário.",
-	"Capítulo 3: explore o sótão. O livro mostra os quatro símbolos.",
-	"Capítulo 4: leia as pistas do porão para descobrir o código do cofre.",
+	"Capítulo 3: encontre as quatro lembranças. O livro mostra os símbolos.",
+	"Capítulo 4: siga as pistas para abrir o cofre e recuperar o coração.",
 	"Capítulo 5: use o artefato, ative o ritual e fuja antes do tempo acabar!",
 }
 Guide.SurvivalTips = {

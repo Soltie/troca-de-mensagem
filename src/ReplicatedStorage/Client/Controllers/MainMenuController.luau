@@ -502,7 +502,7 @@ local function buildPlay(b: Frame)
 		"Standard",
 		"🎲 MODO DESAFIO",
 		"MAIS UMA NOITE",
-		"A mesma casa, com itens e códigos variáveis. 5 capítulos, 1–6 jogadores.",
+		"Casa e jardins, com passagens, escadas e itens sorteados. 5 capítulos, 1–6 jogadores.",
 		function(card)
 			local lines = {
 				"PRÊMIOS: FICHAS E XP POR CAPÍTULO, FUGA E AJUDA AO TIME",

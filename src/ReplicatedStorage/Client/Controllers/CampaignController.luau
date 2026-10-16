@@ -28,7 +28,7 @@ function Controller.toggleGuide()
 	end
 end
 local messages: { [string]: string } = {
-	progress = "✨ Símbolo certo! Continue seguindo a pista.",
+	progress = "✨ Etapa certa! Continue seguindo a pista.",
 	solved = "⭐ Objetivo concluído!",
 	need_partner = "👫 Chame um amigo para apertar este mesmo botão!",
 	wrong_sequence = "Ops! Botão errado, mas seus acertos continuam salvos.",
