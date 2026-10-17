@@ -1,0 +1,9 @@
+{
+  "nearTrees": 515,
+  "blackout": true,
+  "innerTrees": 196,
+  "stage": 6,
+  "seed": 1792276879,
+  "sha256": "9B1DF8CBC022EBB52121124DF210E3D7D32550EA130F8130C53EC9EEB45B86F7",
+  "note": "Final geometry; later revision changes four forest lighting constants only."
+}

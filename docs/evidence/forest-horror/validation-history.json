@@ -1,0 +1,45 @@
+{
+  "initial_build": {
+    "sha256": "3C575DCAD1F82BC87795EA82541C88D8587BA9CDC0287FBE440419A750F31A42",
+    "studio_suite": "295 passed, 0 failed",
+    "story_duo": {
+      "success": true,
+      "checks": 148,
+      "phase": "Playing",
+      "stage": 1
+    },
+    "superseded_by": "trail sign placement and facing correction; soil surface offset"
+  },
+  "sign_fixed_build": {
+    "sha256": "DAE0530C85D63209B9183CEEE9A855DE101EF1AD13E68D1D522B8971484215A6",
+    "first_attempt": "294 passed, 1 failed: HouseNavigation basement route",
+    "cause": "Visual forest fixture was created during the running suite. Its 2400-stud ground plane overlapped the house navigation fixture at x=600.",
+    "clean_restart_same_bytes": {
+      "passed": 295,
+      "failed": 0,
+      "seconds": 30.752
+    },
+    "visual_fixture": "Two pursuer models present; all four title card labels TextFits=true; cameo actors removed after the scene.",
+    "superseded_by": "Permanent exterior soil lowered by 0.08 studs to avoid coplanar surfaces with the existing gardens."
+  },
+  "release_sha256": "9703A276DD3FE5EFD62CB7F15E1B3CBAC27A8BA9BBCA5D565A74A874F6583D13",
+  "final_validation": "See studio-suite-final.json and campaign receipts.",
+  "pre_readability_multiplayer_build": {
+    "studio": "295 passed, 0 failed",
+    "challenge_duo": "success=true, 150 checks",
+    "final_checks": "Lune 283; final Studio and focused visual fixture in final receipt",
+    "last_change": "Forest ambient, outdoor, fog RGB and exposure constants only",
+    "sha256": "9B1DF8CBC022EBB52121124DF210E3D7D32550EA130F8130C53EC9EEB45B86F7"
+  },
+  "release_validation": {
+    "liveSmoke": "Real chapter 6, flashlight present, self light off, active unfrozen patrol moved from z684.9 to z705.7 in 2 seconds",
+    "sourceCount": 225,
+    "studioId": "67efdd23-1206-4ba0-8d91-c507e9fce420",
+    "visual": "forest-runtime-final.png",
+    "studioFailed": 0,
+    "localPassed": 283,
+    "studioPassed": 295,
+    "returnedToEdit": true,
+    "finalDelta": "Four lighting constants and Studio-only debug forest preview helper; normal campaign rules unchanged"
+  }
+}

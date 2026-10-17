@@ -1,3 +1,9 @@
+**CODEX ENTREGUE — 17/10/2026: CORREÇÃO DE VÃOS + FLORESTA DE TERROR + EPÍLOGO.**
+Escopo autorizado: somente este projeto Tung Tung Sahur. Arquivos concluídos (reserva encerrada): HouseEnvelope/HouseAccess,
+ForestCatalog/ForestPlan/ForestBuilder/ForestThreat, CreatureService/CreatureVisualController,
+CampaignRuntime/HouseActivities/WorldService, Audio/Lighting, ForestCinema/CinematicController/
+StoryController e os respectivos testes. Build final: build/TungTung_HORROR_FINAL.rbxlx e build/TungTungSahur.rbxlx. Relatório: docs/FLORESTA_TERROR_FINAL.md. Check 283; Studio 295; História dupla 148 e Desafio dupla 150 verificações. Código: ca0aec9 + d2db940. Studio próprio devolvido a Edit;
+nenhum Studio anterior, Subestação 9 ou fonte de outro checkout será alterado. Sem push/publicação.
 # Projeto independente: Tung Tung Sahur
 
 Raiz atual: `C:/Users/xpg/Documents/tung-tung-sahur`.

@@ -1,0 +1,12 @@
+[PlayerDataService] mode=mock (Config.Data.StudioMode = mock)
+[WorldService] world built: 2605 parts in 53 ms
+[LobbyService] server list offline (Studio/unpublished)
+[Server] boot OK (16 services)
+[PlayerDataService] loaded XISPEGE (mode=mock, sessions=1)
+[AdemirPortrait] Local portrait ready (128x128)
+[ArtController] surface atlas ready (5/5); native materials remain as fallback
+[Client] boot OK (34 controllers)
+[Tests] 295 passed, 0 failed, 0 skipped specs
+[Campaign] stage=6 seed=90312 players=1 tasks=8
+[CreatureService] awakened at (0, 850)
+CorePackages UIBlox/FoundationProvider warnings were retained separately by Studio; no project errors were observed.

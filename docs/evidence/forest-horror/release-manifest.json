@@ -1,0 +1,23 @@
+{
+  "forestCommit": "d2db940",
+  "sourceCount": 225,
+  "studioFinalTests": 295,
+  "generatedAtUtc": "2026-10-17T18:31:23.1855354+00:00",
+  "project": "C:\\Users\\xpg\\Documents\\tung-tung-sahur",
+  "sourceMatchesBuild": true,
+  "challengeDuoChecks": 150,
+  "artifacts": [
+    "build/TungTungSahur.rbxlx",
+    "build/TungTung_HORROR_FINAL.rbxlx"
+  ],
+  "studioStopped": true,
+  "storyDuoChecks": 148,
+  "pushed": false,
+  "houseCommit": "ca0aec9",
+  "published": false,
+  "implementationHead": "d2db940de22a8e3ee7962a1d6968a425627ff971",
+  "localTests": 283,
+  "status": "READY_FOR_HUMAN_PLAYTEST",
+  "artifactSha256": "9703A276DD3FE5EFD62CB7F15E1B3CBAC27A8BA9BBCA5D565A74A874F6583D13",
+  "previousBuild": "build/TungTungSahur_ANTES_TERROR.rbxlx"
+}

@@ -1,3 +1,8 @@
+> **Atualização de 17/10/2026 — floresta de terror e epílogo:** a fundação externa foi
+> fechada sem preencher o porão. Os capítulos 6–8 recebem mata próxima, apagões, perseguição
+> reforçada, 26 objetivos e novas pistas do guarda. Tung Tung fica sem luz própria na mata.
+> A fuga termina com Tung Tung Sahur e Crocodilo Armadilho procurando a equipe e a chamada
+> **PRÓXIMO JOGO: A MANSÃO DO ARMADILHO**. Ver [FLORESTA_TERROR_FINAL.md](FLORESTA_TERROR_FINAL.md).
 # GAME_SPEC — TUNG TUNG SAHUR: THE CURSED HOUSE
 
 > **Revisão pós-teste humano (16/10/2026):** armários selecionáveis no cliente, barreiras físicas

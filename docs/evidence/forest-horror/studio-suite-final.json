@@ -1,0 +1,13 @@
+{
+  "studio_id": "67efdd23-1206-4ba0-8d91-c507e9fce420",
+  "build": "build/TungTung_HORROR_FINAL.rbxlx",
+  "sha256": "9703A276DD3FE5EFD62CB7F15E1B3CBAC27A8BA9BBCA5D565A74A874F6583D13",
+  "report": "[Tests] 295 passed, 0 failed, 0 skipped specs",
+  "seconds": 30.546009499928914,
+  "ok": true,
+  "sourceCount": 225,
+  "embeddedCount": 225,
+  "mismatches": [],
+  "sync": "NotSynced; compiled source read and audited against disk",
+  "studioStoppedAtEnd": true
+}

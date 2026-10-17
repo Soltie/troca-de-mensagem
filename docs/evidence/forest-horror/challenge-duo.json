@@ -1,0 +1,64 @@
+{
+  "sha256": "9B1DF8CBC022EBB52121124DF210E3D7D32550EA130F8130C53EC9EEB45B86F7",
+  "args": {
+    "campaignQA": true,
+    "storyQA": false,
+    "qualityQA": true,
+    "modeMenuQA": true,
+    "lobbyReturnQA": true,
+    "players": 2
+  },
+  "result": {
+    "ok": true,
+    "result": {
+      "players": 2,
+      "success": true,
+      "checks": 150,
+      "phase": "Playing",
+      "stage": 1
+    }
+  },
+  "epilogueProbe": [
+    {
+      "croc": false,
+      "seconds": 0.5,
+      "card": false,
+      "selfLightOff": true,
+      "allTextFits": true,
+      "tung": false
+    },
+    {
+      "croc": true,
+      "seconds": 6,
+      "card": false,
+      "selfLightOff": true,
+      "allTextFits": true,
+      "tung": true
+    },
+    {
+      "croc": true,
+      "seconds": 11,
+      "card": false,
+      "selfLightOff": true,
+      "allTextFits": true,
+      "tung": true
+    },
+    {
+      "croc": false,
+      "seconds": 16,
+      "card": true,
+      "selfLightOff": true,
+      "allTextFits": true,
+      "tung": false
+    },
+    {
+      "croc": false,
+      "seconds": 21,
+      "card": true,
+      "selfLightOff": true,
+      "allTextFits": true,
+      "tung": false
+    }
+  ],
+  "lastChangeAfterThisTest": "Forest ambient/outdoor/fog RGB and exposure constants only; no gameplay or geometry changes."
+}

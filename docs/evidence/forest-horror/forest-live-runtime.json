@@ -1,0 +1,50 @@
+{
+  "sha256": "9703A276DD3FE5EFD62CB7F15E1B3CBAC27A8BA9BBCA5D565A74A874F6583D13",
+  "studio_id": "67efdd23-1206-4ba0-8d91-c507e9fce420",
+  "preparation": "Studio-only forestChapter(6), real CampaignRuntime, no client state fabrication",
+  "chapter": 6,
+  "phase": "Playing",
+  "building": false,
+  "hasFlashlight": true,
+  "creatureSelfLightEnabled": false,
+  "ai": {
+    "before": {
+      "sinceSeen": {
+        "m": null,
+        "t": "numeric",
+        "v": "inf"
+      },
+      "fuses": 0,
+      "active": true,
+      "hunt": false,
+      "exposure": 0,
+      "seeing": false,
+      "position": "-0.6,0.0,684.9",
+      "holdOff": 0,
+      "mode": "Patrol",
+      "waypoints": 54,
+      "frozen": false
+    },
+    "stage": 6,
+    "after": {
+      "sinceSeen": {
+        "m": null,
+        "t": "numeric",
+        "v": "inf"
+      },
+      "fuses": 0,
+      "active": true,
+      "hunt": false,
+      "exposure": 0,
+      "seeing": false,
+      "position": "-0.9,0.0,705.7",
+      "holdOff": 0,
+      "mode": "Patrol",
+      "waypoints": 54,
+      "frozen": false
+    },
+    "phase": "Playing"
+  },
+  "visual": "forest-runtime-final.png",
+  "limitation": "Controlled solo runtime smoke, not human balance or fear evaluation"
+}

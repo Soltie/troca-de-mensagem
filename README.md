@@ -1,6 +1,6 @@
 # Tung Tung Sahur — começar aqui
 
-Remasterização visual final de 17/10/2026, com casa, floresta, oito capítulos e modos História/Desafio.
+Versão atual de 17/10/2026: vãos da casa corrigidos, floresta de terror com 26 objetivos e epílogo com Tung Tung Sahur e Crocodilo Armadilho. Oito capítulos e modos História/Desafio preservados. Relatório: [FLORESTA_TERROR_FINAL.md](docs/FLORESTA_TERROR_FINAL.md).
 
 Pasta independente: `C:/Users/xpg/Documents/tung-tung-sahur`.
 Separação realizada em 17/10/2026. Código base: `19ace468f25f780b58b9c7625b533c0c26f9f9ec`.
@@ -35,12 +35,12 @@ rojo build default.project.json --output build/TungTungSahur.rbxlx
 ## Proveniência e validação
 
 - Base copiada sem alterações de gameplay, com histórico Git local próprio.
-- `lune run scripts/check`: **ALL GREEN**, 279 testes aprovados,
-  zero falhas; 6 specs exclusivas do Studio puladas no Lune.
-- Build recompilada nesta pasta e SHA-256 idêntico à entrega final anterior.
+- `lune run scripts/check`: **ALL GREEN**, 283 testes aprovados,
+  zero falhas; 7 specs exclusivas do Studio puladas no Lune.
+- Build atual: `9703A276DD3FE5EFD62CB7F15E1B3CBAC27A8BA9BBCA5D565A74A874F6583D13`. A remasterização anterior foi preservada em `build/TungTungSahur_ANTES_TERROR.rbxlx`.
 - Auditoria das fontes embutidas: consulte `build/TungTungSahur.audit.json`.
 - Relatório da versão: [VISUAL_REMASTER.md](docs/VISUAL_REMASTER.md).
-- A separação não executou um novo playtest no Studio. O QA anterior está no relatório da versão.
+- A separação original é histórica. Os novos testes e limites de QA estão em `docs/FLORESTA_TERROR_FINAL.md`.
 - Repositório independente, sem remote configurado e sem push/publicação.
 - A pasta original `roblox-teste` e os worktrees anteriores foram preservados.
   Caminhos e reservas nos documentos antigos são históricos; esta pasta é a raiz deste projeto.

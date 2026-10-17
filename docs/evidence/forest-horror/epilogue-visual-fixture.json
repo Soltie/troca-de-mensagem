@@ -1,0 +1,31 @@
+{
+  "kind": "Visual fixture, not a completed campaign",
+  "sha256": "DAE0530C85D63209B9183CEEE9A855DE101EF1AD13E68D1D522B8971484215A6",
+  "result": {
+    "actorsCleaned": true,
+    "labels": [
+      {
+        "text": "PRÓXIMO JOGO",
+        "name": "Kicker",
+        "fits": true
+      },
+      {
+        "text": "A MANSÃO DO ARMADILHO",
+        "name": "Title",
+        "fits": true
+      },
+      {
+        "text": "Vocês fugiram da casa e da floresta.\nTung Tung Sahur e Crocodilo Armadilho estão procurando vocês.\nA caçada está só começando.",
+        "name": "Story",
+        "fits": true
+      },
+      {
+        "text": "CONTINUA...  ·  A equipe volta ao lobby em 30s",
+        "name": "Return",
+        "fits": true
+      }
+    ],
+    "card": true
+  },
+  "sceneActorsVerified": true
+}
