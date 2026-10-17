@@ -37,6 +37,15 @@ function Access.build(root: Instance)
 	end
 	Build.block(
 		folder,
+		"FrontCourtGround",
+		V3(0, -1, 81),
+		V3(216, 1, 34),
+		0,
+		Color3.fromRGB(42, 55, 43),
+		{ material = Enum.Material.Grass }
+	)
+	Build.block(
+		folder,
 		"ExitGround",
 		V3(0, -1, 115),
 		V3(216, 1, 34),

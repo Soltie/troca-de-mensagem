@@ -222,6 +222,18 @@ function Harness.run(runtime: any, args: any)
 				runtime.snapshot().solved == 0 and actor:GetAttribute("HasFlashlight") == false,
 				"victory restart clears inventory and progression"
 			)
+			local issues = {}
+			for _, entry in game:GetService("LogService"):GetLogHistory() do
+				if
+					(
+						entry.messageType == Enum.MessageType.MessageError
+						or entry.messageType == Enum.MessageType.MessageWarning
+					) and not entry.message:find("UIBlox", 1, true)
+				then
+					table.insert(issues, entry.message)
+				end
+			end
+			check(#issues == 0, "project console clean: " .. table.concat(issues, " | "))
 		end
 	end)
 	done = true

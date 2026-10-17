@@ -52,6 +52,14 @@ return {
 				rays.FilterType = Enum.RaycastFilterType.Include
 				rays.FilterDescendantsInstances = { world.root }
 				rays.RespectCanCollide = true
+				for _, x in { -102, -78, -54, -30, 0, 30, 54, 78, 102 } do
+					for _, z in { 84, 92, 106, 124 } do
+						assert(
+							workspace:Raycast(Vector3.new(x, 1, z) + offset, Vector3.new(0, -2, 0), rays),
+							`Missing forecourt floor {x}/{z}`
+						)
+					end
+				end
 				for _, y in { -12, 4, 20, 36 } do
 					for _, z in { -80, -48, -16 } do
 						for _, side in { -1, 1 } do

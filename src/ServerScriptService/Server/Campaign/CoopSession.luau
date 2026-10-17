@@ -184,7 +184,7 @@ end
 
 function Session.taskReady(state: State, taskId: string): boolean
 	local plan = state.plan
-	if not plan or not state.tasks[taskId] or state.tasks[taskId].solved then
+	if state.phase ~= "Playing" or not plan or not state.tasks[taskId] or state.tasks[taskId].solved then
 		return false
 	end
 	for index, spec in plan.activities do
@@ -192,7 +192,7 @@ function Session.taskReady(state: State, taskId: string): boolean
 			if not state.house and state.mode ~= "Story" then
 				return true
 			end
-			return Progress.ready(state.mode, state.stage, index, function(n)
+			return Progress.ready(state.mode, plan.stage, index, function(n)
 				return state.tasks[plan.activities[n].id].solved
 			end)
 		end
