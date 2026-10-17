@@ -21,8 +21,16 @@ Profile.World = {
 	diffuse = 0.14,
 	specular = 0.22,
 }
-Profile.Bloom = { intensity = 0.12, size = 12, threshold = 1.8 }
+Profile.Bloom = { intensity = 0.1, size = 10, threshold = 1.9 }
 Profile.Flashlight = { brightness = 2.7, spill = 0.11, angle = 40 }
+Profile.Forest = {
+	ambient = { 29, 36, 46 },
+	outdoor = { 83, 96, 121 },
+	fog = { 39, 49, 65 },
+	fogStart = 38,
+	fogScale = 1.28,
+	exposure = 0.05,
+}
 Profile.ShadowBudget = 2 -- mais a lanterna própria; colegas nunca ganham sombras
 Profile.ShadowDistance = 60
 Profile.TransitionRate = 1.8
@@ -50,6 +58,8 @@ function Profile.fixture(name: string, brightness: number, range: number): (numb
 		return brightness * 0.55, math.min(range, 18)
 	elseif name == "Candle" then
 		return brightness * 0.8, math.min(range, 22)
+	elseif name == "LampShade" then
+		return brightness, math.min(range, 14)
 	end
 	return brightness, range
 end

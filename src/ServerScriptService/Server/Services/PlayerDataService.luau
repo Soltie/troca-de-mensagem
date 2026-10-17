@@ -25,6 +25,7 @@
 local DataStoreService = game:GetService("DataStoreService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local HttpService = game:GetService("HttpService")
 
 local Config = require("@game/ReplicatedStorage/Shared/Config")
 local Logger = require("@game/ReplicatedStorage/Shared/Logger")
@@ -132,6 +133,8 @@ local function saveProfile(player: Player, profile: Profile, release: boolean?):
 	end
 	if ok then
 		log.debug("saved %s", player.Name)
+		player:SetAttribute("HousePreferencesSaveMode", mode)
+		player:SetAttribute("HousePreferencesSaved", HttpService:JSONEncode(snapshot.house.preferences))
 	else
 		log.error("save failed for %s: %s", player.Name, err or "?")
 	end

@@ -21,6 +21,8 @@ local baseFog = Profile.World.fogEnd
 local insideTarget = false
 local rayClock = 1
 local elapsed = 0
+local treatment = 1
+local forest = 0
 local controller = { Name = "LightingController" }
 
 local function rgb(values: { number }): Color3
@@ -69,6 +71,9 @@ function controller.debugState(): { [string]: any }
 		bloom = bloom and bloom.Intensity,
 		depth = depth and depth.FarIntensity,
 		contrast = grade and grade.Contrast,
+		quality = Settings.visualBudget().name,
+		shaders = Settings.shadersEnabled(),
+		forest = forest,
 	}
 end
 
@@ -129,17 +134,37 @@ function controller.Start()
 		end
 		indoor = Profile.approach(indoor, if insideTarget then 1 else 0, delta)
 		power = Profile.approach(power, if Lighting:GetAttribute("S9PowerOn") == true then 1 else 0, delta)
+		local world = workspace:FindFirstChild(Tags.WorldFolder)
+		forest = Profile.approach(forest, if world and world:GetAttribute("ForestActive") == true then 1 else 0, delta)
+		-- A mesma composição governa luz funcional e profundidade, inclusive com Shaders OFF.
+		Lighting.Ambient = rgb(Profile.World.ambient)
+			:Lerp(rgb(Profile.World.ambientPower), power)
+			:Lerp(rgb(Profile.Forest.ambient), forest)
+		Lighting.OutdoorAmbient = rgb(Profile.World.outdoor):Lerp(rgb(Profile.Forest.outdoor), forest)
+		Lighting.FogColor =
+			rgb(Profile.World.fog):Lerp(rgb(Profile.World.fogPower), power):Lerp(rgb(Profile.Forest.fog), forest)
+		Lighting.FogStart = Profile.World.fogStart + (Profile.Forest.fogStart - Profile.World.fogStart) * forest
 		local values = Profile.grade(indoor, power)
+		local budget = Settings.visualBudget()
+		treatment = Profile.approach(treatment, if Settings.shadersEnabled() then 1 else 0, delta)
 		if grade then
-			grade.TintColor = rgb(values.tint)
-			grade.Contrast = values.contrast
-			grade.Saturation = values.saturation
-			grade.Brightness = values.brightness
+			grade.TintColor = Color3.new(1, 1, 1):Lerp(rgb(values.tint), treatment)
+			grade.Contrast = values.contrast * treatment
+			grade.Saturation = values.saturation * treatment
+			grade.Brightness = values.brightness * treatment
 		end
-		Lighting.ExposureCompensation = Profile.exposure(indoor, power)
-		fog = Profile.approach(fog, Profile.fogEnd(baseFog, danger), delta)
+		if bloom then
+			bloom.Intensity = Profile.approach(bloom.Intensity, budget.bloom, delta)
+			bloom.Enabled = bloom.Intensity > 0.001
+		end
+		if filter then
+			filter.Enabled = Settings.shadersEnabled()
+		end
+		Lighting.ExposureCompensation = Profile.exposure(indoor, power) + forest * Profile.Forest.exposure
+		fog =
+			Profile.approach(fog, Profile.fogEnd(baseFog * (1 + (Profile.Forest.fogScale - 1) * forest), danger), delta)
 		Lighting.FogEnd = fog
-		local cinema = player:GetAttribute("CinematicActive") == true and Settings.motionEnabled()
+		local cinema = budget.depth and player:GetAttribute("CinematicActive") == true and Settings.motionEnabled()
 		if depth then
 			depth.Enabled = cinema
 			depth.FarIntensity = if cinema then 0.07 else 0

@@ -132,7 +132,12 @@ function RetroFxController.Start()
 		end
 		accumulator = 0
 		-- Granulação em passos (12 quadros/s).
-		for _, dot in grain do
+		local budget = SettingsController.visualBudget()
+		for index, dot in grain do
+			dot.Visible = index <= math.floor(#grain * budget.grain)
+			if not dot.Visible then
+				continue
+			end
 			dot.Position = UDim2.fromScale(rng:NextNumber(), rng:NextNumber())
 			local light = rng:NextNumber() < 0.5
 			dot.BackgroundColor3 = if light then Color3.new(1, 1, 1) else Color3.new(0, 0, 0)

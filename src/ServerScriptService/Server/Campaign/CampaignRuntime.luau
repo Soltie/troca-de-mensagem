@@ -15,6 +15,7 @@ local Perks = require("@game/ReplicatedStorage/Shared/Game/Perks")
 local Story = require("@game/ReplicatedStorage/Shared/Game/StoryCatalog")
 local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
 local TaskRewards = require("@game/ReplicatedStorage/Shared/Game/TaskRewards")
+local Preferences = require("@game/ReplicatedStorage/Shared/Game/HousePreferences")
 local Guard = require("@game/ReplicatedStorage/Shared/Net/Guard")
 local Logger = require("@game/ReplicatedStorage/Shared/Logger")
 local ServerNet = require("../Net/ServerNet")
@@ -1036,12 +1037,17 @@ function Runtime.Start()
 				"music",
 				"effects",
 				"breathing",
-				"ambient"
+				"ambient",
+				"shaders",
+				"quality"
 			),
 			Guard.number({ min = 0, max = 1 }),
 		},
 		rateLimit = { capacity = 12, refillPerSecond = 4 },
 	}, function(player: Player, key: string, value: number)
+		if not Preferences.valid(key, value) then
+			return
+		end
 		if PlayerData.update(player, function(data)
 			data.house.preferences[key] = value
 		end) then

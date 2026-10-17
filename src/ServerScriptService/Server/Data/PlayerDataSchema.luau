@@ -50,7 +50,7 @@ local TEMPLATE: Types.PlayerData = TableUtil.deepFreeze({
 	loadout = {},
 	boosts = { fichasUntil = 0, xpUntil = 0 },
 	story = { cleared = {}, flawless = {} },
-	house = { cleared = {}, flawless = {}, endings = {}, achievements = {}, preferences = {} },
+	house = { cleared = {}, flawless = {}, endings = {}, achievements = {}, preferences = { shaders = 1, quality = 0 } },
 })
 
 -- Mapa { [string]: number } saneado (lixo vira vazio; números inválidos somem).
@@ -95,6 +95,13 @@ function PlayerDataSchema.migrate(raw: unknown): Types.PlayerData
 		endings = numberMap(h.endings, 2147483647),
 		achievements = numberMap(h.achievements, 2147483647),
 	}
+	-- v6: preferências gráficas individuais; preserva volumes/conforto e todo o progresso v5.
+	if data.house.preferences.shaders == nil then
+		data.house.preferences.shaders = 1
+	end
+	if data.house.preferences.quality == nil then
+		data.house.preferences.quality = 0
+	end
 	-- Valores corrompidos não podem travar a economia.
 	for _, currency in StoreCatalog.CURRENCIES do
 		local value = (data.wallet :: any)[currency]

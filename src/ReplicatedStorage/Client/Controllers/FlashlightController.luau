@@ -507,6 +507,13 @@ function FlashlightController.Start()
 			vm.model.Parent = camera
 		end
 		local now = os.clock()
+		local budget = SettingsController.visualBudget()
+		if spot then
+			spot.Shadows = budget.shadows > 0
+		end
+		if dust then
+			dust.Rate = 16 * budget.particles
+		end
 		local motion = CharacterController.getMotion()
 
 		-- Mão com peso: a rotação segue a câmera com atraso; corrida abaixa a lanterna.

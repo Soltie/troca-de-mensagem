@@ -79,6 +79,32 @@ function Harness.run(runtime: any, args: any)
 		table.sort(players, function(a, b)
 			return a.UserId < b.UserId
 		end)
+		local visualSerial = 0
+		local function visualCheck()
+			if not args.visualQA then
+				return
+			end
+			visualSerial += 1
+			for index, teammate in players do
+				local shaders = if index == 1 then 0 else 1
+				local quality = if index == 1 then 0.25 else 1
+				teammate:SetAttribute(
+					"VisualQARequest",
+					HttpService:JSONEncode({ shaders = shaders, quality = quality, serial = visualSerial })
+				)
+				waitFor(function()
+					local raw = teammate:GetAttribute("HousePreferences")
+					if type(raw) ~= "string" then
+						return false
+					end
+					local prefs = HttpService:JSONDecode(raw)
+					return prefs.shaders == shaders and prefs.quality == quality
+				end, "individual visual preferences accepted", 40)
+				check(true, `visual settings isolated player {index} serial {visualSerial}`)
+			end
+			task.wait(4)
+		end
+		visualCheck()
 		runtime.restart()
 		local function voteMode(serialNumber: number)
 			if args.modeMenuQA then
@@ -113,6 +139,7 @@ function Harness.run(runtime: any, args: any)
 				runtime.snapshot().stage == 1 and runtime.snapshot().seed == seed and runtime.snapshot().solved == 0,
 				"automatic retry restores same stage with no stale progress"
 			)
+			visualCheck()
 		end
 		check(
 			actor:GetAttribute("HasFlashlight") == false and actor:GetAttribute("Flashlight") == false,
@@ -145,6 +172,7 @@ function Harness.run(runtime: any, args: any)
 			end, `chapter {chapter}`, 50)
 			local snapshot = runtime.snapshot()
 			if args.qualityQA then
+				visualCheck()
 				local state = game:GetService("ReplicatedStorage").CampaignState
 				check(snapshot.mode == (if args.storyQA then "Story" else "Standard"), "selected mode preserved")
 				local hasScene = (tonumber(state:GetAttribute("StorySceneEndsAt")) or 0) > 0
@@ -205,6 +233,7 @@ function Harness.run(runtime: any, args: any)
 				for _, teammate in players do
 					move(teammate, Vector3.new(0, 3.2, 106))
 				end
+				visualCheck()
 				waitFor(function()
 					return runtime.snapshot().phase == "Intermission"
 				end, "house exit before forest")
@@ -260,6 +289,7 @@ function Harness.run(runtime: any, args: any)
 					request(teammate, { restart = true })
 				end
 			end
+			visualCheck()
 			voteMode(2)
 			waitFor(function()
 				local s = runtime.snapshot()
@@ -269,6 +299,7 @@ function Harness.run(runtime: any, args: any)
 				runtime.snapshot().solved == 0 and actor:GetAttribute("HasFlashlight") == false,
 				"victory restart clears inventory and progression"
 			)
+			visualCheck()
 			local issues = {}
 			for _, entry in game:GetService("LogService"):GetLogHistory() do
 				if

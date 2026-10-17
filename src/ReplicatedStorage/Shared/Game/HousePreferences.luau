@@ -14,7 +14,21 @@ Preferences.Keys = {
 	"effects",
 	"breathing",
 	"ambient",
+	"shaders",
+	"quality",
 }
+-- Mantém o transporte numérico existente. Qualidade: 0 auto, 0.25 baixa, 0.5 média, 1 alta.
+function Preferences.valid(key: string, value: any): boolean
+	if type(value) ~= "number" or value ~= value or value < 0 or value > 1 then
+		return false
+	end
+	if key == "quality" then
+		return value == 0 or value == 0.25 or value == 0.5 or value == 1
+	elseif key == "shaders" then
+		return value == 0 or value == 1
+	end
+	return table.find(Preferences.Keys, key) ~= nil
+end
 function Preferences.sanitize(raw: any): { [string]: number }
 	local out: { [string]: number } = {}
 	if type(raw) ~= "table" then
@@ -22,7 +36,7 @@ function Preferences.sanitize(raw: any): { [string]: number }
 	end
 	for _, key in Preferences.Keys do
 		local value = raw[key]
-		if type(value) == "number" and value == value and value >= 0 and value <= 1 then
+		if Preferences.valid(key, value) then
 			out[key] = value
 		end
 	end

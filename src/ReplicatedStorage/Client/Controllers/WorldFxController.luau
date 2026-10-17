@@ -25,13 +25,8 @@ local fixtures: { [Light]: Fixture } = {}
 local nextSeed = 0
 local shadowClock = 1
 local shadowCount = 0
-
-local function quality(): number
-	local ok, value = pcall(function()
-		return UserSettings():GetService("UserGameSettings").SavedQualityLevel.Value
-	end)
-	return if ok then value else 0
-end
+local particles: { [ParticleEmitter]: number } = {}
+local details: { [BasePart]: boolean } = {}
 
 local function selectShadows()
 	local camera = workspace.CurrentCamera
@@ -60,7 +55,21 @@ local function selectShadows()
 			})
 		end
 	end
-	local chosen = Profile.selectShadows(candidates, Profile.shadowBudget(quality()))
+	local budget = SettingsController.visualBudget()
+	local chosen = Profile.selectShadows(candidates, budget.shadows)
+	for emitter, rate in particles do
+		if emitter.Parent then
+			emitter.Rate = rate * budget.particles
+		end
+	end
+	for part in details do
+		if part.Parent then
+			part.LocalTransparencyModifier = if (part.Position - camera.CFrame.Position).Magnitude
+					> budget.detailDistance
+				then 1
+				else 0
+		end
+	end
 	shadowCount = 0
 	for light, entry in fixtures do
 		light.Shadows = chosen[tostring(entry.seed)] == true
@@ -84,7 +93,10 @@ local function step()
 				local ranged = light :: any
 				ranged.Range = reach
 				local kind = instance:GetAttribute(Tags.Attr.LightKind)
-				local architectural = kind ~= nil or instance.Name == "NightLight"
+				local architectural = kind ~= nil
+					or instance.Name == "NightLight"
+					or instance.Name == "LampShade"
+					or instance.Name == "Flame"
 				local factor = if architectural
 					then Profile.flicker(now, entry.seed, instance:GetAttribute(Tags.Attr.Flicker) == true, flashes)
 					else 1
@@ -120,7 +132,20 @@ function WorldFxController.debugState(): { [string]: any }
 	for _ in fixtures do
 		count += 1
 	end
-	return { fixtures = count, shadows = shadowCount, budget = Profile.shadowBudget(quality()) }
+	local particleCount, detailCount = 0, 0
+	for _ in particles do
+		particleCount += 1
+	end
+	for _ in details do
+		detailCount += 1
+	end
+	return {
+		fixtures = count,
+		shadows = shadowCount,
+		budget = SettingsController.visualBudget().shadows,
+		particles = particleCount,
+		details = detailCount,
+	}
 end
 
 -- Pico de falha nas luzes por `duration` segundos.
@@ -132,6 +157,21 @@ end
 
 function WorldFxController.Start()
 	local function add(instance: Instance)
+		local world = workspace:FindFirstChild(Tags.WorldFolder)
+		if not world or not instance:IsDescendantOf(world) then
+			return
+		end
+		if instance:IsA("ParticleEmitter") and instance:GetAttribute("VisualOptional") == true then
+			particles[instance] = instance.Rate
+		end
+		if
+			instance:IsA("BasePart")
+			and instance:GetAttribute("VisualDetail") == true
+			and not instance.CanCollide
+			and not instance.CanQuery
+		then
+			details[instance] = true
+		end
 		if not instance:IsA("Light") or fixtures[instance] then
 			return
 		end
@@ -158,10 +198,17 @@ function WorldFxController.Start()
 		for _, instance in world:GetDescendants() do
 			add(instance)
 		end
-		world.DescendantAdded:Connect(add)
-		world.DescendantRemoving:Connect(function(instance)
+		-- Um par de listeners acompanha também a substituição completa da raiz no retorno ao lobby.
+		workspace.DescendantAdded:Connect(add)
+		workspace.DescendantRemoving:Connect(function(instance)
 			if instance:IsA("Light") then
 				fixtures[instance] = nil
+			end
+			if instance:IsA("ParticleEmitter") then
+				particles[instance] = nil
+			end
+			if instance:IsA("BasePart") then
+				details[instance] = nil
 			end
 		end)
 	end)
