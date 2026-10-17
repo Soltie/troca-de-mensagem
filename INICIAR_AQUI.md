@@ -1,3 +1,5 @@
+> **IA de outro computador:** comece por [LEIA_IA_COLEGA.md](LEIA_IA_COLEGA.md) e [docs/IA/README.md](docs/IA/README.md).
+
 # Tung Tung Sahur — começar aqui
 
 Versão atual de 17/10/2026: vãos da casa corrigidos, floresta de terror com 26 objetivos e epílogo com Tung Tung Sahur e Crocodilo Armadilho. Oito capítulos e modos História/Desafio preservados. Relatório: [FLORESTA_TERROR_FINAL.md](docs/FLORESTA_TERROR_FINAL.md).

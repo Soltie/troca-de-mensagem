@@ -1,0 +1,48 @@
+{
+  "prepared_at_utc": "2026-10-17T19:10:27.929938+00:00",
+  "project": "tung-tung-sahur",
+  "base_head_before_documentation": "d975d86f6ce5d6260d60eca745825a6e2973a6cd",
+  "gameplay_changed": false,
+  "local_check": {
+    "command": "lune run scripts/check",
+    "exit_code": 0,
+    "format": "pass",
+    "lint": "pass (0 errors, 0 warnings)",
+    "sourcemap": "pass",
+    "types": "pass",
+    "pure_tests_passed": 283,
+    "failed": 0,
+    "studio_only_specs_skipped": 7
+  },
+  "build": {
+    "command": "lune run scripts/build",
+    "exit_code": 0,
+    "artifact": "build/Test.rbxlx",
+    "sha256": "40659DD56F8080DFB580EDA4E988066FB22919D6DCED899A0194DE1B9CFE65E5",
+    "source_count": 225,
+    "embedded_count": 225,
+    "mismatches": [],
+    "extra_scripts": [],
+    "lighting_preset_valid": true
+  },
+  "documentation": {
+    "relative_links_checked": 1098,
+    "broken_links": [],
+    "source_hashes_checked": 225,
+    "inventory_deterministic": true,
+    "python_syntax": "pass"
+  },
+  "new_studio_playtest": false,
+  "external_state": {
+    "remote_configured": false,
+    "push": false,
+    "published": false,
+    "teammate_machine_configured": false,
+    "assets_permissions_verified_on_teammate_machine": false
+  },
+  "limitations": [
+    "Engine QA remains the previous version reports; no new Play was run.",
+    "The lexical inventory is not an AST, complete call graph or runtime proof.",
+    "MCP/Script Sync/access on the teammate computer must be validated there."
+  ]
+}

@@ -1,3 +1,5 @@
+> **IA de outro computador:** comece por [LEIA_IA_COLEGA.md](LEIA_IA_COLEGA.md) e [docs/IA/README.md](docs/IA/README.md).
+
 # Projeto independente: Tung Tung Sahur
 
 Raiz atual: `C:/Users/xpg/Documents/tung-tung-sahur`.
