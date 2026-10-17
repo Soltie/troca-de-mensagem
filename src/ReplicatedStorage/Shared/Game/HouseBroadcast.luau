@@ -30,17 +30,17 @@ local Broadcast = {
 }
 table.insert(Broadcast, {
 	"A casa caiu, mas as pancadas continuam.",
-	"O guarda deixou um mapa para quem conseguisse sair.",
+	"O guarda deixou um mapa e um aviso: a mata se cala antes de ele chegar.",
 	"Sigam as marcas amarelas. A floresta também escuta.",
 })
 table.insert(Broadcast, {
 	"O acampamento está vazio. O rádio ainda chia.",
-	"O guarda descobriu que o eco sobreviveu ao incêndio.",
-	"Uma voz pede um sinal da torre. Pode haver uma saída.",
+	"O diário ensina a frequência do resgate. Há duas vozes na transmissão.",
+	"Uma delas pede que vocês sigam para uma mansão. O guarda escreveu: NÃO PAREM.",
 })
 table.insert(Broadcast, {
 	"Além das árvores, há uma estrada.",
 	"Alimentem a torre e chamem o resgate.",
-	"Um sinal. Uma última corrida. Ninguém fica para trás.",
+	"O sinal revela a estrada ao resgate. Também revela o destino aos caçadores.",
 })
 return TableUtil.deepFreeze(Broadcast)

@@ -832,6 +832,8 @@ end
 
 function WorldService.setHouseStage(chapter: number, seed: number?, mode: string?)
 	houseStage = chapter
+	getWorld().root:SetAttribute("HouseChapter", chapter)
+	getWorld().root:SetAttribute("ForestBlackout", false)
 	ForestBuilder.clear(getWorld().root, getFeatures())
 	getWorld().root:SetAttribute("ForestActive", chapter >= 6)
 	if chapter >= 6 then
@@ -899,9 +901,23 @@ function WorldService.upperNoise()
 	knock:Play()
 	game:GetService("Debris"):AddItem(source, 5)
 end
+function WorldService.forestPressure(now: number, playing: boolean)
+	if houseStage >= 6 then
+		ForestBuilder.pressure(getWorld().root, now, houseStage, playing)
+	end
+end
 function WorldService.houseEvent(event: string?)
 	if not event then
 		return
+	end
+	if string.sub(event, 1, 7) == "forest_" then
+		local forest = getWorld().root:FindFirstChild("Forest")
+		if forest then
+			forest:SetAttribute("LastEvent", event)
+			if event == "forest_blackout" or event == "forest_broadcast" or event == "forest_winch" then
+				forest:SetAttribute("ForcedBlackoutUntil", workspace:GetServerTimeNow() + 7)
+			end
+		end
 	end
 	if event == "power" then
 		WorldService.setPower(true)

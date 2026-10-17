@@ -47,6 +47,9 @@ local function encode(value: any): any
 end
 
 local commands: { [string]: (...any) -> any } = {
+	forestChapter = function(chapter: number)
+		return (RoundService :: any).debugForest(chapter)
+	end,
 	lightingPower = function(on: boolean)
 		WorldService.setPower(on)
 		return "ok"

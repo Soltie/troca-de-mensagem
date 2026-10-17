@@ -6,6 +6,8 @@ local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
 local Audio = require("@game/ReplicatedStorage/Shared/Game/Audio")
 local Build = require("./Build")
 local FeatureBuilder = require("./FeatureBuilder")
+local Layout = require("./ForestLayout")
+local Threat = require("@game/ReplicatedStorage/Shared/Game/ForestThreat")
 local Builder = {}
 local wood = Color3.fromRGB(67, 54, 39)
 local leaf = Color3.fromRGB(28, 53, 39)
@@ -41,6 +43,7 @@ function Builder.build(parent: Instance, chapter: number, seed: number, features
 	Builder.clear(parent, features)
 	local root = Build.folder(parent, "Forest")
 	root:SetAttribute("Chapter", chapter)
+	root:SetAttribute("HorrorForest", true)
 	local rng = Random.new(seed + chapter * 104729)
 	block(
 		root,
@@ -59,19 +62,29 @@ function Builder.build(parent: Instance, chapter: number, seed: number, features
 		Color3.fromRGB(86, 73, 53),
 		{ material = Enum.Material.Ground, collide = false }
 	)
-	for _, z in { 640, 670, 700, 730, 760, 790, 820, 850 } do
+	local clearings = Layout.clearings(seed)
+	local drawn: { [string]: boolean } = {}
+	for _, r in clearings do
+		if r.z1 - r.z0 > 35 then
+			continue
+		end
+		local key = `{r.x0}/{r.x1}/{r.z0}/{r.z1}`
+		if drawn[key] then
+			continue
+		end
+		drawn[key] = true
 		block(
 			root,
 			"BranchTrail",
-			Vector3.new(0, 0.07, z),
-			Vector3.new(112, 0.08, 14),
+			Vector3.new((r.x0 + r.x1) / 2, 0.07, (r.z0 + r.z1) / 2),
+			Vector3.new(r.x1 - r.x0, 0.08, r.z1 - r.z0),
 			Color3.fromRGB(78, 69, 51),
 			{ material = Enum.Material.Ground, collide = false }
 		)
 	end
 	local function tree(container: Instance, x: number, z: number, distant: boolean)
-		local height = rng:NextNumber(22, 44)
-		block(
+		local height = rng:NextNumber(29, 51)
+		local trunk = block(
 			container,
 			"Trunk",
 			Vector3.new(x, 0, z),
@@ -79,32 +92,43 @@ function Builder.build(parent: Instance, chapter: number, seed: number, features
 			wood,
 			{ material = Enum.Material.Wood, collide = not distant, query = not distant }
 		)
+		trunk:SetAttribute("ForestTree", true)
+		trunk:SetAttribute("NearTrail", not distant)
 		for level = 1, 2 do
 			local crown = block(
 				container,
 				"Canopy",
 				Vector3.new(x, height - 7 + level * 4, z),
-				Vector3.new(17 - level * 3, 9, 17 - level * 3),
+				Vector3.new(27 - level * 4, 13, 27 - level * 4),
 				leaf,
 				{ material = Enum.Material.Grass, collide = false, query = false }
 			)
 			crown.CFrame *= CFrame.Angles(0, rng:NextNumber(0, math.pi), 0)
+			crown.CastShadow = true
 		end
 	end
 	-- Subárvores pequenas são publicadas por lote; geração cede a thread para o Studio.
 	for batch = 1, 8 do
 		local grove = Instance.new("Folder")
 		grove.Name = `Grove{batch}`
-		for _ = 1, 65 do
-			local near = batch <= 4
-			local x = rng:NextNumber(if near then -230 else -1100, if near then 230 else 1100)
-			local z = rng:NextNumber(if near then 510 else -380, if near then 960 else 1820)
-			local free = math.abs(x) < 16
-			for _, aisle in { 640, 670, 700, 730, 760, 790, 820, 850 } do
-				free = free or (math.abs(x) < 70 and math.abs(z - aisle) < 15)
+		if batch <= 4 then
+			for row = 0, 7 do
+				local z = 548 + ((batch - 1) * 8 + row) * 11
+				for column = 0, 24 do
+					local x = -132 + column * 11 + rng:NextNumber(-1.2, 1.2)
+					local atZ = z + rng:NextNumber(-1.2, 1.2)
+					if not Layout.reserved(x, atZ, clearings) then
+						tree(grove, x, atZ, false)
+					end
+				end
 			end
-			if not free then
-				tree(grove, x, z, not near)
+		else
+			for _ = 1, 85 do
+				local x = rng:NextNumber(-850, 850)
+				local z = rng:NextNumber(300, 1250)
+				if math.abs(x) > 164 or z < 520 or z > 930 then
+					tree(grove, x, z, true)
+				end
 			end
 		end
 		grove.Parent = root
@@ -127,9 +151,9 @@ function Builder.build(parent: Instance, chapter: number, seed: number, features
 	for _, z in { 535, 915 } do
 		block(root, "TrailBoundary", Vector3.new(0, 0, z), Vector3.new(290, 70, 2), leaf, { transparency = 1 })
 	end
-	for z = 600, 840, 40 do
+	for z = 600, 840, 60 do
 		local lamp = block(root, "TrailLantern", Vector3.new(12, 0, z), Vector3.new(0.7, 4, 0.7), wood)
-		Build.light(lamp, "Exit", Color3.fromRGB(235, 179, 88), 23, 0.65, true)
+		Build.light(lamp, "ForestGuide", Color3.fromRGB(192, 155, 100), 12, 0.3, true)
 		-- Lanterna física e sua proteção: apenas visual, luz de orientação continua em todos os perfis.
 		for _, side in { -1, 1 } do
 			local cap = block(
@@ -151,12 +175,73 @@ function Builder.build(parent: Instance, chapter: number, seed: number, features
 			{ material = Enum.Material.Glass, transparency = 0.22, collide = false, query = false }
 		)
 	end
+	-- Marcas físicas continuam legíveis quando as lanternas do mundo apagam.
+	for _, z in { 624, 682, 742, 812, 848 } do
+		Build.sign(
+			root,
+			"RangerMark",
+			Vector3.new(-11, 3.4, z),
+			-Vector3.zAxis,
+			Vector2.new(2.3, 1.1),
+			if z == 848 then "ESTRADA ↑" else "TRILHA ↑",
+			{ textColor = Color3.fromRGB(174, 159, 105), lit = true }
+		)
+	end
+	local props = Build.folder(root, "RangerRemains")
+	for _, z in { 608, 694, 774, 828 } do
+		local stump = block(
+			props,
+			"SplitStump",
+			Vector3.new(-15, 0, z),
+			Vector3.new(4, 3, 4),
+			wood,
+			{ material = Enum.Material.Wood, collide = false, query = false }
+		)
+		stump.CFrame *= CFrame.Angles(0, math.rad(23), 0)
+		block(
+			props,
+			"BrokenBark",
+			Vector3.new(-16, 3, z),
+			Vector3.new(1, 2, 0.5),
+			wood,
+			{ material = Enum.Material.Wood, collide = false, query = false }
+		)
+	end
+	Build.sign(
+		props,
+		"Warning",
+		Vector3.new(20, 5, 596),
+		-Vector3.zAxis,
+		Vector2.new(11, 3),
+		"SE A MATA FICAR EM SILÊNCIO\nAPAGUE A LUZ. NÃO CORRA ATÉ O ABRIGO.",
+		{ textColor = Color3.fromRGB(203, 188, 135), lit = true }
+	)
+	block(props, "CampTable", Vector3.new(-82, 0, 731), Vector3.new(11, 2.4, 5), wood)
+	for i = 1, 4 do
+		block(
+			props,
+			"EmptyPlate",
+			Vector3.new(-87 + i * 2, 2.4, 731),
+			Vector3.new(1.3, 0.1, 1.3),
+			Color3.fromRGB(134, 137, 118),
+			{ material = Enum.Material.Metal, collide = false, query = false }
+		)
+	end
+	Build.sign(
+		props,
+		"RangerWarning",
+		Vector3.new(-77, 5, 740),
+		Vector3.zAxis,
+		Vector2.new(12, 3),
+		"POSTO 09 / ÚLTIMA EQUIPE: 6\nRECEBIDOS NA ESTRADA: 0",
+		{ textColor = Color3.fromRGB(188, 171, 120) }
+	)
 	Build.sign(
 		root,
 		"ChapterBoard",
-		Vector3.new(0, 6, 610),
-		Vector3.zAxis,
-		Vector2.new(20, 4),
+		Vector3.new(-22, 6, 610),
+		-Vector3.zAxis,
+		Vector2.new(14, 3),
 		Forest.Chapters[chapter - 5].title,
 		{ textColor = Color3.fromRGB(226, 193, 130), lit = true }
 	)
@@ -285,12 +370,33 @@ function Builder.build(parent: Instance, chapter: number, seed: number, features
 			root,
 			"RescueSign",
 			Vector3.new(0, 12, 870),
-			Vector3.zAxis,
+			-Vector3.zAxis,
 			Vector2.new(20, 3),
 			"RESGATE / REÚNAM-SE AQUI",
 			{ textColor = Color3.fromRGB(152, 255, 193), lit = true }
 		)
 	end
 	return root
+end
+function Builder.pressure(parent: Instance, now: number, chapter: number, playing: boolean)
+	local forest = parent:FindFirstChild("Forest")
+	if not forest then
+		return
+	end
+	local forced = tonumber(forest:GetAttribute("ForcedBlackoutUntil")) or 0
+	local dark = playing and (Threat.dark(now, chapter) or now < forced)
+	if forest:GetAttribute("Blackout") == dark then
+		return
+	end
+	forest:SetAttribute("Blackout", dark)
+	parent:SetAttribute("ForestBlackout", dark)
+	for _, part in forest:GetChildren() do
+		if part:GetAttribute(Tags.Attr.LightKind) == "ForestGuide" then
+			local light = part:FindFirstChildWhichIsA("PointLight")
+			if light then
+				light.Enabled = not dark
+			end
+		end
+	end
 end
 return Builder

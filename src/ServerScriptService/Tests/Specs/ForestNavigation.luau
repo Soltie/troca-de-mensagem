@@ -13,6 +13,27 @@ return {
 			local ok, failure = pcall(function()
 				local world, features = HouseBuilder.build(fixture)
 				local forest = Builder.build(world.root, 8, 42, features)
+				local near, inner = 0, 0
+				for _, tree in forest:GetDescendants() do
+					if tree:IsA("BasePart") and tree:GetAttribute("NearTrail") == true then
+						near += 1
+						if math.abs(tree.Position.X) < 65 then
+							inner += 1
+						end
+					end
+				end
+				t.expect(near >= 200).toBe(true)
+				t.expect(inner >= 40).toBe(true)
+				Builder.pressure(world.root, 0, 8, true)
+				t.expect(world.root:GetAttribute("ForestBlackout")).toBe(true)
+				for _, part in forest:GetChildren() do
+					if part.Name == "TrailLantern" then
+						local light = part:FindFirstChildWhichIsA("PointLight")
+						assert(light and not light.Enabled, "Trail lamp ignores blackout")
+					end
+				end
+				Builder.pressure(world.root, 7, 8, true)
+				t.expect(world.root:GetAttribute("ForestBlackout")).toBe(false)
 				local offset = Vector3.new(6000, 0, 0)
 				for _, part in world.root:GetDescendants() do
 					if part:IsA("BasePart") then

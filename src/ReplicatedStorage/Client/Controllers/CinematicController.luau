@@ -35,6 +35,8 @@ local Transition = require("./TransitionController")
 local Store = require("./StoreController")
 local Animator = require("./CharacterAnimatorController")
 local TungTungRig = require("../Creature/TungTungRig")
+local ArmadilhoRig = require("../Creature/ArmadilhoRig")
+local AudioController = require("./AudioController")
 local Create = require("../UI/Create")
 local Theme = require("../UI/Theme")
 
@@ -69,10 +71,24 @@ local Controller = { Name = "CinematicController" }
 -- Abertura: surge na porta na última tomada e bate o bastão. Laço do lobby: anda pela varanda.
 local cameo: TungTungRig.TungRig? = nil
 local cameoClock = 0
+local armadilho: Model? = nil
+local epilogueLight: BasePart? = nil
+local epilogueShot = 0
+local teaser: Frame? = nil
+local teaserCountdown: TextLabel? = nil
 -- Junto à porta e virado para as câmeras do quintal (o modelo olha para -Z).
 local PORCH = CFrame.lookAt(Vector3.new(3, -0.5, 65.6), Vector3.new(8, -0.5, 74))
 
 local function dropCameo()
+	if armadilho then
+		armadilho:Destroy()
+		armadilho = nil
+	end
+	if epilogueLight then
+		epilogueLight:Destroy()
+		epilogueLight = nil
+	end
+	epilogueShot = 0
 	if cameo then
 		cameo.model:Destroy()
 		cameo = nil
@@ -122,6 +138,39 @@ local function updateCameo(current: Shots.Sequence, index: number, dt: number)
 		TungTungRig.place(rig, CFrame.lookAt(position, position + velocity))
 		TungTungRig.play(rig, "walk", 0.3, math.clamp(velocity.Magnitude / 3.5, 0.35, 1))
 		TungTungRig.step(rig, dt)
+	elseif current.name == "ForestRescue" and (index == 2 or index == 3) then
+		local actor = ensureCameo()
+		if actor then
+			actor.eyeLight.Enabled = false
+			TungTungRig.place(actor, CFrame.lookAt(Vector3.new(-7, 0, 830), Vector3.new(-7, 0, 850)))
+			TungTungRig.play(actor, "idle", 0.2)
+			TungTungRig.step(actor, dt)
+		end
+		if not armadilho then
+			armadilho = ArmadilhoRig.build(workspace)
+		end
+		local crocodile = armadilho :: Model
+		cameoClock += dt
+		crocodile:PivotTo(
+			CFrame.lookAt(
+				Vector3.new(7, math.sin(cameoClock * 1.4) * 0.06, 828 + math.min(1.5, cameoClock * 0.15)),
+				Vector3.new(7, 0, 850)
+			)
+		)
+		if not epilogueLight then
+			local lamp = Instance.new("Part")
+			lamp.Name, lamp.Anchored, lamp.Transparency = "RescueHeadlights", true, 1
+			lamp.CanCollide, lamp.CanQuery, lamp.CanTouch = false, false, false
+			lamp.CFrame = CFrame.lookAt(Vector3.new(0, 8, 847), Vector3.new(0, 4, 830))
+			local light = Instance.new("SpotLight")
+			light.Angle, light.Range, light.Brightness, light.Shadows = 85, 52, 3.8, true
+			light.Color, light.Parent = Color3.fromRGB(212, 194, 156), lamp
+			lamp.Parent, epilogueLight = workspace, lamp
+		end
+		if epilogueShot ~= index then
+			epilogueShot = index
+			AudioController.play(if index == 2 then "DoorBang" else "Roar", 0.65, 0.65)
+		end
 	else
 		dropCameo()
 	end
@@ -443,6 +492,7 @@ end
 function Controller.Init()
 	local gui = Create("ScreenGui", {
 		Name = "CinematicControls",
+		IgnoreGuiInset = true,
 		ResetOnSpawn = false,
 		DisplayOrder = 121,
 		Parent = player:WaitForChild("PlayerGui"),
@@ -462,6 +512,49 @@ function Controller.Init()
 		Parent = gui,
 	}) :: TextButton
 	skipButton = button
+	local panel = Create("Frame", {
+		Name = "NextGame",
+		Parent = gui,
+		Size = UDim2.fromScale(1, 1),
+		BackgroundColor3 = Color3.fromRGB(3, 5, 6),
+		BorderSizePixel = 0,
+		Visible = false,
+	}) :: Frame
+	local function cardLine(
+		name: string,
+		y: number,
+		height: number,
+		value: string,
+		color: Color3,
+		maximum: number
+	): TextLabel
+		local label = Create("TextLabel", {
+			Name = name,
+			Parent = panel,
+			Position = UDim2.fromScale(0.1, y),
+			Size = UDim2.fromScale(0.8, height),
+			BackgroundTransparency = 1,
+			Text = value,
+			TextColor3 = color,
+			FontFace = Theme.Font,
+			TextWrapped = true,
+			TextScaled = true,
+		}) :: TextLabel
+		Create("UITextSizeConstraint", { Parent = label, MinTextSize = 12, MaxTextSize = maximum })
+		return label
+	end
+	cardLine("Kicker", 0.16, 0.07, "PRÓXIMO JOGO", Color3.fromRGB(162, 126, 75), 22)
+	cardLine("Title", 0.27, 0.19, "A MANSÃO DO ARMADILHO", Color3.fromRGB(222, 208, 170), 46)
+	cardLine(
+		"Story",
+		0.5,
+		0.19,
+		"Vocês fugiram da casa e da floresta.\nTung Tung Sahur e Crocodilo Armadilho estão procurando vocês.\nA caçada está só começando.",
+		Color3.fromRGB(174, 184, 178),
+		23
+	)
+	teaserCountdown = cardLine("Return", 0.8, 0.07, "CONTINUA...", Color3.fromRGB(147, 154, 150), 17)
+	teaser = panel
 	button.Activated:Connect(Controller.stop)
 	-- Imagem de CFTV com visão noturna: dessaturada, clareada e esverdeada (só nos planos fixos).
 	local tint = Instance.new("ColorCorrectionEffect")
@@ -548,6 +641,25 @@ function Controller.Start()
 			onKeyChanged(phase, previous)
 		end
 		local current = sequence
+		local state = campaignState()
+		local showTeaser = phase == "Won"
+			and state ~= nil
+			and state:GetAttribute("ForestActive") == true
+			and (current == nil or (current.name == "ForestRescue" and lastShot >= 4))
+		if teaser then
+			teaser.Visible = showTeaser
+		end
+		player:SetAttribute("ForestEpilogueVisible", showTeaser)
+		if showTeaser and teaserCountdown and state then
+			local remaining = math.max(
+				0,
+				math.ceil(
+					(tonumber(state:GetAttribute("LobbyReturnAt")) or workspace:GetServerTimeNow())
+						- workspace:GetServerTimeNow()
+				)
+			)
+			teaserCountdown.Text = `CONTINUA...  ·  A equipe volta ao lobby em {remaining}s`
+		end
 		if not current then
 			-- Lobby com o menu de modo aberto: câmeras de segurança ao fundo.
 			if phase == "Lobby" and player:GetAttribute("ModeMenuOpen") == true and not Store.isOpen() then

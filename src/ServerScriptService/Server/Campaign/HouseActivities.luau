@@ -41,7 +41,14 @@ function Activities.build(parent: Instance, plan: Generator.Plan, distance: numb
 		TaskProps.build(model, p, spec.item, spec.kind)
 		if spec.kind == "clue" then
 			local solution: { number }? = nil
-			if spec.item == "book" then
+			if plan.stage >= 6 then
+				for _, candidate in plan.activities do
+					if candidate.kind == "puzzle" then
+						solution = candidate.order
+						break
+					end
+				end
+			elseif spec.item == "book" then
 				solution = plan.activities[5].order
 			elseif spec.item == "panel_clue" then
 				solution = plan.activities[2].order

@@ -260,6 +260,13 @@ local function update(dt: number)
 	elseif rig then
 		updateLegacy(rig, root, dt, camera)
 	end
+	-- Na mata não existe farol/halo denunciando o caçador. A lanterna do jogador ainda o revela.
+	local world = workspace:FindFirstChild(Tags.WorldFolder)
+	local forest = world ~= nil and world:GetAttribute("ForestActive") == true
+	local eye = if tung then tung.eyeLight elseif rig then rig.eyeLight else nil
+	if eye then
+		eye.Enabled = not forest
+	end
 
 	-- Fora da perseguição: rosnados e o "TUM TUM TUM" do bastão (assinatura do Tung Tung).
 	local now = os.clock()

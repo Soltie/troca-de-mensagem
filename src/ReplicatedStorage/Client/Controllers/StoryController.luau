@@ -51,7 +51,7 @@ function Controller.Start()
 	local ending = text("Continues", 0, 1)
 	ending.Position, ending.Size = UDim2.fromScale(0, 0), UDim2.fromScale(1, 1)
 	ending.BackgroundColor3, ending.BackgroundTransparency, ending.TextSize = Color3.new(0, 0, 0), 0, 32
-	ending.Text, ending.Visible = "FIM\n\nO resgate chegou. Vocês escaparam.", false
+	ending.Text, ending.Visible = "CONTINUA...", false
 	local previous = ""
 	local lastSolved = 0
 	local revealUntil = 0
@@ -89,9 +89,10 @@ function Controller.Start()
 			if endingAt == 0 then
 				endingAt = now
 			end
-			ending.Visible = now - endingAt >= 12
+			-- O CinematicController apresenta o epílogo nos dois modos, inclusive após pular a cena.
+			ending.Visible = false
 			local remaining = math.max(0, math.ceil((tonumber(state:GetAttribute("LobbyReturnAt")) or now) - now))
-			ending.Text = `FIM\n\nO resgate chegou. Vocês escaparam.\nVoltando ao lobby com a equipe em {remaining}s`
+			ending.Text = `CONTINUA...\nA MANSÃO DO ARMADILHO\nVoltando ao lobby com a equipe em {remaining}s`
 			ending.TextSize = 24
 			revelation.Text = Story.Ending
 		end

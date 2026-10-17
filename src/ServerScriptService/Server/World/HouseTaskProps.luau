@@ -23,7 +23,51 @@ local function part(parent: Instance, name: string, p: Vector3, size: Vector3, c
 end
 function Props.build(parent: Instance, p: Vector3, item: string?, kind: string)
 	local center = p + V3(0, 1.8, 0)
-	if item and string.find(item, "key", 1, true) then
+	if item == "forest_battery" then
+		part(parent, "RescueBattery", center, V3(2.7, 1.8, 1.6), dark)
+		for _, side in { -1, 1 } do
+			part(parent, "BatteryTerminal", center + V3(side * 0.8, 1.8, 0), V3(0.35, 0.4, 0.35), brass)
+		end
+	elseif item == "forest_antenna" then
+		part(parent, "Antenna", center, V3(4.5, 0.2, 0.2), brass)
+		for i = 1, 4 do
+			part(parent, "AntennaBar", center + V3(-2.5 + i, 0, 0), V3(0.15, 0.15, 2.5), dark)
+		end
+	elseif item == "forest_crank" then
+		Build.cylinder(
+			parent,
+			"WinchWheel",
+			center + V3(0, 0.2, 0),
+			Vector3.yAxis,
+			0.3,
+			2.3,
+			brass,
+			{ collide = false, query = false }
+		)
+		part(parent, "CrankHandle", center + V3(0.8, 0.4, 0), V3(0.3, 0.7, 0.3), dark)
+	elseif item == "forest_tape" then
+		part(parent, "GuardCassette", center, V3(3, 0.4, 1.8), dark)
+		for _, side in { -1, 1 } do
+			Build.cylinder(
+				parent,
+				"TapeReel",
+				center + V3(side * 0.7, 0.45, 0),
+				Vector3.yAxis,
+				0.1,
+				0.7,
+				paper,
+				{ collide = false, query = false }
+			)
+		end
+	elseif item == "forest_map" then
+		part(parent, "TornMap", center, V3(3.3, 0.15, 2.7), paper)
+		for i = 1, 3 do
+			part(parent, "MapTrail", center + V3(-1.4 + i * 0.65, 0.16, 0), V3(0.14, 0.03, 1.7), dark)
+		end
+	elseif kind == "puzzle" and p.Z > 500 then
+		part(parent, "RadioReceiver", center + V3(0, 0, -0.8), V3(7, 2.5, 1.5), dark)
+		part(parent, "FrequencyDial", center + V3(0, 1.2, 0), V3(5.5, 0.6, 0.2), paper)
+	elseif item and string.find(item, "key", 1, true) then
 		part(parent, "KeyShaft", center + V3(0, 0, 0.9), V3(0.25, 0.2, 2), brass)
 		part(parent, "KeyTooth", center + V3(0.3, 0, 1.6), V3(0.7, 0.2, 0.3), brass)
 	elseif kind == "repair" then

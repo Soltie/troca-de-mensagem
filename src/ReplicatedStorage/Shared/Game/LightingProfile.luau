@@ -24,12 +24,12 @@ Profile.World = {
 Profile.Bloom = { intensity = 0.1, size = 10, threshold = 1.9 }
 Profile.Flashlight = { brightness = 2.7, spill = 0.11, angle = 40 }
 Profile.Forest = {
-	ambient = { 29, 36, 46 },
-	outdoor = { 83, 96, 121 },
-	fog = { 39, 49, 65 },
-	fogStart = 38,
-	fogScale = 1.28,
-	exposure = 0.05,
+	ambient = { 21, 28, 36 },
+	outdoor = { 49, 63, 81 },
+	fog = { 17, 25, 33 },
+	fogStart = 14,
+	fogScale = 0.62,
+	exposure = -0.04,
 }
 Profile.ShadowBudget = 2 -- mais a lanterna própria; colegas nunca ganham sombras
 Profile.ShadowDistance = 60

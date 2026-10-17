@@ -48,6 +48,7 @@ local muffleOverride = 0
 local nextCreakAt = 0
 local nextHushAt = 0
 local hushUntil = 0
+local forestWasDark = false
 local rng = Random.new()
 
 local Preferences = require("@game/ReplicatedStorage/Shared/Game/HousePreferences")
@@ -420,6 +421,14 @@ function AudioController.Start()
 		end
 		local now = os.clock()
 		local position = camera.CFrame.Position
+		local world = workspace:FindFirstChild(Tags.WorldFolder)
+		local forest = world ~= nil and world:GetAttribute("ForestActive") == true
+		local forestDark = forest and world ~= nil and world:GetAttribute("ForestBlackout") == true
+		if forestDark and not forestWasDark and s.phase == "Playing" then
+			AudioController.silence(2.2)
+			AudioController.playAtPosition("DoorBang", position + camera.CFrame.RightVector * 20, 0.6, 0.65)
+		end
+		forestWasDark = forestDark
 		if now - lastInsideCheck > 0.3 then
 			lastInsideCheck = now
 			inside = checkInside(position)
@@ -439,7 +448,7 @@ function AudioController.Start()
 		targets.AmbExterior = if playing then (if inside then 0.05 else Audio.AmbExterior.volume) else 0.03
 		targets.AmbInterior = if playing and inside then Audio.AmbInterior.volume else 0
 		targets.WindInterior = if playing and inside then Audio.WindInterior.volume * (1 + fear * 0.5) else 0
-		targets.Machinery = if playing and s.powerOn then Audio.Machinery.volume else 0
+		targets.Machinery = if playing and s.powerOn and not forest then Audio.Machinery.volume else 0
 
 		local music = musicState
 		local inPlay = Presentation.playing(s.phase, player:GetAttribute("CampaignStatus") :: string?)
@@ -455,10 +464,13 @@ function AudioController.Start()
 			hushUntil, nextHushAt = 0, 0
 		end
 		local hush = now < hushUntil
-		targets.Music = if inPlay and music == "calm" then Audio.Music.volume else 0
+		targets.Music = if inPlay and music == "calm" and not forest then Audio.Music.volume else 0
 		targets.MusicTension = if inPlay and music == "tension"
 			then Audio.MusicTension.volume * (0.7 + near * 0.6)
 			else 0
+		if forest and inPlay and music ~= "chase" and not forestDark then
+			targets.MusicTension = math.max(targets.MusicTension, Audio.MusicTension.volume * 0.5)
+		end
 		targets.MusicChase = if inPlay and music == "chase" then Audio.MusicChase.volume else 0
 		targets.MusicRelief = if inPlay and music == "relief" then Audio.MusicRelief.volume else 0
 

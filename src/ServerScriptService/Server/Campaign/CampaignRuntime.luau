@@ -341,7 +341,7 @@ local function stage()
 		WorldService.setInteractEnabled(locker.id, true)
 	end
 	built = Builder.build(world.root, plan, Config.Game.InteractDistance)
-	WorldService.setPower(session.stage >= 3)
+	WorldService.setPower(session.stage >= 3 and session.stage < 6)
 	startedAt = if session.stage == 1 then workspace:GetServerTimeNow() else startedAt
 	nextStageAt, nextThreatAt, blackoutUntil = 0, workspace:GetServerTimeNow() + C.ThreatInterval, 0
 	for _, player in Players:GetPlayers() do
@@ -909,11 +909,12 @@ local function tick()
 		end
 	end
 	if session.phase == "Playing" and not building then
+		WorldService.forestPressure(now, true)
 		if built then
 			Builder.refresh(built, session.tasks, now, Session.count(session, "Active"))
 		end
 		if blackoutUntil > 0 and now >= blackoutUntil then
-			WorldService.setPower(true)
+			WorldService.setPower(session.stage < 6)
 			blackoutUntil = 0
 			publish()
 		end
@@ -1246,6 +1247,25 @@ end
 
 function Runtime.restart()
 	restartCampaign()
+end
+
+-- Salto de QA apenas no Studio: exercita o runtime real, sem fabricar estado replicado no cliente.
+function Runtime.debugForest(chapter: number): boolean
+	assert(RunService:IsStudio(), "Studio-only forest preview")
+	assert(chapter >= 6 and chapter <= 8 and chapter % 1 == 0, "Invalid forest preview chapter")
+	if building or #Players:GetPlayers() == 0 then
+		return false
+	end
+	selectedMode, modeVotes = "Story", {}
+	session = Session.new(Story.MapSeed, C, "Story", true)
+	for _, player in Players:GetPlayers() do
+		Session.join(session, player.UserId)
+	end
+	session.stage, session.phase = chapter - 1, "Intermission"
+	session.inventory.flashlight = 1
+	endingShown = false
+	stage()
+	return true
 end
 
 function Runtime.setPlayerAdapter(adapter: any)

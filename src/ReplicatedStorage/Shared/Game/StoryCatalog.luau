@@ -71,5 +71,5 @@ return TableUtil.deepFreeze({
 	Chapters = House.Chapters,
 	Scenes = scenes,
 	SceneLines = Broadcast,
-	Ending = "O sinal atravessou a floresta. A van chegou antes do amanhecer.\nPela primeira vez, o rádio ficou em silêncio.\nVocês escaparam de Tung Tung. FIM.",
+	Ending = "Vocês fugiram da casa e da floresta.\nTung Tung Sahur e Crocodilo Armadilho estão procurando vocês.\nPRÓXIMO JOGO: A MANSÃO DO ARMADILHO.",
 })

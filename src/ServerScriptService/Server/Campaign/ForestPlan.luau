@@ -32,7 +32,10 @@ function Plan.create(seed: number, chapter: number, players: number, mode: strin
 			item = objective.item,
 			event = objective.event,
 			title = objective.title,
-			order = if objective.kind == "repair" then { 1, 2, 3 } else { 1 },
+			order = if objective.kind == "repair"
+				then { 1, 2, 3 }
+				elseif objective.kind == "puzzle" then rng.shuffle({ 1, 2, 3, 4 })
+				else { 1 },
 			house = true,
 		})
 	end

@@ -17,6 +17,7 @@ local Logger = require("@game/ReplicatedStorage/Shared/Logger")
 
 local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
 local CreatureBrain = require("../Game/CreatureBrain")
+local ForestThreat = require("@game/ReplicatedStorage/Shared/Game/ForestThreat")
 local HideRules = require("../Game/HideRules")
 local Layout = require("../World/Layout")
 local WorldService = require("./WorldService")
@@ -227,7 +228,8 @@ local function perceive(target: Target?, now: number): CreatureBrain.Perception
 	local flashlight = target.player:GetAttribute(Tags.Attr.Flashlight) == true
 	-- Agachado ele enxerga menos (alcance e o "sentido" de perto).
 	local crouch = if target.player:GetAttribute("Stance") == "Crouch" then Config.Player.CrouchSightFactor else 1
-	local range = (if flashlight then C.SightRangeFlashlight else C.SightRange) * crouch
+	local forest = WorldService.get().root:GetAttribute("ForestActive") == true
+	local range = (if flashlight then C.SightRangeFlashlight else C.SightRange) * crouch * (if forest then 1.16 else 1)
 	local forward = getRoot().CFrame.LookVector
 	local flat = Vector3.new(toTarget.X, 0, toTarget.Z)
 	local inFov = flat.Magnitude < 1e-3
@@ -374,6 +376,11 @@ local function brainTick()
 		feintDestination = nextPatrolNode()
 	end
 	local command = CreatureBrain.step(brain, perception)
+	command.speed = ForestThreat.speed(
+		tonumber(WorldService.get().root:GetAttribute("HouseChapter")) or 0,
+		command.mode,
+		command.speed
+	)
 	if feintUntil > now and not perception.canSee and not perception.noisePos then
 		command = { mode = "Investigate", target = feintDestination, speed = 5 }
 	else
