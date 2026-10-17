@@ -20,21 +20,30 @@ chances, recompensas, capítulos, mapa, criatura, HUD de partida.
 | Trilho compacto com 4 destinos + MAIS | PASSOU | spec `MenuUi` |
 | Estados dos capítulos (sem quedas / vencido / próximo / aberto), exatamente um "próximo" | PASSOU | spec `MenuUi` |
 | `lune run scripts/build` | PASSOU | `build/Test.rbxlx` e cópia `build/TungTung_UI_REMASTER_F1.rbxlx` |
-| Votar História/Desafio, contagem de votos e "SEU VOTO" | NÃO TESTADO | mesmo remote `SelectGameMode`; precisa de Play no Studio |
-| Equipe 1–6 com avatar e cor do voto; contagem para começar | NÃO TESTADO | precisa de Play (Server & Clients) |
-| Mochila: ligar/desligar consumível; sem estoque leva a MELHORIAS | NÃO TESTADO | mesmas ações `loadout_on/off` |
-| Moedas, nível e XP atualizam em tempo real na barra superior | NÃO TESTADO | lê os mesmos atributos do StoreService |
-| Botão + Créditos abre a aba CRÉDITOS da loja | NÃO TESTADO | `Store.openTab("robux")` |
-| Selo de notificação só com prêmio diário ou giro disponível | NÃO TESTADO | `DailyClaimable` / `SpinsLeft` |
-| MAIS (celular) abre Prêmio Diário, Servidores, Amigos, Ajustes e fecha ao tocar fora | NÃO TESTADO | Device Emulator |
-| Sem texto cortado em 1920×1080, 1366×768, 19,5:9, 16:9 e 4:3 | NÃO TESTADO | capturas pendentes |
+| Runner do Studio (specs puras + motor) sobre a build final | PASSOU | 301 aprovados, 0 falhas, 0 pulados |
+| Console do cliente no menu e após o voto | PASSOU | nenhum aviso/erro do projeto |
+| Votar História: `GameModeVote`, contagem e botão "SEU VOTO" (verde) | PASSOU | clique real via MCP; `StoryVotes = 1`; `f1-voto-inicia-capitulo1.jpg` |
+| Voto leva à partida e o menu fecha | PASSOU | contagem iniciou e entrou no Capítulo 01 |
+| Equipe 1–6 com avatar e espaços vazios | PASSOU (1 jogador) | capturas; 2–6 jogadores ainda NÃO TESTADO |
+| Mochila mostra estoque real e estado (sem estoque) | PASSOU | capturas; ligar/desligar com estoque NÃO TESTADO (conta sem itens) |
+| Moedas, nível e XP na barra superior | PASSOU (leitura) | 100 Fichas, 0 Créditos, Nível 1 0/300 XP iguais aos atributos |
+| Selo de notificação com prêmio diário disponível | PASSOU | `DailyClaimable` real; selo no PRÊMIO DIÁRIO e no MAIS |
+| MAIS (celular) abre os 4 destinos e fecha ao tocar fora | PASSOU | `f1-celular-menu-mais.jpg`; `More.Visible = false` após toque fora |
+| PC 1094×674 (escala desktop) | PASSOU | `f1-pc-final.jpg` |
+| Celular 19,5:9 (844×390) | PASSOU | `f1-celular-844x390.jpg` |
+| Celular pequeno 16:9 (667×375), uma coluna | PASSOU | `f1-celular-667x375.jpg` |
+| Tablet 4:3 (853×640) | PASSOU | `f1-tablet-853x640.jpg` |
+| PC 1920×1080 e 1366×768 | NÃO TESTADO | janela do Studio menor; escala coberta pela spec `MenuUi` |
+| Botão + Créditos abre a aba CRÉDITOS | NÃO TESTADO | fase 3 (loja) |
 | Smartphone físico | NÃO TESTADO | depende do dono |
-| FPS / instâncias vs. baseline | NÃO TESTADO | MCP do Studio indisponível nesta sessão |
+| Instâncias do MainMenu (PC, aba JOGAR) | MEDIDO | 790 descendentes; sem baseline antigo para comparar |
 
-**Por que há NÃO TESTADO:** o servidor MCP `Roblox_Studio` estava conectado, mas não expôs ferramentas
-(o Studio precisa de "Assistant → … → Manage MCP Servers → Enable Studio as MCP server"). Sem isso não há
-Play automatizado nem captura de tela. Plano: ativar o MCP e rodar o roteiro acima, ou o dono abre
-`build/TungTung_UI_REMASTER_F1.rbxlx` e confere manualmente.
+Celular e tablet foram simulados no Studio com o atributo `MenuViewportQA` ("844x390" etc.), que só existe
+no Studio: força a classe de layout de toque e o tamanho da área do menu. Não substitui o aparelho físico.
+
+**Correções feitas após as capturas:** removido o ponto REC duplicado (a câmera de segurança já mostra REC);
+faixa da arte do cartão maior no celular (o selo encostava no título); nomes da mochila em duas linhas legíveis;
+espaço vazio do cartão História mostra o progresso real (vencidos e sem quedas).
 
 **Decisões de comportamento desta fase:**
 - Produtos Robux com `id = 0` (todos hoje) não aparecem como botão nos cartões de campanha. Antes apareciam

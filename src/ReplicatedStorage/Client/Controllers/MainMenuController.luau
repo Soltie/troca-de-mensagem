@@ -864,7 +864,7 @@ type CardMetrics = { art: number, height: number, title: number, desc: number, p
 -- Medidas do cartão de campanha (PC em pixels de desenho 1280×720; compacto em pixels reais).
 local function cardMetrics(): CardMetrics
 	if compactMenu then
-		return { art = 64, height = 258, title = 22, desc = 13, pad = 12, vote = 44 }
+		return { art = 76, height = 270, title = 21, desc = 13, pad = 12, vote = 44 }
 	end
 	return { art = 88, height = 306, title = 28, desc = 15, pad = 14, vote = 48 }
 end
@@ -1091,7 +1091,7 @@ end
 
 -- Slots de informação dentro do cartão (A: trilha/linha 1, B: recompensa/linha 2, C: oferta/estado).
 local function slotY(m: CardMetrics, slot: string): (number, number)
-	local compact = m.art < 80
+	local compact = m.art < 84
 	if slot == "A" then
 		return if compact then 36 else 40, if compact then 28 else 30
 	elseif slot == "B" then
@@ -1271,18 +1271,17 @@ local function kitPanel(parent: Instance, position: UDim2, size: UDim2)
 		tile.Parent = holder
 		label({
 			Name = "ItemName",
-			Position = UDim2.fromOffset(8, 4),
-			Size = UDim2.new(1, -16, 0.5, -2),
+			Position = UDim2.fromOffset(6, 4),
+			Size = UDim2.new(1, -12, 0.62, -4),
 			Text = `{def.name} x{count}`,
-			TextSize = 13,
+			TextSize = 12,
 			TextXAlignment = Enum.TextXAlignment.Center,
-			TextTruncate = Enum.TextTruncate.AtEnd,
 			Parent = tile,
 		})
 		label({
 			Name = "ItemState",
-			Position = UDim2.new(0, 8, 0.5, 0),
-			Size = UDim2.new(1, -16, 0.5, -4),
+			Position = UDim2.new(0, 6, 0.62, 0),
+			Size = UDim2.new(1, -12, 0.38, -4),
 			Text = stateText,
 			TextSize = 11,
 			TextXAlignment = Enum.TextXAlignment.Center,
@@ -1443,7 +1442,23 @@ local function buildPlay(parent: Frame)
 			else
 				-- Produto sem ID publicado não vira botão morto (ver docs/ui-remaster/AUDITORIA.md).
 				local pass = StoreCatalog.ProductByKey[StoreCatalog.StoryPassKey]
-				if pass and pass.id > 0 then
+				if not pass or pass.id <= 0 then
+					local cleared, flawless = storyCleared()
+					local won, perfect = 0, 0
+					for index = 1, #StoryRewards.Chapters do
+						won += if cleared[index] then 1 else 0
+						perfect += if flawless[index] then 1 else 0
+					end
+					label({
+						Name = "Progress",
+						Position = UDim2.fromOffset(0, cy),
+						Size = UDim2.new(1, 0, 0, ch),
+						Text = `VENCIDOS {won}/{#StoryRewards.Chapters} · SEM QUEDAS {perfect}/{#StoryRewards.Chapters}`,
+						TextSize = 13,
+						TextColor3 = Theme.TextSecondary,
+						Parent = inner,
+					})
+				else
 					button({
 						Name = "StoryPass",
 						Position = UDim2.fromOffset(0, cy),
@@ -1613,6 +1628,19 @@ local function selectTab(id: TabId)
 	dirty = true
 end
 
+-- Só no Studio: atributo MenuViewportQA = "844x390" simula a tela de um celular (capturas de QA).
+local function qaViewport(): (number?, number?)
+	if not RunService:IsStudio() then
+		return nil, nil
+	end
+	local raw = player:GetAttribute("MenuViewportQA")
+	if type(raw) ~= "string" then
+		return nil, nil
+	end
+	local width, height = string.match(raw, "^(%d+)x(%d+)$")
+	return tonumber(width), tonumber(height)
+end
+
 -- Selo de notificação: só quando há prêmio diário ou giro disponível de verdade.
 local function dailyReady(): boolean
 	return player:GetAttribute("DailyClaimable") == true or (tonumber(player:GetAttribute("SpinsLeft")) or 0) > 0
@@ -1651,21 +1679,12 @@ local function topBar(root: Frame, mode: MenuLayout.Mode): number
 		BackgroundTransparency = 1,
 		Parent = root,
 	})
+	-- O "REC" da câmera de segurança já aparece atrás do menu (CinematicController); sem ponto duplicado.
 	local brandY = if compact then 0 else -9
-	local rec = Create("Frame", {
-		Name = "Rec",
-		AnchorPoint = Vector2.new(0, 0.5),
-		Position = UDim2.new(0, 0, 0.5, brandY),
-		Size = UDim2.fromOffset(10, 10),
-		BackgroundColor3 = Theme.Accent,
-		BorderSizePixel = 0,
-		Parent = bar,
-	}) :: Frame
-	Components.corner(rec, Theme.CornerPill)
 	local logo = Components.title({
 		Name = "Logo",
 		AnchorPoint = Vector2.new(0, 0.5),
-		Position = UDim2.new(0, 18, 0.5, brandY),
+		Position = UDim2.new(0, 0, 0.5, brandY),
 		Size = UDim2.fromOffset(if compact then 210 else 440, 38),
 		Text = "TUNG TUNG SAHUR",
 		TextSize = if compact then 21 else 34,
@@ -1678,7 +1697,7 @@ local function topBar(root: Frame, mode: MenuLayout.Mode): number
 	if not compact then
 		Components.text({
 			Name = "Subtitle",
-			Position = UDim2.new(0, 18, 0.5, 11),
+			Position = UDim2.new(0, 0, 0.5, 11),
 			Size = UDim2.fromOffset(440, 18),
 			Text = "THE CURSED HOUSE · EXPLORE, PEGUE MOEDAS E FUJA DO TUM TUM TUM",
 			FontFace = Theme.Font,
@@ -1688,9 +1707,6 @@ local function topBar(root: Frame, mode: MenuLayout.Mode): number
 			Parent = bar,
 		})
 	end
-	table.insert(frameUpdates, function()
-		rec.Visible = (os.clock() * 1.4) % 1 < 0.6
-	end)
 
 	local status = Create("Frame", {
 		Name = "Status",
@@ -2017,6 +2033,13 @@ local function build(mode: MenuLayout.Mode): ScreenGui
 	}) :: ScreenGui
 	screen:SetAttribute("Layout", mode.key)
 	local safe = frame({ Name = "SafeArea", Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Parent = screen })
+	local qaWidth, qaHeight = qaViewport()
+	if qaWidth and qaHeight then
+		-- QA no Studio: simula a tela de um aparelho no centro da janela, com moldura visível.
+		safe.AnchorPoint, safe.Position = Vector2.new(0.5, 0.5), UDim2.fromScale(0.5, 0.5)
+		safe.Size, safe.ClipsDescendants = UDim2.fromOffset(qaWidth, qaHeight), true
+		Components.stroke(safe, Theme.Danger, 2, 0)
+	end
 	local root = frame({
 		Name = "Root",
 		Size = UDim2.fromScale(1 / mode.scale, 1 / mode.scale),
@@ -2135,6 +2158,12 @@ end
 -- Classe de layout pela viewport da câmera: não depende da GUI recém-criada (sem medir 0 no
 -- primeiro quadro e reconstruir em laço). As margens seguras ficam com o ScreenInsets.
 local function currentMode(): MenuLayout.Mode
+	local qaWidth, qaHeight = qaViewport()
+	if qaWidth and qaHeight then
+		local mode = MenuLayout.mode(qaWidth, qaHeight, true)
+		mode.key ..= `@{qaWidth}x{qaHeight}`
+		return mode
+	end
 	local size = workspace.CurrentCamera.ViewportSize
 	return MenuLayout.mode(size.X, size.Y, UserInputService.TouchEnabled)
 end
