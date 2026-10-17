@@ -1,9 +1,13 @@
 --!strict
 --[[
 	Menu inicial (lobby da campanha). Substitui o antigo ModeMenuController.
+	Remaster "Cursed Mansion" (docs/ui-remaster): barra superior com perfil e moedas, trilho de
+	navegação com ícones próprios (no celular: 4 destinos + MAIS) e cartões de campanha ilustrados.
+	O layout é reconstruído só quando a classe da tela muda (MenuLayout.mode), não a cada quadro.
 
-	  Esquerda  logo, navegação e cartão do jogador (nível, Fichas, Créditos, VIP).
-	  Direita   conteúdo da aba:
+	  Topo      logo, Fichas, Créditos (+ abre CRÉDITOS na loja), avatar, nível e XP.
+	  Trilho    JOGAR em destaque e os demais destinos.
+	  Painel    conteúdo da aba:
 	    JOGAR       votar História ou Co-op, equipe no servidor, contagem, kit do turno e bônus;
 	    MELHORIAS   vantagens permanentes (5 níveis), consumíveis e pacotes em Robux;
 	    SERVIDORES  lista de servidores (LobbyService) com ENTRAR;
@@ -32,7 +36,9 @@ local StoreCatalog = require("@game/ReplicatedStorage/Shared/Game/StoreCatalog")
 local StoryRewards = require("@game/ReplicatedStorage/Shared/Game/StoryRewards")
 local Text = require("@game/ReplicatedStorage/Shared/Game/Text")
 local Remotes = require("@game/ReplicatedStorage/Shared/Net/Remotes")
+local Components = require("../UI/Components")
 local Create = require("../UI/Create")
+local MenuLayout = require("../UI/MenuLayout")
 local Theme = require("../UI/Theme")
 local AudioController = require("./AudioController")
 local Cinema = require("./CinematicController")
@@ -43,19 +49,20 @@ local TungTungRig = require("../Creature/TungTungRig")
 type TabId = "play" | "perks" | "store" | "season" | "daily" | "servers" | "friends" | "settings"
 
 local player = Players.LocalPlayer
-local GREEN = Color3.fromRGB(120, 200, 140)
-local VEIL = Theme.Panel
-local CARD = Theme.PanelLight
+local GREEN = Theme.Success
+local VEIL = Theme.Overlay
+local CARD = Theme.BgPanel
 
-local NAV: { { id: TabId, label: string, icon: string } } = {
-	{ id = "play", label = "JOGAR", icon = "▶️" },
-	{ id = "perks", label = "MELHORIAS", icon = "⚡" },
-	{ id = "store", label = "LOJA", icon = "🛒" },
-	{ id = "season", label = "PASSE DA TEMPORADA", icon = "🎫" },
-	{ id = "daily", label = "PRÊMIO DIÁRIO", icon = "🎁" },
-	{ id = "servers", label = "SERVIDORES", icon = "🌐" },
-	{ id = "friends", label = "AMIGOS", icon = "👫" },
-	{ id = "settings", label = "AJUSTES", icon = "⚙️" },
+-- `short` é o rótulo do trilho compacto (cabe em 76 px).
+local NAV: { { id: TabId, label: string, short: string, icon: string } } = {
+	{ id = "play", label = "JOGAR", short = "JOGAR", icon = "Play" },
+	{ id = "perks", label = "MELHORIAS", short = "MELHORIAS", icon = "Perks" },
+	{ id = "store", label = "LOJA", short = "LOJA", icon = "Store" },
+	{ id = "season", label = "PASSE DA TEMPORADA", short = "PASSE", icon = "Season" },
+	{ id = "daily", label = "PRÊMIO DIÁRIO", short = "PRÊMIOS", icon = "Daily" },
+	{ id = "servers", label = "SERVIDORES", short = "SERVIDORES", icon = "Servers" },
+	{ id = "friends", label = "AMIGOS", short = "AMIGOS", icon = "Friends" },
+	{ id = "settings", label = "AJUSTES", short = "AJUSTES", icon = "Settings" },
 }
 -- Abas que só abrem a loja.
 local STORE_TABS: { [string]: string } = { store = "shop", season = "season", daily = "daily" }
@@ -77,6 +84,13 @@ local header: TextLabel? = nil
 local subheader: TextLabel? = nil
 local feedback: TextLabel? = nil
 local navButtons: { [string]: TextButton } = {}
+-- Atualizações contínuas da moldura (moedas, nível, selos, dica); trocadas a cada reconstrução.
+local frameUpdates: { (number) -> () } = {}
+local menuMode: MenuLayout.Mode? = nil
+local columnsShown = 0
+local bodyTop = 66
+local rootFrame: Frame? = nil
+local rootScale: UIScale? = nil
 local currentTab: TabId = "play"
 local dirty = true
 local live: { () -> () } = {}
@@ -90,7 +104,6 @@ local wasOpen = false
 local tipIndex = 1
 local compactMenu = false
 local singleColumn = false
-local shortMenu = false
 
 -- A fonte do tema (FredokaOne) tem acentos; o texto passa direto.
 local function px(value: string): string
@@ -132,7 +145,7 @@ local function label(props: { [string]: any }): TextLabel
 	local base: { [string]: any } = {
 		BackgroundTransparency = 1,
 		FontFace = Theme.Font,
-		TextColor3 = Theme.Text,
+		TextColor3 = Theme.TextPrimary,
 		TextSize = Theme.SizeBody,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextWrapped = true,
@@ -151,7 +164,7 @@ local function note(props: { [string]: any }): TextLabel
 	local base: { [string]: any } = {
 		BackgroundTransparency = 1,
 		FontFace = Theme.FontNote,
-		TextColor3 = Theme.TextDim,
+		TextColor3 = Theme.TextSecondary,
 		TextSize = 15,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextYAlignment = Enum.TextYAlignment.Top,
@@ -168,7 +181,12 @@ local function frame(props: { [string]: any }, children: { any }?): Frame
 	for key, value in props do
 		base[key] = value
 	end
-	return Create("Frame", base, children) :: Frame
+	local result = Create("Frame", base, children) :: Frame
+	-- Cartões visíveis ganham o canto do tema; contêineres transparentes ficam como estão.
+	if result.BackgroundTransparency < 1 and not result:FindFirstChildOfClass("UICorner") then
+		Components.corner(result, Theme.CornerSmall)
+	end
+	return result
 end
 
 local function stroke(color: Color3, thickness: number?, transparency: number?): Instance
@@ -180,36 +198,22 @@ local function stroke(color: Color3, thickness: number?, transparency: number?):
 	})
 end
 
+local function click()
+	AudioController.play("UiBlip", 0.5, 1.1, true)
+end
+
+-- Botão do tema. `Variant` escolhe o estilo; `Accent = GREEN` (legado) vira "success".
+-- Cor de fundo avulsa é ignorada: o estado visual vem da variante (normal/hover/pressão/desabilitado).
 local function button(props: { [string]: any }, onClick: () -> ()): TextButton
-	local base: { [string]: any } = {
-		AutoButtonColor = false,
-		BackgroundColor3 = Theme.Panel,
-		BorderSizePixel = 0,
-		FontFace = Theme.Font,
-		TextColor3 = Theme.Text,
-		TextSize = Theme.SizeBody,
-	}
-	local accent = props.Accent or Theme.Hazard
-	props.Accent = nil
-	for key, value in props do
-		base[key] = value
+	local variant: Components.Variant = props.Variant or (if props.Accent == GREEN then "success" else "secondary")
+	props.Variant, props.Accent, props.BackgroundColor3, props.BackgroundTransparency = nil, nil, nil, nil
+	if type(props.Text) == "string" then
+		props.Text = px(props.Text)
 	end
-	if type(base.Text) == "string" then
-		base.Text = px(base.Text)
-	end
-	local b = Create("TextButton", base, { stroke(accent, 1, 0.35) }) :: TextButton
-	local idle = b.BackgroundColor3
-	b.MouseEnter:Connect(function()
-		b.BackgroundColor3 = idle:Lerp(accent, 0.25)
-	end)
-	b.MouseLeave:Connect(function()
-		b.BackgroundColor3 = idle
-	end)
-	b.Activated:Connect(function()
-		AudioController.play("UiBlip", 0.5, 1.1, true)
+	return Components.button(variant, props, function()
+		click()
 		onClick()
 	end)
-	return b
 end
 
 local function say(key: string?)
@@ -347,470 +351,6 @@ local function storyPreview(): (number, string)
 		table.insert(parts, if entry then entry.name else reward.item)
 	end
 	return chapter, table.concat(parts, " · ")
-end
-
-local function modeCard(
-	parent: Instance,
-	index: number,
-	id: string,
-	eyebrow: string,
-	title: string,
-	description: string,
-	extra: (Frame) -> ()
-)
-	local card = frame({
-		Name = `Mode_{id}`,
-		Position = if singleColumn
-			then UDim2.fromOffset(0, (index - 1) * (if shortMenu then 168 else 332))
-			else UDim2.new((index - 1) * 0.5, if index == 1 then 0 else 8, 0, 0),
-		Size = UDim2.new(
-			if singleColumn then 1 else 0.5,
-			if singleColumn then 0 else -8,
-			0,
-			if shortMenu then 156 else 320
-		),
-		BackgroundColor3 = CARD,
-		BackgroundTransparency = 0.08,
-		Parent = parent,
-	}, {
-		Create("UIPadding", {
-			PaddingLeft = UDim.new(0, 16),
-			PaddingRight = UDim.new(0, 16),
-			PaddingTop = UDim.new(0, 14),
-		}),
-	})
-	local border = stroke(Theme.Hazard, 1, 0.55) :: UIStroke
-	border.Parent = card
-	label({
-		Size = UDim2.new(1, 0, 0, 16),
-		Text = eyebrow,
-		TextSize = Theme.SizeSmall,
-		TextColor3 = Theme.Hazard,
-		Parent = card,
-	})
-	label({
-		Position = UDim2.fromOffset(0, 20),
-		Size = UDim2.new(1, 0, 0, 30),
-		Text = title,
-		TextSize = 26,
-		Parent = card,
-	})
-	note({ Position = UDim2.fromOffset(0, 56), Size = UDim2.new(1, 0, 0, 40), Text = description, Parent = card })
-	if not shortMenu then
-		extra(card)
-	end
-	local votes = label({
-		AnchorPoint = Vector2.new(0, 1),
-		Position = UDim2.new(0, 0, 1, -18),
-		Size = UDim2.new(0.45, 0, 0, 20),
-		Text = "VOTOS: 0",
-		TextColor3 = Theme.TextDim,
-		Parent = card,
-	})
-	local vote = button({
-		Name = "Vote",
-		AnchorPoint = Vector2.new(1, 1),
-		Position = UDim2.new(1, 0, 1, -12),
-		Size = UDim2.new(0.55, 0, 0, 44),
-		Text = "VOTAR",
-		TextSize = Theme.SizeLarge,
-	}, function()
-		local data, err = invoke("SelectGameMode", id)
-		if err then
-			say(err)
-		elseif type(data) == "table" and not data.accepted then
-			say("not_available")
-		end
-	end)
-	vote.Parent = card
-	table.insert(live, function()
-		local state = campaign()
-		local count = if state then state:GetAttribute(if id == "Story" then "StoryVotes" else "StandardVotes") else 0
-		votes.Text = px(`VOTOS: {count or 0}`)
-		local mine = player:GetAttribute("GameModeVote") == id
-		vote.Text = px(if mine then "SEU VOTO" else "VOTAR")
-		vote.BackgroundColor3 = if mine then Color3.fromRGB(46, 58, 40) else Theme.Panel
-		border.Transparency = if mine then 0 else 0.55
-		border.Thickness = if mine then 2 else 1
-	end)
-end
-
-local function buildPlay(parent: Frame)
-	local modesHeight = if shortMenu then (if singleColumn then 324 else 156) else (if singleColumn then 652 else 320)
-	local afterModes = modesHeight - 300
-	-- Conteúdo maior que o painel precisa rolar; a vitrine antes vazava sobre a dica inferior.
-	local scroll = Create("ScrollingFrame", {
-		Name = "PlayScroll",
-		Size = UDim2.fromScale(1, 1),
-		BackgroundTransparency = 1,
-		BorderSizePixel = 0,
-		ScrollBarThickness = 6,
-		ScrollBarImageColor3 = Theme.Hazard,
-		CanvasSize = UDim2.fromOffset(0, 654 + afterModes),
-		ClipsDescendants = true,
-		Parent = parent,
-	})
-	local b = frame({
-		Name = "PlayContent",
-		Size = UDim2.new(1, -12, 0, 650 + afterModes),
-		BackgroundTransparency = 1,
-		Parent = scroll,
-	})
-	local modes = frame({ Size = UDim2.new(1, 0, 0, modesHeight), BackgroundTransparency = 1, Parent = b })
-	local cleared, flawless = storyCleared()
-	modeCard(
-		modes,
-		1,
-		"Story",
-		"📖 MODO HISTÓRIA",
-		"THE CURSED HOUSE",
-		"Casa + floresta: 8 capítulos, perseguição e resgate. Solo ou equipe de até 6.",
-		function(card)
-			for chapter = 1, #StoryRewards.Chapters do
-				local done = cleared[chapter] == true
-				local box = frame({
-					Position = UDim2.new((chapter - 1) / #StoryRewards.Chapters, 0, 0, 104),
-					Size = UDim2.new(1 / #StoryRewards.Chapters, -4, 0, 40),
-					BackgroundColor3 = if done then Color3.fromRGB(46, 40, 22) else Color3.fromRGB(24, 28, 30),
-					Parent = card,
-				}, { stroke(if done then Theme.Hazard else Theme.TextDim, 1, if done then 0 else 0.6) })
-				label({
-					Size = UDim2.fromScale(1, 0.6),
-					Text = `CAP. {chapter}`,
-					TextSize = Theme.SizeSmall,
-					TextXAlignment = Enum.TextXAlignment.Center,
-					TextColor3 = if done then Theme.Hazard else Theme.TextDim,
-					Parent = box,
-				})
-				label({
-					Position = UDim2.fromScale(0, 0.55),
-					Size = UDim2.fromScale(1, 0.4),
-					Text = if flawless[chapter] then "SEM QUEDAS" elseif done then "VENCIDO" else "",
-					TextSize = 10,
-					TextXAlignment = Enum.TextXAlignment.Center,
-					TextColor3 = if flawless[chapter] then GREEN else Theme.Hazard,
-					Parent = box,
-				})
-			end
-			local chapter, reward = storyPreview()
-			label({
-				Position = UDim2.fromOffset(0, 152),
-				Size = UDim2.new(1, 0, 0, 34),
-				Text = `CAPÍTULO {chapter}: {reward}`,
-				TextSize = Theme.SizeSmall,
-				TextColor3 = GREEN,
-				Parent = card,
-			})
-			if player:GetAttribute("StoryPass") == true then
-				label({
-					Position = UDim2.fromOffset(0, 188),
-					Size = UDim2.new(1, 0, 0, 16),
-					Text = "⭐ PASSE DA HISTÓRIA ATIVO: RECOMPENSAS x2",
-					TextSize = Theme.SizeSmall,
-					TextColor3 = Theme.Hazard,
-					Parent = card,
-				})
-			else
-				local pass = StoreCatalog.ProductByKey[StoreCatalog.StoryPassKey]
-				button({
-					Name = "StoryPass",
-					Position = UDim2.fromOffset(0, 186),
-					Size = UDim2.new(1, 0, 0, 44),
-					Text = if pass.id > 0
-						then `PASSE DA HISTÓRIA: RECOMPENSAS x2 · R$ {pass.robux}`
-						else "PASSE INDISPONÍVEL",
-					TextSize = Theme.SizeSmall,
-					BackgroundTransparency = 0.4,
-					Parent = card,
-				}, function()
-					buyProduct(StoreCatalog.StoryPassKey)
-				end)
-			end
-		end
-	)
-	modeCard(
-		modes,
-		2,
-		"Standard",
-		"🎲 MODO DESAFIO",
-		"MAIS UMA NOITE",
-		"Casa, jardins e floresta: 8 capítulos com itens e passagens sorteados. 1–6 jogadores.",
-		function(card)
-			local lines = {
-				"PRÊMIOS: FICHAS E XP POR CAPÍTULO, FUGA E AJUDA AO TIME",
-				"MOEDAS E FITAS VHS ESPALHADAS PELA CASA",
-			}
-			for i, line in lines do
-				label({
-					Position = UDim2.fromOffset(0, 104 + (i - 1) * 22),
-					Size = UDim2.new(1, 0, 0, 20),
-					Text = line,
-					TextSize = Theme.SizeSmall,
-					TextColor3 = if i == 1 then GREEN else Theme.TextDim,
-					Parent = card,
-				})
-			end
-			local boost = label({
-				Position = UDim2.fromOffset(0, 160),
-				Size = UDim2.new(1, 0, 0, 20),
-				Text = "",
-				TextSize = Theme.SizeSmall,
-				TextColor3 = Theme.Hazard,
-				Parent = card,
-			})
-			table.insert(live, function()
-				local now = workspace:GetServerTimeNow()
-				local fichas = (tonumber(player:GetAttribute("BoostFichasUntil")) or 0) - now
-				local xp = (tonumber(player:GetAttribute("BoostXpUntil")) or 0) - now
-				local parts = {}
-				if fichas > 0 then
-					table.insert(parts, `FICHAS x2 · {clock(fichas)}`)
-				end
-				if xp > 0 then
-					table.insert(parts, `XP x2 · {clock(xp)}`)
-				end
-				if player:GetAttribute("Vip") == true then
-					table.insert(parts, "VIP x1,5")
-				end
-				boost.Text = px(if #parts > 0 then "ATIVO: " .. table.concat(parts, " · ") else "")
-			end)
-			local product = StoreCatalog.ProductByKey.bonus_duplo_3h
-			button({
-				Name = "Boost",
-				Position = UDim2.fromOffset(0, 186),
-				Size = UDim2.new(1, 0, 0, 44),
-				Text = if product.id > 0
-					then `FICHAS E XP x2 POR 3 HORAS · R$ {product.robux}`
-					else "BÔNUS INDISPONÍVEL",
-				TextSize = Theme.SizeSmall,
-				BackgroundTransparency = 0.4,
-				Parent = card,
-			}, function()
-				buyProduct("bonus_duplo_3h")
-			end)
-		end
-	)
-
-	-- Equipe no servidor + contagem.
-	local team = frame({
-		Name = "Team",
-		Position = UDim2.fromOffset(0, 312 + afterModes),
-		Size = UDim2.new(1, 0, 0, 96),
-		BackgroundTransparency = 0.08,
-		Parent = b,
-	}, { stroke(Theme.TextDim, 1, 0.7) })
-	local status = label({
-		Position = UDim2.fromOffset(14, 8),
-		Size = UDim2.new(1, -28, 0, 20),
-		Text = "",
-		TextColor3 = Theme.Hazard,
-		Parent = team,
-	})
-	local slots = frame({
-		Position = UDim2.fromOffset(14, 34),
-		Size = UDim2.new(1, -28, 0, 52),
-		BackgroundTransparency = 1,
-		Parent = team,
-	})
-	local slotFrames: { Frame } = {}
-	for i = 1, Config.Campaign.maxPlayers do
-		local slot = frame({
-			Position = UDim2.new((i - 1) / Config.Campaign.maxPlayers, 2, 0, 0),
-			Size = UDim2.new(1 / Config.Campaign.maxPlayers, -4, 1, 0),
-			BackgroundColor3 = Color3.fromRGB(20, 24, 26),
-			Parent = slots,
-		}, { stroke(Theme.TextDim, 1, 0.75) })
-		Create("ImageLabel", {
-			Name = "Face",
-			AnchorPoint = Vector2.new(0.5, 0),
-			Size = UDim2.fromOffset(30, 30),
-			Position = UDim2.new(0.5, 0, 0, 3),
-			BackgroundTransparency = 1,
-			Image = "",
-			Parent = slot,
-		})
-		label({
-			Name = "Who",
-			Position = UDim2.fromOffset(2, 34),
-			Size = UDim2.new(1, -4, 0, 14),
-			Text = "",
-			TextSize = 10,
-			TextWrapped = false,
-			TextTruncate = Enum.TextTruncate.AtEnd,
-			TextXAlignment = Enum.TextXAlignment.Center,
-			TextColor3 = Theme.Text,
-			Parent = slot,
-		})
-		table.insert(slotFrames, slot)
-	end
-	table.insert(live, function()
-		local state = campaign()
-		local list = Players:GetPlayers()
-		local count = #list
-		local remaining = if state
-			then math.ceil((tonumber(state:GetAttribute("NextStageAt")) or 0) - workspace:GetServerTimeNow())
-			else 0
-		status.Text = px(
-			if remaining > 0
-				then `TIME REUNIDO · COMEÇANDO EM {remaining}s`
-				elseif
-					count < Config.Campaign.minPlayers
-				then `TIME {count}/{Config.Campaign.maxPlayers} · FALTAM {Config.Campaign.minPlayers - count} PARA COMEÇAR`
-				else `TIME {count}/{Config.Campaign.maxPlayers} · ESPERANDO OS VOTOS`
-		)
-		for i, slot in slotFrames do
-			local other = list[i]
-			local face = slot:FindFirstChild("Face") :: ImageLabel
-			local who = slot:FindFirstChild("Who") :: TextLabel
-			local border = slot:FindFirstChildOfClass("UIStroke")
-			if other then
-				face.Image = `rbxthumb://type=AvatarHeadShot&id={other.UserId}&w=48&h=48`
-				local vote = other:GetAttribute("GameModeVote")
-				who.Text = px(other.DisplayName)
-				if border then
-					border.Color = if vote == "Story"
-						then Theme.Hazard
-						elseif vote == "Standard" then GREEN
-						else Theme.TextDim
-					border.Transparency = if vote == "Story" or vote == "Standard" then 0 else 0.75
-				end
-			else
-				face.Image = ""
-				who.Text = ""
-				if border then
-					border.Color = Theme.TextDim
-					border.Transparency = 0.75
-				end
-			end
-		end
-	end)
-
-	-- Kit do turno (consumíveis de uso automático) e atalhos.
-	local kit = frame({
-		Name = "Kit",
-		Position = UDim2.fromOffset(0, 420 + afterModes),
-		Size = UDim2.new(1, 0, 0, 64),
-		BackgroundTransparency = 1,
-		Parent = b,
-	})
-	label({
-		Size = UDim2.new(1, 0, 0, 16),
-		Text = "🎒 MOCHILA DA PARTIDA",
-		TextSize = Theme.SizeSmall,
-		TextColor3 = Theme.Hazard,
-		Parent = kit,
-	})
-	local stock = json("Consumables", {})
-	local loadout: { [string]: boolean } = {}
-	for _, id in json("Loadout", {}) do
-		loadout[tostring(id)] = true
-	end
-	for i, def in Perks.Consumables do
-		local count = tonumber(stock[def.id]) or 0
-		local on = loadout[def.id] == true
-		local chip = button({
-			Name = `Kit_{def.id}`,
-			Position = UDim2.new((i - 1) / 3, if i == 1 then 0 else 6, 0, 22),
-			Size = UDim2.new(1 / 3, -6, 0, 44),
-			Text = if def.loadout
-				then `{def.name} x{count} · {if on and count > 0 then "LIGADO" else "DESLIGADO"}`
-				else `{def.name} x{count} · NA DERROTA`,
-			TextSize = Theme.SizeSmall,
-			BackgroundColor3 = if on and count > 0 then Color3.fromRGB(40, 52, 36) else Theme.Panel,
-			Accent = if on then GREEN else Theme.Hazard,
-			Parent = kit,
-		}, function()
-			if count <= 0 then
-				currentTab = "perks"
-				dirty = true
-				return
-			end
-			if def.loadout then
-				store(if on then "loadout_off" else "loadout_on", def.id)
-			end
-		end)
-		chip.TextWrapped = true
-	end
-
-	-- Vitrine: o próprio Tung Tung do jogo, animado, com a "fala" dele.
-	local portraitWidth = if singleColumn then 100 else 210
-	local textX = portraitWidth + 10
-	local showcase = frame({
-		Name = "Showcase",
-		ClipsDescendants = true,
-		Position = UDim2.fromOffset(0, 496 + afterModes),
-		Size = UDim2.new(1, 0, 0, 146),
-		BackgroundColor3 = Theme.PanelLight,
-		BackgroundTransparency = 0.3,
-		Parent = b,
-	}, { Create("UICorner", { CornerRadius = Theme.Corner }), stroke(Theme.Hazard, 2, 0.35) })
-	local viewport = Create("ViewportFrame", {
-		Name = "TungTung",
-		Size = UDim2.new(0, portraitWidth, 1, 0),
-		BackgroundTransparency = 1,
-		Ambient = Color3.fromRGB(190, 170, 230),
-		LightColor = Color3.fromRGB(255, 236, 210),
-		LightDirection = Vector3.new(-0.6, -1, 0.4),
-		Parent = showcase,
-	}) :: ViewportFrame
-	label({
-		Position = UDim2.fromOffset(textX, 8),
-		Size = UDim2.new(1, -textX - 12, 0, 40),
-		Text = "TUNG TUNG SAHUR",
-		TextSize = if singleColumn then 20 else 28,
-		TextColor3 = Theme.Hazard,
-		Parent = showcase,
-	})
-	note({
-		Position = UDim2.fromOffset(textX, 50),
-		Size = UDim2.new(1, -textX - 12, 0, 32),
-		Text = "“TUM... TUM... TUM... SAHUR!” 🥁",
-		TextSize = 15,
-		TextColor3 = Theme.Text,
-		Parent = showcase,
-	})
-	note({
-		Position = UDim2.fromOffset(textX, 84),
-		Size = UDim2.new(1, -textX - 12, 0, 56),
-		Text = "Ele anda pela casa com o bastão. Apague a lanterna, se esconda nos armários e salve seus amigos!",
-		TextSize = 14,
-		TextColor3 = Theme.TextDim,
-		Parent = showcase,
-	})
-	local world = Instance.new("WorldModel")
-	world.Parent = viewport
-	local rig = TungTungRig.build(world)
-	if rig then
-		local camera = Instance.new("Camera")
-		camera.FieldOfView = 30
-		camera.CFrame = CFrame.lookAt(Vector3.new(0, 4.6, -13.5), Vector3.new(0, 3.9, 0))
-		camera.Parent = viewport
-		viewport.CurrentCamera = camera
-		local clips: { TungTungRig.ClipName } = { "idle", "slash", "strafe", "walk", "sheath" }
-		local index, showClock, sway = 1, 0, 0
-		local connection: RBXScriptConnection? = nil
-		connection = RunService.RenderStepped:Connect(function(dt)
-			if not viewport.Parent then
-				if connection then
-					connection:Disconnect()
-				end
-				return
-			end
-			local screen = gui
-			if not screen or not screen.Enabled then
-				return
-			end
-			showClock += dt
-			sway += dt
-			if showClock > 3 then
-				showClock = 0
-				index = index % #clips + 1
-				TungTungRig.play(rig, clips[index], 0.3)
-			end
-			TungTungRig.place(rig, CFrame.Angles(0, math.sin(sway * 0.6) * 0.5, 0))
-			TungTungRig.step(rig, dt)
-		end)
-	end
 end
 
 local function effectText(id: string, level: number): string
@@ -1319,6 +859,698 @@ local function buildFriends(b: Frame)
 	end
 end
 
+type CardMetrics = { art: number, height: number, title: number, desc: number, pad: number, vote: number }
+
+-- Medidas do cartão de campanha (PC em pixels de desenho 1280×720; compacto em pixels reais).
+local function cardMetrics(): CardMetrics
+	if compactMenu then
+		return { art = 64, height = 258, title = 22, desc = 13, pad = 12, vote = 44 }
+	end
+	return { art = 88, height = 306, title = 28, desc = 15, pad = 14, vote = 48 }
+end
+
+-- Arte original do cartão: céu noturno em gradiente, lua e horizonte pixel-art (casa ou mata).
+local function campaignArt(parent: Instance, story: boolean, m: CardMetrics): Frame
+	local art = Create("Frame", {
+		Name = "Art",
+		Size = UDim2.new(1, 0, 0, m.art),
+		BackgroundColor3 = Color3.new(1, 1, 1),
+		BorderSizePixel = 0,
+		ClipsDescendants = true,
+		Parent = parent,
+	}) :: Frame
+	Components.corner(art, Theme.CornerLarge)
+	Create("UIGradient", {
+		Rotation = 90,
+		Color = if story
+			then ColorSequence.new(Color3.fromRGB(30, 42, 66), Color3.fromRGB(86, 58, 36))
+			else ColorSequence.new(Color3.fromRGB(16, 34, 44), Color3.fromRGB(24, 56, 42)),
+		Parent = art,
+	})
+	local moon = Create("Frame", {
+		Name = "Moon",
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -20, 0, 10),
+		Size = UDim2.fromOffset(22, 22),
+		BackgroundColor3 = Theme.GoldLight,
+		BackgroundTransparency = 0.1,
+		BorderSizePixel = 0,
+		Parent = art,
+	})
+	Components.corner(moon, Theme.CornerPill)
+	-- Horizonte: silhuetas escuras; as janelas da casa deixam o céu quente aparecer como luz acesa.
+	local big = math.max(36, math.floor((m.art - 16) / 12) * 12)
+	local small = math.max(24, big - 24)
+	local shapes: { { string | number } } = if story
+		then { { "Tree", small, 0.52 }, { "House", big, 0.66 }, { "Tree", small, 0.8 } }
+		else {
+			{ "Tree", small, 0.5 },
+			{ "Tree", big, 0.62 },
+			{ "Tree", small + 12, 0.75 },
+			{ "Tree", small, 0.86 },
+		}
+	for _, shape in shapes do
+		local size = shape[2] :: number
+		Components.icon(art, shape[1] :: string, size, Theme.Overlay, {
+			AnchorPoint = Vector2.new(0.5, 1),
+			Position = UDim2.new(shape[3] :: number, 0, 1, 2),
+		})
+	end
+	Create("Frame", {
+		Name = "Ground",
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.fromScale(0, 1),
+		Size = UDim2.new(1, 0, 0, 4),
+		BackgroundColor3 = Theme.Overlay,
+		BorderSizePixel = 0,
+		Parent = art,
+	})
+	return art
+end
+
+-- Trilha dos 8 capítulos: estado por ícone e texto, não só por cor.
+local function chapterTrack(parent: Instance, y: number, height: number)
+	local cleared, flawless = storyCleared()
+	local states = MenuLayout.chapters(cleared, flawless, #StoryRewards.Chapters)
+	local track = Create("Frame", {
+		Name = "Chapters",
+		Position = UDim2.fromOffset(0, y),
+		Size = UDim2.new(1, 0, 0, height),
+		BackgroundTransparency = 1,
+		Parent = parent,
+	}, {
+		Create("UIListLayout", {
+			FillDirection = Enum.FillDirection.Horizontal,
+			Padding = UDim.new(0, 4),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		}),
+	})
+	local count = #states
+	for chapter, state in states do
+		local won = state == "cleared" or state == "flawless"
+		local tile = Create("Frame", {
+			Name = `Chapter_{chapter}`,
+			LayoutOrder = chapter,
+			Size = UDim2.new(1 / count, -4 * (count - 1) / count, 1, 0),
+			BackgroundColor3 = if won then Theme.GoldDeep else Theme.BgSunken,
+			BorderSizePixel = 0,
+			Parent = track,
+		}) :: Frame
+		tile:SetAttribute("State", state)
+		Components.corner(tile, Theme.CornerSmall)
+		Components.stroke(
+			tile,
+			if state == "next" or won then Theme.Gold else Theme.Border,
+			if state == "next" then 2 else 1,
+			if state == "open" then 0.6 else 0.1
+		)
+		if won then
+			Components.icon(tile, if state == "flawless" then "Star" else "Check", 12, Theme.GoldLight, {
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.fromScale(0.5, 0.5),
+			})
+		else
+			label({
+				Size = UDim2.fromScale(1, 1),
+				Text = tostring(chapter),
+				TextSize = 15,
+				TextXAlignment = Enum.TextXAlignment.Center,
+				TextColor3 = if state == "next" then Theme.GoldLight else Theme.TextMuted,
+				Parent = tile,
+			})
+		end
+	end
+end
+
+local function modeCard(
+	parent: Instance,
+	index: number,
+	columns: number,
+	id: string,
+	eyebrow: string,
+	title: string,
+	description: string,
+	extra: (Frame, CardMetrics) -> ()
+)
+	local m = cardMetrics()
+	local card = Create("Frame", {
+		Name = `Mode_{id}`,
+		Position = if columns == 2
+			then UDim2.new((index - 1) * 0.5, if index == 1 then 0 else 6, 0, 0)
+			else UDim2.fromOffset(0, (index - 1) * (m.height + 12)),
+		Size = if columns == 2 then UDim2.new(0.5, -6, 1, 0) else UDim2.new(1, 0, 0, m.height),
+		BackgroundColor3 = Theme.BgPanel,
+		BackgroundTransparency = 0.04,
+		BorderSizePixel = 0,
+		Parent = parent,
+	}) :: Frame
+	Components.corner(card, Theme.CornerLarge)
+	local border = Components.stroke(card, Theme.Border, 1, 0.45)
+	local story = id == "Story"
+	local art = campaignArt(card, story, m)
+	Components.chip(eyebrow, if story then Theme.Gold else GREEN, {
+		Position = UDim2.fromOffset(m.pad, 10),
+		Parent = art,
+	})
+	local titleLabel = label({
+		Name = "Title",
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.new(0, m.pad, 1, -8),
+		Size = UDim2.new(0.62, 0, 0, m.title + 6),
+		Text = title,
+		TextSize = m.title,
+		TextWrapped = false,
+		TextScaled = false,
+		TextTruncate = Enum.TextTruncate.AtEnd,
+		Parent = art,
+	})
+	titleLabel.TextStrokeColor3 = Theme.Overlay
+	titleLabel.TextStrokeTransparency = 0.2
+	local inner = Create("Frame", {
+		Name = "Info",
+		Position = UDim2.fromOffset(m.pad, m.art + 10),
+		Size = UDim2.new(1, -2 * m.pad, 1, -(m.art + 10 + m.pad)),
+		BackgroundTransparency = 1,
+		Parent = card,
+	}) :: Frame
+	note({
+		Name = "Description",
+		Size = UDim2.new(1, 0, 0, if compactMenu then 32 else 36),
+		Text = description,
+		TextSize = m.desc,
+		Parent = inner,
+	})
+	extra(inner, m)
+	Components.icon(inner, "Friends", 24, Theme.TextSecondary, {
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.new(0, 0, 1, -(m.vote - 24) // 2),
+	})
+	local votes = label({
+		Name = "Votes",
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.new(0, 32, 1, 0),
+		Size = UDim2.new(0.45, -32, 0, m.vote),
+		Text = "0 VOTOS",
+		TextSize = 15,
+		TextColor3 = Theme.TextSecondary,
+		Parent = inner,
+	})
+	local vote = button({
+		Name = "Vote",
+		Variant = "primary",
+		AnchorPoint = Vector2.new(1, 1),
+		Position = UDim2.fromScale(1, 1),
+		Size = UDim2.new(0.55, 0, 0, m.vote),
+		Text = "VOTAR",
+		TextSize = if compactMenu then 20 else 22,
+	}, function()
+		local data, err = invoke("SelectGameMode", id)
+		if err then
+			say(err)
+		elseif type(data) == "table" and not data.accepted then
+			say("not_available")
+		end
+	end)
+	vote.Parent = inner
+	table.insert(live, function()
+		local state = campaign()
+		local count = tonumber(if state then state:GetAttribute(if story then "StoryVotes" else "StandardVotes") else 0)
+			or 0
+		votes.Text = px(if count == 1 then "1 VOTO" else `{count} VOTOS`)
+		local mine = player:GetAttribute("GameModeVote") == id
+		local wanted: Components.Variant = if mine then "success" else "primary"
+		if vote:GetAttribute("Variant") ~= wanted then
+			Components.setVariant(vote, wanted)
+		end
+		vote.Text = px(if mine then "SEU VOTO" else "VOTAR")
+		border.Color = if mine then Theme.Gold else Theme.Border
+		border.Transparency = if mine then 0 else 0.45
+		border.Thickness = if mine then 2 else 1
+	end)
+end
+
+-- Slots de informação dentro do cartão (A: trilha/linha 1, B: recompensa/linha 2, C: oferta/estado).
+local function slotY(m: CardMetrics, slot: string): (number, number)
+	local compact = m.art < 80
+	if slot == "A" then
+		return if compact then 36 else 40, if compact then 28 else 30
+	elseif slot == "B" then
+		return if compact then 68 else 76, if compact then 16 else 18
+	end
+	return if compact then 90 else 100, if compact then 32 else 36
+end
+
+local function teamPanel(parent: Instance, position: UDim2, size: UDim2)
+	local panel = Components.panel({ Name = "Team", Position = position, Size = size, Parent = parent })
+	Components.padding(panel, 12, 10)
+	Components.icon(panel, "Friends", 24, Theme.Gold)
+	local status = label({
+		Name = "Status",
+		Position = UDim2.fromOffset(32, 0),
+		Size = UDim2.new(1, -164, 0, 24),
+		Text = "",
+		TextSize = 15,
+		TextWrapped = false,
+		TextTruncate = Enum.TextTruncate.AtEnd,
+		TextColor3 = Theme.Gold,
+		Parent = panel,
+	})
+	button({
+		Name = "Invite",
+		Variant = "ghost",
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, 0, 0, -4),
+		Size = UDim2.fromOffset(124, if compactMenu then 40 else 32),
+		Text = "CONVIDAR",
+		TextSize = 14,
+	}, invite).Parent =
+		panel
+	local slots = Create("Frame", {
+		Name = "Slots",
+		Position = UDim2.fromOffset(0, 34),
+		Size = UDim2.new(1, 0, 1, -34),
+		BackgroundTransparency = 1,
+		Parent = panel,
+	})
+	local avatar = if compactMenu then 36 else 40
+	local slotFrames: { Frame } = {}
+	local max = Config.Campaign.maxPlayers
+	for i = 1, max do
+		local slot = Create("Frame", {
+			Name = `Slot_{i}`,
+			Position = UDim2.fromScale((i - 1) / max, 0),
+			Size = UDim2.fromScale(1 / max, 1),
+			BackgroundTransparency = 1,
+			Parent = slots,
+		}) :: Frame
+		local face = Create("ImageLabel", {
+			Name = "Face",
+			AnchorPoint = Vector2.new(0.5, 0),
+			Position = UDim2.fromScale(0.5, 0),
+			Size = UDim2.fromOffset(avatar, avatar),
+			BackgroundColor3 = Theme.BgSunken,
+			BorderSizePixel = 0,
+			Image = "",
+			Parent = slot,
+		}) :: ImageLabel
+		Components.corner(face, Theme.CornerPill)
+		Components.stroke(face, Theme.Border, 2, 0.5).Name = "Ring"
+		Components.icon(face, "Plus", 12, Theme.TextMuted, {
+			Name = "Empty",
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.5),
+		})
+		label({
+			Name = "Who",
+			Position = UDim2.fromOffset(0, avatar + 2),
+			Size = UDim2.new(1, 0, 0, 16),
+			Text = "",
+			TextSize = 12,
+			TextWrapped = false,
+			TextTruncate = Enum.TextTruncate.AtEnd,
+			TextXAlignment = Enum.TextXAlignment.Center,
+			Parent = slot,
+		})
+		table.insert(slotFrames, slot)
+	end
+	table.insert(live, function()
+		local state = campaign()
+		local list = Players:GetPlayers()
+		local count = #list
+		local remaining = if state
+			then math.ceil((tonumber(state:GetAttribute("NextStageAt")) or 0) - workspace:GetServerTimeNow())
+			else 0
+		status.Text = px(
+			if remaining > 0
+				then `TIME REUNIDO · COMEÇANDO EM {remaining}s`
+				elseif
+					count < Config.Campaign.minPlayers
+				then `TIME {count}/{max} · FALTAM {Config.Campaign.minPlayers - count} PARA COMEÇAR`
+				else `TIME {count}/{max} · ESPERANDO OS VOTOS`
+		)
+		for i, slot in slotFrames do
+			local other = list[i]
+			local face = slot:FindFirstChild("Face") :: ImageLabel
+			local who = slot:FindFirstChild("Who") :: TextLabel
+			local ring = face:FindFirstChild("Ring") :: UIStroke
+			local empty = face:FindFirstChild("Empty") :: Frame
+			if other then
+				face.Image = `rbxthumb://type=AvatarHeadShot&id={other.UserId}&w=48&h=48`
+				empty.Visible = false
+				who.Text = px(other.DisplayName)
+				local vote = other:GetAttribute("GameModeVote")
+				ring.Color = if vote == "Story" then Theme.Gold elseif vote == "Standard" then GREEN else Theme.Border
+				ring.Transparency = if vote == "Story" or vote == "Standard" then 0 else 0.5
+			else
+				face.Image = ""
+				empty.Visible = true
+				who.Text = ""
+				ring.Color, ring.Transparency = Theme.Border, 0.7
+			end
+		end
+	end)
+end
+
+-- Mochila da partida: consumíveis reais (estoque/kit publicados pelo StoreService).
+local function kitPanel(parent: Instance, position: UDim2, size: UDim2)
+	local panel = Components.panel({ Name = "Kit", Position = position, Size = size, Parent = parent })
+	Components.padding(panel, 12, 10)
+	Components.icon(panel, "Backpack", 24, Theme.Gold)
+	label({
+		Position = UDim2.fromOffset(32, 0),
+		Size = UDim2.new(1, -32, 0, 24),
+		Text = "MOCHILA DA PARTIDA",
+		TextSize = 15,
+		TextColor3 = Theme.Gold,
+		Parent = panel,
+	})
+	local stock = json("Consumables", {})
+	local loadout: { [string]: boolean } = {}
+	for _, id in json("Loadout", {}) do
+		loadout[tostring(id)] = true
+	end
+	local holder = Create("Frame", {
+		Name = "Slots",
+		Position = UDim2.fromOffset(0, 32),
+		Size = UDim2.new(1, 0, 1, -32),
+		BackgroundTransparency = 1,
+		Parent = panel,
+	}, {
+		Create("UIListLayout", {
+			FillDirection = Enum.FillDirection.Horizontal,
+			Padding = UDim.new(0, 6),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		}),
+	})
+	local total = #Perks.Consumables
+	for i, def in Perks.Consumables do
+		local count = tonumber(stock[def.id]) or 0
+		local on = loadout[def.id] == true
+		local active = def.loadout and on and count > 0
+		local stateText = if count <= 0
+			then "SEM ESTOQUE"
+			elseif not def.loadout then "USO NA DERROTA"
+			elseif on then "NA MOCHILA"
+			else "FORA DA MOCHILA"
+		local tile = Components.button(if active then "success" else "secondary", {
+			Name = `Kit_{def.id}`,
+			LayoutOrder = i,
+			Size = UDim2.new(1 / total, -6 * (total - 1) / total, 1, 0),
+			Text = "",
+		}, function()
+			click()
+			if count <= 0 then
+				currentTab = "perks"
+				dirty = true
+			elseif def.loadout then
+				store(if on then "loadout_off" else "loadout_on", def.id)
+			else
+				say("Use no botão CONTINUAR depois de uma derrota.")
+			end
+		end)
+		tile.Parent = holder
+		label({
+			Name = "ItemName",
+			Position = UDim2.fromOffset(8, 4),
+			Size = UDim2.new(1, -16, 0.5, -2),
+			Text = `{def.name} x{count}`,
+			TextSize = 13,
+			TextXAlignment = Enum.TextXAlignment.Center,
+			TextTruncate = Enum.TextTruncate.AtEnd,
+			Parent = tile,
+		})
+		label({
+			Name = "ItemState",
+			Position = UDim2.new(0, 8, 0.5, 0),
+			Size = UDim2.new(1, -16, 0.5, -4),
+			Text = stateText,
+			TextSize = 11,
+			TextXAlignment = Enum.TextXAlignment.Center,
+			TextColor3 = if active then GREEN elseif count <= 0 then Theme.TextMuted else Theme.TextSecondary,
+			Parent = tile,
+		})
+	end
+end
+
+-- Vitrine: o próprio Tung Tung do jogo, animado, com a "fala" dele.
+local function showcase(parent: Instance, order: number)
+	local portraitWidth = if singleColumn then 110 else 200
+	local textX = portraitWidth + 10
+	local box = Components.panel({
+		Name = "Showcase",
+		ClipsDescendants = true,
+		Size = UDim2.new(1, 0, 0, if compactMenu then 132 else 150),
+		LayoutOrder = order,
+		Parent = parent,
+	})
+	Create("UIGradient", {
+		Color = ColorSequence.new(Theme.BgElevated, Theme.Bg),
+		Rotation = 0,
+		Parent = box,
+	})
+	local viewport = Create("ViewportFrame", {
+		Name = "TungTung",
+		Size = UDim2.new(0, portraitWidth, 1, 0),
+		BackgroundTransparency = 1,
+		Ambient = Color3.fromRGB(150, 140, 170),
+		LightColor = Color3.fromRGB(255, 226, 180),
+		LightDirection = Vector3.new(-0.6, -1, 0.4),
+		Parent = box,
+	}) :: ViewportFrame
+	Components.icon(box, "Drum", 24, Theme.Gold, { Position = UDim2.fromOffset(textX, 12) })
+	label({
+		Position = UDim2.fromOffset(textX + 32, 8),
+		Size = UDim2.new(1, -textX - 44, 0, 32),
+		Text = "TUNG TUNG SAHUR",
+		TextSize = if singleColumn then 20 else 26,
+		TextColor3 = Theme.GoldLight,
+		Parent = box,
+	})
+	note({
+		Position = UDim2.fromOffset(textX, 46),
+		Size = UDim2.new(1, -textX - 12, 0, 24),
+		Text = "“TUM... TUM... TUM... SAHUR!”",
+		TextSize = 15,
+		TextColor3 = Theme.TextPrimary,
+		Parent = box,
+	})
+	note({
+		Position = UDim2.fromOffset(textX, 74),
+		Size = UDim2.new(1, -textX - 12, 0, 56),
+		Text = "Ele anda pela casa com o bastão. Apague a lanterna, se esconda nos armários e salve seus amigos!",
+		TextSize = 14,
+		Parent = box,
+	})
+	local world = Instance.new("WorldModel")
+	world.Parent = viewport
+	local rig = TungTungRig.build(world)
+	if rig then
+		local camera = Instance.new("Camera")
+		camera.FieldOfView = 30
+		camera.CFrame = CFrame.lookAt(Vector3.new(0, 4.6, -13.5), Vector3.new(0, 3.9, 0))
+		camera.Parent = viewport
+		viewport.CurrentCamera = camera
+		local clips: { TungTungRig.ClipName } = { "idle", "slash", "strafe", "walk", "sheath" }
+		local index, showClock, sway = 1, 0, 0
+		local connection: RBXScriptConnection? = nil
+		connection = RunService.RenderStepped:Connect(function(dt)
+			if not viewport.Parent then
+				if connection then
+					connection:Disconnect()
+				end
+				return
+			end
+			local screen = gui
+			if not screen or not screen.Enabled then
+				return
+			end
+			showClock += dt
+			sway += dt
+			if showClock > 3 then
+				showClock = 0
+				index = index % #clips + 1
+				TungTungRig.play(rig, clips[index], 0.3)
+			end
+			TungTungRig.place(rig, CFrame.Angles(0, math.sin(sway * 0.6) * 0.5, 0))
+			TungTungRig.step(rig, dt)
+		end)
+	end
+end
+
+local function buildPlay(parent: Frame)
+	local width = parent.AbsoluteSize.X
+	if width <= 0 then
+		width = if compactMenu then 600 else 900
+	end
+	local columns = MenuLayout.columns(width)
+	columnsShown = columns
+	singleColumn = columns == 1
+	local m = cardMetrics()
+	-- Conteúdo maior que o painel rola numa única lista vertical.
+	local scroll = Create("ScrollingFrame", {
+		Name = "PlayScroll",
+		Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ScrollBarThickness = 6,
+		ScrollBarImageColor3 = Theme.Gold,
+		ScrollingDirection = Enum.ScrollingDirection.Y,
+		CanvasSize = UDim2.new(),
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		ClipsDescendants = true,
+		Parent = parent,
+	}, {
+		Create("UIListLayout", { Padding = UDim.new(0, 12), SortOrder = Enum.SortOrder.LayoutOrder }),
+		Create("UIPadding", { PaddingRight = UDim.new(0, 10), PaddingBottom = UDim.new(0, 6) }),
+	})
+	local modes = frame({
+		Name = "Modes",
+		Size = UDim2.new(1, 0, 0, if columns == 2 then m.height else m.height * 2 + 12),
+		BackgroundTransparency = 1,
+		LayoutOrder = 1,
+		Parent = scroll,
+	})
+	modeCard(
+		modes,
+		1,
+		columns,
+		"Story",
+		"MODO HISTÓRIA",
+		"THE CURSED HOUSE",
+		"Casa + floresta: 8 capítulos, perseguição e resgate. Solo ou equipe de até 6.",
+		function(inner, cm)
+			local ay, ah = slotY(cm, "A")
+			chapterTrack(inner, ay, ah)
+			local by, bh = slotY(cm, "B")
+			local chapter, reward = storyPreview()
+			label({
+				Name = "NextReward",
+				Position = UDim2.fromOffset(0, by),
+				Size = UDim2.new(1, 0, 0, bh),
+				Text = `PRÓXIMO: CAP. {chapter} · {reward}`,
+				TextSize = 13,
+				TextWrapped = false,
+				TextTruncate = Enum.TextTruncate.AtEnd,
+				TextColor3 = GREEN,
+				Parent = inner,
+			})
+			local cy, ch = slotY(cm, "C")
+			if player:GetAttribute("StoryPass") == true then
+				Components.chip("PASSE DA HISTÓRIA ATIVO · RECOMPENSAS x2", Theme.Gold, {
+					Position = UDim2.fromOffset(0, cy + (ch - 24) // 2),
+					Parent = inner,
+				})
+			else
+				-- Produto sem ID publicado não vira botão morto (ver docs/ui-remaster/AUDITORIA.md).
+				local pass = StoreCatalog.ProductByKey[StoreCatalog.StoryPassKey]
+				if pass and pass.id > 0 then
+					button({
+						Name = "StoryPass",
+						Position = UDim2.fromOffset(0, cy),
+						Size = UDim2.new(1, 0, 0, ch),
+						Text = `PASSE DA HISTÓRIA · RECOMPENSAS x2 · R$ {pass.robux}`,
+						TextSize = 13,
+					}, function()
+						buyProduct(StoreCatalog.StoryPassKey)
+					end).Parent =
+						inner
+				end
+			end
+		end
+	)
+	modeCard(
+		modes,
+		2,
+		columns,
+		"Standard",
+		"MODO DESAFIO",
+		"MAIS UMA NOITE",
+		"Casa, jardins e floresta: 8 capítulos com itens e passagens sorteados. 1–6 jogadores.",
+		function(inner, cm)
+			local ay, ah = slotY(cm, "A")
+			Components.icon(inner, "Coin", 24, Theme.Coin, {
+				Position = UDim2.fromOffset(0, ay + (ah - 24) // 2),
+			})
+			label({
+				Position = UDim2.fromOffset(32, ay),
+				Size = UDim2.new(1, -32, 0, ah),
+				Text = "FICHAS E XP POR CAPÍTULO, FUGA E AJUDA AO TIME",
+				TextSize = 13,
+				TextColor3 = GREEN,
+				Parent = inner,
+			})
+			local by, bh = slotY(cm, "B")
+			label({
+				Position = UDim2.fromOffset(32, by),
+				Size = UDim2.new(1, -32, 0, bh),
+				Text = "MOEDAS E FITAS VHS ESPALHADAS PELA CASA",
+				TextSize = 12,
+				TextWrapped = false,
+				TextTruncate = Enum.TextTruncate.AtEnd,
+				TextColor3 = Theme.TextSecondary,
+				Parent = inner,
+			})
+			local cy, ch = slotY(cm, "C")
+			local product = StoreCatalog.ProductByKey.bonus_duplo_3h
+			local sellable = product ~= nil and product.id > 0
+			local boost = label({
+				Name = "Boost",
+				Position = UDim2.fromOffset(0, cy),
+				Size = UDim2.new(if sellable then 0.5 else 1, -4, 0, ch),
+				Text = "",
+				TextSize = 12,
+				TextColor3 = Theme.Gold,
+				Parent = inner,
+			})
+			table.insert(live, function()
+				local now = workspace:GetServerTimeNow()
+				local fichas = (tonumber(player:GetAttribute("BoostFichasUntil")) or 0) - now
+				local xp = (tonumber(player:GetAttribute("BoostXpUntil")) or 0) - now
+				local parts = {}
+				if fichas > 0 then
+					table.insert(parts, `FICHAS x2 · {clock(fichas)}`)
+				end
+				if xp > 0 then
+					table.insert(parts, `XP x2 · {clock(xp)}`)
+				end
+				if player:GetAttribute("Vip") == true then
+					table.insert(parts, "VIP x1,5")
+				end
+				boost.Text = px(if #parts > 0 then "ATIVO: " .. table.concat(parts, " · ") else "")
+			end)
+			if sellable then
+				button({
+					Name = "Boost",
+					AnchorPoint = Vector2.new(1, 0),
+					Position = UDim2.new(1, 0, 0, cy),
+					Size = UDim2.new(0.5, -4, 0, ch),
+					Text = `FICHAS E XP x2 · 3H · R$ {product.robux}`,
+					TextSize = 12,
+				}, function()
+					buyProduct("bonus_duplo_3h")
+				end).Parent =
+					inner
+			end
+		end
+	)
+	local rowHeight = if compactMenu then 116 else 124
+	local party = frame({
+		Name = "Party",
+		Size = UDim2.new(1, 0, 0, if columns == 2 then rowHeight else rowHeight * 2 + 12),
+		BackgroundTransparency = 1,
+		LayoutOrder = 2,
+		Parent = scroll,
+	})
+	if columns == 2 then
+		teamPanel(party, UDim2.new(), UDim2.new(0.56, -6, 1, 0))
+		kitPanel(party, UDim2.new(0.56, 6, 0, 0), UDim2.new(0.44, -6, 1, 0))
+	else
+		teamPanel(party, UDim2.new(), UDim2.new(1, 0, 0, rowHeight))
+		kitPanel(party, UDim2.fromOffset(0, rowHeight + 12), UDim2.new(1, 0, 0, rowHeight))
+	end
+	showcase(scroll, 3)
+end
+
 local TITLES: { [string]: { string } } = {
 	play = {
 		"ESCOLHA A CAMPANHA",
@@ -1343,8 +1575,10 @@ local function renderTab()
 	end
 	for id, nav in navButtons do
 		local selected = id == currentTab
-		nav.BackgroundTransparency = if selected then 0.55 else 1
-		nav.TextColor3 = if selected then Theme.Hazard else Theme.Text
+		-- No PC o JOGAR é sempre a ação principal; os demais destinos marcam a aba aberta.
+		if id ~= "play" or compactMenu then
+			Components.setVariant(nav, if selected then "secondary" elseif id == "play" then "primary" else "ghost")
+		end
 		local bar = nav:FindFirstChild("Bar")
 		if bar and bar:IsA("Frame") then
 			bar.Visible = selected
@@ -1359,8 +1593,8 @@ local function renderTab()
 	else
 		buildPlay(b)
 	end
-	-- Entrada da aba: desliza 12 px (só com efeitos de movimento ligados).
-	local top = if shortMenu then 34 else 74
+	-- Entrada da aba: desliza 12 px.
+	local top = bodyTop
 	b.Position = UDim2.fromOffset(0, top + 12)
 	TweenService:Create(b, TweenInfo.new(0.16, Enum.EasingStyle.Quad), { Position = UDim2.fromOffset(0, top) }):Play()
 end
@@ -1379,7 +1613,400 @@ local function selectTab(id: TabId)
 	dirty = true
 end
 
-local function build(): ScreenGui
+-- Selo de notificação: só quando há prêmio diário ou giro disponível de verdade.
+local function dailyReady(): boolean
+	return player:GetAttribute("DailyClaimable") == true or (tonumber(player:GetAttribute("SpinsLeft")) or 0) > 0
+end
+
+local function notifyDot(parent: Instance, position: UDim2): Frame
+	local dot = Create("Frame", {
+		Name = "Badge",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = position,
+		Size = UDim2.fromOffset(10, 10),
+		BackgroundColor3 = Theme.Gold,
+		BorderSizePixel = 0,
+		Visible = false,
+		ZIndex = 3,
+		Parent = parent,
+	}) :: Frame
+	Components.corner(dot, Theme.CornerPill)
+	Components.stroke(dot, Theme.Overlay, 2, 0)
+	table.insert(frameUpdates, function()
+		dot.Visible = dailyReady()
+	end)
+	return dot
+end
+
+-- Barra superior: marca à esquerda; moedas, + Créditos e perfil (nível/XP) à direita.
+local function topBar(root: Frame, mode: MenuLayout.Mode): number
+	local compact = mode.compact
+	local height = if mode.short then 46 elseif compact then 52 else 60
+	local margin = if compact then 8 else 28
+	local y = if compact then 6 else 20
+	local bar = Create("Frame", {
+		Name = "TopBar",
+		Position = UDim2.fromOffset(margin, y),
+		Size = UDim2.new(1, -2 * margin, 0, height),
+		BackgroundTransparency = 1,
+		Parent = root,
+	})
+	local brandY = if compact then 0 else -9
+	local rec = Create("Frame", {
+		Name = "Rec",
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, 0, 0.5, brandY),
+		Size = UDim2.fromOffset(10, 10),
+		BackgroundColor3 = Theme.Accent,
+		BorderSizePixel = 0,
+		Parent = bar,
+	}) :: Frame
+	Components.corner(rec, Theme.CornerPill)
+	local logo = Components.title({
+		Name = "Logo",
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, 18, 0.5, brandY),
+		Size = UDim2.fromOffset(if compact then 210 else 440, 38),
+		Text = "TUNG TUNG SAHUR",
+		TextSize = if compact then 21 else 34,
+		TextColor3 = Theme.GoldLight,
+		TextTruncate = Enum.TextTruncate.AtEnd,
+		Parent = bar,
+	})
+	logo.TextStrokeColor3 = Theme.Overlay
+	logo.TextStrokeTransparency = 0.1
+	if not compact then
+		Components.text({
+			Name = "Subtitle",
+			Position = UDim2.new(0, 18, 0.5, 11),
+			Size = UDim2.fromOffset(440, 18),
+			Text = "THE CURSED HOUSE · EXPLORE, PEGUE MOEDAS E FUJA DO TUM TUM TUM",
+			FontFace = Theme.Font,
+			TextSize = 13,
+			TextColor3 = Theme.TextSecondary,
+			TextWrapped = false,
+			Parent = bar,
+		})
+	end
+	table.insert(frameUpdates, function()
+		rec.Visible = (os.clock() * 1.4) % 1 < 0.6
+	end)
+
+	local status = Create("Frame", {
+		Name = "Status",
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.fromScale(1, 0.5),
+		Size = UDim2.new(1, -240, 1, 0),
+		BackgroundTransparency = 1,
+		Parent = bar,
+	}, {
+		Create("UIListLayout", {
+			FillDirection = Enum.FillDirection.Horizontal,
+			HorizontalAlignment = Enum.HorizontalAlignment.Right,
+			VerticalAlignment = Enum.VerticalAlignment.Center,
+			Padding = UDim.new(0, 8),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		}),
+	})
+	local badgeHeight = if compact then 38 else 40
+	local badgeWidth = if compact then 100 else 140
+	local _, setFichas = Components.currency("fichas", {
+		Size = UDim2.fromOffset(badgeWidth, badgeHeight),
+		LayoutOrder = 1,
+		Parent = status,
+	})
+	local _, setCreditos = Components.currency("creditos", {
+		Size = UDim2.fromOffset(badgeWidth, badgeHeight),
+		LayoutOrder = 2,
+		Parent = status,
+	})
+	Components.iconButton("success", "Plus", nil, {
+		Name = "AddCredits",
+		Size = UDim2.fromOffset(badgeHeight, badgeHeight),
+		LayoutOrder = 3,
+		Parent = status,
+	}, function()
+		click()
+		Store.openTab("robux")
+	end)
+
+	local profileHeight = if compact then 40 else 48
+	local avatar = profileHeight - 8
+	local profile = Create("Frame", {
+		Name = "Profile",
+		Size = UDim2.fromOffset(if compact then 118 else 240, profileHeight),
+		BackgroundColor3 = Theme.BgSunken,
+		BackgroundTransparency = 0.15,
+		BorderSizePixel = 0,
+		LayoutOrder = 4,
+		Parent = status,
+	})
+	Components.corner(profile, Theme.CornerLarge)
+	Components.stroke(profile, Theme.Gold, 1, 0.55)
+	local face = Create("ImageLabel", {
+		Name = "Avatar",
+		Position = UDim2.fromOffset(4, 4),
+		Size = UDim2.fromOffset(avatar, avatar),
+		BackgroundColor3 = Theme.BgElevated,
+		BorderSizePixel = 0,
+		Image = `rbxthumb://type=AvatarHeadShot&id={player.UserId}&w=150&h=150`,
+		Parent = profile,
+	})
+	Components.corner(face, Theme.CornerPill)
+	local textX = avatar + 12
+	local nameLabel: TextLabel? = nil
+	if not compact then
+		nameLabel = Components.text({
+			Name = "PlayerName",
+			Position = UDim2.fromOffset(textX, 4),
+			Size = UDim2.new(1, -(textX + 8), 0, 18),
+			FontFace = Theme.Font,
+			TextSize = 15,
+			TextWrapped = false,
+			TextTruncate = Enum.TextTruncate.AtEnd,
+			Text = player.DisplayName,
+			Parent = profile,
+		})
+	end
+	local levelLabel = Components.text({
+		Name = "Level",
+		Position = UDim2.fromOffset(textX, if compact then 3 else 22),
+		Size = UDim2.new(1, -(textX + 8), 0, 16),
+		FontFace = Theme.Font,
+		TextSize = 13,
+		TextColor3 = Theme.Gold,
+		TextWrapped = false,
+		TextTruncate = Enum.TextTruncate.AtEnd,
+		Text = "",
+		Parent = profile,
+	})
+	local xpTrack, setXp = Components.progress({
+		Name = "Xp",
+		Position = UDim2.new(0, textX, 1, -12),
+		Size = UDim2.new(1, -(textX + 10), 0, 6),
+	}, GREEN)
+	xpTrack.Parent = profile
+	table.insert(frameUpdates, function()
+		setFichas(tonumber(player:GetAttribute("Fichas")) or 0)
+		setCreditos(tonumber(player:GetAttribute("Creditos")) or 0)
+		local xp = tonumber(player:GetAttribute("Xp")) or 0
+		local level, into, needed = Economy.levelInfo(xp)
+		levelLabel.Text =
+			px(if compact then `NÍVEL {level}` else `NÍVEL {level} · {number(into)}/{number(needed)} XP`)
+		setXp(into / math.max(needed, 1))
+		local nameText = nameLabel
+		if nameText then
+			local titleId = player:GetAttribute("Title")
+			local titleItem = if type(titleId) == "string" then StoreCatalog.ItemById[titleId] else nil
+			local suffix = (if titleItem then ` · {titleItem.name}` else "")
+				.. (if player:GetAttribute("Vip") == true then " · VIP" else "")
+			nameText.Text = player.DisplayName .. suffix
+		end
+	end)
+	return y + height
+end
+
+-- Trilho do PC: JOGAR em destaque e os demais destinos com ícone e rótulo.
+local function desktopRail(root: Frame, top: number): number
+	local width = 248
+	local rail = Create("Frame", {
+		Name = "Rail",
+		Position = UDim2.fromOffset(28, top),
+		Size = UDim2.new(0, width, 1, -(top + 28)),
+		BackgroundTransparency = 1,
+		Parent = root,
+	}, {
+		Create("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }),
+	})
+	for i, item in NAV do
+		local isPlay = item.id == "play"
+		local nav = Components.iconButton(if isPlay then "primary" else "ghost", item.icon, item.label, {
+			Name = `Nav_{item.id}`,
+			LayoutOrder = i * 10,
+			Size = UDim2.new(1, 0, 0, if isPlay then 60 else 46),
+			TextSize = if isPlay then 26 else 18,
+			Parent = rail,
+		}, function()
+			click()
+			selectTab(item.id)
+		end)
+		if not isPlay then
+			Create("Frame", {
+				Name = "Bar",
+				AnchorPoint = Vector2.new(0, 0.5),
+				Position = UDim2.fromScale(0, 0.5),
+				Size = UDim2.new(0, 4, 0.6, 0),
+				BackgroundColor3 = Theme.Gold,
+				BorderSizePixel = 0,
+				Visible = false,
+				Parent = nav,
+			})
+		end
+		if STORE_TABS[item.id] or item.id == "settings" then
+			-- Abre outra janela (loja/ajustes): seta discreta deixa isso claro antes do clique.
+			Components.text({
+				Name = "Opens",
+				AnchorPoint = Vector2.new(1, 0.5),
+				Position = UDim2.new(1, -12, 0.5, 0),
+				Size = UDim2.fromOffset(16, 20),
+				Text = "›",
+				TextSize = 22,
+				TextColor3 = Theme.TextMuted,
+				TextXAlignment = Enum.TextXAlignment.Right,
+				Parent = nav,
+			})
+		end
+		if item.id == "daily" then
+			notifyDot(nav, UDim2.new(1, -38, 0.5, 0))
+		end
+		if isPlay then
+			Create("Frame", {
+				Name = "Spacer",
+				Size = UDim2.new(1, 0, 0, 6),
+				BackgroundTransparency = 1,
+				LayoutOrder = 15,
+				Parent = rail,
+			})
+		end
+		navButtons[item.id] = nav
+	end
+	return 28 + width + 20
+end
+
+-- Peça do trilho compacto: ícone em cima, rótulo curto embaixo (alvo de toque >= 52 px).
+local function railTile(
+	parent: Instance,
+	id: string,
+	text: string,
+	icon: string,
+	order: number,
+	height: number,
+	onClick: () -> ()
+): TextButton
+	local tile = Components.button(if id == "play" then "primary" else "ghost", {
+		Name = `Nav_{id}`,
+		Text = "",
+		LayoutOrder = order,
+		Size = UDim2.new(1, 0, 0, height),
+		Parent = parent,
+	}, function()
+		click()
+		onClick()
+	end)
+	Components.icon(tile, icon, 24, tile.TextColor3, {
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, if height < 56 then 6 else 8),
+	})
+	local caption = Components.text({
+		Name = "Label",
+		Position = UDim2.new(0, 2, 1, -20),
+		Size = UDim2.new(1, -4, 0, 16),
+		Text = text,
+		FontFace = Theme.Font,
+		TextSize = 11,
+		TextColor3 = tile.TextColor3,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextWrapped = false,
+		TextTruncate = Enum.TextTruncate.AtEnd,
+		Parent = tile,
+	})
+	tile:GetPropertyChangedSignal("TextColor3"):Connect(function()
+		caption.TextColor3 = tile.TextColor3
+	end)
+	return tile
+end
+
+-- Trilho do celular: 4 destinos + MAIS (prêmio diário, servidores, amigos, ajustes num menu curto).
+local function compactRail(root: Frame, top: number, mode: MenuLayout.Mode): number
+	local width = 76
+	local rail = Create("ScrollingFrame", {
+		Name = "Rail",
+		Position = UDim2.fromOffset(8, top),
+		Size = UDim2.new(0, width, 1, -(top + 8)),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ScrollBarThickness = 0,
+		ScrollingDirection = Enum.ScrollingDirection.Y,
+		CanvasSize = UDim2.new(),
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		Parent = root,
+	}, {
+		Create("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }),
+	})
+	local height = if mode.short then 52 else 58
+	local visible, overflow = MenuLayout.split(NAV, true)
+	for i, item in visible do
+		navButtons[item.id] = railTile(rail, item.id, item.short, item.icon, i, height, function()
+			selectTab(item.id)
+		end)
+	end
+	-- Fundo que fecha o MAIS ao tocar fora; o menu fica ao lado do trilho, acima do painel.
+	local catcher = Create("TextButton", {
+		Name = "MoreCatcher",
+		Size = UDim2.fromScale(1, 1),
+		BackgroundColor3 = Theme.Overlay,
+		BackgroundTransparency = 0.6,
+		Text = "",
+		AutoButtonColor = false,
+		Visible = false,
+		ZIndex = 20,
+		Parent = root,
+	}) :: TextButton
+	local itemHeight = Theme.TouchMin
+	local popover = Components.panel({
+		Name = "More",
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.new(0, 8 + width + 8, 1, -8),
+		Size = UDim2.fromOffset(240, #overflow * (itemHeight + 6) + 18),
+		BackgroundColor3 = Theme.BgPanel,
+		BackgroundTransparency = 0,
+		Visible = false,
+		ZIndex = 21,
+		Parent = root,
+	}, {
+		Create("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }),
+	})
+	Components.padding(popover, 9)
+	local function setMore(open: boolean)
+		popover.Visible = open
+		catcher.Visible = open
+	end
+	catcher.Activated:Connect(function()
+		setMore(false)
+	end)
+	for i, item in overflow do
+		local entry = Components.iconButton("ghost", item.icon, item.label, {
+			Name = `More_{item.id}`,
+			LayoutOrder = i,
+			Size = UDim2.new(1, 0, 0, itemHeight),
+			TextSize = 16,
+			ZIndex = 22,
+			Parent = popover,
+		}, function()
+			click()
+			setMore(false)
+			selectTab(item.id)
+		end)
+		for _, child in entry:GetDescendants() do
+			if child:IsA("GuiObject") then
+				child.ZIndex = 22
+			end
+		end
+		if item.id == "daily" then
+			notifyDot(entry, UDim2.new(1, -16, 0.5, 0)).ZIndex = 23
+		end
+	end
+	local more = railTile(rail, "more", "MAIS", "More", #visible + 1, height, function()
+		setMore(not popover.Visible)
+	end)
+	notifyDot(more, UDim2.new(1, -12, 0, 12))
+	return 8 + width + 8
+end
+
+local function build(mode: MenuLayout.Mode): ScreenGui
+	frameUpdates = {}
+	navButtons = {}
+	compactMenu = mode.compact
 	local screen = Create("ScreenGui", {
 		Name = "MainMenu",
 		ResetOnSpawn = false,
@@ -1388,363 +2015,128 @@ local function build(): ScreenGui
 		Enabled = false,
 		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 	}) :: ScreenGui
+	screen:SetAttribute("Layout", mode.key)
 	local safe = frame({ Name = "SafeArea", Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Parent = screen })
-	local root = frame({ Name = "Root", Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Parent = safe })
-	local scale = Create("UIScale", { Parent = root }) :: UIScale
-	-- Véu: escuro à esquerda (leitura), aberto à direita (as câmeras aparecem).
-	frame({
+	local root = frame({
+		Name = "Root",
+		Size = UDim2.fromScale(1 / mode.scale, 1 / mode.scale),
+		BackgroundTransparency = 1,
+		Parent = safe,
+	})
+	rootFrame = root
+	rootScale = Create("UIScale", { Scale = mode.scale, Parent = root }) :: UIScale
+	-- Véu: escuro à esquerda (leitura), aberto à direita (as câmeras da casa aparecem atrás).
+	Create("Frame", {
 		Name = "Veil",
 		Size = UDim2.fromScale(1, 1),
 		BackgroundColor3 = VEIL,
+		BorderSizePixel = 0,
 		Parent = root,
 	}, {
 		Create("UIGradient", {
 			Transparency = NumberSequence.new({
-				NumberSequenceKeypoint.new(0, 0.04),
-				NumberSequenceKeypoint.new(0.38, 0.22),
-				NumberSequenceKeypoint.new(1, 0.55),
+				NumberSequenceKeypoint.new(0, 0.05),
+				NumberSequenceKeypoint.new(0.35, 0.25),
+				NumberSequenceKeypoint.new(1, 0.5),
 			}),
 		}),
 	})
 
-	-- Coluna esquerda: logo, navegação, cartão do jogador.
-	local left = frame({
-		Name = "Left",
-		Position = UDim2.fromOffset(44, 34),
-		Size = UDim2.new(0, 380, 1, -68),
-		BackgroundTransparency = 1,
-		Parent = root,
-	})
-	local rec = frame({
-		Size = UDim2.fromOffset(12, 12),
-		Position = UDim2.fromOffset(0, 4),
-		BackgroundColor3 = Theme.Accent,
-		Parent = left,
-	}, {
-		Create("UICorner", { CornerRadius = UDim.new(1, 0) }),
-	})
-	local eyebrow = label({
-		Position = UDim2.fromOffset(20, 0),
-		Size = UDim2.new(1, -20, 0, 20),
-		Text = "🌙 UMA NOITE NA CASA DO TUNG TUNG",
-		TextSize = Theme.SizeSmall,
-		TextColor3 = Theme.Accent,
-		Parent = left,
-	})
-	local logo = label({
-		Position = UDim2.fromOffset(0, 26),
-		Size = UDim2.new(1, 0, 0, 58),
-		Text = "TUNG TUNG SAHUR",
-		TextSize = 38,
-		Parent = left,
-	})
-	local tagline = label({
-		Position = UDim2.fromOffset(0, 86),
-		Size = UDim2.new(1, 0, 0, 18),
-		Text = "EXPLORE · PEGUE MOEDAS · FUJA DO TUM TUM TUM!",
-		TextSize = Theme.SizeSmall,
-		TextColor3 = Theme.Hazard,
-		Parent = left,
-	})
-	local nav = Create("ScrollingFrame", {
-		Name = "Nav",
-		Position = UDim2.fromOffset(0, 128),
-		Size = UDim2.new(1, 0, 0, #NAV * 44),
-		BackgroundTransparency = 1,
-		BorderSizePixel = 0,
-		ScrollBarThickness = 3,
-		ScrollBarImageColor3 = Theme.Hazard,
-		CanvasSize = UDim2.new(),
-		Parent = left,
-	}, {
-		Create("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder }),
-	}) :: ScrollingFrame
-	for i, item in NAV do
-		local navButton = Create("TextButton", {
-			Name = `Nav_{item.id}`,
-			Size = UDim2.new(1, 0, 0, 40),
-			AutoButtonColor = false,
-			BackgroundColor3 = Color3.fromRGB(46, 38, 16),
-			BackgroundTransparency = 1,
-			BorderSizePixel = 0,
-			FontFace = Theme.Font,
-			Text = `   {item.icon}  {item.label}`,
-			TextColor3 = Theme.Text,
-			TextSize = Theme.SizeLarge,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			LayoutOrder = i,
-			Parent = nav,
-		}) :: TextButton
-		frame({
-			Name = "Bar",
-			Size = UDim2.new(0, 4, 1, 0),
-			BackgroundColor3 = Theme.Hazard,
-			Visible = false,
-			Parent = navButton,
-		})
-		if STORE_TABS[item.id] then
-			label({
-				Name = "Arrow",
-				AnchorPoint = Vector2.new(1, 0.5),
-				Position = UDim2.new(1, -10, 0.5, 0),
-				Size = UDim2.fromOffset(30, 20),
-				Text = ">",
-				TextColor3 = Theme.TextDim,
-				TextXAlignment = Enum.TextXAlignment.Right,
-				Parent = navButton,
-			})
-		end
-		if item.id == "daily" then
-			frame({
-				Name = "Badge",
-				AnchorPoint = Vector2.new(1, 0.5),
-				Position = UDim2.new(1, -46, 0.5, 0),
-				Size = UDim2.fromOffset(10, 10),
-				BackgroundColor3 = Theme.Accent,
-				Visible = false,
-				Parent = navButton,
-			}, { Create("UICorner", { CornerRadius = UDim.new(1, 0) }) })
-		end
-		navButton.MouseEnter:Connect(function()
-			if item.id ~= currentTab then
-				navButton.BackgroundTransparency = 0.8
-			end
-		end)
-		navButton.MouseLeave:Connect(function()
-			navButton.BackgroundTransparency = if item.id == currentTab then 0.55 else 1
-		end)
-		navButton.Activated:Connect(function()
-			AudioController.play("UiBlip", 0.5, 1.1, true)
-			selectTab(item.id)
-		end)
-		navButtons[item.id] = navButton
-	end
+	local top = topBar(root, mode) + (if mode.compact then 6 else 20)
+	local left = if mode.compact then compactRail(root, top, mode) else desktopRail(root, top)
+	local margin = if mode.compact then 8 else 28
 
-	-- O kit pago fica só na aba MELHORIAS (sem oferta fixa na tela inicial).
-
-	-- Cartão do jogador.
-	local cardFrame = frame({
-		Name = "Player",
-		AnchorPoint = Vector2.new(0, 1),
-		Position = UDim2.fromScale(0, 1),
-		Size = UDim2.new(1, 0, 0, 128),
-		BackgroundTransparency = 0.1,
-		Parent = left,
-	}, { stroke(Theme.Hazard, 1, 0.5) })
-	Create("ImageLabel", {
-		Position = UDim2.fromOffset(10, 10),
-		Size = UDim2.fromOffset(64, 64),
-		BackgroundColor3 = Color3.fromRGB(24, 28, 30),
-		BorderSizePixel = 0,
-		Image = `rbxthumb://type=AvatarHeadShot&id={player.UserId}&w=150&h=150`,
-		Parent = cardFrame,
-	})
-	local nameLabel = label({
-		Position = UDim2.fromOffset(84, 8),
-		Size = UDim2.new(1, -94, 0, 20),
-		Text = player.DisplayName,
-		Parent = cardFrame,
-	})
-	local titleLabel = label({
-		Position = UDim2.fromOffset(84, 28),
-		Size = UDim2.new(1, -94, 0, 16),
-		Text = "",
-		TextSize = Theme.SizeSmall,
-		TextColor3 = Theme.Hazard,
-		Parent = cardFrame,
-	})
-	local levelLabel = label({
-		Position = UDim2.fromOffset(84, 46),
-		Size = UDim2.new(1, -94, 0, 16),
-		Text = "",
-		TextSize = Theme.SizeSmall,
-		Parent = cardFrame,
-	})
-	local barBack = frame({
-		Position = UDim2.fromOffset(84, 64),
-		Size = UDim2.new(1, -94, 0, 6),
-		BackgroundColor3 = Color3.fromRGB(34, 38, 40),
-		Parent = cardFrame,
-	})
-	local barFill = frame({ Size = UDim2.fromScale(0, 1), BackgroundColor3 = GREEN, Parent = barBack })
-	local wallet = label({
-		Position = UDim2.fromOffset(10, 86),
-		Size = UDim2.new(1, -100, 0, 30),
-		Text = "",
-		TextSize = Theme.SizeSmall,
-		Parent = cardFrame,
-	})
-	button({
-		Name = "AddCredits",
-		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -10, 0, 88),
-		Size = UDim2.fromOffset(80, 28),
-		Text = "+ CRÉDITOS",
-		TextSize = 10,
-		Accent = GREEN,
-		BackgroundColor3 = Color3.fromRGB(28, 44, 30),
-		Parent = cardFrame,
-	}, function()
-		Store.openTab("robux")
-	end)
-
-	-- Painel da direita.
-	local right = frame({
+	local right = Components.panel({
 		Name = "Content",
-		Position = UDim2.fromOffset(470, 34),
-		Size = UDim2.new(1, -514, 1, -68),
-		BackgroundColor3 = Theme.Panel,
-		BackgroundTransparency = 0.18,
+		Position = UDim2.fromOffset(left, top),
+		Size = UDim2.new(1, -(left + margin), 1, -(top + margin)),
+		BackgroundColor3 = Theme.Bg,
+		BackgroundTransparency = 0.12,
 		Parent = root,
-	}, {
-		stroke(Theme.Hazard, 1, 0.6),
-		Create("UIPadding", {
-			PaddingLeft = UDim.new(0, 20),
-			PaddingRight = UDim.new(0, 20),
-			PaddingTop = UDim.new(0, 16),
-			PaddingBottom = UDim.new(0, 16),
-		}),
 	})
-	header = label({ Size = UDim2.new(1, 0, 0, 32), Text = "", TextSize = 28, Parent = right })
-	subheader = note({ Position = UDim2.fromOffset(0, 36), Size = UDim2.new(1, 0, 0, 30), Text = "", Parent = right })
+	local rightCorner = right:FindFirstChildOfClass("UICorner")
+	if rightCorner then
+		rightCorner.CornerRadius = Theme.CornerLarge
+	end
+	local padX = if mode.compact then 10 else 20
+	local padY = if mode.compact then 8 else 16
+	Components.padding(right, padX, padY)
+	header = Components.title({
+		Name = "Header",
+		Size = UDim2.new(1, 0, 0, if mode.compact then 26 else 32),
+		Text = "",
+		TextSize = if mode.compact then 20 else 28,
+		Parent = right,
+	})
+	subheader = note({
+		Name = "Subheader",
+		Position = UDim2.fromOffset(0, if mode.compact then 28 else 36),
+		Size = UDim2.new(1, 0, 0, if mode.compact then 18 else 22),
+		Text = "",
+		TextSize = if mode.compact then 13 else 15,
+		Visible = not mode.short,
+		Parent = right,
+	})
+	bodyTop = if mode.short then 32 elseif mode.compact then 52 else 66
+	local footer = if mode.compact then 0 else 28
 	body = frame({
 		Name = "Body",
-		Position = UDim2.fromOffset(0, 74),
-		Size = UDim2.new(1, 0, 1, -110),
+		Position = UDim2.fromOffset(0, bodyTop),
+		Size = UDim2.new(1, 0, 1, -(bodyTop + footer)),
 		BackgroundTransparency = 1,
 		Parent = right,
 	})
-	local tip = label({
-		Name = "Tip",
-		AnchorPoint = Vector2.new(0, 1),
-		Position = UDim2.fromScale(0, 1),
-		Size = UDim2.new(1, -260, 0, 20),
-		Text = "",
-		TextSize = Theme.SizeSmall,
-		TextColor3 = Theme.TextDim,
-		Parent = right,
-	})
-	tip.TextWrapped, tip.TextTruncate = false, Enum.TextTruncate.AtEnd
+	if not mode.compact then
+		local tip = label({
+			Name = "Tip",
+			AnchorPoint = Vector2.new(0, 1),
+			Position = UDim2.fromScale(0, 1),
+			Size = UDim2.new(1, -440, 0, 20),
+			Text = "",
+			TextSize = Theme.SizeSmall,
+			TextColor3 = Theme.TextMuted,
+			Parent = right,
+		})
+		tip.TextWrapped, tip.TextTruncate = false, Enum.TextTruncate.AtEnd
+		local tipClock = 0
+		table.insert(frameUpdates, function(dt)
+			tipClock += dt
+			if tipClock > 6 or tip.Text == "" then
+				tipClock = 0
+				tipIndex = tipIndex % #TIPS + 1
+				tip.Text = px("DICA: " .. TIPS[tipIndex])
+			end
+		end)
+	end
+	-- Aviso curto de resultado (compra, erro, voto). No celular fica sobre a base do painel.
 	feedback = label({
 		Name = "Feedback",
 		AnchorPoint = Vector2.new(1, 1),
 		Position = UDim2.fromScale(1, 1),
-		Size = UDim2.fromOffset(420, 20),
+		Size = if mode.compact then UDim2.new(1, 0, 0, 34) else UDim2.fromOffset(420, 22),
 		Text = "",
-		TextSize = Theme.SizeSmall,
+		TextSize = if mode.compact then 14 else Theme.SizeSmall,
 		TextColor3 = GREEN,
-		TextXAlignment = Enum.TextXAlignment.Right,
+		TextXAlignment = if mode.compact then Enum.TextXAlignment.Center else Enum.TextXAlignment.Right,
+		BackgroundColor3 = Theme.BgSunken,
+		BackgroundTransparency = if mode.compact then 0.08 else 1,
 		Visible = false,
+		ZIndex = 5,
 		Parent = right,
 	})
-
-	-- Atualizações contínuas fora das abas (cartão, dica, escala).
-	local tipClock = 0
-	RunService.RenderStepped:Connect(function(dt)
-		if not screen.Enabled then
-			return
-		end
-		local viewport = safe.AbsoluteSize
-		local compact = UserInputService.TouchEnabled or viewport.X < 1000 or viewport.Y < 600
-		local stacked = compact and viewport.X < 620
-		local short = compact and viewport.Y < 500
-		if compact ~= compactMenu or stacked ~= singleColumn or short ~= shortMenu then
-			compactMenu, singleColumn, shortMenu, dirty = compact, stacked, short, true
-		end
-		local factor = if compact then 1 else math.clamp(math.min(viewport.X / 1280, viewport.Y / 720), 0.7, 1.6)
-		scale.Scale = factor
-		root.Size = UDim2.fromScale(1 / factor, 1 / factor)
-		local navLayout = nav:FindFirstChildOfClass("UIListLayout") :: UIListLayout
-		if compact then
-			left.Position, left.Size = UDim2.fromOffset(8, 4), UDim2.new(1, -16, 0, 98)
-			eyebrow.Visible, tagline.Visible, rec.Visible, cardFrame.Visible = false, false, false, false
-			logo.Position, logo.Size, logo.TextSize = UDim2.fromOffset(0, 0), UDim2.new(1, 0, 0, 36), 26
-			nav.Position, nav.Size = UDim2.fromOffset(0, 40), UDim2.new(1, 0, 0, 50)
-			navLayout.FillDirection = Enum.FillDirection.Horizontal
-			nav.ScrollingDirection, nav.CanvasSize = Enum.ScrollingDirection.X, UDim2.fromOffset(#NAV * 128, 0)
-			for _, item in NAV do
-				local b = navButtons[item.id]
-				b.Size, b.TextSize = UDim2.fromOffset(124, 44), 14
-				b.Text = `{item.icon} {if item.id == "season"
-					then "PASSE"
-					elseif item.id == "daily" then "PRÊMIOS"
-					else item.label}`
-				b.TextXAlignment = Enum.TextXAlignment.Center
-				local arrow = b:FindFirstChild("Arrow")
-				if arrow and arrow:IsA("GuiObject") then
-					arrow.Visible = false
-				end
-			end
-			right.Position, right.Size = UDim2.fromOffset(8, 102), UDim2.new(1, -16, 1, -110)
-			local pad = right:FindFirstChildOfClass("UIPadding") :: UIPadding
-			pad.PaddingLeft, pad.PaddingRight, pad.PaddingTop, pad.PaddingBottom =
-				UDim.new(0, 10), UDim.new(0, 10), UDim.new(0, 8), UDim.new(0, 8)
-			if header then
-				header.TextSize, header.Size = 21, UDim2.new(1, 0, 0, 28)
-			end
-			if subheader then
-				subheader.Visible = not short
-				subheader.Position, subheader.Size, subheader.TextSize =
-					UDim2.fromOffset(0, 30), UDim2.new(1, 0, 0, 34), 14
-			end
-			if body then
-				body.Size = UDim2.new(1, 0, 1, if short then -34 else -78)
-			end
-			tip.Visible = false
-			if feedback then
-				feedback.Size, feedback.TextSize = UDim2.new(1, 0, 0, 28), 14
-			end
-		else
-			if subheader then
-				subheader.Visible = true
-			end
-			left.Position, left.Size = UDim2.fromOffset(44, 34), UDim2.new(0, 380, 1, -68)
-			eyebrow.Visible, tagline.Visible, cardFrame.Visible = true, true, true
-			logo.Position, logo.Size, logo.TextSize = UDim2.fromOffset(0, 26), UDim2.new(1, 0, 0, 58), 38
-			nav.Position, nav.Size = UDim2.fromOffset(0, 128), UDim2.new(1, 0, 1, -268)
-			navLayout.FillDirection = Enum.FillDirection.Vertical
-			nav.ScrollingDirection, nav.CanvasSize = Enum.ScrollingDirection.Y, UDim2.fromOffset(0, #NAV * 44)
-			for _, item in NAV do
-				local b = navButtons[item.id]
-				b.Size, b.TextSize, b.TextXAlignment = UDim2.new(1, 0, 0, 40), Theme.SizeLarge, Enum.TextXAlignment.Left
-				b.Text = `   {item.icon}  {item.label}`
-			end
-			right.Position, right.Size = UDim2.fromOffset(470, 34), UDim2.new(1, -514, 1, -68)
-			if body then
-				body.Size = UDim2.new(1, 0, 1, -110)
-			end
-			tip.Visible = true
-		end
-		rec.Visible = (os.clock() * 1.4) % 1 < 0.6
-		local xp = tonumber(player:GetAttribute("Xp")) or 0
-		local level, into, needed = Economy.levelInfo(xp)
-		levelLabel.Text = px(`NÍVEL {level} · {number(into)}/{number(needed)} XP`)
-		barFill.Size = UDim2.fromScale(math.clamp(into / math.max(needed, 1), 0, 1), 1)
-		local titleId = player:GetAttribute("Title")
-		local titleItem = if type(titleId) == "string" then StoreCatalog.ItemById[titleId] else nil
-		titleLabel.Text = px(
-			(if titleItem then titleItem.name else "") .. (if player:GetAttribute("Vip") == true then " · VIP" else "")
-		)
-		nameLabel.Text = player.DisplayName
-		wallet.Text = px(
-			`💰 {number(tonumber(player:GetAttribute("Fichas")) or 0)} FICHAS   💎 {number(
-				tonumber(player:GetAttribute("Creditos")) or 0
-			)} CRÉDITOS`
-		)
-		local badge = navButtons.daily and navButtons.daily:FindFirstChild("Badge")
-		if badge and badge:IsA("Frame") then
-			badge.Visible = player:GetAttribute("DailyClaimable") == true
-				or (tonumber(player:GetAttribute("SpinsLeft")) or 0) > 0
-		end
-		tipClock += dt
-		if tipClock > 6 or tip.Text == "" then
-			tipClock = 0
-			tipIndex = tipIndex % #TIPS + 1
-			tip.Text = px("DICA: " .. TIPS[tipIndex])
-		end
-	end)
+	if mode.compact then
+		local f = feedback :: TextLabel
+		Components.corner(f, Theme.CornerSmall)
+	end
 	screen.Parent = player:WaitForChild("PlayerGui")
 	return screen
+end
+
+-- Classe de layout pela viewport da câmera: não depende da GUI recém-criada (sem medir 0 no
+-- primeiro quadro e reconstruir em laço). As margens seguras ficam com o ScreenInsets.
+local function currentMode(): MenuLayout.Mode
+	local size = workspace.CurrentCamera.ViewportSize
+	return MenuLayout.mode(size.X, size.Y, UserInputService.TouchEnabled)
 end
 
 -- ===================== Ciclo =====================
@@ -1768,7 +2160,8 @@ function Controller.Start()
 		return
 	end
 	local state = ReplicatedStorage:WaitForChild("CampaignState")
-	gui = build()
+	menuMode = currentMode()
+	gui = build(menuMode :: MenuLayout.Mode)
 	-- Qualquer mudança de saldo, estoque, nível ou voto redesenha a aba (no máximo uma vez por quadro).
 	for _, name in
 		{
@@ -1805,13 +2198,38 @@ function Controller.Start()
 			qaVote()
 		end
 	end
-	RunService:BindToRenderStep("S9MainMenu", Enum.RenderPriority.Last.Value, function()
+	RunService:BindToRenderStep("S9MainMenu", Enum.RenderPriority.Last.Value, function(dt: number)
 		local screen = gui
 		if not screen then
 			return
 		end
 		local open = state:GetAttribute("Phase") == "Lobby" and player:GetAttribute("OpeningActive") ~= true
 		player:SetAttribute("ModeMenuOpen", open)
+		if open then
+			-- Troca de classe (PC ↔ celular ↔ celular baixo) reconstrói a moldura; só escala, ajusta.
+			local mode = currentMode()
+			local current = menuMode
+			if not current or mode.key ~= current.key then
+				menuMode = mode
+				local rebuilt = build(mode)
+				screen:Destroy()
+				gui, screen = rebuilt, rebuilt
+				dirty = true
+			elseif math.abs(mode.scale - current.scale) > 0.005 then
+				menuMode = mode
+				local root, scale = rootFrame, rootScale
+				if root and scale then
+					scale.Scale = mode.scale
+					root.Size = UDim2.fromScale(1 / mode.scale, 1 / mode.scale)
+				end
+			end
+			local b = body
+			if b and currentTab == "play" and b.AbsoluteSize.X > 0 then
+				if MenuLayout.columns(b.AbsoluteSize.X) ~= columnsShown then
+					dirty = true
+				end
+			end
+		end
 		-- A loja abre por cima: o menu some enquanto ela estiver aberta.
 		screen.Enabled = open and not Store.isOpen()
 		if open and not wasOpen then
@@ -1830,6 +2248,9 @@ function Controller.Start()
 			end
 			for _, update in live do
 				update()
+			end
+			for _, update in frameUpdates do
+				update(dt)
 			end
 		elseif wasOpen then
 			UserInputService.MouseIconEnabled = false

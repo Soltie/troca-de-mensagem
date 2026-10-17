@@ -34,6 +34,31 @@ local Theme = {
 
 	Corner = UDim.new(0, 10),
 	CornerSmall = UDim.new(0, 6),
+
+	-- Remaster "Cursed Mansion" (docs/ui-remaster): tokens das telas novas. Dourado só para foco,
+	-- progresso e ação principal; verde = sucesso/equipado; vermelho = perigo (nunca pressão de compra).
+	Bg = rgb(16, 25, 35),
+	BgPanel = rgb(37, 51, 68),
+	BgElevated = rgb(48, 65, 85),
+	BgSunken = rgb(11, 17, 24),
+	Gold = rgb(229, 182, 107),
+	GoldLight = rgb(241, 211, 151),
+	GoldDeep = rgb(120, 86, 40),
+	Danger = rgb(141, 52, 59),
+	Success = rgb(112, 190, 145),
+	TextPrimary = rgb(237, 228, 213),
+	TextSecondary = rgb(182, 193, 204),
+	TextMuted = rgb(128, 140, 152),
+	Border = rgb(86, 96, 107),
+	Overlay = rgb(9, 14, 20),
+	Wood = rgb(92, 62, 40),
+
+	-- Alvo mínimo de toque (px de tela) e espaçamentos.
+	TouchMin = 48,
+	Gap = 8,
+	GapLarge = 16,
+	CornerLarge = UDim.new(0, 14),
+	CornerPill = UDim.new(1, 0),
 }
 
 return table.freeze(Theme)
