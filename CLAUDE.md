@@ -1,3 +1,13 @@
+# Projeto independente: Tung Tung Sahur
+
+Raiz atual: `C:/Users/xpg/Documents/tung-tung-sahur`.
+Leia primeiro [INICIAR_AQUI.md](INICIAR_AQUI.md). Edite somente o src desta pasta.
+Os caminhos, worktrees e reservas anteriores nos documentos abaixo são históricos.
+Use Studio e Script Sync próprios deste jogo; não conecte à árvore do outro jogo.
+A conexão da nova places/Dev.rbxlx ainda precisa ser configurada e verificada.
+
+---
+
 # CLAUDE.md — como trabalhar neste repositório
 
 **Coordenação do mapa:** leia [LEIA_CLAUDE.md](LEIA_CLAUDE.md) antes de integrar mudanças no mundo

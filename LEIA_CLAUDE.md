@@ -1,3 +1,13 @@
+# Projeto independente: Tung Tung Sahur
+
+Raiz atual: `C:/Users/xpg/Documents/tung-tung-sahur`.
+Leia primeiro [INICIAR_AQUI.md](INICIAR_AQUI.md). Edite somente o src desta pasta.
+Os caminhos, worktrees e reservas anteriores nos documentos abaixo são históricos.
+Use Studio e Script Sync próprios deste jogo; não conecte à árvore do outro jogo.
+A conexão da nova places/Dev.rbxlx ainda precisa ser configurada e verificada.
+
+---
+
 **CLAUDE — POLISH FINAL TUNG TUNG (16/10/2026), branch `claude/final-polish` (worktree `.cache/final-polish`, base `codex/cursed-house` 20bf296).**
 Pedido do humano: polish geral para crianças + Tung Tung novo do zip. Relatório: `docs/FINAL_POLISH.md` (no branch).
 Studio próprio: `build/FinalPolish.rbxlx` do worktree (não uso Dev/Test/CasaAmaldicoada de outros). Sem push/publicação.
