@@ -26,7 +26,10 @@ local function placer(parent: Instance, room: House.Room): Place
 		-- offset.X: distância a partir do centro rumo à fachada; offset.Y: altura da base; offset.Z: frente/trás.
 		local center = Vector3.new(room.x + side * offset.X, floor + offset.Y + size.Y / 2, room.z + offset.Z)
 		local part = Build.part(parent, name, size, CFrame.new(center), color, {
-			material = material or Enum.Material.SmoothPlastic,
+			material = material or (if string.find(name, "Pillow") or string.find(name, "Cover")
+				then Enum.Material.Fabric
+				elseif string.find(name, "Lamp") or string.find(name, "Handle") then Enum.Material.Metal
+				else Enum.Material.Wood),
 			collide = false,
 			query = false,
 		})
@@ -37,7 +40,13 @@ end
 
 local function lampStand(put: Place, x: number, z: number, color: Color3)
 	put("LampPole", Vector3.new(0.3, 5, 0.3), Vector3.new(x, 0, z), rgb(60, 50, 70), Enum.Material.Metal)
-	local shade = put("LampShade", Vector3.new(1.8, 1.4, 1.8), Vector3.new(x, 5, z), color, Enum.Material.Neon)
+	local shade = put(
+		"LampShade",
+		Vector3.new(1.8, 1.4, 1.8),
+		Vector3.new(x, 5, z),
+		color:Lerp(rgb(224, 197, 150), 0.65),
+		Enum.Material.Fabric
+	)
 	local light = Instance.new("PointLight")
 	light.Color = color
 	light.Range = 16

@@ -10,7 +10,22 @@ local plaster = Color3.fromRGB(125, 119, 110)
 local decor = { collide = false, query = false, material = Enum.Material.Wood }
 
 local function piece(parent: Instance, name: string, base: Vector3, size: Vector3, color: Color3, solid: boolean?)
-	return Build.block(parent, name, base, size, 0, color, if solid then nil else decor)
+	local part = Build.block(parent, name, base, size, 0, color, if solid then nil else decor)
+	if name == "CorridorPendant" or name == "StairPendant" or name == "LandingSconce" then
+		part.Material = Enum.Material.Metal
+		local glass = Build.cylinder(
+			parent,
+			"FixtureGlass",
+			part.Position - V3(0, 0.22, 0),
+			Vector3.yAxis,
+			0.16,
+			math.max(size.X, size.Z) * 0.75,
+			Color3.fromRGB(217, 177, 117),
+			{ material = Enum.Material.Neon, collide = false, query = false }
+		)
+		glass:SetAttribute("VisualDetail", true)
+	end
+	return part
 end
 local function plaque(parent: Instance, position: Vector3, facing: Vector3, text: string)
 	Build.sign(parent, "Wayfinding", position, facing, Vector2.new(9, 1.5), text, {
@@ -62,6 +77,17 @@ function Architecture.build(structure: Instance, dressing: Instance)
 				for _, dz in { -10.5, 10.5 } do
 					piece(dressing, "Wainscot", V3(side * 7.42, y, z + dz), V3(0.16, 3.5, 10.8), wood)
 					piece(dressing, "ChairRail", V3(side * 7.3, y + 3.5, z + dz), V3(0.25, 0.18, 10.8), trim)
+					-- Painéis baixos afastados da parede; não interceptam portas, colisões ou raycasts.
+					for _, inset in { -3.6, 0, 3.6 } do
+						local panel = piece(
+							dressing,
+							"WainscotPanel",
+							V3(side * 7.26, y + 0.4, z + dz + inset),
+							V3(0.12, 2.6, 3.1),
+							wood:Lerp(trim, 0.12)
+						)
+						panel:SetAttribute("VisualDetail", true)
+					end
 				end
 				for _, dz in { -5.15, 5.15 } do
 					piece(dressing, "DoorCasing", V3(side * 7.35, y, z + dz), V3(0.3, 11.6, 0.3), trim)

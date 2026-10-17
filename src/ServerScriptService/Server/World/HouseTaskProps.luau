@@ -7,7 +7,19 @@ local brass = Color3.fromRGB(190, 153, 78)
 local paper = Color3.fromRGB(204, 190, 147)
 local dark = Color3.fromRGB(46, 43, 46)
 local function part(parent: Instance, name: string, p: Vector3, size: Vector3, color: Color3)
-	return Build.block(parent, name, p, size, 0, color, { collide = false, query = false })
+	local metal = string.find(name, "Key")
+		or string.find(name, "Cap")
+		or string.find(name, "Flashlight")
+		or name == "FuseCabinet"
+	local ceramic = string.find(name, "Fuse") or name == "PorcelainMask"
+	return Build.block(parent, name, p, size, 0, color, {
+		collide = false,
+		query = false,
+		material = if metal
+			then Enum.Material.Metal
+			elseif ceramic then Enum.Material.Marble
+			else Enum.Material.SmoothPlastic,
+	})
 end
 function Props.build(parent: Instance, p: Vector3, item: string?, kind: string)
 	local center = p + V3(0, 1.8, 0)

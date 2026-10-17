@@ -17,7 +17,14 @@ local function block(
 	color: Color3,
 	options: Build.PartOptions?
 ): BasePart
-	return Build.block(parent, name, p, size, 0, color, options)
+	local defaults = {
+		material = if name == "Canvas" or name == "Bedroll"
+			then Enum.Material.Fabric
+			elseif name == "Roof" or name == "RadioShelterRoof" then Enum.Material.Slate
+			elseif name == "TowerRing" then Enum.Material.Metal
+			else Enum.Material.Wood,
+	}
+	return Build.block(parent, name, p, size, 0, color, options or defaults)
 end
 function Builder.clear(parent: Instance, features: FeatureBuilder.Built)
 	for id in features.lockers do
@@ -56,7 +63,7 @@ function Builder.build(parent: Instance, chapter: number, seed: number, features
 		block(
 			root,
 			"BranchTrail",
-			Vector3.new(0, 0.02, z),
+			Vector3.new(0, 0.07, z),
 			Vector3.new(112, 0.08, 14),
 			Color3.fromRGB(78, 69, 51),
 			{ material = Enum.Material.Ground, collide = false }
@@ -123,6 +130,26 @@ function Builder.build(parent: Instance, chapter: number, seed: number, features
 	for z = 600, 840, 40 do
 		local lamp = block(root, "TrailLantern", Vector3.new(12, 0, z), Vector3.new(0.7, 4, 0.7), wood)
 		Build.light(lamp, "Exit", Color3.fromRGB(235, 179, 88), 23, 0.65, true)
+		-- Lanterna física e sua proteção: apenas visual, luz de orientação continua em todos os perfis.
+		for _, side in { -1, 1 } do
+			local cap = block(
+				root,
+				"LanternCap",
+				Vector3.new(12, 3.3 + side * 0.55, z),
+				Vector3.new(1.5, 0.18, 1.5),
+				wood,
+				{ material = Enum.Material.Metal, collide = false, query = false }
+			)
+			cap:SetAttribute("VisualDetail", true)
+		end
+		block(
+			root,
+			"LanternGlass",
+			Vector3.new(12, 3, z),
+			Vector3.new(0.9, 0.7, 0.9),
+			Color3.fromRGB(223, 177, 103),
+			{ material = Enum.Material.Glass, transparency = 0.22, collide = false, query = false }
+		)
 	end
 	Build.sign(
 		root,

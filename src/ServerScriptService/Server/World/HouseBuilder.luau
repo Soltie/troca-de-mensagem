@@ -27,15 +27,22 @@ local function block(
 	sz: number,
 	color: Color3
 ): BasePart
-	return Build.block(
-		parent,
-		name,
-		Vector3.new(x, y, z),
-		Vector3.new(sx, sy, sz),
-		0,
-		color,
-		{ material = Enum.Material.WoodPlanks }
-	)
+	local masonry = name == "Facade"
+		or name == "DoorWall"
+		or name == "DoorLintel"
+		or name == "RoomPartition"
+		or name == "RoomCeiling"
+		or name == "RearWall"
+		or name == "EntrySide"
+		or name == "EntryLintel"
+	local ground = name == "ForestGround" or name == "Garden" or name == "SideGarden" or name == "BackGarden"
+	return Build.block(parent, name, Vector3.new(x, y, z), Vector3.new(sx, sy, sz), 0, color, {
+		material = if masonry
+			then Enum.Material.Plaster
+			elseif ground then Enum.Material.Ground
+			elseif name == "PowerPanel" or name == "PowerLamp" then Enum.Material.Metal
+			else Enum.Material.WoodPlanks,
+	})
 end
 local function sound(parent: Instance, name: string): Sound
 	return Build.sound(parent, name, Audio.Door.id, 0.4)
@@ -212,6 +219,7 @@ function Builder.build(parent: Instance): (MapBuilder.World, FeatureBuilder.Buil
 		local doorId = `house_door_{index}`
 		local doorCenter = Vector3.new(if room.x < 0 then -8 else 8, room.y + 5.5, room.z)
 		local doorPanel = Build.part(doors, doorId, Vector3.new(0.5, 11, 9), CFrame.new(doorCenter), wood)
+		doorPanel.Material = Enum.Material.Wood
 		local hinge = CFrame.new(doorCenter + Vector3.new(0, 0, -4.5))
 		local closed = doorPanel.CFrame
 		local openAngle = math.rad(if room.x < 0 then -95 else 95)

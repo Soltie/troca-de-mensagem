@@ -28,13 +28,13 @@ local HOUSE_MAX = Vector2.new(48, 68)
 local PATH_HALF_WIDTH = 22
 local EXIT_Z = Vector2.new(60, 135)
 
-local GRASS = rgb(74, 128, 72)
+local GRASS = rgb(61, 88, 64)
 local WALL = rgb(133, 126, 117)
 local WALL_DARK = rgb(112, 111, 105)
-local ROOF = rgb(70, 44, 96)
-local TRIM = rgb(236, 210, 150)
+local ROOF = rgb(55, 58, 69)
+local TRIM = rgb(183, 161, 119)
 local FLOOR = rgb(92, 67, 49)
-local WINDOW = rgb(255, 200, 110)
+local WINDOW = rgb(206, 166, 112)
 
 local WALL_NAMES = {
 	Facade = true,
@@ -369,6 +369,7 @@ local function fireflies(parent: Instance, center: Vector3, spread: Vector3)
 	local anchor = decor(parent, "Fireflies", spread, CFrame.new(center), rgb(0, 0, 0))
 	anchor.Transparency = 1
 	local emitter = Instance.new("ParticleEmitter")
+	emitter:SetAttribute("VisualOptional", true)
 	emitter.Shape = Enum.ParticleEmitterShape.Box
 	emitter.ShapeInOut = Enum.ParticleEmitterShapeInOut.Outward
 	emitter.Rate = 7
@@ -488,8 +489,8 @@ local function exterior(parent: Instance)
 	fence(folder, Vector3.new(PATH_HALF_WIDTH, -0.5, 131), Vector3.new(108, -0.5, 131))
 	-- Letreiro grande e iluminado na fachada.
 	Build.sign(folder, "BigTitle", Vector3.new(10, 40, 65.6), Vector3.zAxis, Vector2.new(34, 6), "TUNG TUNG SAHUR", {
-		textColor = rgb(255, 214, 80),
-		background = rgb(60, 20, 70),
+		textColor = rgb(233, 202, 147),
+		background = rgb(38, 34, 31),
 		lit = true,
 		font = Enum.Font.FredokaOne,
 	})
@@ -581,16 +582,16 @@ local function forestGate(root: Instance)
 			"GateLamp",
 			Vector3.new(1.6, 1.6, 1.6),
 			pillar.CFrame * CFrame.new(0, 7.4, 0),
-			rgb(120, 255, 170),
+			rgb(219, 182, 124),
 			Enum.Material.Neon
 		)
 		local orbShape = orb :: Part
 		orbShape.Shape = Enum.PartType.Ball
-		glow(orb, rgb(120, 255, 170), 22, 1.2)
+		glow(orb, rgb(235, 193, 133), 18, 0.65)
 	end
 end
 
-local NIGHT_COLORS = { rgb(120, 200, 255), rgb(255, 150, 220), rgb(150, 255, 190), rgb(255, 210, 120) }
+local NIGHT_COLORS = { rgb(148, 178, 207), rgb(193, 152, 154), rgb(153, 184, 161), rgb(221, 187, 137) }
 local RUG_COLORS = { rgb(160, 52, 72), rgb(52, 88, 150), rgb(64, 120, 84), rgb(130, 76, 150) }
 
 local function interior(parent: Instance)

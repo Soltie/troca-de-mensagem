@@ -44,8 +44,8 @@ type TabId = "play" | "perks" | "store" | "season" | "daily" | "servers" | "frie
 
 local player = Players.LocalPlayer
 local GREEN = Color3.fromRGB(120, 200, 140)
-local VEIL = Color3.fromRGB(16, 8, 34)
-local CARD = Color3.fromRGB(30, 18, 56)
+local VEIL = Theme.Panel
+local CARD = Theme.PanelLight
 
 local NAV: { { id: TabId, label: string, icon: string } } = {
 	{ id = "play", label = "JOGAR", icon = "▶️" },

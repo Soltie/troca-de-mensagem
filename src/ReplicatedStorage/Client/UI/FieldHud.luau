@@ -6,6 +6,7 @@
 ]]
 local Create = require("./Create")
 local Theme = require("./Theme")
+local Icons = require("./Icons")
 local Input = game:GetService("UserInputService")
 local Hud = {}
 
@@ -19,8 +20,8 @@ end
 local function stroke(color: Color3?, thickness: number?, transparency: number?): Instance
 	return Create("UIStroke", {
 		Color = color or Theme.Stroke,
-		Thickness = thickness or 2,
-		Transparency = transparency or 0.15,
+		Thickness = thickness or 1,
+		Transparency = transparency or 0.28,
 		ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 	}) :: UIStroke
 end
@@ -33,7 +34,7 @@ local function card(parent: Instance, name: string, size: UDim2, position: UDim2
 		Position = position,
 		Size = size,
 		BackgroundColor3 = Theme.Panel,
-		BackgroundTransparency = 0.12,
+		BackgroundTransparency = 0.05,
 		BorderSizePixel = 0,
 	}, {
 		corner(),
@@ -71,7 +72,7 @@ local function label(
 	}) :: TextLabel
 end
 
-local function bar(parent: Instance, name: string, icon: string, color: Color3, y: number): Bar
+local function bar(parent: Instance, name: string, _icon: string, color: Color3, y: number): Bar
 	local frame = Create("Frame", {
 		Name = name,
 		Parent = parent,
@@ -80,7 +81,8 @@ local function bar(parent: Instance, name: string, icon: string, color: Color3, 
 		BackgroundTransparency = 1,
 	}) :: Frame
 	local iconLabel = label(frame, "Icon", Theme.Font, 18, Theme.Text, UDim2.new(), UDim2.fromOffset(26, 24))
-	iconLabel.Text = icon
+	iconLabel.Text = ""
+	Icons.draw(iconLabel, name, color)
 	local track = Create("Frame", {
 		Name = "Track",
 		Parent = frame,

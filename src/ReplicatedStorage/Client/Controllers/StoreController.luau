@@ -955,6 +955,21 @@ local function renderSeason(c: ScrollingFrame)
 		TextSize = Theme.SizeSmall,
 		Parent = intro,
 	})
+	local progress = Create("Frame", {
+		Name = "SeasonProgress",
+		Parent = intro,
+		Position = UDim2.fromOffset(12, 104),
+		Size = UDim2.new(1, -24, 0, 5),
+		BackgroundColor3 = Theme.PanelLight,
+		BorderSizePixel = 0,
+	}) :: Frame
+	Create("Frame", {
+		Name = "Fill",
+		Parent = progress,
+		Size = UDim2.fromScale(if need > 0 then math.clamp(into / need, 0, 1) else 1, 1),
+		BackgroundColor3 = Theme.Hazard,
+		BorderSizePixel = 0,
+	})
 	label({
 		Position = UDim2.fromOffset(12, 112),
 		Size = UDim2.new(0.4, -18, 0, 44),
@@ -984,7 +999,7 @@ local function renderSeason(c: ScrollingFrame)
 		local reached = index <= tier
 		local box = card(c, index, if reached then Theme.Good else Theme.TextDim)
 		box.Name = `SeasonTier_{index}`
-		box.Size = UDim2.new(1, -12, 0, 100)
+		box.Size = UDim2.new(1, -12, 0, 154)
 		label({
 			Position = UDim2.fromOffset(8, 4),
 			Size = UDim2.new(1, -16, 0, 20),
@@ -994,17 +1009,31 @@ local function renderSeason(c: ScrollingFrame)
 		for column, trackName in { "free", "premium" } do
 			local unlocked = reached and (trackName == "free" or premium)
 			local text = if trackName == "free" then Text.Season.free else Text.Season.premium
-			label({
-				Position = UDim2.new((column - 1) * 0.5, 8, 0, 26),
-				Size = UDim2.new(0.5, -16, 0, 68),
-				Text = text
-					.. " · "
-					.. (if unlocked then Text.Season.received else Text.Season.locked)
-					.. "\n"
-					.. rewardText(if trackName == "free" then entry.free else entry.premium),
-				TextSize = Theme.SizeSmall,
-				TextColor3 = if unlocked then Theme.Good else Theme.TextDim,
+			local trackPanel = Create("Frame", {
+				Name = trackName,
 				Parent = box,
+				Position = UDim2.new((column - 1) * 0.5, 8, 0, 28),
+				Size = UDim2.new(0.5, -16, 1, -38),
+				BackgroundColor3 = Theme.Panel,
+				BorderSizePixel = 0,
+			}, { Create("UICorner", { CornerRadius = Theme.CornerSmall }) }) :: Frame
+			label({
+				Name = "TrackPreview",
+				Position = UDim2.fromOffset(6, 4),
+				Size = UDim2.new(1, -12, 1, -8),
+				Text = text .. " · " .. (if unlocked
+					then Text.Season.received
+					elseif not reached then `Nível {index}`
+					else "Requer passe premium") .. "\n" .. rewardText(
+					if trackName == "free" then entry.free else entry.premium
+				),
+				TextSize = Theme.SizeSmall,
+				TextColor3 = if unlocked
+					then Theme.Good
+					elseif trackName == "premium" then Theme.Hazard
+					else Theme.TextDim,
+				TextWrapped = true,
+				Parent = trackPanel,
 			})
 		end
 	end
@@ -1130,7 +1159,7 @@ local function build()
 		Name = "StoreUi",
 		ResetOnSpawn = false,
 		ScreenInsets = Enum.ScreenInsets.CoreUISafeInsets,
-		DisplayOrder = 80,
+		DisplayOrder = 220,
 		Parent = player:WaitForChild("PlayerGui"),
 	}) :: ScreenGui
 
@@ -1161,7 +1190,7 @@ local function build()
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
 		Size = UDim2.fromScale(0.9, 0.86),
-		BackgroundColor3 = Color3.fromRGB(6, 6, 8),
+		BackgroundColor3 = Theme.Panel,
 		BackgroundTransparency = 0.04,
 		BorderSizePixel = 0,
 		Visible = false,

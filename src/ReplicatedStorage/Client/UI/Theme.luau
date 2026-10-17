@@ -18,22 +18,22 @@ local Theme = {
 	SizeTitle = 44,
 
 	Text = rgb(255, 250, 240),
-	TextDim = rgb(196, 186, 226),
-	Accent = rgb(255, 82, 122),
-	Hazard = rgb(255, 206, 64),
+	TextDim = rgb(190, 199, 211),
+	Accent = rgb(183, 72, 91),
+	Hazard = rgb(233, 193, 122),
 	Good = rgb(96, 232, 140),
 	Info = rgb(92, 200, 255),
 	Black = rgb(0, 0, 0),
-	Panel = rgb(26, 16, 48),
-	PanelLight = rgb(48, 32, 86),
-	Stroke = rgb(255, 206, 64),
+	Panel = rgb(18, 24, 34),
+	PanelLight = rgb(34, 44, 58),
+	Stroke = rgb(151, 130, 98),
 	Paper = rgb(255, 242, 210),
 	Ink = rgb(44, 30, 66),
 	Skin = rgb(176, 112, 64),
 	Coin = rgb(255, 196, 40),
 
-	Corner = UDim.new(0, 14),
-	CornerSmall = UDim.new(0, 10),
+	Corner = UDim.new(0, 10),
+	CornerSmall = UDim.new(0, 6),
 }
 
 return table.freeze(Theme)

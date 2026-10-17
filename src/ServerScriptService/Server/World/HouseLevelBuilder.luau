@@ -9,15 +9,16 @@ local trim = Color3.fromRGB(204, 183, 138)
 local wood = Color3.fromRGB(79, 58, 46)
 local roof = Color3.fromRGB(55, 48, 69)
 local function piece(parent: Instance, name: string, base: Vector3, size: Vector3, color: Color3, solid: boolean?)
-	return Build.block(
-		parent,
-		name,
-		base,
-		size,
-		0,
-		color,
-		{ collide = solid == true, query = solid == true, material = Enum.Material.Wood }
-	)
+	return Build.block(parent, name, base, size, 0, color, {
+		collide = solid == true,
+		query = solid == true,
+		material = if name == "PavilionFloor" or name == "GardenStairTread"
+			then Enum.Material.Slate
+			elseif name == "ClayPot" then Enum.Material.Brick
+			elseif name == "Herbs" then Enum.Material.Grass
+			elseif name == "PavilionRoof" then Enum.Material.Slate
+			else Enum.Material.Wood,
+	})
 end
 local function sign(parent: Instance, p: Vector3, text: string)
 	Build.sign(
