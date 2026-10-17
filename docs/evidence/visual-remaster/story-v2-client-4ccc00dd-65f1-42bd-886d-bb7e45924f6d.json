@@ -1,0 +1,9 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"logs\":{\"1\":\"[VisualQA] PASS serial=1 shaders=true quality=Alta fixtures=121 shadows=3\",\"3\":\"[VisualQA] PASS serial=3 shaders=true quality=Alta fixtures=122 shadows=3\",\"2\":\"[VisualQA] PASS serial=2 shaders=true quality=Alta fixtures=122 shadows=3\"},\"player\":\"Player1\",\"settings\":{\"budget\":{\"shadows\":3,\"name\":\"Alta\",\"grain\":1,\"bloom\":0.1,\"depth\":true,\"particles\":1,\"detailDistance\":145},\"pending\":[],\"preference\":1,\"shaders\":true},\"state\":{\"indoor\":0.9999999999999997,\"shadows\":true,\"audio\":{\"volumes\":{\"MusicRelief\":0,\"Machinery\":0,\"AmbInterior\":0.15,\"AmbExterior\":0.05,\"Whisper\":0,\"MusicChase\":0,\"Heartbeat\":0.05,\"Music\":0.13,\"MusicTension\":0,\"WindInterior\":0.13},\"hush\":false,\"muffle\":-2.6979681935891834e-24,\"silenced\":false,\"zone\":\"Hall\",\"music\":\"calm\",\"reverb\":\"Hallway\",\"inside\":true},\"power\":0,\"danger\":0,\"exposure\":0.1599999964237213,\"baseFog\":190,\"forest\":0,\"fixtures\":{\"shadows\":3,\"details\":167,\"budget\":3,\"particles\":3,\"fixtures\":122},\"contrast\":0.10000000149011612,\"style\":\"Realistic\",\"fog\":190,\"bloom\":0.10000000149011612,\"depth\":0,\"shaders\":true,\"quality\":\"Alta\"},\"stage\":1,\"prefs\":\"{\\\"shaders\\\":1,\\\"quality\\\":1}\"}"
+    }
+  ],
+  "isError": false
+}

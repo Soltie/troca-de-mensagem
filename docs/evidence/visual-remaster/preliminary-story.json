@@ -1,0 +1,13 @@
+{
+  "build": "Casa_VISUAL_REMASTER_ENTREGA.rbxlx",
+  "sha256": "5f0c00c88f9b4793b8e9da09294267b3b1d288f460ef6649faa09bf88b1f9e1f",
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"ok\":true,\"result\":{\"players\":2,\"success\":true,\"checks\":150,\"phase\":\"Playing\",\"stage\":1}}"
+      }
+    ],
+    "isError": false
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "sha256": "7824AA430DE79B8CE486DF2DCC7B6E9FA23D28B4B7FDBDCDFEA8AB9374A96E33",
+  "studio_id": "2f4a1a96-bdd0-4dbe-988e-16fb47eea8c6",
+  "args": {
+    "campaignQA": true,
+    "storyQA": false,
+    "qualityQA": true,
+    "modeMenuQA": true,
+    "lobbyReturnQA": true,
+    "visualQA": true,
+    "players": 2
+  },
+  "receipt": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"ok\":true,\"result\":{\"players\":2,\"success\":true,\"checks\":156,\"phase\":\"Playing\",\"stage\":1}}"
+      }
+    ],
+    "isError": false
+  }
+}

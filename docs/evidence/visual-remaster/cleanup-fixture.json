@@ -1,0 +1,22 @@
+{
+  "fixture": true,
+  "seed": 42,
+  "cycles": 3,
+  "partCountsPerCycle": {
+    "chapter6": 1535,
+    "chapter7": 1532,
+    "chapter8": 1587
+  },
+  "forestRemaining": false,
+  "clientAfterCleanup": {
+    "fixtures": 121,
+    "details": 167,
+    "particleEmitters": 3
+  },
+  "clientBeforeCleanup": {
+    "fixtures": 128,
+    "details": 181,
+    "particleEmitters": 3
+  },
+  "note": "Same counts in each cycle; cache returns to house baseline."
+}

@@ -1,0 +1,42 @@
+{
+  "build": "Casa_VISUAL_REMASTER_QA.rbxlx",
+  "presentationIdenticalToFinalV2": true,
+  "sourceDifference": "Studio-only QA startup hook and harness timeout",
+  "devices": [
+    {
+      "name": "Desktop",
+      "viewport": [
+        1116,
+        605
+      ]
+    },
+    {
+      "name": "iPhone 17 Pro Portrait",
+      "viewport": [
+        401,
+        778
+      ],
+      "settingsAll16ButtonsTextFits": true,
+      "settingsButtonHeight": 44,
+      "hintFits": true,
+      "statusFits": true,
+      "seasonTierLabelsTextFits": true
+    },
+    {
+      "name": "iPhone 17 Pro Landscape",
+      "viewport": [
+        750,
+        381
+      ]
+    },
+    {
+      "name": "iPad Pro M5 13in",
+      "viewport": [
+        1375,
+        1032
+      ]
+    }
+  ],
+  "physicalDevice": false,
+  "orientationTest": "Portrait forced by simulator; shipping StarterGui remains LandscapeSensor"
+}

@@ -1,0 +1,48 @@
+{
+  "source": "live ComfortOptions.VisualQA, normal SetHousePreference remote",
+  "build": "Casa_VISUAL_REMASTER_QA.rbxlx",
+  "viewport": [
+    1116,
+    605
+  ],
+  "sampleDelaySeconds": 0.8,
+  "profiles": [
+    {
+      "preference": 0.25,
+      "name": "Baixa",
+      "shadows": 0,
+      "particles": 0,
+      "acknowledged": true
+    },
+    {
+      "preference": 0.5,
+      "name": "Média",
+      "shadows": 1,
+      "particles": 0.45,
+      "acknowledged": true
+    },
+    {
+      "preference": 1,
+      "name": "Alta",
+      "shadows": 3,
+      "particles": 1,
+      "acknowledged": true
+    },
+    {
+      "preference": 0,
+      "name": "Média",
+      "shadows": 1,
+      "particles": 0.45,
+      "acknowledged": true
+    }
+  ],
+  "offAfter4Seconds": {
+    "shadows": 0,
+    "particleRateScale": 0,
+    "bloom": 0.00005768883784185164,
+    "depth": 0,
+    "fog": 190,
+    "exposure": 0.07999999821186066,
+    "pending": 0
+  }
+}

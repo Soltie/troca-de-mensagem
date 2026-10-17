@@ -1,0 +1,68 @@
+{
+  "ownedStudios": [
+    {
+      "status": "fulfilled",
+      "value": {
+        "id": "ac50855d-adf0-4a43-90e5-c0c6bdfa215d",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "- Current Studio Mode: Edit\n- Available DataModels: Edit\n- Focused DataModel in the viewport: Edit"
+            }
+          ],
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "id": "2f4a1a96-bdd0-4dbe-988e-16fb47eea8c6",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "- Current Studio Mode: Edit\n- Available DataModels: Edit\n- Focused DataModel in the viewport: Edit"
+            }
+          ],
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "id": "00798df7-ec5b-4d0d-a137-5f6b917d8e3c",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "- Current Studio Mode: Edit\n- Available DataModels: Edit\n- Focused DataModel in the viewport: Edit"
+            }
+          ],
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "id": "f2c4de96-aef8-47b3-9feb-144584f5a1e1",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "- Current Studio Mode: Edit\n- Available DataModels: Edit\n- Focused DataModel in the viewport: Edit"
+            }
+          ],
+          "isError": false
+        }
+      }
+    }
+  ],
+  "otherStudiosPreserved": [
+    "06e84296-b807-4c06-9ad9-ac7cb1a836d3",
+    "4e236bf3-eb5b-4ae0-a9d7-2abcea29cd5e"
+  ]
+}

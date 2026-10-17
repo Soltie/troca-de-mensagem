@@ -1,0 +1,9 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"logs\":{\"1\":\"[VisualQA] PASS serial=1 shaders=true quality=Alta fixtures=121 shadows=0\",\"3\":\"[VisualQA] PASS serial=3 shaders=true quality=Alta fixtures=122 shadows=3\",\"2\":\"[VisualQA] PASS serial=2 shaders=true quality=Alta fixtures=122 shadows=3\",\"5\":\"[VisualQA] PASS serial=5 shaders=true quality=Alta fixtures=121 shadows=2\",\"4\":\"[VisualQA] PASS serial=4 shaders=true quality=Alta fixtures=121 shadows=1\",\"7\":\"[VisualQA] PASS serial=7 shaders=true quality=Alta fixtures=121 shadows=3\",\"6\":\"[VisualQA] PASS serial=6 shaders=true quality=Alta fixtures=121 shadows=3\",\"9\":\"[VisualQA] PASS serial=9 shaders=true quality=Alta fixtures=128 shadows=0\",\"8\":\"[VisualQA] PASS serial=8 shaders=true quality=Alta fixtures=127 shadows=3\",\"10\":\"[VisualQA] PASS serial=10 shaders=true quality=Alta fixtures=128 shadows=0\"},\"stage\":7,\"scene\":{\"indoor\":9.764040707640119e-33,\"shadows\":true,\"audio\":{\"volumes\":{\"MusicRelief\":0,\"Machinery\":0.18,\"AmbInterior\":0,\"AmbExterior\":0.24,\"Whisper\":0,\"MusicChase\":0,\"Heartbeat\":0.06,\"Music\":0.07,\"MusicTension\":0,\"WindInterior\":0},\"hush\":false,\"muffle\":-0,\"silenced\":false,\"zone\":\"Outside\",\"music\":\"calm\",\"reverb\":\"Plain\",\"inside\":false},\"power\":0.999999979749136,\"danger\":0,\"exposure\":0.12999999523162843,\"baseFog\":210,\"forest\":0.9999999999999999,\"fixtures\":{\"shadows\":1,\"details\":181,\"budget\":3,\"particles\":3,\"fixtures\":128},\"contrast\":0.07500000298023224,\"style\":\"Realistic\",\"fog\":268.79998779296877,\"bloom\":0.10000000149011612,\"depth\":0,\"shaders\":true,\"quality\":\"Alta\"}}"
+    }
+  ],
+  "isError": false
+}

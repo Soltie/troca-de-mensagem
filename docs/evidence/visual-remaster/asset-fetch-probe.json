@@ -1,0 +1,27 @@
+{
+  "build": "Casa_VISUAL_REMASTER_v1.rbxlx",
+  "method": "ContentProvider.PreloadAsync with four URI strings",
+  "pbr": [
+    {
+      "id": 71421127786076,
+      "status": "Failure"
+    },
+    {
+      "id": 88828750077938,
+      "status": "Failure"
+    },
+    {
+      "id": 124558417113945,
+      "status": "Failure"
+    },
+    {
+      "id": 123416759825160,
+      "status": "Failure"
+    }
+  ],
+  "cause": "Unclassified fetch failure; no evidence of wrong UVs or map orientation",
+  "modelAndGeneratedClipsUnchanged": true,
+  "uploads": false,
+  "artSurfacesInHouse": 0,
+  "atmosphere": false
+}

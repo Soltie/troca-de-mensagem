@@ -1,0 +1,9 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"logs\":[],\"receipt\":\"{\\\"ok\\\":true,\\\"result\\\":{\\\"players\\\":2,\\\"success\\\":false,\\\"checks\\\":0,\\\"phase\\\":\\\"Lobby\\\",\\\"error\\\":\\\"ServerScriptService.Tests.CampaignHarness:31: Timeout: individual visual preferences accepted\\\",\\\"stage\\\":0}}\"}"
+    }
+  ],
+  "isError": false
+}

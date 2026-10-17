@@ -323,3 +323,21 @@ Código da revisão em a03623a e d39669f: armário selecionável, barreiras por 
 Check 270 ALL GREEN; Studio 280/0; História 2 clientes 79 checks e Desafio 2 clientes 81 checks, incluindo derrota, retry, resgate, cinco capítulos, fuga, reinício por voto e console limpo. Testes usam seleção normal do cliente; teleporte/IA congelada só preparam cenários. Diversão, balanceamento e celular físico ainda exigem avaliação humana.
 Build atual: build/Casa_QUALIDADE_VALIDADA.rbxlx (cópia também no projeto principal). SHA256 97F6B3BD563234537FBCC055406E65EC42EE88A7C56AD457A3AA3725285A65F1. Relatório docs/QUALITY_REVIEW.md; evidências docs/evidence/quality-review.
 Studio próprio Casa_QUALIDADE_CORRIGIDA (3820fb81-8966-495e-b0dd-3d0981335c94) LIBERADO EM EDIT; clientes encerrados, sem reserva ativa. Sem push/publicação. Não substituir src concorrente inteiro: fontes integradas estão neste worktree/branch.
+
+**CODEX — REMASTER VISUAL (17/10/2026, chat 01a1483a), EM ANDAMENTO.**
+Worktree próprio visual-remaster/roblox-teste; branch codex/visual-remaster; base ce42900 consolidada.
+Reservados nesta árvore: preferências/Settings, LightingProfile/Lighting/WorldFx/RetroFx, builders, Theme/UI e specs.
+QA em Casa_VISUAL_REMASTER_BASELINE e Casa_VISUAL_REMASTER, nunca conectar ao Script Sync antigo.
+As outras árvores/Studios estão preservados. Gameplay, economia, rig/PBR/clipes não serão substituídos.
+
+**CODEX — REMASTER VISUAL ENTREGUE (17/10/2026, chat 01a1483a).**
+Branch codex/visual-remaster; worktree C:/Users/xpg/.codex/worktrees/visual-remaster/roblox-teste.
+Base ce42900; implementação 163b877 (gráficos/preferências) + ff5159d (cenário/UI).
+Build própria: build/Casa_VISUAL_REMASTER_FINAL.rbxlx, cópia na pasta build principal.
+SHA256 7824AA430DE79B8CE486DF2DCC7B6E9FA23D28B4B7FDBDCDFEA8AB9374A96E33.
+279 testes locais ALL GREEN; 290 no Studio; História 154 e Desafio 156 verificações em dupla.
+Oito capítulos, derrota/retry/resgate/final/lobby/nova partida; perfis distintos, sem mudar regras/economia.
+Fontes embutidas 219/219 auditadas, sem Script Sync antigo; rebuild byte-idêntico. Original preservado.
+Todos os Plays próprios encerrados, editores em Edit, nenhuma reserva ativa. Studios de outras frentes preservados.
+Relatório docs/VISUAL_REMASTER.md; recibos/capturas docs/evidence/visual-remaster. Limites físicos/humanos/backend real no checklist único.
+Sem push/publicação/uploads. Não substituir src inteiro em outra árvore; usar os commits desta branch.

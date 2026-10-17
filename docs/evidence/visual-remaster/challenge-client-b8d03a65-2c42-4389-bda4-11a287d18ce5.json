@@ -1,0 +1,9 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"log\":{\"1\":\"[VisualQA] PASS serial=1 shaders=false quality=Baixa fixtures=121 shadows=0\",\"3\":\"[VisualQA] PASS serial=3 shaders=false quality=Baixa fixtures=122 shadows=0\",\"2\":\"[VisualQA] PASS serial=2 shaders=false quality=Baixa fixtures=122 shadows=0\",\"5\":\"[VisualQA] PASS serial=5 shaders=false quality=Baixa fixtures=121 shadows=0\",\"4\":\"[VisualQA] PASS serial=4 shaders=false quality=Baixa fixtures=121 shadows=0\",\"6\":\"[VisualQA] PASS serial=6 shaders=false quality=Baixa fixtures=121 shadows=0\"},\"settings\":{\"budget\":{\"shadows\":0,\"name\":\"Baixa\",\"grain\":0,\"bloom\":0,\"depth\":false,\"particles\":0,\"detailDistance\":48},\"pending\":[],\"preference\":0.25,\"shaders\":false},\"scene\":{\"indoor\":0.8695904256390638,\"shadows\":true,\"audio\":{\"volumes\":{\"MusicRelief\":0,\"Machinery\":0.18,\"AmbInterior\":0.12,\"AmbExterior\":0.09,\"Whisper\":0,\"MusicChase\":0,\"Heartbeat\":0.04,\"Music\":0.03,\"MusicTension\":0,\"WindInterior\":0.1},\"hush\":false,\"muffle\":-0,\"silenced\":false,\"zone\":\"Hall\",\"music\":\"none\",\"reverb\":\"Hallway\",\"inside\":true},\"power\":0.9999999999999999,\"danger\":0,\"exposure\":0.09739180654287338,\"baseFog\":210,\"forest\":0,\"fixtures\":{\"shadows\":0,\"details\":167,\"budget\":0,\"particles\":3,\"fixtures\":121},\"contrast\":0,\"style\":\"Realistic\",\"fog\":210,\"bloom\":0,\"depth\":0,\"shaders\":false,\"quality\":\"Baixa\"},\"stage\":4,\"player\":\"Player2\"}"
+    }
+  ],
+  "isError": false
+}

@@ -1,0 +1,12 @@
+{
+  "mode": "mock",
+  "current": {
+    "shaders": 1,
+    "quality": 0
+  },
+  "saved": {
+    "shaders": 1,
+    "quality": 0
+  },
+  "label": "Salvo na simulação local do Studio"
+}

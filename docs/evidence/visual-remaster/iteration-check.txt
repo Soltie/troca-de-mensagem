@@ -1,0 +1,22 @@
+
+[check 1/5] format (stylua --check)
+  -> ok
+
+[check 2/5] lint (selene)
+Results:
+0 errors
+0 warnings
+0 parse errors
+  -> ok
+
+[check 3/5] sourcemap (rojo)
+  -> ok
+
+[check 4/5] types (luau-lsp analyze, strict)
+  -> ok
+
+[check 5/5] tests (lune run scripts/test)
+[Tests] 279 passed, 0 failed, 6 skipped specs
+  -> ok
+
+[check] ALL GREEN
