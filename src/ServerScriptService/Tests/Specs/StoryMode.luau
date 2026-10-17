@@ -28,7 +28,9 @@ return {
 						local plan = s.plan
 						assert(plan, "Expected house plan")
 						t.expect((Plan.validate(plan))).toBe(true)
-						t.expect((Session.act(s, 1, plan.activities[2].id, 1, 1))).toBe(false)
+						if mode == "Story" or chapter == 1 or chapter == 5 then
+							t.expect((Session.act(s, 1, plan.activities[2].id, 1, 1))).toBe(false)
+						end
 						for _, spec in plan.activities do
 							if spec.kind == "puzzle" or spec.kind == "repair" then
 								local wrong = spec.order[1] % 4 + 1

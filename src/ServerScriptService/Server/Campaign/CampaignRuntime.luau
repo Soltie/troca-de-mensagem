@@ -150,6 +150,7 @@ local function publish()
 				solved = state.solved,
 				progress = state.progress,
 				required = #spec.order,
+				available = Session.taskReady(session, spec.id),
 				relayUntil = state.relayUntil,
 			})
 		end
@@ -327,6 +328,10 @@ local function stage()
 	end
 	for id in world.interactables do
 		WorldService.setInteractEnabled(id, world.interactables[id].kind == "Door")
+	end
+	-- Esconderijos usam a mesma seleção de alvo do jogador; precisam ser reativados após o reset.
+	for _, locker in WorldService.features().lockers do
+		WorldService.setInteractEnabled(locker.id, true)
 	end
 	built = Builder.build(world.root, plan, Config.Game.InteractDistance)
 	WorldService.setPower(session.stage >= 3)
@@ -844,6 +849,9 @@ local function tick()
 				local hidden = playerAdapter and playerAdapter.hiddenId(player)
 				local complete = spec.kind == "explore"
 					and (root.Position - Vector3.new(spec.x, spec.y or 0, spec.z)).Magnitude < 9
+				if not Session.taskReady(session, spec.id) then
+					continue
+				end
 				if spec.kind == "hide" then
 					complete = hidden == "hide_Library"
 				end

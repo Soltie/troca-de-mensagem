@@ -2,6 +2,7 @@
 -- Apresentação pura: usa só o progresso publicado, nunca revela a solução das sequências.
 -- Textos curtos e diretos, pensados para crianças lerem no meio da ação.
 local Catalog = require("./CampaignCatalog")
+local House = require("./HouseCatalog")
 
 export type Activity = {
 	id: string,
@@ -10,16 +11,25 @@ export type Activity = {
 	title: string?,
 	solved: boolean,
 	progress: number,
+	available: boolean?,
 	required: number?,
 	relayUntil: number?,
 	x: number?,
 	z: number?,
 }
 local Guide = {}
+function Guide.roomName(id: string): string
+	for _, room in House.Rooms do
+		if room.id == id then
+			return room.title
+		end
+	end
+	return Catalog.RoomNames[id] or id
+end
 
 function Guide.current(tasks: { Activity }): (Activity?, number)
 	for index, activity in tasks do
-		if not activity.solved then
+		if not activity.solved and activity.available ~= false then
 			return activity, index
 		end
 	end
@@ -36,7 +46,7 @@ function Guide.instruction(activity: Activity, now: number, activePlayers: numbe
 	elseif activity.kind == "hide" then
 		return "Entre no armário com E. Cabe só uma pessoa em cada esconderijo."
 	elseif activity.kind == "breath" then
-		return "Escondido? Segure Espaço (ou Z) para prender o ar. Solte antes do ar acabar!"
+		return "No armário da biblioteca, segure Espaço ou Z por 2 segundos. E sai do armário."
 	elseif activity.kind == "puzzle" then
 		return `Aperte E nos símbolos na ordem da pista: {activity.progress}/{activity.required or 4}. Errou? Os acertos ficam salvos.`
 	elseif activity.kind == "activate" then
@@ -79,7 +89,7 @@ function Guide.objective(phase: string, status: string?, activity: Activity?): (
 		return "FUJA PARA O PORTÃO!", "O portão abriu! Ajude quem caiu e corra para a floresta."
 	elseif activity then
 		return activity.title or `Concluir {Catalog.KindNames[activity.kind] or "desafio"}`,
-			`Vá até {Catalog.RoomNames[activity.room] or "o lugar marcado"}.`
+			`Vá até {Guide.roomName(activity.room)}.`
 	end
 	return "Preparando o próximo capítulo", "Só um instante..."
 end

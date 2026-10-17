@@ -1,0 +1,32 @@
+--!strict
+local Session = require("@game/ServerScriptService/Server/Campaign/CoopSession")
+local Config = require("@game/ReplicatedStorage/Shared/Config")
+local TestKit = require("../TestKit")
+return {
+	name = "HouseProgression",
+	run = function(t: TestKit.Context)
+		t.it("challenge allows teammates to collect in parallel but never bypass prerequisites", function()
+			local s = Session.new(42, Config.Campaign, "Standard", true)
+			Session.join(s, 1)
+			Session.join(s, 2)
+			s.stage = 1
+			Session.beginStage(s)
+			t.expect(Session.taskReady(s, "task_3")).toBe(true)
+			t.expect((Session.act(s, 2, "task_3", 1, 1))).toBe(true)
+			t.expect((Session.act(s, 1, "task_4", 1, 2))).toBe(false)
+			Session.act(s, 1, "task_1", 1, 3)
+			Session.act(s, 2, "task_2", 1, 4)
+			t.expect(Session.taskReady(s, "task_4")).toBe(true)
+		end)
+		t.it("story retains the authored order when the same objects are reachable", function()
+			local s = Session.new(42, Config.Campaign, "Story", true)
+			Session.join(s, 1)
+			s.stage = 1
+			Session.beginStage(s)
+			t.expect(Session.taskReady(s, "task_3")).toBe(false)
+			t.expect((Session.act(s, 1, "task_3", 1, 1))).toBe(false)
+			Session.act(s, 1, "task_1", 1, 2)
+			t.expect(Session.taskReady(s, "task_2")).toBe(true)
+		end)
+	end,
+} :: TestKit.Spec

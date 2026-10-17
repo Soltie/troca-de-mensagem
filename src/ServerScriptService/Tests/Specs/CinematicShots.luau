@@ -7,6 +7,13 @@ local SEQUENCES = { CinematicShots.Opening, CinematicShots.Stage, CinematicShots
 local testSpec: TestKit.Spec = {
 	name = "CinematicShots",
 	run = function(t)
+		t.it("lobby cameras frame the porch instead of looking through the locked house", function()
+			for _, s in CinematicShots.Attract.shots do
+				t.expect(s.from.z >= 80 and s.to.z >= 80).toBe(true)
+				t.expect(s.lookFrom.z >= 64 and s.lookTo.z >= 64).toBe(true)
+			end
+			t.expect(CinematicShots.Opening.shots[1].from.z >= 110).toBe(true)
+		end)
 		t.it("easing curves start at 0, end at 1 and clamp outside", function()
 			local eases: { CinematicShots.Ease } = { "linear", "inOut", "out", "in" }
 			for _, kind in eases do

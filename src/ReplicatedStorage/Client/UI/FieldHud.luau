@@ -407,9 +407,14 @@ function Hud.build(parent: Instance)
 	waypoint.TextStrokeColor3 = Theme.Ink
 
 	local function resize(viewport: Vector2)
-		local factor = math.clamp(math.min(viewport.X / 820, viewport.Y / 640), 0.6, 1.25)
+		local factor = math.clamp(math.min(viewport.X / 820, viewport.Y / 640), 0.35, 1.25)
 		scale.Scale = factor
 		canvas.Size = UDim2.fromOffset(viewport.X / factor, viewport.Y / factor)
+		local compact = viewport.X / factor < 980
+		tray.AnchorPoint = Vector2.new(if compact then 1 else 0.5, 1)
+		tray.Position = if compact then UDim2.new(1, -16, 1, -16) else UDim2.new(0.5, 0, 1, -16)
+		wallet.Position = if compact then UDim2.new(1, -16, 0, 154) else UDim2.new(1, -16, 0, 14)
+		levelBadge.Position = if compact then UDim2.new(1, -16, 0, 206) else UDim2.new(1, -16, 0, 66)
 		dossier.Size = UDim2.fromOffset(420, math.max(200, viewport.Y / factor - 120))
 		return factor
 	end

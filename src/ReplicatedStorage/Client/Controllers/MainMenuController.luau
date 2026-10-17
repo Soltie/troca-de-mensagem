@@ -423,7 +423,21 @@ local function modeCard(
 	end)
 end
 
-local function buildPlay(b: Frame)
+local function buildPlay(parent: Frame)
+	-- Conteúdo maior que o painel precisa rolar; a vitrine antes vazava sobre a dica inferior.
+	local scroll = Create("ScrollingFrame", {
+		Name = "PlayScroll",
+		Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ScrollBarThickness = 6,
+		ScrollBarImageColor3 = Theme.Hazard,
+		CanvasSize = UDim2.fromOffset(0, 654),
+		ClipsDescendants = true,
+		Parent = parent,
+	})
+	local b =
+		frame({ Name = "PlayContent", Size = UDim2.new(1, -12, 0, 650), BackgroundTransparency = 1, Parent = scroll })
 	local modes = frame({ Size = UDim2.new(1, 0, 0, 300), BackgroundTransparency = 1, Parent = b })
 	local cleared, flawless = storyCleared()
 	modeCard(
@@ -703,6 +717,7 @@ local function buildPlay(b: Frame)
 	-- Vitrine: o próprio Tung Tung do jogo, animado, com a "fala" dele.
 	local showcase = frame({
 		Name = "Showcase",
+		ClipsDescendants = true,
 		Position = UDim2.fromOffset(0, 496),
 		Size = UDim2.new(1, 0, 0, 146),
 		BackgroundColor3 = Theme.PanelLight,
@@ -728,15 +743,15 @@ local function buildPlay(b: Frame)
 	})
 	note({
 		Position = UDim2.fromOffset(220, 52),
-		Size = UDim2.new(1, -236, 0, 46),
+		Size = UDim2.new(1, -236, 0, 32),
 		Text = "“TUM... TUM... TUM... SAHUR!” 🥁",
 		TextSize = 18,
 		TextColor3 = Theme.Text,
 		Parent = showcase,
 	})
 	note({
-		Position = UDim2.fromOffset(220, 92),
-		Size = UDim2.new(1, -236, 0, 48),
+		Position = UDim2.fromOffset(220, 89),
+		Size = UDim2.new(1, -236, 0, 50),
 		Text = "Ele anda pela casa com o bastão. Apague a lanterna, se esconda nos armários e salve seus amigos!",
 		TextSize = 14,
 		TextColor3 = Theme.TextDim,
@@ -1365,7 +1380,7 @@ local function build(): ScreenGui
 		Position = UDim2.fromOffset(0, 26),
 		Size = UDim2.new(1, 0, 0, 58),
 		Text = "TUNG TUNG SAHUR",
-		TextSize = 52,
+		TextSize = 38,
 		Parent = left,
 	})
 	label({
@@ -1550,6 +1565,7 @@ local function build(): ScreenGui
 		TextColor3 = Theme.TextDim,
 		Parent = right,
 	})
+	tip.TextWrapped, tip.TextTruncate = false, Enum.TextTruncate.AtEnd
 	feedback = label({
 		Name = "Feedback",
 		AnchorPoint = Vector2.new(1, 1),
@@ -1571,7 +1587,7 @@ local function build(): ScreenGui
 		end
 		local viewport = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1280, 720)
 		-- Desenho em 1280x720: o UIScale encolhe o raiz junto, então ele cresce na mesma proporção.
-		local factor = math.clamp(math.min(viewport.X / 1280, viewport.Y / 720), 0.5, 1.6)
+		local factor = math.clamp(math.min(viewport.X / 1280, viewport.Y / 720), 0.25, 1.6)
 		scale.Scale = factor
 		root.Size = UDim2.fromScale(1 / factor, 1 / factor)
 		rec.Visible = (os.clock() * 1.4) % 1 < 0.6

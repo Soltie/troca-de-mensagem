@@ -286,34 +286,7 @@ end
 -- A fita começa às 03:12 (a queda de energia da história).
 CinematicShots.TAPE_START = 3 * 3600 + 12 * 60
 
-local function houseScene(name: string, duration: number, labels: { string }): Sequence
-	local list: { Shot } = {}
-	for index, label in labels do
-		table.insert(
-			list,
-			shot({
-				label = label,
-				from = v(-15 + index * 7, 8, 86 - index * 3),
-				to = v(-13 + index * 7, 7, 83 - index * 3),
-				lookFrom = v(0, 12, 0),
-				lookTo = v(0, 10, 0),
-				duration = duration / #labels,
-				fov = 64,
-				ease = "inOut",
-				handheld = 0,
-				cut = "blink",
-			})
-		)
-	end
-	return { name = name, title = "TUNG TUNG SAHUR", subtitle = "THE CURSED HOUSE", shots = list }
-end
-CinematicShots.Opening = houseScene("Opening", 9, { "CAMINHO DA FLORESTA", "A CASA", "NÃO ACORDE O DONO" })
-CinematicShots.Opening.captions = {
-	"A floresta terminou diante de uma casa esquecida.",
-	"A porta se abriu sozinha.",
-	"Lá dentro, alguém ouviu vocês chegarem.",
-}
-CinematicShots.Attract = houseScene("Attract", 12, { "THE CURSED HOUSE", "CINCO CAPÍTULOS", "UMA ÚLTIMA NOITE" })
+-- O final tem três planos próprios. Abertura e laço do menu usam as definições autorais acima.
 CinematicShots.Escape = {
 	name = "Escape",
 	title = "A ÚLTIMA NOITE",

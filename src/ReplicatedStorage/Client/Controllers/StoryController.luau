@@ -43,8 +43,10 @@ function Controller.Start()
 	local revelation = text("RecoveredRecording", 0.72, 0.13)
 	-- Objetivo unificado no CampaignUi; aqui ficam somente gravações e cenas.
 	revelation.AnchorPoint = Vector2.new(0.5, 1)
-	revelation.Position = UDim2.new(0.5, 0, 1, -105)
-	revelation.Size = UDim2.new(0.8, 0, 0, 96)
+	revelation.Position = UDim2.new(0.5, 0, 1, -150)
+	revelation.Size = UDim2.new(0.78, 0, 0, 84)
+	revelation.TextScaled = true
+	Create("UITextSizeConstraint", { Parent = revelation, MinTextSize = 14, MaxTextSize = 17 })
 	local endingAt = 0
 	local ending = text("Continues", 0, 1)
 	ending.Position, ending.Size = UDim2.fromScale(0, 0), UDim2.fromScale(1, 1)
@@ -54,7 +56,7 @@ function Controller.Start()
 	local lastSolved = 0
 	local revealUntil = 0
 	RunService:BindToRenderStep("S9Story", Enum.RenderPriority.Camera.Value - 1, function()
-		local active = state:GetAttribute("Phase") ~= "Lobby"
+		local active = state:GetAttribute("GameMode") == "Story" and state:GetAttribute("Phase") ~= "Lobby"
 		gui.Enabled = active and player:GetAttribute("CinematicActive") ~= true
 		ending.Visible = false
 		if not active then

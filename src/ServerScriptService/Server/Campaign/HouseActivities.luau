@@ -6,6 +6,7 @@ local Build = require("../World/Build")
 local Plan = require("./HousePlan")
 local Generator = require("./CampaignGenerator")
 local TaskProps = require("../World/HouseTaskProps")
+local Progress = require("@game/ReplicatedStorage/Shared/Game/HouseProgression")
 local Activities = {}
 local repairSteps = { "ISOLAR O CIRCUITO", "ENCAIXAR OS FUSÍVEIS", "TESTAR A ENERGIA" }
 local gold = Color3.fromRGB(219, 171, 80)
@@ -126,12 +127,12 @@ function Activities.build(parent: Instance, plan: Generator.Plan, distance: numb
 	return built
 end
 function Activities.refresh(built: any, tasks: any)
-	local current: string? = nil
-	for _, spec in built.plan.activities do
-		if not tasks[spec.id].solved then
-			current = spec.id
-			break
-		end
+	local ready: { [string]: boolean } = {}
+	for index, spec in built.plan.activities do
+		ready[spec.id] = not tasks[spec.id].solved
+			and Progress.ready(built.plan.mode, built.plan.stage, index, function(n)
+				return tasks[built.plan.activities[n].id].solved
+			end)
 	end
 	for _, target in built.targets do
 		local state = tasks[target.taskId]
@@ -142,14 +143,17 @@ function Activities.refresh(built: any, tasks: any)
 		if built.labels[spec.id] then
 			built.labels[spec.id].Text = if state.solved
 				then "CONCLUÍDO"
-				elseif current ~= spec.id then "AGUARDE A PISTA ANTERIOR"
+				elseif not ready[spec.id] then "ENCONTRE AS PISTAS E OS ITENS NECESSÁRIOS"
 				elseif spec.kind == "repair" then `{state.progress}/3 · {repairSteps[state.progress + 1]}`
 				else `{state.progress}/4 · CONSULTE A PISTA RECUPERADA`
 		end
-		local enabled = current == target.taskId
+		local enabled = ready[target.taskId]
 			and spec.kind ~= "hide"
 			and spec.kind ~= "breath"
 			and spec.kind ~= "explore"
+		if spec.kind == "repair" then
+			enabled = enabled and target.button == state.progress + 1
+		end
 		target.focus:SetAttribute(Tags.Attr.InteractEnabled, enabled)
 		target.focus.Transparency = if spec.kind == "collect" then 1 else 0
 		if spec.kind == "collect" and target.focus.Parent then
@@ -164,7 +168,10 @@ function Activities.refresh(built: any, tasks: any)
 				end
 			end
 		end
-		target.focus.Color = if state.solved then Color3.fromRGB(63, 105, 76) else Color3.fromRGB(219, 171, 80)
+		target.focus.Color = if state.solved or (spec.kind == "repair" and target.button <= state.progress)
+			then Color3.fromRGB(63, 105, 76)
+			elseif enabled then Color3.fromRGB(219, 171, 80)
+			else Color3.fromRGB(97, 91, 77)
 	end
 end
 return Activities

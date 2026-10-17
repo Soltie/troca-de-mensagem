@@ -4,6 +4,7 @@ local Catalog = require("@game/ReplicatedStorage/Shared/Game/CampaignCatalog")
 local Generator = require("./CampaignGenerator")
 local HousePlan = require("./HousePlan")
 local House = require("@game/ReplicatedStorage/Shared/Game/HouseCatalog")
+local Progress = require("@game/ReplicatedStorage/Shared/Game/HouseProgression")
 
 export type Status = "Active" | "Downed" | "Waiting" | "Escaped"
 export type Phase = "Lobby" | "Playing" | "Intermission" | "Extracting" | "Won" | "Lost"
@@ -181,6 +182,23 @@ function Session.solvedCount(state: State): number
 	return n
 end
 
+function Session.taskReady(state: State, taskId: string): boolean
+	local plan = state.plan
+	if not plan or not state.tasks[taskId] or state.tasks[taskId].solved then
+		return false
+	end
+	for index, spec in plan.activities do
+		if spec.id == taskId then
+			if not state.house and state.mode ~= "Story" then
+				return true
+			end
+			return Progress.ready(state.mode, state.stage, index, function(n)
+				return state.tasks[plan.activities[n].id].solved
+			end)
+		end
+	end
+	return false
+end
 function Session.act(state: State, id: number, taskId: string, button: number, now: number): (boolean, string)
 	if state.phase ~= "Playing" then
 		return false, "wrong_phase"
@@ -202,15 +220,8 @@ function Session.act(state: State, id: number, taskId: string, button: number, n
 	if not activity or activity.solved then
 		return false, "not_available"
 	end
-	if (state.house or state.mode == "Story") and state.plan then
-		for _, previous in state.plan.activities do
-			if previous.id == taskId then
-				break
-			end
-			if not state.tasks[previous.id].solved then
-				return false, "story_order"
-			end
-		end
+	if not Session.taskReady(state, taskId) then
+		return false, "story_order"
 	end
 	local kind = activity.spec.kind
 	local result = "progress"

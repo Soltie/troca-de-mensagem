@@ -10,6 +10,7 @@ local FeatureBuilder = require("./FeatureBuilder")
 local Architecture = require("./HouseArchitecture")
 local Layout = require("@game/ReplicatedStorage/Shared/Game/HouseLayout")
 local Television = require("./HouseTelevision")
+local Access = require("./HouseAccess")
 local Builder = {}
 local wood = Color3.fromRGB(75, 48, 32)
 local plaster = Color3.fromRGB(104, 94, 76)
@@ -167,6 +168,7 @@ function Builder.build(parent: Instance): (MapBuilder.World, FeatureBuilder.Buil
 	gate("upstairs", 16, 0, 23, 10, 1)
 	gate("basement", -16, -16, 23, 10, 1)
 	gate("ritual", 0, -16, -52, 16, 1)
+	Access.build(root)
 	local interactables: { [string]: MapBuilder.Interactable } = {}
 	local doorHandles: { [string]: MapBuilder.DoorHandle } = {}
 	local lockers: { [string]: FeatureBuilder.LockerHandle } = {}

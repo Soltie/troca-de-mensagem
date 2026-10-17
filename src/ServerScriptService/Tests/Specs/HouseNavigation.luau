@@ -37,6 +37,7 @@ return {
 					end
 				end
 				world.gate.model:PivotTo(world.gate.openPivot + offset)
+				require("@game/ServerScriptService/Server/World/HouseAccess").refresh(world.root)
 				-- Pathfinding não detecta uma casa visualmente aberta: medimos também a geometria física.
 				local rays = RaycastParams.new()
 				rays.FilterType = Enum.RaycastFilterType.Include

@@ -40,6 +40,7 @@ local HouseScenery = require("../World/HouseScenery")
 local House = require("@game/ReplicatedStorage/Shared/Game/HouseCatalog")
 local HouseLevels = require("../Campaign/HouseLevelPlan")
 local HouseLevelBuilder = require("../World/HouseLevelBuilder")
+local HouseAccess = require("../World/HouseAccess")
 local houseStage = 0
 local outdoorPatrol: { Layout.Point } = {}
 local world: MapBuilder.World? = nil
@@ -855,7 +856,12 @@ function WorldService.setHouseStage(chapter: number, seed: number?, mode: string
 			table.insert(outdoorPatrol, { x = spot.x, y = spot.y, z = spot.z })
 		end
 		getWorld().spawnCFrame = CFrame.lookAt(Vector3.new(0, 3, 77), Vector3.new(0, 3, 0))
+		local entry = gates and gates:FindFirstChild("entry")
+		if entry and entry:IsA("BasePart") then
+			entry.CanCollide, entry.CanQuery, entry.Transparency = false, false, 1
+		end
 	end
+	HouseAccess.refresh(getWorld().root)
 end
 function WorldService.upperNoise()
 	local source = Build.part(
@@ -891,7 +897,8 @@ function WorldService.houseEvent(event: string?)
 	end
 	local gate = gates and gates:FindFirstChild(event)
 	if gate and gate:IsA("BasePart") then
-		local closing = event == "entry"
+		-- A primeira pessoa a entrar não pode trancar os colegas que ainda estão no jardim.
+		local closing = false
 		gate.CanCollide, gate.CanQuery, gate.Transparency = closing, closing, if closing then 0 else 1
 		for _, child in gate:GetDescendants() do
 			if child:IsA("SurfaceGui") then
@@ -899,6 +906,7 @@ function WorldService.houseEvent(event: string?)
 			end
 		end
 	end
+	HouseAccess.refresh(getWorld().root)
 end
 function WorldService.houseRuins()
 	HouseLevelBuilder.ruins(getWorld().root)

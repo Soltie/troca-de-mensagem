@@ -80,11 +80,40 @@ function Harness.run(runtime: any, args: any)
 			return a.UserId < b.UserId
 		end)
 		runtime.restart()
+		local function voteMode(serialNumber: number)
+			if args.modeMenuQA then
+				for _, teammate in players do
+					teammate:SetAttribute(
+						"ModeQARequest",
+						`{if args.storyQA then "Story" else "Standard"}:{serialNumber}`
+					)
+				end
+			end
+		end
+		voteMode(1)
 		waitFor(function()
 			local s = runtime.snapshot()
 			return s.stage == 1 and not s.building and s.active == args.players
 		end, "chapter 1", 60)
 		local actor = players[1]
+		if args.qualityQA then
+			local seed = runtime.snapshot().seed
+			for _, teammate in players do
+				runtime.lose(teammate)
+			end
+			waitFor(function()
+				return runtime.snapshot().phase == "Lost"
+			end, "team defeat", 45)
+			check(runtime.snapshot().phase == "Lost", "defeat presents retry state")
+			waitFor(function()
+				local s = runtime.snapshot()
+				return s.phase == "Playing" and not s.building and s.active == args.players
+			end, "free checkpoint restart", 35)
+			check(
+				runtime.snapshot().stage == 1 and runtime.snapshot().seed == seed and runtime.snapshot().solved == 0,
+				"automatic retry restores same stage with no stale progress"
+			)
+		end
 		check(
 			actor:GetAttribute("HasFlashlight") == false and actor:GetAttribute("Flashlight") == false,
 			"no flashlight before collection"
@@ -115,14 +144,21 @@ function Harness.run(runtime: any, args: any)
 				return s.stage == chapter and not s.building and s.phase == "Playing"
 			end, `chapter {chapter}`, 50)
 			local snapshot = runtime.snapshot()
+			if args.qualityQA then
+				local state = game:GetService("ReplicatedStorage").CampaignState
+				check(snapshot.mode == (if args.storyQA then "Story" else "Standard"), "selected mode preserved")
+				local hasScene = (tonumber(state:GetAttribute("StorySceneEndsAt")) or 0) > 0
+				check(hasScene == (args.storyQA == true), "story transitions differ from challenge")
+			end
 			for _, spec in snapshot.plan.activities do
 				if spec.kind == "explore" then
 					move(actor, Vector3.new(spec.x, (spec.y or 0) + 3.2, spec.z))
 				elseif spec.kind == "hide" then
 					local locker = World.locker("hide_Library")
 					assert(locker, "Tutorial hide missing")
+					check(locker.door:GetAttribute("InteractEnabled") == true, "library cabinet discoverable by client")
 					move(actor, locker.front + Vector3.new(0, 3, 0))
-					local result = request(actor, { id = "hide_Library" })
+					local result = request(actor, { id = "hide_Library", select = true })
 					check(result.ok and result.data.accepted, "enter physical hide through remote")
 				elseif spec.kind == "breath" then
 					request(actor, { breath = true })
@@ -134,7 +170,7 @@ function Harness.run(runtime: any, args: any)
 						local target = model and model:FindFirstChild(`{spec.id}_{button}`) :: BasePart
 						assert(target, "Objective target missing")
 						move(actor, target.Position + Vector3.new(0, 1.4, 5))
-						local result = request(actor, { id = target.Name })
+						local result = request(actor, { id = target.Name, select = true })
 						check(
 							result.ok and result.data.accepted,
 							`chapter {chapter} {spec.id} button {button}: {result.data.message}`
@@ -147,7 +183,7 @@ function Harness.run(runtime: any, args: any)
 				if spec.kind == "breath" then
 					request(actor, { breath = false })
 					check((tonumber(actor:GetAttribute("Oxygen")) or 100) < 100, "tutorial consumes real oxygen")
-					request(actor, { id = "hide_Library" })
+					request(actor, { id = "hide_Library", select = true })
 					check(actor:GetAttribute("Hidden") == "", "exit restores hide state")
 				end
 				if spec.kind == "collect" and runtime.snapshot().phase == "Playing" then
@@ -173,6 +209,20 @@ function Harness.run(runtime: any, args: any)
 			return runtime.snapshot().phase == "Won"
 		end, "forest extraction")
 		check(runtime.snapshot().phase == "Won", "main ending after real exit zone")
+		if args.qualityQA then
+			for _, teammate in players do
+				request(teammate, { restart = true })
+			end
+			voteMode(2)
+			waitFor(function()
+				local s = runtime.snapshot()
+				return s.stage == 1 and s.phase == "Playing" and not s.building
+			end, "restart after victory", 60)
+			check(
+				runtime.snapshot().solved == 0 and actor:GetAttribute("HasFlashlight") == false,
+				"victory restart clears inventory and progression"
+			)
+		end
 	end)
 	done = true
 	local result = {

@@ -33,7 +33,7 @@ local messages: { [string]: string } = {
 	need_partner = "👫 Chame um amigo para apertar este mesmo botão!",
 	wrong_sequence = "Ops! Botão errado, mas seus acertos continuam salvos.",
 	repair_order = "Aperte o botão aceso: desligar, trocar o fusível e ligar.",
-	story_order = "Primeiro faça o objetivo marcado lá em cima!",
+	story_order = "Complete as pistas e os itens necessários. H abre o guia.",
 	rescuing = "Ajudando... fique pertinho do seu amigo!",
 	rescued = "🙌 Amigo de pé de novo!",
 	rescue_cancelled = "Ajuda interrompida. Chegue perto e tente de novo.",
@@ -244,7 +244,7 @@ function Controller.Start()
 			Juice.pop(ui.order, 0.08)
 		end
 		ui.destination.Text = if active and activity
-			then `📍 {Catalog.RoomNames[activity.room] or activity.room}`
+			then `📍 {Guide.roomName(activity.room)}`
 			else "🏚️ CASA DO TUNG TUNG"
 		ui.action.Text = if active and activity then Guide.instruction(activity, now, activePlayers) else detail
 		local solved = (state:GetAttribute("Solved") or 0) :: number
@@ -326,14 +326,19 @@ function Controller.Start()
 				`🎭 SEU PAPEL: {roleTitle}\n{roleDescription}`,
 				if story
 					then "🗺️ MISSÃO\nFaçam os objetivos na ordem abaixo. O marcado é o próximo. São cinco capítulos; no último, fujam pelo portão!"
-					else "🗺️ MISSÃO\nExplorem a casa e façam os objetivos. A seta mostra uma sugestão. No final, fujam pelo portão!",
+					else "🗺️ DESAFIO\nDividam as tarefas disponíveis entre colegas. Coletem em qualquer ordem; mecanismos exigem as pistas e os itens. A seta é uma sugestão.",
 				"✅ OBJETIVOS",
 			}
 			for n, item in tasks do
 				table.insert(
 					lines,
-					`{if item.solved then "✅" elseif n == index then "👉" else "⬜"} {n}. {Catalog.RoomNames[item.room] or item.room}\n{item.title or Catalog.KindNames[item.kind]}{if item.solved
+					`{if item.solved
+						then "✅"
+						elseif item.available == false then "🔒"
+						elseif n == index then "👉"
+						else "◆"} {n}. {Guide.roomName(item.room)}\n{item.title or Catalog.KindNames[item.kind]}{if item.solved
 						then ""
+						elseif item.available == false then "\nComplete as pistas e os itens anteriores."
 						else `\n{Guide.instruction(item, now, activePlayers)}`}`
 				)
 			end
@@ -402,7 +407,7 @@ function Controller.Start()
 				ui.waypoint.Position = UDim2.fromOffset(x, y)
 				local distance = math.floor((station.Position - camera.CFrame.Position).Magnitude / 3.57)
 				local direction = if onScreen then "◆" elseif x < width / 2 then "◀" else "▶"
-				ui.waypoint.Text = `{direction} {Catalog.RoomNames[activity.room] or activity.room}\n{distance} m`
+				ui.waypoint.Text = `{direction} {Guide.roomName(activity.room)}\n{distance} m`
 			else
 				ui.waypoint.Visible = false
 			end
@@ -435,7 +440,20 @@ function Controller.Start()
 				local request = HttpService:JSONDecode(command)
 				task.spawn(function()
 					local result: any
-					if request.breath ~= nil then
+					if request.restart then
+						result = Remotes.clientFunction("RequestRestart", 10):InvokeServer()
+					elseif request.select then
+						local selected = require("./InteractionController").testInteract(request.id)
+						result = {
+							ok = true,
+							data = {
+								accepted = selected and player:GetAttribute("CampaignAccepted") == true,
+								message = if selected
+									then player:GetAttribute("CampaignFeedback")
+									else "client_target_unavailable",
+							},
+						}
+					elseif request.breath ~= nil then
 						Remotes.clientEvent("SetHoldBreath", 10):FireServer(request.breath)
 						result = { ok = true }
 					else

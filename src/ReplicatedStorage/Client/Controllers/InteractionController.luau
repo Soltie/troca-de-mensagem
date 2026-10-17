@@ -401,4 +401,38 @@ function InteractionController.currentTarget(): string?
 	return nil
 end
 
+-- QA usa a mesma mira, visibilidade, estado e envio do botão E. Não ativa um alvo bloqueado.
+function InteractionController.testInteract(expectedId: string): boolean
+	assert(RunService:IsStudio(), "Studio-only interaction QA")
+	local character = player.Character
+	local head = character and character:FindFirstChild("Head")
+	local camera = workspace.CurrentCamera
+	if not head or not head:IsA("BasePart") or not camera or not allowed() then
+		return false
+	end
+	if hiddenId() == expectedId then
+		interact(expectedId, nil)
+		return true
+	end
+	local focus: BasePart? = nil
+	for _, candidate in CollectionService:GetTagged(Tags.Interactable) do
+		if candidate:IsA("BasePart") and candidate:GetAttribute(Tags.Attr.InteractId) == expectedId then
+			focus = candidate
+			break
+		end
+	end
+	if not focus then
+		return false
+	end
+	local previous = camera.CFrame
+	camera.CFrame = CFrame.lookAt(head.Position, focus.Position)
+	local selected = findTarget(camera)
+	camera.CFrame = previous
+	if selected ~= focus then
+		return false
+	end
+	current = selected
+	interact(expectedId, selected)
+	return true
+end
 return InteractionController
