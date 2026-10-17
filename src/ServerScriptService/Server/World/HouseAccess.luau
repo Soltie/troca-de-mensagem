@@ -1,6 +1,7 @@
 --!strict
 -- Barreira física acompanha a missão: a regra do servidor e a geometria usam os mesmos eventos.
 local Build = require("./Build")
+local Envelope = require("@game/ReplicatedStorage/Shared/Game/HouseEnvelope")
 local Access = {}
 local V3 = Vector3.new
 local wood = Color3.fromRGB(86, 65, 54)
@@ -10,6 +11,18 @@ function Access.build(root: Instance)
 		old:Destroy()
 	end
 	local folder = Build.folder(root, "ProgressionBarriers")
+	-- A base antiga deixava frestas de 2–4 studs junto às fachadas e um recorte inteiro
+	-- ao lado do vestíbulo. Solo espesso elimina também a visão lateral para o vazio.
+	for _, rect in Envelope.Ground do
+		Build.box(
+			folder,
+			"EstateSoil",
+			V3(rect.x0, -18, rect.z0),
+			V3(rect.x1, -0.08, rect.z1),
+			Color3.fromRGB(36, 48, 34),
+			{ material = Enum.Material.Grass }
+		)
+	end
 	local function barrier(name: string, base: Vector3, size: Vector3)
 		local part = Build.block(folder, name, base, size, 0, wood, { material = Enum.Material.WoodPlanks })
 		part:SetAttribute("MissionBarrier", name)
