@@ -82,7 +82,12 @@ local testSpec: TestKit.Spec = {
 			for _, s in CinematicShots.Attract.shots do
 				t.expect(CinematicShots.isCctv(s)).toBe(true)
 			end
-			t.expect(CinematicShots.isCctv(CinematicShots.Opening.shots[1])).toBe(true)
+			t.expect(CinematicShots.isCctv(CinematicShots.Opening.shots[1])).toBe(false)
+			for _, s in CinematicShots.Escape.shots do
+				t.expect(CinematicShots.isCctv(s)).toBe(false)
+				t.expect(CinematicShots.lens(s, 0)).toBe(s.fov)
+				t.expect(CinematicShots.lens(s, 1)).toBe(s.fovTo)
+			end
 			t.expect(CinematicShots.quantize(0, 5, 12)).toBe(0)
 			t.expect(CinematicShots.quantize(1, 5, 12)).toBe(1)
 			-- 60 quadros em 5 s: 0.0101 ainda está no quadro 0; 0.0167 já é o quadro 1.

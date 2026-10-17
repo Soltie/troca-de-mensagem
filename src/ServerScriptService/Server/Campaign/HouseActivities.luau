@@ -50,6 +50,7 @@ function Activities.build(parent: Instance, plan: Generator.Plan, distance: numb
 			end
 			local text = if solution
 				then `LUA=1 OLHO=2 CHAMA=3 PORTA=4\nORDEM: {table.concat(solution, " - ")}`
+				elseif plan.stage >= 6 then "O ECO SOBREVIVEU À CASA.\nCHAMEM O RESGATE PELA TORRE."
 				else "ELE NÃO É O DONO.\nO CORAÇÃO ESTÁ SOB A CASA."
 			Build.sign(
 				model,

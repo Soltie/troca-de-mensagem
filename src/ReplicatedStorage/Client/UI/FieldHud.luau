@@ -6,6 +6,7 @@
 ]]
 local Create = require("./Create")
 local Theme = require("./Theme")
+local Input = game:GetService("UserInputService")
 local Hud = {}
 
 export type Bar = { frame: Frame, fill: Frame, label: TextLabel }
@@ -142,12 +143,16 @@ function Hud.build(parent: Instance)
 		Name = "CampaignUi",
 		Parent = parent,
 		ResetOnSpawn = false,
-		IgnoreGuiInset = true,
+		ScreenInsets = Enum.ScreenInsets.CoreUISafeInsets,
 		DisplayOrder = 60,
 	}) :: ScreenGui
+	local safe = Create(
+		"Frame",
+		{ Name = "SafeArea", Parent = gui, BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1) }
+	) :: Frame
 	local canvas = Create(
 		"Frame",
-		{ Name = "Canvas", Parent = gui, BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1) }
+		{ Name = "Canvas", Parent = safe, BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1) }
 	) :: Frame
 	local scale = Create("UIScale", { Parent = canvas }) :: UIScale
 
@@ -407,7 +412,53 @@ function Hud.build(parent: Instance)
 	waypoint.TextStrokeColor3 = Theme.Ink
 
 	local function resize(viewport: Vector2)
+		viewport = safe.AbsoluteSize
+		local touch = Input.TouchEnabled
+		if touch then
+			-- Medidas em pixels de interface: texto e alvos de toque não encolhem junto com o desktop.
+			scale.Scale = 1
+			canvas.Size = UDim2.fromScale(1, 1)
+			local portrait = viewport.X < 600
+			local width = if portrait
+				then viewport.X - 16
+				else math.min(500, viewport.X - math.clamp(viewport.X * 0.29, 210, 252) - 24)
+			local y = if portrait then 60 else 8
+			local height = if viewport.Y < 420 then 92 else 112
+			objective.AnchorPoint = Vector2.zero
+			objective.Position, objective.Size = UDim2.fromOffset(8, y), UDim2.fromOffset(width, height)
+			chapter.Position, chapter.Size, chapter.TextSize = UDim2.fromOffset(10, 4), UDim2.new(1, -20, 0, 18), 12
+			destination.Visible = false
+			title.Position, title.Size = UDim2.fromOffset(10, 23), UDim2.new(1, -20, 0, 27)
+			action.Position, action.Size, action.TextSize =
+				UDim2.fromOffset(10, 50), UDim2.new(1, -20, 0, height - 64), 14
+			progressTrack.Size, progressTrack.Position = UDim2.new(1, -80, 0, 5), UDim2.new(0.5, -16, 1, -6)
+			progress.Position = UDim2.new(1, -50, 1, -20)
+			footer.AnchorPoint = Vector2.zero
+			footer.Position, footer.Size = UDim2.fromOffset(8, y + height + 6), UDim2.fromOffset(width, 24)
+			footer.BackgroundTransparency = 0.35
+			for index, which in { bars.stamina, bars.battery, bars.oxygen } do
+				which.frame.Position, which.frame.Size = UDim2.new((index - 1) / 3, 4, 0, 0), UDim2.new(1 / 3, -8, 1, 0)
+				local icon = which.frame:FindFirstChild("Icon") :: TextLabel
+				local track = which.frame:FindFirstChild("Track") :: Frame
+				icon.Visible = false
+				track.Position, track.Size = UDim2.fromOffset(0, 4), UDim2.new(1, 0, 0, 16)
+			end
+			equipment.Visible = false
+			wallet.Visible, levelBadge.Visible = false, false
+			dossier.Size, dossier.Position =
+				UDim2.fromOffset(math.min(560, viewport.X - 16), viewport.Y - 16), UDim2.new(0.5, 0, 0, 8)
+			close.Size, close.Position, close.Text = UDim2.fromOffset(104, 44), UDim2.new(1, -114, 0, 4), "FECHAR"
+			scroll.Position, scroll.Size = UDim2.fromOffset(12, 56), UDim2.new(1, -24, 1, -68)
+			feedback.Position = UDim2.fromScale(if portrait then 0.5 else 0.38, 0.65)
+			feedback.Size, feedback.TextSize =
+				UDim2.fromOffset(if portrait then viewport.X - 32 else viewport.X - 280, 48), 16
+			waypoint.Size, waypoint.TextSize = UDim2.fromOffset(150, 40), 14
+			return 1
+		end
 		local factor = math.clamp(math.min(viewport.X / 820, viewport.Y / 640), 0.35, 1.25)
+		objective.AnchorPoint, objective.Position, objective.Size =
+			Vector2.new(0.5, 0), UDim2.new(0.5, 0, 0, 14), UDim2.fromOffset(470, 132)
+		destination.Visible, equipment.Visible, wallet.Visible, levelBadge.Visible = true, true, true, true
 		scale.Scale = factor
 		canvas.Size = UDim2.fromOffset(viewport.X / factor, viewport.Y / factor)
 		local compact = viewport.X / factor < 980
@@ -456,6 +507,9 @@ function Hud.build(parent: Instance)
 		feedback = feedback,
 		waypoint = waypoint,
 		resize = resize,
+		viewport = function()
+			return safe.AbsoluteSize
+		end,
 	}
 end
 

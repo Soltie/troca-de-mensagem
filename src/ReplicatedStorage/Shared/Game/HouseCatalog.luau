@@ -200,4 +200,8 @@ local House = {
 		},
 	} :: { Chapter },
 }
+local Forest = require("./ForestCatalog")
+for _, chapter in Forest.Chapters do
+	table.insert(House.Chapters, chapter)
+end
 return TableUtil.deepFreeze(House)

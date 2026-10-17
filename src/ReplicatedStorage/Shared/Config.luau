@@ -20,6 +20,7 @@ local Config = {
 		StageIntroSeconds = 3,
 		SpawnTimeout = 35,
 		IntermissionSeconds = 6,
+		EndingSeconds = 22,
 		ActionCooldown = 0.5,
 		ReviveSeconds = 4,
 		MedicReviveSeconds = 2.5,

@@ -206,3 +206,7 @@ Observação: outra sessão de agente trabalhou ao mesmo tempo no mesmo Studio e
 
 ## Retomada dos dois chats — 16/10/2026
 Economia/temporada be50b06 e animações 1602f3d entregues. Snapshot isolado ALL GREEN (201); Studio 224, campanha 3/8 Won; smoke posterior de articulações/câmera/skip no Dev e runner com 229 aprovados. Plays encerrados. Modo história é frente paralela e precisa de integração própria. Ver docs/TWO_CHATS_RESUME.md e docs/evidence/two-chats.
+
+## Continuação da floresta — 16/10/2026
+
+A campanha da casa tem oito capítulos. A evacuação do quinto leva a três níveis de floresta: trilha, acampamento e torre/resgate. Final, retorno automático ao lobby e integração das frentes mobile/apresentação estão descritos em FOREST_CAMPAIGN.md e THREE_CHATS_RELEASE.md. Fontes isoladas em C:/Users/xpg/.codex/worktrees/forest-campaign/roblox-teste. Build de entrega no build do projeto principal; não é necessário conectar Script Sync para abrir a cópia com fontes embutidas. Sem push/publicação.

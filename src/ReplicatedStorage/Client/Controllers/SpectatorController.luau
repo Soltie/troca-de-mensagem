@@ -83,7 +83,13 @@ function Controller.Start()
 		local target = if selected then candidates[selected] else nil
 		Camera.setSpectator(target)
 		banner.Text = PixelText.normalize(
-			(if target then `ACOMPANHANDO {target.DisplayName} · [← / →] TROCAR` else "AGUARDANDO COLEGAS ATIVOS.")
+			(
+				if target
+					then `ACOMPANHANDO {target.DisplayName} · {if UserInputService.TouchEnabled
+						then "TOQUE COLEGA PARA TROCAR"
+						else "[← / →] TROCAR"}`
+					else "AGUARDANDO COLEGAS ATIVOS."
+			)
 				.. (
 					if player:GetAttribute("CampaignStatus") == "Downed"
 						then "\nVOCÊ AINDA PODE SER RESGATADO POR UM COLEGA."

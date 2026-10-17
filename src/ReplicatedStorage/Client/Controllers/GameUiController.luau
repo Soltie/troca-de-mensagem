@@ -316,6 +316,16 @@ local function build(): Refs
 			PaddingBottom = UDim.new(0, 30),
 		}),
 	})
+	local noteScroll = Create("ScrollingFrame", {
+		Name = "Reading",
+		Parent = note,
+		Size = UDim2.new(1, 0, 1, -50),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ScrollBarThickness = 6,
+		CanvasSize = UDim2.new(),
+		ScrollingDirection = Enum.ScrollingDirection.Y,
+	}) :: ScrollingFrame
 	local noteText = label({
 		Name = "Body",
 		Size = UDim2.fromScale(1, 1),
@@ -325,13 +335,30 @@ local function build(): Refs
 		TextStrokeTransparency = 1,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextYAlignment = Enum.TextYAlignment.Top,
-		Parent = note,
+		Parent = noteScroll,
 	})
+	local noteClose = Create("TextButton", {
+		Name = "Close",
+		Parent = note,
+		AnchorPoint = Vector2.new(1, 1),
+		Position = UDim2.fromScale(1, 1),
+		Size = UDim2.fromOffset(120, 44),
+		Text = "FECHAR",
+		FontFace = Theme.Font,
+		TextSize = 16,
+		BackgroundColor3 = Theme.Panel,
+		TextColor3 = Theme.Text,
+		Modal = true,
+	}) :: TextButton
+	noteClose.Activated:Connect(function()
+		note.Visible, noteOpen = false, false
+		player:SetAttribute("NoteOpen", false)
+	end)
 	label({
 		AnchorPoint = Vector2.new(1, 1),
 		Position = UDim2.new(1, 0, 1, 18),
 		Size = UDim2.fromOffset(160, 14),
-		Text = Text.NoteClose,
+		Text = "",
 		TextSize = Theme.SizeSmall,
 		TextColor3 = Theme.Ink,
 		TextStrokeTransparency = 1,
@@ -796,21 +823,55 @@ function GameUiController.Init()
 	local shared = Create("ScreenGui", {
 		Name = "InteractionUi",
 		ResetOnSpawn = false,
-		IgnoreGuiInset = true,
+		ScreenInsets = Enum.ScreenInsets.CoreUISafeInsets,
 		DisplayOrder = 70,
 		Parent = player:WaitForChild("PlayerGui"),
 	})
 	ui.prompt.Parent = shared
 	ui.caption.Parent = shared
 	ui.note.Parent = shared
+	local safe = Create(
+		"Frame",
+		{ Name = "SafeArea", Parent = shared, Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1 }
+	) :: Frame
+	ui.prompt.Parent, ui.caption.Parent, ui.note.Parent = safe, safe, safe
+	RunService.RenderStepped:Connect(function()
+		local size = safe.AbsoluteSize
+		local touch = UserInputService.TouchEnabled
+		ui.note.Size = UDim2.fromOffset(math.min(460, size.X - 24), math.min(400, size.Y - 24))
+		ui.note.Rotation = if touch then 0 else -1.5
+		if ui.note.Visible then
+			local reading = ui.note:FindFirstChild("Reading") :: ScrollingFrame
+			local bounds = game:GetService("TextService"):GetTextSize(
+				ui.noteText.Text,
+				19,
+				Enum.Font.Gotham,
+				Vector2.new(math.max(100, reading.AbsoluteSize.X - 12), 100000)
+			)
+			ui.noteText.Size, reading.CanvasSize =
+				UDim2.new(1, -12, 0, bounds.Y + 32), UDim2.fromOffset(0, bounds.Y + 32)
+		end
+		if touch then
+			ui.prompt.Position = UDim2.new(if size.X < 600 then 0.5 else 0.38, 0, 0.5, 12)
+			ui.prompt.Size = UDim2.fromOffset(math.min(400, size.X - (if size.X < 600 then 32 else 280)), 48)
+			ui.prompt.TextSize = 14
+			ui.caption.Position, ui.caption.Size = UDim2.new(0.5, 0, 1, -12), UDim2.new(1, -24, 0, 44)
+		end
+	end)
 	ui.caption.Font = Enum.Font.Code
 	ui.caption.TextSize = 16
 	ui.caption.BackgroundColor3 = Theme.Panel
 	ui.caption.BackgroundTransparency = 0.12
 	local function visibility()
 		(shared :: ScreenGui).Enabled = player:GetAttribute("CinematicActive") ~= true
+			and player:GetAttribute("ComfortMenuOpen") ~= true
+			and player:GetAttribute("FieldGuideOpen") ~= true
+			and player:GetAttribute("TouchBackpackOpen") ~= true
 	end
 	player:GetAttributeChangedSignal("CinematicActive"):Connect(visibility)
+	for _, key in { "ComfortMenuOpen", "FieldGuideOpen", "TouchBackpackOpen" } do
+		player:GetAttributeChangedSignal(key):Connect(visibility)
+	end
 	visibility()
 	refreshHelp()
 end
@@ -900,6 +961,14 @@ end
 
 function GameUiController.setPrompt(text: string?)
 	local ui = r()
+	if text and UserInputService.TouchEnabled then
+		if (player:GetAttribute("Hidden") or "") ~= "" then
+			text = "Toque SAIR · Segure O AR para prender a respiração"
+				.. (if player:GetAttribute("HoldBreath") == true then "\nPRENDENDO O AR..." else "")
+		else
+			text = text:gsub("%[E%]", "AÇÃO"):gsub("aperte E", "toque AÇÃO")
+		end
+	end
 	ui.prompt.Visible = text ~= nil
 	if text then
 		ui.prompt.Text = text
@@ -915,12 +984,15 @@ function GameUiController.showNote(id: string)
 	local text = (Text.Notes :: any)[id] or ""
 	ui.noteText.Text = if id == "note_breakers" then string.format(text, GameState.snapshot().breakerOrder) else text
 	ui.note.Visible = true
+	local reading = ui.note:FindFirstChild("Reading") :: ScrollingFrame
+	reading.CanvasPosition = Vector2.zero
 	if SettingsController.motionEnabled() then
 		local target = UDim2.fromScale(0.5, 0.5)
 		ui.note.Position = target + UDim2.fromOffset(0, 12)
 		TweenService:Create(ui.note, TweenInfo.new(0.18), { Position = target }):Play()
 	end
 	noteOpen = true
+	player:SetAttribute("NoteOpen", true)
 end
 
 function GameUiController.isNoteOpen(): boolean
@@ -931,6 +1003,7 @@ function GameUiController.closeNote()
 	local ui = r()
 	ui.note.Visible = false
 	noteOpen = false
+	player:SetAttribute("NoteOpen", false)
 end
 
 return GameUiController

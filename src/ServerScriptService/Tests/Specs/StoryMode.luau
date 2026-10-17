@@ -16,14 +16,14 @@ return {
 			t.expect((Modes.winner({ [1] = "Story", [2] = "Standard" }, { [1] = {}, [2] = {} }, 1))).toBe(nil)
 			t.expect((Modes.winner({ [99] = "Story" }, { [1] = {} }, 1))).toBe(nil)
 		end)
-		t.it("finishes all five chapters with 1, 2 and 6 survivors and no duplicated pickups", function()
+		t.it("finishes house and forest chapters with 1, 2 and 6 survivors and no duplicated pickups", function()
 			for _, count in { 1, 2, 6 } do
 				for _, mode in { "Story", "Standard" } do
 					local s = Session.new(90312, Config.Campaign, mode, true)
 					for id = 1, count do
 						t.expect((Session.join(s, id))).toBe(true)
 					end
-					for chapter = 1, 5 do
+					for chapter = 1, 8 do
 						t.expect((Session.beginStage(s))).toBe(true)
 						local plan = s.plan
 						assert(plan, "Expected house plan")
@@ -43,7 +43,13 @@ return {
 							end
 							t.expect((Session.act(s, 1, spec.id, 1, 1))).toBe(false)
 						end
-						t.expect(s.phase).toBe(if chapter == 5 then "Extracting" else "Intermission")
+						t.expect(s.phase).toBe(if chapter == 5 or chapter == 8 then "Extracting" else "Intermission")
+						if chapter == 5 then
+							for id = 1, count do
+								Session.escape(s, id)
+							end
+							t.expect(s.phase).toBe("Intermission")
+						end
 					end
 					t.expect(s.inventory.artifact).toBe(1)
 					for id = 1, count do
@@ -156,8 +162,8 @@ return {
 			t.expect(s.inventory.flashlight).toBe(1)
 			t.expect(s.phase).toBe("Playing")
 		end)
-		t.it("five chapter scenes fit their shared server interval", function()
-			t.expect(#Story.Chapters).toBe(5)
+		t.it("eight chapter scenes fit their shared server interval", function()
+			t.expect(#Story.Chapters).toBe(8)
 			for _, scene in Story.Scenes do
 				t.expect(Shots.duration(scene)).toBe(Story.SceneSeconds)
 			end

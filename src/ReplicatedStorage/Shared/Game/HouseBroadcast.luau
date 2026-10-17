@@ -28,4 +28,19 @@ local Broadcast = {
 		"Memorizem o retorno: escada, hall, varanda, floresta.",
 	},
 }
+table.insert(Broadcast, {
+	"A casa caiu, mas as pancadas continuam.",
+	"O guarda deixou um mapa para quem conseguisse sair.",
+	"Sigam as marcas amarelas. A floresta também escuta.",
+})
+table.insert(Broadcast, {
+	"O acampamento está vazio. O rádio ainda chia.",
+	"O guarda descobriu que o eco sobreviveu ao incêndio.",
+	"Uma voz pede um sinal da torre. Pode haver uma saída.",
+})
+table.insert(Broadcast, {
+	"Além das árvores, há uma estrada.",
+	"Alimentem a torre e chamem o resgate.",
+	"Um sinal. Uma última corrida. Ninguém fica para trás.",
+})
 return TableUtil.deepFreeze(Broadcast)

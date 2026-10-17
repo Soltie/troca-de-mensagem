@@ -59,7 +59,7 @@ function Harness.run(runtime: any, args: any)
 		}
 	end
 
-	task.delay(330, function()
+	task.delay(600, function()
 		if not done then
 			done = true
 			StudioTestService:EndTest({ success = false, error = "House QA watchdog" })
@@ -138,7 +138,7 @@ function Harness.run(runtime: any, args: any)
 			helperRoot.Anchored = false
 			check(players[2]:GetAttribute("CampaignStatus") == "Active", "rescue returns teammate")
 		end
-		for chapter = 1, 5 do
+		for chapter = 1, 8 do
 			waitFor(function()
 				local s = runtime.snapshot()
 				return s.stage == chapter and not s.building and s.phase == "Playing"
@@ -154,11 +154,12 @@ function Harness.run(runtime: any, args: any)
 				if spec.kind == "explore" then
 					move(actor, Vector3.new(spec.x, (spec.y or 0) + 3.2, spec.z))
 				elseif spec.kind == "hide" then
-					local locker = World.locker("hide_Library")
+					local locker = World.locker(if chapter >= 6 then "hide_Forest_3" else "hide_Library")
 					assert(locker, "Tutorial hide missing")
 					check(locker.door:GetAttribute("InteractEnabled") == true, "library cabinet discoverable by client")
 					move(actor, locker.front + Vector3.new(0, 3, 0))
-					local result = request(actor, { id = "hide_Library", select = true })
+					local result =
+						request(actor, { id = if chapter >= 6 then "hide_Forest_3" else "hide_Library", select = true })
 					check(result.ok and result.data.accepted, "enter physical hide through remote")
 				elseif spec.kind == "breath" then
 					request(actor, { breath = true })
@@ -183,7 +184,7 @@ function Harness.run(runtime: any, args: any)
 				if spec.kind == "breath" then
 					request(actor, { breath = false })
 					check((tonumber(actor:GetAttribute("Oxygen")) or 100) < 100, "tutorial consumes real oxygen")
-					request(actor, { id = "hide_Library", select = true })
+					request(actor, { id = if chapter >= 6 then "hide_Forest_3" else "hide_Library", select = true })
 					check(actor:GetAttribute("Hidden") == "", "exit restores hide state")
 				end
 				if spec.kind == "collect" and runtime.snapshot().phase == "Playing" then
@@ -197,21 +198,67 @@ function Harness.run(runtime: any, args: any)
 				end
 			end
 			check(
-				runtime.snapshot().phase == (if chapter == 5 then "Extracting" else "Intermission"),
+				runtime.snapshot().phase == (if chapter == 5 or chapter == 8 then "Extracting" else "Intermission"),
 				`chapter {chapter} transition`
 			)
+			if chapter == 5 then
+				for _, teammate in players do
+					move(teammate, Vector3.new(0, 3.2, 106))
+				end
+				waitFor(function()
+					return runtime.snapshot().phase == "Intermission"
+				end, "house exit before forest")
+				check(runtime.snapshot().phase ~= "Won", "house exit does not end forest campaign")
+			end
 		end
-		check(runtime.snapshot().stage == 5, "all five chapters")
+		check(runtime.snapshot().stage == 8, "all eight chapters")
 		for _, player in players do
-			move(player, Vector3.new(0, 3.2, 106))
+			move(player, Vector3.new(0, 3.2, 870))
 		end
 		waitFor(function()
 			return runtime.snapshot().phase == "Won"
 		end, "forest extraction")
 		check(runtime.snapshot().phase == "Won", "main ending after real exit zone")
 		if args.qualityQA then
-			for _, teammate in players do
-				request(teammate, { restart = true })
+			if args.lobbyReturnQA then
+				local state = game:GetService("ReplicatedStorage"):WaitForChild("CampaignState")
+				local deadline = tonumber(state:GetAttribute("LobbyReturnAt")) or 0
+				check(deadline > workspace:GetServerTimeNow(), "server schedules the ending and lobby return")
+				waitFor(function()
+					return runtime.snapshot().phase == "Lobby"
+				end, "automatic team return without restart input", 35)
+				task.wait(1)
+				check(
+					runtime.snapshot().phase == "Lobby" and runtime.snapshot().stage == 0,
+					"lobby waits for fresh mode votes"
+				)
+				check(World.get().root:FindFirstChild("Forest") == nil, "forest cleaned up for forecourt lobby")
+				check(
+					state:GetAttribute("LobbyReturnAt") == 0 and state:GetAttribute("GameMode") == "",
+					"ending timer and mode cleared"
+				)
+				for _, teammate in players do
+					check(
+						teammate:GetAttribute("CampaignStatus") == "Waiting"
+							and teammate:GetAttribute("GameModeVote") == "",
+						"teammate returns waiting with vote cleared"
+					)
+					check(
+						teammate.Character ~= nil
+							and (teammate.Character:GetPivot().Position - Vector3.new(0, 3, 77)).Magnitude < 24,
+						"avatar returned to forecourt lobby"
+					)
+					check(
+						teammate:GetAttribute("HasFlashlight") == false
+							and teammate:GetAttribute("Hidden") == ""
+							and teammate:GetAttribute("HoldBreath") == false,
+						"lobby clears equipment and hold state"
+					)
+				end
+			else
+				for _, teammate in players do
+					request(teammate, { restart = true })
+				end
 			end
 			voteMode(2)
 			waitFor(function()

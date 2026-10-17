@@ -40,6 +40,9 @@ StoryRewards.Chapters = table.freeze({
 	},
 	{ first = { fichas = 450, xp = 350 }, again = { fichas = 100, xp = 100 }, flawless = { creditos = 20 } },
 	{ first = { fichas = 600, xp = 450 }, again = { fichas = 150, xp = 150 }, flawless = { creditos = 30 } },
+	{ first = { fichas = 350, xp = 250 }, again = { fichas = 100, xp = 100 }, flawless = { creditos = 20 } },
+	{ first = { fichas = 450, xp = 350 }, again = { fichas = 100, xp = 100 }, flawless = { creditos = 20 } },
+	{ first = { fichas = 600, xp = 450 }, again = { fichas = 150, xp = 150 }, flawless = { creditos = 30 } },
 } :: { ChapterReward })
 
 StoryRewards.CompletionItem = "titulo_ultimo_turno"

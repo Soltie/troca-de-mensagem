@@ -1,0 +1,21 @@
+{
+  "buildSha256": "8bfa4e4a6d9358b8b0737b623a618b1f04be64c9afa9102001440b02c3d9f192",
+  "args": {
+    "campaignQA": true,
+    "storyQA": false,
+    "qualityQA": true,
+    "modeMenuQA": true,
+    "lobbyReturnQA": true,
+    "players": 2
+  },
+  "receipt": {
+    "ok": true,
+    "result": {
+      "players": 2,
+      "success": true,
+      "checks": 130,
+      "phase": "Playing",
+      "stage": 1
+    }
+  }
+}

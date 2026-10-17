@@ -41,6 +41,8 @@ local House = require("@game/ReplicatedStorage/Shared/Game/HouseCatalog")
 local HouseLevels = require("../Campaign/HouseLevelPlan")
 local HouseLevelBuilder = require("../World/HouseLevelBuilder")
 local HouseAccess = require("../World/HouseAccess")
+local Forest = require("@game/ReplicatedStorage/Shared/Game/ForestCatalog")
+local ForestBuilder = require("../World/ForestBuilder")
 local houseStage = 0
 local outdoorPatrol: { Layout.Point } = {}
 local world: MapBuilder.World? = nil
@@ -360,6 +362,13 @@ function WorldService.rebuildSector(plan: ProceduralLayout.Plan)
 end
 
 function WorldService.patrolNodes(): { Layout.Point }
+	if Config.House.Enabled and houseStage >= 6 then
+		local points: { Layout.Point } = {}
+		for _, room in Forest.Rooms do
+			table.insert(points, { x = room.x, y = 0, z = room.z })
+		end
+		return points
+	end
 	if Config.House.Enabled then
 		local points: { Layout.Point } = {}
 		for _, point in outdoorPatrol do
@@ -805,6 +814,12 @@ function WorldService.isInsideBuilding(position: Vector3): boolean
 end
 
 function WorldService.isInExitZone(position: Vector3): boolean
+	if Config.House.Enabled and houseStage >= 6 then
+		return math.abs(position.X - Forest.Exit.x) < 11
+			and math.abs(position.Z - Forest.Exit.z) < 8
+			and position.Y > -1
+			and position.Y < 10
+	end
 	if Config.House.Enabled then
 		return math.abs(position.X) < 12
 			and position.Z > 101
@@ -817,6 +832,14 @@ end
 
 function WorldService.setHouseStage(chapter: number, seed: number?, mode: string?)
 	houseStage = chapter
+	ForestBuilder.clear(getWorld().root, getFeatures())
+	getWorld().root:SetAttribute("ForestActive", chapter >= 6)
+	if chapter >= 6 then
+		WorldService.setHouseDestruction(false)
+		ForestBuilder.build(getWorld().root, chapter, seed or 1, getFeatures())
+		getWorld().spawnCFrame = CFrame.lookAt(Vector3.new(0, 3, 580), Vector3.new(0, 3, 640))
+		return
+	end
 	local architecture = getWorld().root:FindFirstChild("Architecture")
 	if architecture then
 		for _, part in architecture:GetChildren() do

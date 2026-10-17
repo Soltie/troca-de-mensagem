@@ -1,0 +1,2 @@
+All 216 embedded Luau sources match final disk source exactly (XML normalized newlines).
+SHA256: 8bfa4e4a6d9358b8b0737b623a618b1f04be64c9afa9102001440b02c3d9f192

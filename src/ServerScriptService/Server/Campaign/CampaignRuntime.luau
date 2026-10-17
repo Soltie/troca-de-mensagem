@@ -47,6 +47,7 @@ local blackoutUntil = 0
 local building = false
 local escapeEndsAt = 0
 local lostRetryAt = 0
+local lobbyReturnAt = 0
 local tutorialHeld: { [number]: number } = {}
 local supplies: { [number]: { [string]: number } } = {}
 local endingPaid: { [number]: boolean } = {}
@@ -117,6 +118,10 @@ local function publish()
 	if not replicated then
 		return
 	end
+	if session.phase == "Won" and lobbyReturnAt == 0 then
+		lobbyReturnAt = workspace:GetServerTimeNow() + C.EndingSeconds
+	end
+	replicated:SetAttribute("LobbyReturnAt", lobbyReturnAt)
 	local roster = {}
 	for _, player in Players:GetPlayers() do
 		local member = session.members[player.UserId]
@@ -160,6 +165,7 @@ local function publish()
 	replicated:SetAttribute("Inventory", HttpService:JSONEncode(session.inventory))
 	replicated:SetAttribute("EscapeEndsAt", escapeEndsAt)
 	replicated:SetAttribute("Stage", session.stage)
+	replicated:SetAttribute("ForestActive", session.stage >= 6)
 	replicated:SetAttribute("Seed", session.seed)
 	replicated:SetAttribute("Title", if plan then plan.title else "REUNINDO A EQUIPE")
 	replicated:SetAttribute("Threat", if plan then Catalog.Threats[plan.threat].title else "")
@@ -304,7 +310,7 @@ local function stage()
 		freeze(player, true)
 	end
 	channels, nextActionAt, tutorialHeld = {}, {}, {}
-	escapeEndsAt, lostRetryAt = 0, 0
+	escapeEndsAt, lostRetryAt, lobbyReturnAt = 0, 0, 0
 	clearRescues()
 	CreatureService.reset()
 	local plan = session.plan
@@ -528,8 +534,11 @@ local function afterActivity(previous: Session.Phase)
 			end
 		elseif session.phase == "Extracting" then
 			escapeEndsAt = workspace:GetServerTimeNow() + Config.House.EscapeSeconds
-			WorldService.setHouseDestruction(true)
-			CreatureService.makeNoise(Vector3.new(26, -16, -68), 500)
+			WorldService.setHouseDestruction(session.stage == 5)
+			CreatureService.makeNoise(
+				if session.stage >= 6 then Vector3.new(0, 0, 850) else Vector3.new(26, -16, -68),
+				500
+			)
 			CreatureService.setFrozen(false)
 			WorldService.setPower(false)
 			WorldService.openGate()
@@ -723,7 +732,7 @@ local function restartCampaign()
 	rewardCampaign += 1
 	taskPayments, supplies, endingPaid = {}, {}, {}
 	endingShown = false
-	escapeEndsAt, lostRetryAt = 0, 0
+	escapeEndsAt, lostRetryAt, lobbyReturnAt = 0, 0, 0
 	version += 1
 	building = false
 	clearRescues()
@@ -740,8 +749,23 @@ local function restartCampaign()
 		player:SetAttribute("GameModeVote", "")
 		supplies[player.UserId] = { battery = 1, oxygen = 1, decoy = 1 }
 		slotFor(player.UserId)
+		player:SetAttribute("HasFlashlight", false)
+		player:SetAttribute(Tags.Attr.Flashlight, false)
+		if playerAdapter then
+			playerAdapter.resetForSpawn(player)
+		end
+		local character, root = parts(player)
+		if character and root then
+			-- O lobby usa as câmeras da casa; reúne os avatares no pátio de entrada.
+			character:PivotTo(CFrame.new((slotFor(player.UserId) - 1) * 4 - 10, 3, 77))
+			root.AssemblyLinearVelocity, root.AssemblyAngularVelocity = Vector3.zero, Vector3.zero
+			if playerAdapter then
+				playerAdapter.markTeleported(player)
+			end
+		end
 		freeze(player, true)
 	end
+	WorldService.setHouseStage(1, seed, "Story")
 	nextStageAt, startedAt = 0, 0
 	GameState.set("RoundId", version)
 	GameState.set("RoundEndedAt", 0)
@@ -853,10 +877,15 @@ local function tick()
 					continue
 				end
 				if spec.kind == "hide" then
-					complete = hidden == "hide_Library"
+					complete = if session.stage >= 6
+						then hidden ~= nil and string.sub(hidden, 1, 12) == "hide_Forest_"
+						else hidden == "hide_Library"
 				end
 				if spec.kind == "breath" then
-					if hidden == "hide_Library" and player:GetAttribute("HoldBreath") == true then
+					local inHide = if session.stage >= 6
+						then hidden ~= nil and string.sub(hidden, 1, 12) == "hide_Forest_"
+						else hidden == "hide_Library"
+					if inHide and player:GetAttribute("HoldBreath") == true then
 						tutorialHeld[player.UserId] = (tutorialHeld[player.UserId] or 0) + 0.2
 						complete = tutorialHeld[player.UserId] >= 2
 					else
@@ -922,15 +951,21 @@ local function tick()
 	end
 	if
 		session.phase == "Won"
-		and Endings.resolve(Session.count(session, "Escaped"), math.min(now, escapeEndsAt), escapeEndsAt)
+		and Endings.resolve(Session.count(session, "Escaped"), math.min(now, escapeEndsAt), escapeEndsAt, session.stage)
 	then
 		if not endingShown then
 			endingShown = true
-			WorldService.houseRuins()
-			CreatureService.endingPose()
+			if session.stage < 6 then
+				WorldService.houseRuins()
+			end
+			if session.stage >= 6 then
+				CreatureService.freeze()
+			else
+				CreatureService.endingPose()
+			end
 		end
 		if replicated then
-			replicated:SetAttribute("Ending", "house_fire")
+			replicated:SetAttribute("Ending", if session.stage >= 6 then "forest_rescue" else "house_fire")
 		end
 		for _, player in Players:GetPlayers() do
 			if
@@ -939,17 +974,27 @@ local function tick()
 				and session.members[player.UserId].status == "Escaped"
 			then
 				endingPaid[player.UserId] = PlayerData.update(player, function(data)
-					data.house.endings.house_fire = os.time()
+					data.house.endings[if session.stage >= 6 then "forest_rescue" else "house_fire"] = os.time()
 					data.house.achievements.escaped = os.time()
 				end)
 			end
 		end
+	end
+	if before:sub(1, 10) == "Extracting" and session.phase == "Intermission" then
+		nextStageAt = now + C.IntermissionSeconds
+		escapeEndsAt = 0
+		CreatureService.freeze()
+		publish()
 	end
 	if session.phase == "Won" or session.phase == "Lost" then
 		CreatureService.freeze()
 		for _, player in Players:GetPlayers() do
 			freeze(player, true)
 		end
+	end
+	if session.phase == "Won" and lobbyReturnAt > 0 and now >= lobbyReturnAt then
+		restartCampaign()
+		return
 	end
 	if relayExpired or before ~= session.phase .. ":" .. Session.count(session, "Downed") then
 		publish()
@@ -1029,6 +1074,17 @@ function Runtime.Start()
 			end
 			local _, root = parts(player)
 			if not root then
+				return false
+			end
+			if item == "battery" and player:GetAttribute("HasFlashlight") ~= true then
+				feedback(player, "need_flashlight")
+				return false
+			end
+			if
+				(item == "battery" and playerAdapter.battery(player) >= 0.98)
+				or (item == "oxygen" and (tonumber(player:GetAttribute("Oxygen")) or 100) >= 99.9)
+			then
+				feedback(player, "supply_full")
 				return false
 			end
 			stock[item] -= 1

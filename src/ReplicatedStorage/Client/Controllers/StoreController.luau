@@ -14,6 +14,7 @@
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
 local Economy = require("@game/ReplicatedStorage/Shared/Game/Economy")
 local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
@@ -1128,7 +1129,7 @@ local function build()
 	local screen = Create("ScreenGui", {
 		Name = "StoreUi",
 		ResetOnSpawn = false,
-		IgnoreGuiInset = true,
+		ScreenInsets = Enum.ScreenInsets.CoreUISafeInsets,
 		DisplayOrder = 80,
 		Parent = player:WaitForChild("PlayerGui"),
 	}) :: ScreenGui
@@ -1210,14 +1211,25 @@ local function build()
 		Parent = bar,
 	}) :: Frame
 
+	local tabBar = Create("ScrollingFrame", {
+		Name = "Tabs",
+		Parent = p,
+		Position = UDim2.fromOffset(16, 46),
+		Size = UDim2.new(1, -32, 0, 48),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ScrollBarThickness = 3,
+		CanvasSize = UDim2.new(),
+		ScrollingDirection = Enum.ScrollingDirection.X,
+	}) :: ScrollingFrame
 	for i, key in TABS do
 		tabButtons[key :: Tab] = button({
 			Name = `Tab_{key}`,
-			Position = UDim2.new((i - 1) / #TABS, 16, 0, 52),
-			Size = UDim2.new(1 / #TABS, -20, 0, 30),
+			Position = UDim2.fromScale((i - 1) / #TABS, 0),
+			Size = UDim2.new(1 / #TABS, -8, 0, 44),
 			Text = (S.tabs :: any)[key],
 			TextSize = Theme.SizeBody,
-			Parent = p,
+			Parent = tabBar,
 		}, function()
 			tab = key :: Tab
 			track("view", key)
@@ -1228,8 +1240,8 @@ local function build()
 	-- Filtro por tipo (só na aba LOJA).
 	local kinds = Create("Frame", {
 		Name = "Kinds",
-		Position = UDim2.fromOffset(16, 90),
-		Size = UDim2.new(1, -32, 0, 24),
+		Position = UDim2.fromOffset(16, 100),
+		Size = UDim2.new(1, -32, 0, 44),
 		BackgroundTransparency = 1,
 		Parent = p,
 	}) :: Frame
@@ -1249,8 +1261,8 @@ local function build()
 	end
 	content = Create("ScrollingFrame", {
 		Name = "Content",
-		Position = UDim2.fromOffset(16, 124),
-		Size = UDim2.new(1, -32, 1, -176),
+		Position = UDim2.fromOffset(16, 152),
+		Size = UDim2.new(1, -32, 1, -214),
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		ScrollBarThickness = 6,
@@ -1263,16 +1275,17 @@ local function build()
 	message = label({
 		AnchorPoint = Vector2.new(0, 1),
 		Position = UDim2.new(0, 16, 1, -12),
-		Size = UDim2.new(0.7, 0, 0, 24),
+		Size = UDim2.new(1, -190, 0, 44),
 		Text = "",
 		TextColor3 = Theme.Hazard,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = p,
 	})
 	button({
+		Name = "Close",
 		AnchorPoint = Vector2.new(1, 1),
 		Position = UDim2.new(1, -16, 1, -10),
-		Size = UDim2.fromOffset(150, 28),
+		Size = UDim2.fromOffset(150, 44),
 		Text = S.close,
 		Parent = p,
 	}, function()
@@ -1287,6 +1300,26 @@ local function build()
 		ZIndex = 5,
 		Parent = p,
 	}) :: Frame
+	RunService.RenderStepped:Connect(function()
+		local touch = UserInputService.TouchEnabled
+		if touch then
+			p.Size = UDim2.new(1, -16, 1, -16)
+			tabBar.CanvasSize = UDim2.fromOffset(#TABS * 112, 0)
+			for index, key in TABS do
+				local b = tabButtons[key :: Tab]
+				b.Position, b.Size = UDim2.fromOffset((index - 1) * 112, 0), UDim2.fromOffset(104, 44)
+			end
+			if toastHolder then
+				toastHolder.Visible = player:GetAttribute("ModeMenuOpen") ~= true
+					and player:GetAttribute("FieldGuideOpen") ~= true
+					and player:GetAttribute("ComfortMenuOpen") ~= true
+					and player:GetAttribute("TouchBackpackOpen") ~= true
+			end
+		end
+		if hintLabel and touch then
+			hintLabel.Visible = false
+		end
+	end)
 end
 
 local StoreController = {

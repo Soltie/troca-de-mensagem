@@ -20,6 +20,7 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
 local CinematicShots = require("@game/ReplicatedStorage/Shared/Game/CinematicShots")
+local Presentation = require("@game/ReplicatedStorage/Shared/Game/Presentation")
 local SettingsController = require("./SettingsController")
 local Create = require("../UI/Create")
 local Theme = require("../UI/Theme")
@@ -38,6 +39,7 @@ type Refs = {
 	lidTop: Frame,
 	lidBottom: Frame,
 	fade: Frame,
+	sceneShade: Frame,
 	noise: Frame,
 	bars: { Frame },
 	tracking: Frame,
@@ -60,6 +62,9 @@ local staticUntil = 0
 local staticStrength = 0
 local stampClock = 0
 local stampMode: StampMode = "PLAY"
+local sceneAlpha = 0
+local revealStarted: number? = nil
+local revealDuration = 0.25
 local rng = Random.new()
 
 local function r(): Refs
@@ -76,18 +81,20 @@ local function alive(layer: string, token: number): boolean
 	return tokens[layer] == token
 end
 
--- Anima apply(t) de 0 a 1 em passos de STEP; false se outro pedido da camada cancelou.
-local function stepped(layer: string, duration: number, apply: (number) -> ()): boolean
-	local token = bump(layer)
-	local steps = math.max(1, math.floor(duration / STEP + 0.5))
-	for i = 1, steps do
+-- Tempo real: faixas/fades lisos; a textura VHS continua atualizando no ritmo próprio.
+local function stepped(layer: string, duration: number, apply: (number) -> (), existingToken: number?): boolean
+	local token = existingToken or bump(layer)
+	local started = os.clock()
+	while true do
 		if not alive(layer, token) then
 			return false
 		end
-		apply(i / steps)
-		if i < steps then
-			task.wait(STEP)
+		local alpha = if duration <= 0 then 1 else math.clamp((os.clock() - started) / duration, 0, 1)
+		apply(Presentation.ease(alpha))
+		if alpha >= 1 then
+			break
 		end
+		RunService.RenderStepped:Wait()
 	end
 	return alive(layer, token)
 end
@@ -237,6 +244,8 @@ local function build(): Refs
 		Position = UDim2.fromScale(0.5, 0.44),
 		Size = UDim2.new(0.9, 0, 0, 60),
 		TextSize = 56,
+		TextScaled = true,
+		TextWrapped = true,
 		TextColor3 = Theme.Text,
 		TextStrokeTransparency = 0,
 		Visible = false,
@@ -247,7 +256,9 @@ local function build(): Refs
 		Name = "Subtitle",
 		AnchorPoint = Vector2.new(0.5, 0),
 		Position = UDim2.new(0.5, 0, 0.44, 40),
-		Size = UDim2.new(0.9, 0, 0, 22),
+		Size = UDim2.new(0.86, 0, 0, 44),
+		TextScaled = true,
+		TextWrapped = true,
 		TextSize = Theme.SizeLarge,
 		TextColor3 = Theme.Hazard,
 		TextStrokeTransparency = 0,
@@ -259,7 +270,8 @@ local function build(): Refs
 		Name = "Caption",
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 1 - BAR / 2),
-		Size = UDim2.new(0.92, 0, 0, 24),
+		Size = UDim2.new(0.86, 0, BAR, -8),
+		TextScaled = true,
 		TextSize = Theme.SizeLarge,
 		TextWrapped = true,
 		Visible = false,
@@ -291,6 +303,22 @@ local function build(): Refs
 		ZIndex = 10,
 		Parent = gui,
 	})
+	local sceneShade = black({
+		Name = "SceneShade",
+		Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1,
+		ZIndex = 5,
+		Parent = gui,
+	})
+	Create("UITextSizeConstraint", { Parent = title, MinTextSize = 18, MaxTextSize = 56 })
+	Create("UITextSizeConstraint", { Parent = subtitle, MinTextSize = 12, MaxTextSize = Theme.SizeLarge })
+	Create("UITextSizeConstraint", { Parent = caption, MinTextSize = 12, MaxTextSize = Theme.SizeLarge })
+	stampCamera.Size = UDim2.new(0.64, -28, 0, 32)
+	stampCamera.TextScaled, stampCamera.TextWrapped = true, true
+	stampClockLabel.Size = UDim2.new(0.3, -16, 0, 24)
+	stampClockLabel.TextScaled = true
+	Create("UITextSizeConstraint", { Parent = stampCamera, MinTextSize = 10, MaxTextSize = Theme.SizeBody })
+	Create("UITextSizeConstraint", { Parent = stampClockLabel, MinTextSize = 12, MaxTextSize = Theme.SizeLarge })
 
 	gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
 	return {
@@ -300,6 +328,7 @@ local function build(): Refs
 		lidTop = lidTop,
 		lidBottom = lidBottom,
 		fade = fade,
+		sceneShade = sceneShade,
 		noise = noise,
 		bars = bars,
 		tracking = tracking,
@@ -381,6 +410,15 @@ end
 function TransitionController.Start()
 	local stepClock = 0
 	RunService.RenderStepped:Connect(function(dt: number)
+		local started = revealStarted
+		if started then
+			local alpha = math.clamp((os.clock() - started) / revealDuration, 0, 1)
+			sceneAlpha = 1 - Presentation.ease(alpha)
+			r().sceneShade.BackgroundTransparency = 1 - sceneAlpha
+			if alpha >= 1 then
+				revealStarted = nil
+			end
+		end
 		stepClock += dt
 		local ui = r()
 		if ui.stamp.Visible then
@@ -506,17 +544,43 @@ function TransitionController.stamp(label: string?, mode: StampMode?, clock: num
 	ui.stamp.Visible = true
 end
 
+-- Camada própria: não disputa fade/pálpebras com resgate, derrota ou cartela.
+function TransitionController.sceneShade(alpha: number)
+	revealStarted = nil
+	sceneAlpha = math.clamp(alpha, 0, 1)
+	r().sceneShade.BackgroundTransparency = 1 - sceneAlpha
+end
+
+function TransitionController.reveal(duration: number?)
+	TransitionController.sceneShade(1)
+	revealDuration = math.max(0.01, duration or 0.25)
+	revealStarted = os.clock()
+end
+
 -- Cartela central. title = nil apaga. Entra com 3 quadros de tremida de projeção.
 function TransitionController.title(title: string?, subtitle: string?)
 	local ui = r()
 	local token = bump("title")
 	if not title then
-		ui.title.Visible = false
-		ui.subtitle.Visible = false
+		local from = ui.title.TextTransparency
+		task.spawn(function()
+			stepped("title", 0.18, function(alpha)
+				ui.title.TextTransparency = from + (1 - from) * alpha
+				ui.title.TextStrokeTransparency = from + (1 - from) * alpha
+				ui.subtitle.TextTransparency = alpha
+				ui.subtitle.TextStrokeTransparency = alpha
+			end, token)
+			if alive("title", token) then
+				ui.title.Visible, ui.subtitle.Visible = false, false
+			end
+		end)
 		return
 	end
 	ui.title.Text = title
 	ui.subtitle.Text = subtitle or ""
+	ui.subtitle.Visible = false
+	ui.subtitle.TextTransparency = 0
+	ui.subtitle.TextStrokeTransparency = 0
 	task.spawn(function()
 		local offsets: { number } = { 6, -3, 1, 0 }
 		if not SettingsController.motionEnabled() then
@@ -549,18 +613,26 @@ function TransitionController.caption(value: string?)
 		return
 	end
 	local normalized = value
+	ui.caption.Text = normalized
+	ui.caption.MaxVisibleGraphemes = if SettingsController.motionEnabled() then 0 else -1
 	ui.caption.Visible = true
+	if not SettingsController.motionEnabled() then
+		return
+	end
 	task.spawn(function()
 		local length = utf8.len(normalized) or #normalized
-		local shown = 0
-		while shown < length do
+		local started = os.clock()
+		while true do
 			if not alive("caption", token) then
 				return
 			end
-			shown = math.min(length, shown + 2)
-			local cut = utf8.offset(normalized, shown + 1)
-			ui.caption.Text = if cut then string.sub(normalized, 1, cut - 1) else normalized
-			task.wait(1 / 30)
+			local shown = math.min(length, math.floor((os.clock() - started) * math.max(60, length / 0.65)))
+			ui.caption.MaxVisibleGraphemes = shown
+			if shown >= length then
+				ui.caption.MaxVisibleGraphemes = -1
+				break
+			end
+			RunService.RenderStepped:Wait()
 		end
 	end)
 end
@@ -571,6 +643,7 @@ function TransitionController.reset()
 		bump(layer)
 	end
 	staticUntil = 0
+	TransitionController.sceneShade(0)
 	applyLetterbox(0)
 	applyEyes(0)
 	applyFade(0)
@@ -587,6 +660,8 @@ function TransitionController.debugState(): { [string]: any }
 		letterbox = letterboxAlpha,
 		eyes = eyesAlpha,
 		fade = fadeAlpha,
+		sceneShade = sceneAlpha,
+		revealing = revealStarted ~= nil,
 		static = os.clock() < staticUntil,
 		stamp = r().stamp.Visible,
 		title = if r().title.Visible then r().title.Text else nil,

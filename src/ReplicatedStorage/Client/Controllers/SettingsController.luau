@@ -15,6 +15,7 @@
 local UserInputService = game:GetService("UserInputService")
 local ContextActionService = game:GetService("ContextActionService")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 
 local HttpService = game:GetService("HttpService")
 local Remotes = require("@game/ReplicatedStorage/Shared/Net/Remotes")
@@ -122,9 +123,13 @@ function SettingsController.Init()
 		Name = "ComfortOptions",
 		ResetOnSpawn = false,
 		DisplayOrder = 250,
-		IgnoreGuiInset = true,
+		ScreenInsets = Enum.ScreenInsets.CoreUISafeInsets,
 		Parent = Players.LocalPlayer:WaitForChild("PlayerGui"),
 	}) :: ScreenGui
+	local safe = Create(
+		"Frame",
+		{ Name = "SafeArea", Parent = gui, Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1 }
+	) :: Frame
 	local panel = Create("Frame", {
 		Name = "Options",
 		AnchorPoint = Vector2.new(0.5, 0.5),
@@ -133,17 +138,17 @@ function SettingsController.Init()
 		BackgroundColor3 = Theme.Panel,
 		BackgroundTransparency = 0.04,
 		Visible = false,
-		Parent = gui,
+		Parent = safe,
 	}, {
 		Create("UICorner", { CornerRadius = Theme.Corner }),
 		Create("UIStroke", { Color = Theme.Stroke, Thickness = 3 }),
-		Create("UISizeConstraint", { MaxSize = Vector2.new(680, 420) }),
+		Create("UISizeConstraint", { MaxSize = Vector2.new(680, 600) }),
 	}) :: Frame
 	menu = panel
 	Create("TextLabel", {
 		Name = "Title",
 		Position = UDim2.fromOffset(20, 12),
-		Size = UDim2.new(1, -40, 0, 34),
+		Size = UDim2.new(1, -140, 0, 34),
 		BackgroundTransparency = 1,
 		FontFace = Theme.Font,
 		TextSize = 26,
@@ -161,14 +166,26 @@ function SettingsController.Init()
 		TextSize = 13,
 		TextColor3 = Theme.TextDim,
 		TextXAlignment = Enum.TextXAlignment.Left,
-		Text = "Clique para ligar/desligar. Volume: cada clique baixa 25%. Tecla O abre e fecha.",
+		Text = "Toque para alternar. Volume: cada toque baixa 25%.",
 		Parent = panel,
 	})
+	local scroll = Create("ScrollingFrame", {
+		Name = "OptionsScroll",
+		Parent = panel,
+		Position = UDim2.fromOffset(12, 74),
+		Size = UDim2.new(1, -24, 1, -86),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ScrollBarThickness = 6,
+		CanvasSize = UDim2.new(),
+		ScrollingDirection = Enum.ScrollingDirection.Y,
+	}) :: ScrollingFrame
+	local entries: { TextButton } = {}
 	local function option(key: string, index: number, column: number, callback: () -> ())
 		local button = Create("TextButton", {
 			Name = key,
 			Modal = true,
-			Parent = panel,
+			Parent = scroll,
 			Position = UDim2.new(column * 0.5, if column == 0 then 16 else 6, 0, 74 + (index - 1) * 40),
 			Size = UDim2.new(0.5, -22, 0, 34),
 			BackgroundColor3 = OFF_COLOR,
@@ -180,6 +197,7 @@ function SettingsController.Init()
 			Text = key,
 		}, { Create("UICorner", { CornerRadius = Theme.CornerSmall }) }) :: TextButton
 		buttons[key] = button
+		table.insert(entries, button)
 		button.Activated:Connect(callback)
 	end
 	for index, key in KEYS do
@@ -201,6 +219,22 @@ function SettingsController.Init()
 	end)
 	buttons.close.Text = "✖ FECHAR"
 	buttons.close.BackgroundColor3 = Theme.Accent
+	buttons.close.Parent = panel
+	buttons.close.Position, buttons.close.Size = UDim2.new(1, -110, 0, 10), UDim2.fromOffset(96, 44)
+	RunService.RenderStepped:Connect(function()
+		if not panel.Visible then
+			return
+		end
+		panel.Size = UDim2.new(0.94, 0, 0, math.max(180, math.min(600, safe.AbsoluteSize.Y - 20)))
+		local columns = if panel.AbsoluteSize.X >= 560 then 2 else 1
+		for index, b in entries do
+			if b ~= buttons.close then
+				local row, column = math.floor((index - 1) / columns), (index - 1) % columns
+				b.Position, b.Size = UDim2.new(column / columns, 0, 0, row * 52), UDim2.new(1 / columns, -8, 0, 44)
+			end
+		end
+		scroll.CanvasSize = UDim2.fromOffset(0, math.ceil((#entries - 1) / columns) * 52)
+	end)
 	refreshMenu()
 end
 

@@ -44,6 +44,17 @@ local frames = {
 	},
 }
 local scenes: { Shots.Sequence } = {}
+for index, label in { "A CASA FICOU PARA TRÁS", "UMA VOZ NO CHIADO", "O ÚLTIMO SINAL" } do
+	table.insert(frames, {
+		beat(label, point(0, 12, 586), point(0, 10, 610), point(0, 7, 700)),
+		beat(
+			if index == 3 then "ANTES DO AMANHECER" else "NÃO SIGAM AS VOZES",
+			point(-55, 9, 725),
+			point(-45, 8, 740),
+			point(if index == 3 then 82 else 38, if index == 3 then 40 else 5, 760)
+		),
+	})
+end
 for index, chapter in House.Chapters do
 	table.insert(scenes, {
 		name = `StoryHouse{index}`,
@@ -60,5 +71,5 @@ return TableUtil.deepFreeze({
 	Chapters = House.Chapters,
 	Scenes = scenes,
 	SceneLines = Broadcast,
-	Ending = "O coração parou. A porta abriu.\nNa fita, a floresta já não está vazia.\nCONTINUA...",
+	Ending = "O sinal atravessou a floresta. A van chegou antes do amanhecer.\nPela primeira vez, o rádio ficou em silêncio.\nVocês escaparam de Tung Tung. FIM.",
 })

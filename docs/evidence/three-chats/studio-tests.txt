@@ -1,0 +1,2 @@
+[Tests] 287 passed, 0 failed, 0 skipped specs
+Server: 16 services; Client: 34 controllers. No project errors. UIBlox FoundationProvider warnings originate from Roblox CorePackages.

@@ -23,6 +23,9 @@ export type Shot = {
 	-- Tremor de câmera na mão (0..1); 0 = câmera de segurança fixa.
 	handheld: number,
 	cut: Cut,
+	-- Planos lisos podem ser estáveis; ausência de tremor não significa CFTV.
+	style: "film" | "cctv"?,
+	fovTo: number?,
 }
 
 export type Sequence = {
@@ -59,6 +62,7 @@ CinematicShots.Opening = table.freeze({
 	shots = table.freeze({
 		shot({
 			label = "FLORESTA / 03:12",
+			style = "film",
 			from = v(8, 7, 123),
 			to = v(6, 6, 113),
 			lookFrom = v(0, 9, 64),
@@ -203,7 +207,11 @@ CinematicShots.Attract = table.freeze({
 
 -- Câmera de segurança: fixa e sem tremor (o controller dá cor de CFTV e 12 quadros/s).
 function CinematicShots.isCctv(s: Shot): boolean
-	return s.handheld <= 0
+	return if s.style then s.style == "cctv" else s.handheld <= 0
+end
+
+function CinematicShots.lens(s: Shot, alpha: number): number
+	return s.fov + ((s.fovTo or s.fov) - s.fov) * CinematicShots.ease(s.ease, alpha)
 end
 
 -- Progresso preso na grade de quadros do CFTV (fps), para a imagem andar "aos saltos".
@@ -294,6 +302,8 @@ CinematicShots.Escape = {
 	shots = {
 		shot({
 			label = "A CASA DESTRUÍDA",
+			style = "film",
+			fovTo = 60,
 			from = v(-65, 65, 120),
 			to = v(-55, 60, 112),
 			lookFrom = v(0, 16, -10),
@@ -306,6 +316,8 @@ CinematicShots.Escape = {
 		}),
 		shot({
 			label = "VOCÊS QUEIMARAM MINHA CASA...",
+			style = "film",
+			fovTo = 54,
 			from = v(12, 10, 90),
 			to = v(9, 9, 85),
 			lookFrom = v(0, 6, 58),
@@ -318,6 +330,8 @@ CinematicShots.Escape = {
 		}),
 		shot({
 			label = "MAS NÃO ACABARAM COMIGO.",
+			style = "film",
+			fovTo = 46,
 			from = v(3, 7, 75),
 			to = v(2, 6.5, 73),
 			lookFrom = v(0, 5, 58),

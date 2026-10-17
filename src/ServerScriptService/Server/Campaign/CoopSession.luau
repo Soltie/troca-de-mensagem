@@ -104,6 +104,7 @@ local function evaluate(state: State)
 	local active = Session.count(state, "Active")
 	local escaped = Session.count(state, "Escaped")
 	local downed = Session.count(state, "Downed")
+	local success: Phase = if state.house and state.stage == 5 then "Intermission" else "Won"
 	-- Alguém caído vai levantar sozinho (Segunda Chance): a derrota espera a janela dele.
 	for _, member in state.members do
 		if member.status == "Downed" and member.risingUntil then
@@ -115,9 +116,9 @@ local function evaluate(state: State)
 		return
 	end
 	if state.phase == "Extracting" and active == 0 and downed == 0 and escaped > 0 then
-		state.phase = "Won"
+		state.phase = success
 	elseif active == 0 then
-		state.phase = if escaped > 0 then "Won" else "Lost"
+		state.phase = if escaped > 0 then success else "Lost"
 	end
 end
 
@@ -281,7 +282,8 @@ function Session.act(state: State, id: number, taskId: string, button: number, n
 	end
 	local plan = state.plan
 	if plan and Session.solvedCount(state) == #plan.activities then
-		state.phase = if state.stage == (if state.house then #House.Chapters else #Catalog.Stages)
+		state.phase = if (state.house and state.stage == 5)
+				or state.stage == (if state.house then #House.Chapters else #Catalog.Stages)
 			then "Extracting"
 			else "Intermission"
 	end

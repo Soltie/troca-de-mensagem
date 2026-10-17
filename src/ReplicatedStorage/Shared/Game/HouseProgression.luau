@@ -9,7 +9,7 @@ local groups: { { { number } } } = {
 	{ {}, { 1 }, { 1 }, { 1 }, { 2, 3, 4 } },
 }
 function Progress.dependencies(mode: string?, chapter: number, index: number): { number }
-	if mode == "Standard" then
+	if mode == "Standard" and chapter <= 5 then
 		return table.clone(groups[chapter][index])
 	end
 	return if index > 1 then { index - 1 } else {}

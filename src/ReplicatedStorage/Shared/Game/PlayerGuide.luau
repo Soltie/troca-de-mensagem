@@ -24,6 +24,11 @@ function Guide.roomName(id: string): string
 			return room.title
 		end
 	end
+	for _, room in require("./ForestCatalog").Rooms do
+		if room.id == id then
+			return room.title
+		end
+	end
 	return Catalog.RoomNames[id] or id
 end
 
@@ -42,11 +47,11 @@ function Guide.instruction(activity: Activity, now: number, activePlayers: numbe
 	elseif activity.kind == "clue" then
 		return "Chegue perto da pista e aperte E para ler. Ela ensina o próximo desafio."
 	elseif activity.kind == "explore" then
-		return "Siga a seta amarela e entre na casa."
+		return "Siga a seta amarela até o ponto indicado."
 	elseif activity.kind == "hide" then
-		return "Entre no armário com E. Cabe só uma pessoa em cada esconderijo."
+		return "Entre no armário ou abrigo com E. Cabe só uma pessoa em cada esconderijo."
 	elseif activity.kind == "breath" then
-		return "No armário da biblioteca, segure Espaço ou Z por 2 segundos. E sai do armário."
+		return "No esconderijo, segure Espaço ou Z por 2 segundos. Solte antes de zerar o ar. E sai."
 	elseif activity.kind == "puzzle" then
 		return `Aperte E nos símbolos na ordem da pista: {activity.progress}/{activity.required or 4}. Errou? Os acertos ficam salvos.`
 	elseif activity.kind == "activate" then
@@ -73,7 +78,7 @@ function Guide.objective(phase: string, status: string?, activity: Activity?): (
 	if phase == "Briefing" then
 		return "Prepare-se!", "A aventura começa em instantes. Fique junto do seu time."
 	elseif phase == "Won" then
-		return "Vocês escaparam!", "Que coragem! Aperte R para votar e voltar ao menu com o time."
+		return "Vocês escaparam!", "A equipe volta ao lobby após a cena final. Vocês podem escolher outra aventura."
 	elseif phase == "Lost" then
 		return "O Tung Tung pegou o time!",
 			"Sem problema: vocês voltam no começo deste capítulo em instantes, de graça."
@@ -101,6 +106,9 @@ Guide.StageTips = {
 	"Capítulo 4: siga as pistas para abrir o cofre e recuperar o coração.",
 	"Capítulo 5: use o artefato, ative o ritual e fuja antes do tempo acabar!",
 }
+table.insert(Guide.StageTips, "Capítulo 6: siga a trilha, pegue o mapa e se esconda das pancadas.")
+table.insert(Guide.StageTips, "Capítulo 7: encontre o fusível, conserte o rádio e abra a trilha da torre.")
+table.insert(Guide.StageTips, "Capítulo 8: ligue a torre, chame o resgate e corra para o farol verde!")
 Guide.SurvivalTips = {
 	"Ouviu TUM TUM TUM? Apague a lanterna (F) e se esconda!",
 	"Shift corre, mas cansa e faz barulho. C agacha e deixa você mais silencioso.",

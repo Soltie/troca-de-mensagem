@@ -1,0 +1,22 @@
+{
+  "snapshot": "before HUD header text-only correction",
+  "buildSha256": "5e48f2742ec13c3c4507159f6d55e329dc4eac3302bd4e8968fed918b62cce5b",
+  "args": {
+    "campaignQA": true,
+    "storyQA": true,
+    "qualityQA": true,
+    "modeMenuQA": true,
+    "lobbyReturnQA": true,
+    "players": 2
+  },
+  "receipt": {
+    "ok": true,
+    "result": {
+      "players": 2,
+      "success": true,
+      "checks": 128,
+      "phase": "Playing",
+      "stage": 1
+    }
+  }
+}

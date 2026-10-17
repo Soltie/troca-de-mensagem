@@ -7,6 +7,9 @@ local Random = require("./SeededRandom")
 local Levels = require("./HouseLevelPlan")
 local Plan = {}
 function Plan.create(seed: number, chapter: number, players: number, mode: string): Generator.Plan
+	if chapter >= 6 then
+		return require("./ForestPlan").create(seed, chapter, players, mode)
+	end
 	assert(chapter >= 1 and chapter <= #House.Chapters and chapter % 1 == 0, "Invalid house chapter")
 	assert(players >= 1 and players <= 6 and players % 1 == 0, "Invalid house party")
 	local rng = Random.new(seed + chapter * 7919)
@@ -68,6 +71,9 @@ function Plan.create(seed: number, chapter: number, players: number, mode: strin
 	}
 end
 function Plan.validate(plan: Generator.Plan): (boolean, string?)
+	if plan.stage >= 6 then
+		return require("./ForestPlan").validate(plan)
+	end
 	if not plan.house or plan.stage < 1 or plan.stage > #House.Chapters or plan.players < 1 or plan.players > 6 then
 		return false, "invalid_house_plan"
 	end

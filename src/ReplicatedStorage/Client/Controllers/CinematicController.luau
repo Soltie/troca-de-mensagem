@@ -26,6 +26,8 @@ local Config = require("@game/ReplicatedStorage/Shared/Config")
 local CampaignCatalog = require("@game/ReplicatedStorage/Shared/Game/CampaignCatalog")
 local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
 local Shots = require("@game/ReplicatedStorage/Shared/Game/CinematicShots")
+local Presentation = require("@game/ReplicatedStorage/Shared/Game/Presentation")
+local HouseCatalog = require("@game/ReplicatedStorage/Shared/Game/HouseCatalog")
 local Text = require("@game/ReplicatedStorage/Shared/Game/Text")
 local Camera = require("./CameraController")
 local Settings = require("./SettingsController")
@@ -187,6 +189,7 @@ function Controller.stop()
 	-- Sem cena no ar, não apaga a cartela de etapa nem o despertar (renascer chama stop()).
 	if wasActive then
 		Transition.reset()
+		Transition.reveal(0.25)
 	end
 end
 
@@ -206,7 +209,7 @@ function Controller.play(value: Shots.Sequence, playOptions: PlayOptions?)
 	-- Avisos da loja esperam cenas de verdade (o laço do lobby não segura nada).
 	player:SetAttribute("CinematicHold", not options.loop)
 	if skipButton then
-		skipButton.Visible = not options.loop
+		skipButton.Visible = false
 	end
 	ContextActionService:BindActionAtPriority(
 		"S9CinemaMovement",
@@ -299,10 +302,13 @@ function Controller.stageCard()
 	task.spawn(function()
 		local started = os.clock()
 		Transition.closeEyes(0.12)
+		if token ~= cardToken then
+			return
+		end
 		task.spawn(Transition.setLetterbox, true, 0.3)
 		Transition.title(
-			`ETAPA {stage}/{#require("@game/ReplicatedStorage/Shared/Game/HouseCatalog").Chapters} · {title}`,
-			if threat ~= "" then `AMEAÇA: {threat}  ·  VOCÊ: {roleTitle()}` else `VOCÊ: {roleTitle()}`
+			`ETAPA {stage}/{#HouseCatalog.Chapters}`,
+			`{title}\n{if threat ~= "" then `AMEAÇA: {threat}  ·  ` else ""}VOCÊ: {roleTitle()}`
 		)
 		-- Espera o renascimento da etapa (ou o fim do congelamento), no máximo ~3 s no escuro.
 		while token == cardToken and os.clock() - started < 3.2 do
@@ -333,6 +339,9 @@ function Controller.stageCard()
 end
 
 local function onKeyChanged(phase: string, previous: string)
+	-- Troca de fase invalida cartelas antigas; o respawn isolado continua preservando a cartela atual.
+	cardToken += 1
+	Transition.reset()
 	Controller.stop()
 	local campaign = campaignState()
 	if phase == "Lobby" then
@@ -348,7 +357,11 @@ local function onKeyChanged(phase: string, previous: string)
 			player:SetAttribute("OpeningActive", true)
 		end
 	elseif phase == "Won" then
-		Controller.play(Shots.Escape)
+		Controller.play(
+			if campaign and campaign:GetAttribute("ForestActive") == true
+				then require("@game/ReplicatedStorage/Shared/Game/ForestCinema")
+				else Shots.Escape
+		)
 	elseif phase == "Playing" and previous ~= "" then
 		if campaign and campaign:GetAttribute("GameMode") ~= "Story" then
 			Controller.stageCard()
@@ -371,6 +384,17 @@ local function updateSequence(current: Shots.Sequence, dt: number)
 		return
 	end
 	local shot = current.shots[index]
+	if skipButton then
+		skipButton.Visible = not options.loop and elapsed >= 0.65
+	end
+	local nextShot = current.shots[index + 1]
+	local cutShade = Presentation.cut(
+		alpha,
+		shot.duration,
+		index > 1 and shot.cut == "blink",
+		nextShot ~= nil and nextShot.cut == "blink"
+	)
+	Transition.sceneShade(if options.quiet then 0 else math.max(Presentation.shade(elapsed, total), cutShade))
 	updateCameo(current, index, dt)
 	local cctv = Shots.isCctv(shot)
 	if lastShot ~= index then
@@ -411,7 +435,7 @@ local function updateSequence(current: Shots.Sequence, dt: number)
 			math.noise(elapsed * 0.5, 3.7) * amount * 0.015
 		)
 	end
-	if not Camera.setCinema(frame, shot.fov, vec(look)) then
+	if not Camera.setCinema(frame, Shots.lens(shot, progress), vec(look)) then
 		Controller.stop()
 	end
 end
@@ -425,14 +449,14 @@ function Controller.Init()
 	})
 	local button = Create("TextButton", {
 		Name = "Skip",
-		AnchorPoint = Vector2.new(1, 1),
-		Position = UDim2.new(1, -24, 1, -20),
-		Size = UDim2.fromOffset(220, 32),
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -18, 0.12, 8),
+		Size = UDim2.fromOffset(220, 44),
 		BackgroundColor3 = Theme.Panel,
 		TextColor3 = Theme.Text,
 		FontFace = Theme.Font,
 		TextSize = 16,
-		Text = "PULAR CENA [ESPAÇO / A]",
+		Text = if UserInputService.TouchEnabled then "PULAR CENA" else "PULAR CENA [ESPAÇO / A]",
 		Modal = true,
 		Visible = false,
 		Parent = gui,
@@ -454,7 +478,18 @@ function Controller.Init()
 		local bridge = Instance.new("BindableFunction")
 		bridge.Name = "AnimationDebugBridge"
 		bridge.OnInvoke = function(command: string, value: any): any
-			if command == "scene" then
+			if command == "transition" then
+				if value == "reset" then
+					Transition.reset()
+				elseif value == "caption" then
+					Transition.caption("Uma fita. Três pancadas. Não responda.")
+				elseif value == "title" then
+					Transition.title("CAPÍTULO 08", "A FLORESTA · NINGUÉM FICA PARA TRÁS")
+				elseif value == "replace" then
+					Transition.title(nil)
+					Transition.title("CAPÍTULO 09", "A NOVA FITA")
+				end
+			elseif command == "scene" then
 				local selected = if value == "Escape"
 					then Shots.Escape
 					elseif value == "Attract" then Shots.Attract
@@ -476,6 +511,7 @@ function Controller.Init()
 				camera = Camera.debugState(),
 				transition = Transition.debugState(),
 				characters = Animator.debugState(),
+				feedback = require("./UiFeedbackController").debugState(),
 			}
 		end
 		bridge.Parent = gui
@@ -488,6 +524,7 @@ function Controller.Start()
 			UserInputService:GetFocusedTextBox() == nil
 			and sequence
 			and not options.loop
+			and elapsed >= 0.65
 			and (input.KeyCode == Enum.KeyCode.Space or input.KeyCode == Enum.KeyCode.ButtonA)
 		then
 			Controller.stop()
