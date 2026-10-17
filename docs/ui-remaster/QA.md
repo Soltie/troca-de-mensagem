@@ -88,6 +88,29 @@ que hoje só existe em placas do cenário — essas continuam normalizando no pr
 ficavam atrás do véu (ScreenGui agora usa `ZIndexBehavior.Sibling`); em tela baixa a loja usa uma coluna e
 mais colunas de cartões; detalhe ajusta a altura da prévia para o texto não sumir atrás dos botões.
 
+## Fase 4 — Melhorias e mochila (17/10/2026)
+
+**Arquivos:** `Client/Controllers/MainMenuController.luau` (aba MELHORIAS, diálogo de confirmação, rolagem
+preservada, `MenuQARequest`), `Client/Controllers/StoreController.luau` (rolagem preservada),
+`Client/UI/Icons.luau` (bateria, pulmões, maleta, passos, coração, repetir). **Não alterado:** `Perks`
+(preços, efeitos, estoque máximo), StoreService, remotes.
+
+| Caso | Status | Evidência |
+|---|---|---|
+| Check / runner do Studio | PASSOU | ALL GREEN (295) · Studio 307 aprovados, 0 falhas |
+| Console do cliente | PASSOU | nenhum aviso/erro do projeto |
+| Cartão de melhoria: ícone, descrição, nível 5 etapas + "NÍVEL N/5", efeito atual e próximo | PASSOU | `f4-melhorias-pc.jpg` |
+| Preço nas duas moedas; sem saldo: "FALTAM N CRÉDITOS" desativado | PASSOU | `f4-consumiveis-pc.jpg` |
+| Confirmação antes de melhorar (efeito, preço, saldo depois) | PASSOU | `f4-confirmar-melhoria.jpg` (clique real) |
+| Melhorar debita uma vez e sobe o nível | PASSOU | 1.000 → 700 Fichas; `Perks.bateria = 1`; "MELHORIA INSTALADA!" (cliques reais) |
+| Comprar consumível com confirmação | PASSOU | 1.000 → 700 Fichas; `pilha_extra = 3` (pacote de 3) |
+| Colocar na mochila separado da compra | PASSOU | `Loadout = ["pilha_extra"]` (clique real) |
+| Rolagem mantida após compra (menu e loja) | PASSOU | `CanvasPosition.Y = 470` antes e depois |
+| Continuação: só por Créditos e uso no botão CONTINUAR; sem toggle de mochila | PASSOU | captura |
+| Pacotes em Robux só aparecem com produto publicado | PASSOU | todos com `id = 0` → seção oculta |
+| Celular 844×390 | PASSOU | `f4-melhorias-celular.jpg` |
+| Estoque cheio (99) desativa a compra | NÃO TESTADO | regra lida de `Perks.MAX_STOCK`; sem fixture com 99 |
+
 **Sobre os cliques automatizados:** com a janela do Studio sem foco, o módulo de câmera padrão do Roblox mantém
 o mouse travado no centro e os cliques simulados caem no meio da tela. Para o jogador (janela em foco) o
 `CameraController` libera o cursor no lobby. Por isso os fluxos foram exercitados pelo atributo

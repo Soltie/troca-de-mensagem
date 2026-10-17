@@ -27,6 +27,12 @@ local MENU_ICONS = {
 	"Drum",
 	"Chest",
 	"Tape",
+	"Battery",
+	"Lungs",
+	"Medkit",
+	"Steps",
+	"Heart",
+	"Replay",
 }
 
 return {

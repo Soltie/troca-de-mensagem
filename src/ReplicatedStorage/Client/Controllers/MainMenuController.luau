@@ -90,6 +90,8 @@ local frameUpdates: { (number) -> () } = {}
 local menuMode: MenuLayout.Mode? = nil
 local columnsShown = 0
 local bodyTop = 66
+-- Ação do diálogo de confirmação aberto (QA no Studio confirma pelo atributo MenuQARequest).
+local pendingConfirm: (() -> ())? = nil
 local rootFrame: Frame? = nil
 local rootScale: UIScale? = nil
 local currentTab: TabId = "play"
@@ -290,33 +292,6 @@ local function clearBody(): Frame?
 	return b
 end
 
-local function sectionTitle(parent: Instance, text: string, order: number): TextLabel
-	return label({
-		Size = UDim2.new(1, 0, 0, if compactMenu and singleColumn then 44 else 22),
-		Text = text,
-		TextColor3 = Theme.Hazard,
-		LayoutOrder = order,
-		Parent = parent,
-	})
-end
-
-local function pips(parent: Instance, filled: number, total: number, position: UDim2)
-	local row = frame({
-		Position = position,
-		Size = UDim2.fromOffset(total * 18, 10),
-		BackgroundTransparency = 1,
-		Parent = parent,
-	})
-	for i = 1, total do
-		frame({
-			Position = UDim2.fromOffset((i - 1) * 18, 0),
-			Size = UDim2.fromOffset(14, 10),
-			BackgroundColor3 = if i <= filled then Theme.Hazard else Color3.fromRGB(40, 44, 46),
-			Parent = row,
-		})
-	end
-end
-
 local function storyCleared(): ({ [number]: boolean }, { [number]: boolean })
 	local progress = json("StoryProgress", {})
 	local cleared, flawless = {}, {}
@@ -367,154 +342,488 @@ local function effectText(id: string, level: number): string
 	return `-{percent}% DE BARULHO`
 end
 
+-- Ícone e cor de cada melhoria/consumível (pictogramas próprios do Icons).
+local PERK_LOOK: { [string]: { icon: string, color: Color3 } } = {
+	bateria = { icon = "Battery", color = Theme.Gold },
+	folego = { icon = "Lungs", color = Theme.Info },
+	socorro = { icon = "Medkit", color = Color3.fromRGB(224, 104, 104) },
+	silencio = { icon = "Steps", color = Theme.Success },
+	segunda_chance = { icon = "Heart", color = Color3.fromRGB(224, 104, 104) },
+	pilha_extra = { icon = "Battery", color = Theme.Gold },
+	continuar = { icon = "Replay", color = Theme.Info },
+}
+
+local function walletOf(currency: string): number
+	return tonumber(player:GetAttribute(if currency == "fichas" then "Fichas" else "Creditos")) or 0
+end
+
+local function priceText(currency: string, price: number): string
+	return `{number(price)} {if currency == "fichas" then "FICHAS" else "CRÉDITOS"}`
+end
+
+-- Diálogo de confirmação do menu (compras com Fichas/Créditos). Tocar fora cancela.
+local function confirmDialog(title: string, message: string, confirmText: string, onConfirm: () -> ())
+	local root = rootFrame
+	if not root then
+		return
+	end
+	local old = root:FindFirstChild("Confirm")
+	if old then
+		old:Destroy()
+	end
+	local holder = Create("Frame", {
+		Name = "Confirm",
+		Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1,
+		ZIndex = 40,
+		Parent = root,
+	}) :: Frame
+	local dismiss = Create("TextButton", {
+		Name = "Dismiss",
+		Size = UDim2.fromScale(1, 1),
+		BackgroundColor3 = Theme.Overlay,
+		BackgroundTransparency = 0.35,
+		AutoButtonColor = false,
+		Text = "",
+		Parent = holder,
+	}) :: TextButton
+	dismiss.Activated:Connect(function()
+		holder:Destroy()
+	end)
+	pendingConfirm = function()
+		holder:Destroy()
+		onConfirm()
+	end
+	holder.Destroying:Connect(function()
+		pendingConfirm = nil
+	end)
+	local box = Components.panel({
+		Name = "Box",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromOffset(if compactMenu then 340 else 440, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		BackgroundColor3 = Theme.BgPanel,
+		BackgroundTransparency = 0,
+		Active = true,
+		Parent = holder,
+	})
+	local outline = box:FindFirstChildOfClass("UIStroke")
+	if outline then
+		outline.Color, outline.Transparency = Theme.Gold, 0.3
+	end
+	Components.padding(box, 18)
+	Create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder, Parent = box })
+	Components.title({
+		Size = UDim2.fromScale(1, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		TextWrapped = true,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Text = title,
+		TextSize = 20,
+		LayoutOrder = 1,
+		Parent = box,
+	})
+	note({
+		Size = UDim2.fromScale(1, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Text = message,
+		TextSize = 15,
+		LayoutOrder = 2,
+		Parent = box,
+	})
+	local row = Create("Frame", {
+		Name = "Actions",
+		Size = UDim2.new(1, 0, 0, Theme.TouchMin),
+		BackgroundTransparency = 1,
+		LayoutOrder = 3,
+		Parent = box,
+	})
+	button({
+		Name = "Cancel",
+		Variant = "secondary",
+		Size = UDim2.new(0.5, -5, 1, 0),
+		Text = "CANCELAR",
+		TextSize = 16,
+		Parent = row,
+	}, function()
+		holder:Destroy()
+	end)
+	button({
+		Name = "Confirm",
+		Variant = "primary",
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.fromScale(1, 0),
+		Size = UDim2.new(0.5, -5, 1, 0),
+		Text = confirmText,
+		TextSize = 16,
+		Parent = row,
+	}, function()
+		holder:Destroy()
+		onConfirm()
+	end)
+end
+
+-- Botão de preço: mostra a moeda com ícone; sem saldo fica desativado e diz quanto falta.
+local function priceButton(
+	parent: Instance,
+	currency: string,
+	price: number,
+	props: { [string]: any },
+	onBuy: () -> ()
+): TextButton
+	local have = walletOf(currency)
+	local affordable = have >= price
+	local fichas = currency == "fichas"
+	props.Text = if affordable then priceText(currency, price) else `FALTAM {priceText(currency, price - have)}`
+	props.Variant = if fichas then "primary" else "secondary"
+	props.TextSize = props.TextSize or 14
+	local b = button(props, onBuy)
+	-- Espaço para o ícone da moeda à esquerda sem sobrepor o texto centralizado.
+	Create("UIPadding", { PaddingLeft = UDim.new(0, 30), PaddingRight = UDim.new(0, 6), Parent = b })
+	local icon = Components.icon(b, if fichas then "Coin" else "Gem", 24, if fichas then Theme.Coin else Theme.Info, {
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, -22, 0.5, 0),
+	})
+	icon.Name = "Currency"
+	Components.setDisabled(b, not affordable)
+	b.Parent = parent
+	return b
+end
+
+local function cardShell(
+	parent: Instance,
+	name: string,
+	order: number,
+	height: number,
+	look: { icon: string, color: Color3 }
+): Frame
+	local card = Components.panel({
+		Name = name,
+		Size = UDim2.new(1, 0, 0, height),
+		LayoutOrder = order,
+		Parent = parent,
+	})
+	Components.padding(card, 12)
+	local tile = Create("Frame", {
+		Name = "IconTile",
+		Size = UDim2.fromOffset(52, 52),
+		BackgroundColor3 = look.color:Lerp(Theme.Bg, 0.75),
+		BorderSizePixel = 0,
+		Parent = card,
+	})
+	Components.corner(tile, Theme.CornerSmall)
+	Components.stroke(tile, look.color, 1, 0.4)
+	Components.icon(tile, look.icon, 36, look.color, {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+	})
+	return card
+end
+
+local function sectionHeader(parent: Instance, order: number, title: string, subtitle: string)
+	local box = Create("Frame", {
+		Name = `Section_{order}`,
+		Size = UDim2.new(1, 0, 0, 44),
+		BackgroundTransparency = 1,
+		LayoutOrder = order,
+		Parent = parent,
+	})
+	label({ Size = UDim2.new(1, 0, 0, 22), Text = title, TextSize = 18, TextColor3 = Theme.Gold, Parent = box })
+	note({
+		Position = UDim2.fromOffset(0, 24),
+		Size = UDim2.new(1, 0, 0, 18),
+		Text = subtitle,
+		TextSize = 13,
+		Parent = box,
+	})
+end
+
 local function buildPerks(b: Frame)
+	local width = b.AbsoluteSize.X
+	local columns = if width >= 640 then 2 else 1
+	singleColumn = columns == 1
 	local scroll = Create("ScrollingFrame", {
+		Name = "PerksScroll",
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		ScrollBarThickness = 6,
-		ScrollBarImageColor3 = Theme.Hazard,
+		ScrollBarImageColor3 = Theme.Gold,
 		CanvasSize = UDim2.new(),
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		Parent = b,
 	}, {
-		Create("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder }),
-		Create("UIPadding", { PaddingRight = UDim.new(0, 12) }),
+		Create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }),
+		Create("UIPadding", { PaddingRight = UDim.new(0, 10), PaddingBottom = UDim.new(0, 8) }),
 	}) :: ScrollingFrame
 	local levels = json("Perks", {})
 	local stock = json("Consumables", {})
-	sectionTitle(scroll, "MELHORIAS PERMANENTES · VALEM EM TODAS AS PARTIDAS", 1)
+	local loadout: { [string]: boolean } = {}
+	for _, id in json("Loadout", {}) do
+		loadout[tostring(id)] = true
+	end
+
+	local function grid(order: number, cellHeight: number): Frame
+		return Create("Frame", {
+			Name = `Grid_{order}`,
+			Size = UDim2.fromScale(1, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			BackgroundTransparency = 1,
+			LayoutOrder = order,
+			Parent = scroll,
+		}, {
+			Create("UIGridLayout", {
+				CellSize = UDim2.new(1 / columns, if columns == 2 then -5 else 0, 0, cellHeight),
+				CellPadding = UDim2.fromOffset(10, 10),
+				SortOrder = Enum.SortOrder.LayoutOrder,
+			}),
+		}) :: Frame
+	end
+
+	sectionHeader(scroll, 1, "MELHORIAS PERMANENTES", "Valem em todas as partidas. Cada uma tem 5 níveis.")
+	local perkGrid = grid(2, 196)
 	for i, perk in Perks.List do
 		local level = math.clamp(tonumber(levels[perk.id]) or 0, 0, Perks.MAX_LEVEL)
-		local row = frame({
-			Name = `Perk_{perk.id}`,
-			Size = UDim2.new(1, 0, 0, 86),
-			BackgroundTransparency = 0.08,
-			LayoutOrder = 1 + i,
-			Parent = scroll,
-		}, { stroke(Theme.TextDim, 1, 0.7) })
+		local look = PERK_LOOK[perk.id] or { icon = "Perks", color = Theme.Gold }
+		local card = cardShell(perkGrid, `Perk_{perk.id}`, i, 196, look)
+		card:SetAttribute("Level", level)
 		label({
-			Position = UDim2.fromOffset(14, 8),
-			Size = UDim2.new(0.5, 0, 0, 22),
+			Name = "PerkName",
+			Position = UDim2.fromOffset(64, 0),
+			Size = UDim2.new(1, -64, 0, 22),
 			Text = perk.name,
-			TextSize = 18,
-			Parent = row,
+			TextSize = 17,
+			TextWrapped = false,
+			TextTruncate = Enum.TextTruncate.AtEnd,
+			Parent = card,
 		})
 		note({
-			Position = UDim2.fromOffset(14, 32),
-			Size = UDim2.new(0.5, -14, 0, 20),
+			Position = UDim2.fromOffset(64, 24),
+			Size = UDim2.new(1, -64, 0, 30),
 			Text = perk.description,
-			Parent = row,
+			TextSize = 13,
+			Parent = card,
 		})
-		pips(row, level, Perks.MAX_LEVEL, UDim2.fromOffset(14, 62))
+		-- Nível em 5 etapas + rótulo (não depende só de cor).
+		local steps = Create("Frame", {
+			Name = "Levels",
+			Position = UDim2.fromOffset(0, 62),
+			Size = UDim2.new(1, -86, 0, 10),
+			BackgroundTransparency = 1,
+			Parent = card,
+		}, {
+			Create("UIListLayout", {
+				FillDirection = Enum.FillDirection.Horizontal,
+				Padding = UDim.new(0, 4),
+				SortOrder = Enum.SortOrder.LayoutOrder,
+			}),
+		})
+		for step = 1, Perks.MAX_LEVEL do
+			local segment = Create("Frame", {
+				LayoutOrder = step,
+				Size = UDim2.new(1 / Perks.MAX_LEVEL, -4, 1, 0),
+				BackgroundColor3 = if step <= level then look.color else Theme.BgSunken,
+				BorderSizePixel = 0,
+				Parent = steps,
+			})
+			Components.corner(segment, Theme.CornerPill)
+		end
 		label({
-			Position = UDim2.fromOffset(112, 56),
-			Size = UDim2.new(0.5, -110, 0, 22),
-			Text = if level >= Perks.MAX_LEVEL
-				then `NÍVEL MÁXIMO · {effectText(perk.id, level)}`
-				else `AGORA: {if level > 0 then effectText(perk.id, level) else "-"} · PRÓXIMO: {effectText(
-					perk.id,
-					level + 1
-				)}`,
-			TextSize = Theme.SizeSmall,
-			TextColor3 = GREEN,
-			Parent = row,
+			Name = "LevelText",
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, 0, 0, 56),
+			Size = UDim2.fromOffset(80, 22),
+			Text = `NÍVEL {level}/{Perks.MAX_LEVEL}`,
+			TextSize = 13,
+			TextXAlignment = Enum.TextXAlignment.Right,
+			TextColor3 = look.color,
+			Parent = card,
 		})
-		if level < Perks.MAX_LEVEL then
-			local fichas = Perks.nextCost(perk.id, level, "fichas") or 0
-			local creditos = Perks.nextCost(perk.id, level, "creditos") or 0
-			button({
-				Name = "UpgradeFichas",
-				AnchorPoint = Vector2.new(1, 0),
-				Position = UDim2.new(1, -14, 0, 12),
-				Size = UDim2.fromOffset(220, 30),
-				Text = `MELHORAR · {number(fichas)} FICHAS`,
-				TextSize = Theme.SizeSmall,
-				Parent = row,
-			}, function()
-				store("upgrade_fichas", perk.id)
-			end)
-			button({
-				Name = "UpgradeCreditos",
-				AnchorPoint = Vector2.new(1, 0),
-				Position = UDim2.new(1, -14, 0, 48),
-				Size = UDim2.fromOffset(220, 30),
-				Text = `MELHORAR · {number(creditos)} CRÉDITOS`,
-				TextSize = Theme.SizeSmall,
-				BackgroundColor3 = Color3.fromRGB(40, 34, 18),
-				Parent = row,
-			}, function()
-				store("upgrade_creditos", perk.id)
-			end)
+		local now = if level > 0 then effectText(perk.id, level) else "SEM EFEITO"
+		label({
+			Name = "Effect",
+			Position = UDim2.fromOffset(0, 82),
+			Size = UDim2.new(1, 0, 0, 36),
+			Text = if level >= Perks.MAX_LEVEL
+				then `AGORA: {now} · NÍVEL MÁXIMO`
+				else `AGORA: {now}\nPRÓXIMO: {effectText(perk.id, level + 1)}`,
+			TextSize = 13,
+			TextColor3 = GREEN,
+			TextYAlignment = Enum.TextYAlignment.Top,
+			Parent = card,
+		})
+		local actions = Create("Frame", {
+			Name = "Actions",
+			AnchorPoint = Vector2.new(0, 1),
+			Position = UDim2.fromScale(0, 1),
+			Size = UDim2.new(1, 0, 0, Theme.TouchMin),
+			BackgroundTransparency = 1,
+			Parent = card,
+		})
+		if level >= Perks.MAX_LEVEL then
+			local done = button(
+				{ Variant = "success", Size = UDim2.fromScale(1, 1), Text = "NÍVEL MÁXIMO", Parent = actions },
+				function() end
+			)
+			Components.setDisabled(done, true)
+		else
+			for column, currency in { "fichas", "creditos" } do
+				local price = Perks.nextCost(perk.id, level, currency :: Perks.Currency) or 0
+				priceButton(actions, currency, price, {
+					Name = if currency == "fichas" then "UpgradeFichas" else "UpgradeCreditos",
+					Position = UDim2.new((column - 1) * 0.5, if column == 1 then 0 else 5, 0, 0),
+					Size = UDim2.new(0.5, -5, 1, 0),
+				}, function()
+					confirmDialog(
+						`MELHORAR {perk.name}?`,
+						`Nível {level + 1}: {effectText(perk.id, level + 1)}. Custa {priceText(currency, price)}; você fica com {priceText(
+							currency,
+							walletOf(currency) - price
+						)}.`,
+						"MELHORAR",
+						function()
+							store(if currency == "fichas" then "upgrade_fichas" else "upgrade_creditos", perk.id)
+						end
+					)
+				end)
+			end
 		end
 	end
-	sectionTitle(scroll, "CONSUMÍVEIS · LIGUE NA MOCHILA DA PARTIDA (ABA JOGAR)", 20)
+
+	sectionHeader(
+		scroll,
+		3,
+		"CONSUMÍVEIS PARA A PARTIDA",
+		"Compre aqui; coloque na mochila para usar sozinho na partida (aba JOGAR)."
+	)
+	local itemGrid = grid(4, 264)
 	for i, def in Perks.Consumables do
-		local row = frame({
-			Name = `Consumable_{def.id}`,
-			Size = UDim2.new(1, 0, 0, 70),
-			BackgroundTransparency = 0.08,
-			LayoutOrder = 20 + i,
-			Parent = scroll,
-		}, { stroke(Theme.TextDim, 1, 0.7) })
+		local count = tonumber(stock[def.id]) or 0
+		local on = loadout[def.id] == true
+		local look = PERK_LOOK[def.id] or { icon = "Backpack", color = Theme.Gold }
+		local card = cardShell(itemGrid, `Consumable_{def.id}`, i, 264, look)
+		card:SetAttribute("Count", count)
 		label({
-			Position = UDim2.fromOffset(14, 8),
-			Size = UDim2.new(0.55, 0, 0, 22),
-			Text = `{def.name} · VOCÊ TEM {tonumber(stock[def.id]) or 0}`,
-			TextSize = 18,
-			Parent = row,
+			Name = "ItemName",
+			Position = UDim2.fromOffset(64, 0),
+			Size = UDim2.new(1, -64, 0, 22),
+			Text = def.name,
+			TextSize = 17,
+			TextWrapped = false,
+			TextTruncate = Enum.TextTruncate.AtEnd,
+			Parent = card,
 		})
+		local stateText, stateColor = "FORA DA MOCHILA", Theme.TextSecondary
+		if count <= 0 then
+			stateText, stateColor = "SEM ESTOQUE", Theme.TextMuted
+		elseif not def.loadout then
+			stateText, stateColor = "USO NO BOTÃO CONTINUAR", Theme.Info
+		elseif on then
+			stateText, stateColor = "NA MOCHILA", GREEN
+		end
+		local chips = Create("Frame", {
+			Name = "Chips",
+			Position = UDim2.fromOffset(64, 26),
+			Size = UDim2.new(1, -64, 0, 24),
+			BackgroundTransparency = 1,
+			Parent = card,
+		}, {
+			Create("UIListLayout", {
+				FillDirection = Enum.FillDirection.Horizontal,
+				Padding = UDim.new(0, 6),
+				SortOrder = Enum.SortOrder.LayoutOrder,
+			}),
+		})
+		Components.chip(`VOCÊ TEM {count}`, look.color, { LayoutOrder = 1, Parent = chips })
+		Components.chip(stateText, stateColor, { LayoutOrder = 2, Parent = chips })
 		note({
-			Position = UDim2.fromOffset(14, 34),
-			Size = UDim2.new(0.55, -14, 0, 30),
+			Position = UDim2.fromOffset(0, 60),
+			Size = UDim2.new(1, 0, 0, 34),
 			Text = def.description,
-			Parent = row,
+			TextSize = 13,
+			Parent = card,
 		})
-		local slot = 0
+		label({
+			Position = UDim2.fromOffset(0, 96),
+			Size = UDim2.new(1, 0, 0, 18),
+			Text = if def.bundle > 1 then `CADA COMPRA: {def.bundle} UNIDADES` else "CADA COMPRA: 1 UNIDADE",
+			TextSize = 12,
+			TextColor3 = Theme.TextSecondary,
+			Parent = card,
+		})
+		local full = count + def.bundle > Perks.MAX_STOCK
+		local buyRow = Create("Frame", {
+			Name = "Buy",
+			Position = UDim2.new(0, 0, 1, -(2 * Theme.TouchMin + 8)),
+			Size = UDim2.new(1, 0, 0, Theme.TouchMin),
+			BackgroundTransparency = 1,
+			Parent = card,
+		})
+		local options: { { currency: string, price: number } } = {}
 		if def.fichas then
-			slot += 1
-			button({
-				Name = "BuyFichas",
-				AnchorPoint = Vector2.new(1, 0),
-				Position = UDim2.new(1, -14, 0, 4 + (slot - 1) * 32),
-				Size = UDim2.fromOffset(220, 28),
-				Text = `x{def.bundle} · {number(def.fichas)} FICHAS`,
-				TextSize = Theme.SizeSmall,
-				Parent = row,
-			}, function()
-				store("consumable_fichas", def.id)
-			end)
+			table.insert(options, { currency = "fichas", price = def.fichas })
 		end
 		if def.creditos then
-			slot += 1
-			button({
-				Name = "BuyCreditos",
-				AnchorPoint = Vector2.new(1, 0),
-				Position = UDim2.new(1, -14, 0, 4 + (slot - 1) * 32),
-				Size = UDim2.fromOffset(220, 28),
-				Text = `x{def.bundle} · {number(def.creditos)} CRÉDITOS`,
-				TextSize = Theme.SizeSmall,
-				BackgroundColor3 = Color3.fromRGB(40, 34, 18),
-				Parent = row,
-			}, function()
-				store("consumable_creditos", def.id)
-			end)
+			table.insert(options, { currency = "creditos", price = def.creditos })
 		end
+		for index, option in options do
+			local share = 1 / #options
+			local buyButton = priceButton(buyRow, option.currency, option.price, {
+				Name = if option.currency == "fichas" then "BuyFichas" else "BuyCreditos",
+				Position = UDim2.new(share * (index - 1), if index == 1 then 0 else 5, 0, 0),
+				Size = UDim2.new(share, if #options > 1 then -5 else 0, 1, 0),
+			}, function()
+				confirmDialog(
+					`COMPRAR {def.name}?`,
+					`Recebe {def.bundle} {if def.bundle > 1 then "unidades" else "unidade"}. Custa {priceText(
+						option.currency,
+						option.price
+					)}; você fica com {priceText(option.currency, walletOf(option.currency) - option.price)}.`,
+					"COMPRAR",
+					function()
+						store(
+							if option.currency == "fichas" then "consumable_fichas" else "consumable_creditos",
+							def.id
+						)
+					end
+				)
+			end)
+			if full then
+				buyButton.Text = `ESTOQUE CHEIO ({Perks.MAX_STOCK})`
+				Components.setDisabled(buyButton, true)
+			end
+		end
+		-- Ativação separada da compra: só itens de mochila com estoque.
+		local toggleRow = Create("Frame", {
+			Name = "Loadout",
+			AnchorPoint = Vector2.new(0, 1),
+			Position = UDim2.fromScale(0, 1),
+			Size = UDim2.new(1, 0, 0, Theme.TouchMin),
+			BackgroundTransparency = 1,
+			Parent = card,
+		})
+		local toggle = button({
+			Name = "Toggle",
+			Variant = if on and count > 0 then "success" elseif def.loadout and count > 0 then "secondary" else "ghost",
+			Size = UDim2.fromScale(1, 1),
+			Text = if not def.loadout
+				then "APARECE QUANDO O TIME PERDER"
+				elseif count <= 0 then "COMPRE PARA USAR NA MOCHILA"
+				elseif on then "NA MOCHILA · TOCAR PARA TIRAR"
+				else "COLOCAR NA MOCHILA",
+			TextSize = 14,
+			Parent = toggleRow,
+		}, function()
+			if def.loadout and count > 0 then
+				store(if on then "loadout_off" else "loadout_on", def.id)
+			end
+		end)
+		Components.setDisabled(toggle, not def.loadout or count <= 0)
 	end
-	sectionTitle(scroll, "PACOTES EM ROBUX", 40)
-	local grid = frame({
-		Size = UDim2.fromScale(1, 0),
-		AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundTransparency = 1,
-		LayoutOrder = 41,
-		Parent = scroll,
-	}, {
-		Create("UIGridLayout", {
-			CellSize = UDim2.new(0.333, -8, 0, 112),
-			CellPadding = UDim2.fromOffset(8, 8),
-			SortOrder = Enum.SortOrder.LayoutOrder,
-		}),
-	})
+
+	-- Pacotes em Robux só aparecem quando o produto existe no Creator Hub (ID publicado).
 	local keys = {
 		"kit_sobrevivente",
 		"segunda_chance_3",
@@ -527,79 +836,38 @@ local function buildPerks(b: Frame)
 		"creditos_1200",
 		"creditos_2800",
 	}
-	for i, key in keys do
+	local sellable = {}
+	for _, key in keys do
 		local product = StoreCatalog.ProductByKey[key]
-		if product then
-			local cell = frame(
-				{ Name = `Product_{key}`, BackgroundTransparency = 0.05, LayoutOrder = i, Parent = grid },
-				{
-					stroke(
-						if key == "kit_sobrevivente" or key == "arquivo_elias" then Theme.Hazard else Theme.TextDim,
-						1,
-						0.4
-					),
-				}
-			)
-			label({
-				Position = UDim2.fromOffset(10, 8),
-				Size = UDim2.new(1, -20, 0, 34),
-				Text = product.name,
-				TextSize = Theme.SizeSmall,
-				Parent = cell,
-			})
+		if product and product.id > 0 then
+			table.insert(sellable, product)
+		end
+	end
+	if #sellable > 0 then
+		sectionHeader(scroll, 5, "PACOTES EM ROBUX", "Compra pela janela oficial do Roblox.")
+		local packs = grid(6, 132)
+		for i, product in sellable do
+			local card = Components.panel({ Name = `Product_{product.key}`, LayoutOrder = i, Parent = packs })
+			Components.padding(card, 10)
+			label({ Size = UDim2.new(1, 0, 0, 22), Text = product.name, TextSize = 15, Parent = card })
 			note({
-				Position = UDim2.fromOffset(10, 42),
-				Size = UDim2.new(1, -20, 0, 34),
+				Position = UDim2.fromOffset(0, 24),
+				Size = UDim2.new(1, 0, 0, 40),
 				Text = product.description,
 				TextSize = 12,
-				Parent = cell,
+				Parent = card,
 			})
 			button({
 				Name = "Buy",
-				AnchorPoint = Vector2.new(0.5, 1),
-				Position = UDim2.new(0.5, 0, 1, -8),
-				Size = UDim2.new(1, -20, 0, 24),
-				Text = if product.id > 0 then `R$ {product.robux}` else "INDISPONÍVEL",
-				TextSize = Theme.SizeSmall,
-				BackgroundColor3 = Color3.fromRGB(28, 44, 30),
-				Accent = GREEN,
-				Parent = cell,
+				Variant = "success",
+				AnchorPoint = Vector2.new(0, 1),
+				Position = UDim2.fromScale(0, 1),
+				Size = UDim2.new(1, 0, 0, Theme.TouchMin),
+				Text = `R$ {product.robux}`,
+				Parent = card,
 			}, function()
-				buyProduct(key)
+				buyProduct(product.key)
 			end)
-		end
-	end
-	if compactMenu and singleColumn then
-		-- Uma coluna na tela estreita: descrição e compra não disputam a mesma linha.
-		for _, row in scroll:GetChildren() do
-			if
-				row:IsA("Frame")
-				and (row.Name:find("Perk_", 1, true) == 1 or row.Name:find("Consumable_", 1, true) == 1)
-			then
-				local perk = row.Name:find("Perk_", 1, true) == 1
-				local nextY = if perk then 140 else 84
-				for _, child in row:GetChildren() do
-					if child:IsA("TextButton") then
-						child.AnchorPoint = Vector2.zero
-						child.Position, child.Size = UDim2.fromOffset(14, nextY), UDim2.new(1, -28, 0, 44)
-						nextY += 52
-					elseif child:IsA("TextLabel") then
-						local originalY = child.Position.Y.Offset
-						child.Position = UDim2.fromOffset(14, if originalY == 56 then 94 else originalY)
-						child.Size = UDim2.new(1, -28, 0, if originalY == 8 then 24 else 40)
-					elseif child:IsA("Frame") and child.Position.Y.Offset == 62 then
-						child.Position = UDim2.fromOffset(14, 80)
-					end
-				end
-				row.Size = UDim2.new(1, 0, 0, nextY)
-			end
-		end
-		local layout = grid:FindFirstChildOfClass("UIGridLayout") :: UIGridLayout
-		layout.CellSize = UDim2.new(1, -8, 0, 132)
-		for _, child in grid:GetDescendants() do
-			if child:IsA("TextButton") then
-				child.Size = UDim2.new(1, -20, 0, 44)
-			end
 		end
 	end
 end
@@ -1578,10 +1846,20 @@ local TITLES: { [string]: { string } } = {
 }
 
 local function renderTab()
+	-- Redesenho por mudança de saldo/estoque (compra, mochila) mantém a rolagem da mesma aba.
+	local keep: Vector2? = nil
+	local previous = body
+	if previous and previous:GetAttribute("Tab") == currentTab then
+		local scroller = previous:FindFirstChildWhichIsA("ScrollingFrame")
+		if scroller then
+			keep = scroller.CanvasPosition
+		end
+	end
 	local b = clearBody()
 	if not b then
 		return
 	end
+	b:SetAttribute("Tab", currentTab)
 	local titles = TITLES[currentTab] or TITLES.play
 	if header then
 		header.Text = px(titles[1])
@@ -1608,6 +1886,17 @@ local function renderTab()
 		buildFriends(b)
 	else
 		buildPlay(b)
+	end
+	local saved = keep
+	if saved then
+		local scroller = b:FindFirstChildWhichIsA("ScrollingFrame")
+		if scroller then
+			-- A lista nova mede o canvas no próximo quadro; aplica a posição depois disso.
+			task.defer(function()
+				scroller.CanvasPosition = saved
+			end)
+		end
+		return
 	end
 	-- Entrada da aba: desliza 12 px.
 	local top = bodyTop
@@ -2217,6 +2506,22 @@ function Controller.Start()
 			player:GetAttributeChangedSignal("ModeQARequest"):Connect(qaVote)
 			qaVote()
 		end
+		-- QA de layout/fluxo sem foco de janela: "tab:perks" | "confirm:x" (toca CONFIRMAR no diálogo).
+		player:GetAttributeChangedSignal("MenuQARequest"):Connect(function()
+			local raw = player:GetAttribute("MenuQARequest")
+			if type(raw) ~= "string" then
+				return
+			end
+			local command, arg = string.match(raw, "^(%a+):([%w_]+)$")
+			if command == "tab" and arg then
+				selectTab(arg :: TabId)
+			elseif command == "confirm" then
+				local run = pendingConfirm
+				if run then
+					run()
+				end
+			end
+		end)
 	end
 	RunService:BindToRenderStep("S9MainMenu", Enum.RenderPriority.Last.Value, function(dt: number)
 		local screen = gui

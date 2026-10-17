@@ -1617,7 +1617,14 @@ render = function()
 	for kind, b in kindButtons do
 		Components.setVariant(b, if kind == kindFilter then "secondary" else "ghost")
 	end
+	-- Mesma aba e filtro (redesenho por compra/saldo): mantém a rolagem; trocou: volta ao topo.
+	local view = `{tab}/{kindFilter}`
+	local keep = if c:GetAttribute("View") == view then c.CanvasPosition else Vector2.zero
+	c:SetAttribute("View", view)
 	c.CanvasPosition = Vector2.zero
+	task.defer(function()
+		c.CanvasPosition = keep
+	end)
 	if tab == "shop" then
 		renderShop(c)
 	elseif tab == "season" then
