@@ -28,10 +28,12 @@ local StoreView = require("@game/ReplicatedStorage/Shared/Game/StoreView")
 local Types = require("@game/ReplicatedStorage/Shared/Types")
 local Components = require("../UI/Components")
 local Create = require("../UI/Create")
+local Icons = require("../UI/Icons")
 local ItemPreview = require("../UI/ItemPreview")
 local Theme = require("../UI/Theme")
 local ViewportQA = require("../UI/ViewportQA")
 local AudioController = require("./AudioController")
+local Settings = require("./SettingsController")
 
 type Tab = "shop" | "season" | "chests" | "daily" | "collection" | "robux"
 
@@ -60,6 +62,10 @@ local setFichasBadge: ((number) -> ())? = nil
 local setCreditosBadge: ((number) -> ())? = nil
 local setXpBar: ((number) -> ())? = nil
 local levelChip: TextLabel? = nil
+-- QA no Studio: ações dos botões da aba aberta (press:<nome> no StoreQARequest).
+local qaActions: { [string]: () -> () } = {}
+-- Última rotação da roleta: depois do giro, a roda redesenhada continua apontando o prêmio.
+local wheelRotation = 0
 
 local TAB_ICONS: { [Tab]: string } = {
 	shop = "Store",
@@ -142,10 +148,19 @@ local function button(props: { [string]: any }, onClick: () -> ()): TextButton
 	if props.TextSize == nil then
 		props.TextSize = Theme.SizeSmall
 	end
-	return Components.button(variant, props, function()
+	local b = Components.button(variant, props, function()
 		AudioController.play("UiBlip", 1, 1.1, true)
 		onClick()
 	end)
+	if RunService:IsStudio() and type(props.Name) == "string" then
+		-- QA: "press:<Nome>" executa este clique (respeita botão desativado).
+		qaActions[props.Name] = function()
+			if b.Parent and b:GetAttribute("Disabled") ~= true then
+				onClick()
+			end
+		end
+	end
+	return b
 end
 
 local function setMessage(key: string?)
@@ -338,25 +353,6 @@ local function setLayout(c: ScrollingFrame, grid: boolean)
 			Parent = c,
 		})
 	end
-end
-
-local function card(parent: Instance, order: number, accent: Color3): Frame
-	local box = Create("Frame", {
-		BackgroundColor3 = Theme.BgPanel,
-		BorderSizePixel = 0,
-		LayoutOrder = order,
-		Parent = parent,
-	}, {
-		Create("UIStroke", { Color = accent, Thickness = 1, Transparency = 0.3 }),
-		Create("Frame", {
-			Name = "Bar",
-			Size = UDim2.new(1, 0, 0, 4),
-			BackgroundColor3 = accent,
-			BorderSizePixel = 0,
-		}),
-	}) :: Frame
-	Components.corner(box, Theme.CornerSmall)
-	return box
 end
 
 local render: () -> ()
@@ -899,56 +895,95 @@ local function renderShop(c: ScrollingFrame)
 	end
 end
 
+-- ===================== Recompensas (ícones e textos) =====================
+
+local function rewardParts(reward: StoreCatalog.Reward?): { string }
+	local parts = {}
+	if not reward then
+		return parts
+	end
+	if reward.item then
+		table.insert(parts, itemName(reward.item))
+	end
+	if reward.fichas then
+		table.insert(parts, `{Components.formatNumber(reward.fichas)} FICHAS`)
+	end
+	if reward.creditos then
+		table.insert(parts, `{Components.formatNumber(reward.creditos)} CRÉDITOS`)
+	end
+	if reward.xp then
+		table.insert(parts, `{Components.formatNumber(reward.xp)} XP`)
+	end
+	return parts
+end
+
+-- Arte da recompensa: miniatura real do item, ou a moeda/XP com o ícone próprio.
+local function rewardArt(parent: Instance, reward: StoreCatalog.Reward?)
+	local entry = if reward and reward.item then StoreCatalog.ItemById[reward.item] else nil
+	if entry then
+		ItemPreview.thumbnail(parent, entry)
+		return
+	end
+	local holder = Create("Frame", {
+		Name = "RewardArt",
+		Size = UDim2.fromScale(1, 1),
+		BackgroundColor3 = Theme.BgSunken,
+		BorderSizePixel = 0,
+		Parent = parent,
+	})
+	Components.corner(holder, Theme.CornerSmall)
+	local kind, color = "Star", Theme.Success
+	if reward and reward.creditos then
+		kind, color = "Gem", Theme.Info
+	elseif reward and reward.fichas then
+		kind, color = "Coin", Theme.Coin
+	elseif not reward then
+		kind, color = "Close", Theme.TextMuted
+	end
+	Components.icon(holder, kind, 36, color, {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+	})
+end
+
+-- ===================== Chances e rolo do baú =====================
+
 local function showOdds(title: string, lines: { string })
 	track("view", "odds")
-	local o = overlay
+	local o = clearOverlay()
 	if not o then
 		return
 	end
-	for _, child in o:GetChildren() do
-		child:Destroy()
-	end
-	o.Visible = true
-	local box = Create("Frame", {
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.fromOffset(620, 0),
-		AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundColor3 = Theme.Panel,
-		BorderSizePixel = 0,
-		Parent = o,
-	}, {
-		Create("UIStroke", { Color = Theme.Hazard, Thickness = 2 }),
-		Create("UIPadding", {
-			PaddingLeft = UDim.new(0, 12),
-			PaddingRight = UDim.new(0, 12),
-			PaddingTop = UDim.new(0, 10),
-			PaddingBottom = UDim.new(0, 10),
-		}),
-		Create("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder }),
-	}) :: Frame
-	label({
-		Size = UDim2.new(1, 0, 0, 22),
-		Text = px(title),
-		TextColor3 = Theme.Hazard,
+	local box = modalBox(o, UDim2.fromOffset(if compactStore then 380 else 600, 0))
+	box.AutomaticSize = Enum.AutomaticSize.Y
+	Components.padding(box, 16)
+	Create("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = box })
+	Components.title({
+		Size = UDim2.new(1, 0, 0, 26),
+		Text = title,
+		TextSize = 20,
+		TextColor3 = Theme.Gold,
 		LayoutOrder = 0,
 		Parent = box,
 	})
 	for i, line in lines do
-		label({
+		Components.text({
 			Size = UDim2.fromScale(1, 0),
 			AutomaticSize = Enum.AutomaticSize.Y,
-			Text = px(line),
-			TextSize = Theme.SizeSmall,
-			TextXAlignment = Enum.TextXAlignment.Left,
+			Text = line,
+			FontFace = if string.sub(line, 1, 2) == "  " then Theme.FontNote else Theme.Font,
+			TextSize = 14,
+			TextColor3 = if string.sub(line, 1, 2) == "  " then Theme.TextSecondary else Theme.TextPrimary,
 			LayoutOrder = i,
 			Parent = box,
 		})
 	end
 	button({
 		Name = "OddsOk",
-		Size = UDim2.fromOffset(140, 24),
-		Text = "OK",
+		Variant = "primary",
+		Size = UDim2.new(1, 0, 0, Theme.TouchMin),
+		Text = "ENTENDI",
+		TextSize = 16,
 		LayoutOrder = #lines + 1,
 		Parent = box,
 	}, function()
@@ -978,7 +1013,7 @@ local function oddsLines(chest: StoreCatalog.Chest): { string }
 	return lines
 end
 
--- Rolo de nomes que desacelera e para no item sorteado pelo servidor.
+-- Rolo de miniaturas que desacelera e para no item sorteado pelo servidor.
 local function playReel(
 	pool: { string },
 	result: string,
@@ -986,62 +1021,72 @@ local function playReel(
 	duplicate: boolean,
 	refund: number
 )
-	local o = overlay
+	local o = clearOverlay()
 	if not o then
 		return
 	end
-	for _, child in o:GetChildren() do
-		child:Destroy()
-	end
-	o.Visible = true
 	local accent = rgb(StoreCatalog.Rarities[rarity].color)
-	local box = Create("Frame", {
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.fromOffset(460, 170),
-		BackgroundColor3 = Theme.Panel,
-		BorderSizePixel = 0,
-		Parent = o,
-	}, { Create("UIStroke", { Color = Theme.TextDim, Thickness = 2 }) }) :: Frame
-	local name = label({
-		Position = UDim2.fromOffset(10, 40),
-		Size = UDim2.new(1, -20, 0, 40),
-		Text = "",
-		TextSize = Theme.SizeLarge,
+	local box = modalBox(o, UDim2.fromOffset(if compactStore then 340 else 420, 300))
+	Components.padding(box, 16)
+	local frameArt = Create("Frame", {
+		Name = "Reel",
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.fromScale(0.5, 0),
+		Size = UDim2.fromOffset(132, 132),
+		BackgroundTransparency = 1,
 		Parent = box,
 	})
-	local sub = label({
-		Position = UDim2.fromOffset(10, 90),
-		Size = UDim2.new(1, -20, 0, 22),
+	local outline = Components.stroke(frameArt, Theme.Border, 2, 0)
+	local name = Components.title({
+		Position = UDim2.fromOffset(0, 142),
+		Size = UDim2.new(1, 0, 0, 30),
+		TextXAlignment = Enum.TextXAlignment.Center,
 		Text = "",
-		TextColor3 = Theme.TextDim,
+		TextSize = 20,
 		Parent = box,
 	})
+	local sub = Components.text({
+		Position = UDim2.fromOffset(0, 174),
+		Size = UDim2.new(1, 0, 0, 22),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Text = "",
+		TextColor3 = Theme.TextSecondary,
+		Parent = box,
+	})
+	local function show(id: string)
+		for _, child in frameArt:GetChildren() do
+			if child:IsA("GuiObject") then
+				child:Destroy()
+			end
+		end
+		local entry = StoreCatalog.ItemById[id]
+		if entry then
+			ItemPreview.thumbnail(frameArt, entry)
+		end
+		name.Text = itemName(id)
+	end
 	local rng = Random.new()
-	local delay = 0.04
+	local delay = 0.05
 	while delay < 0.32 do
-		name.Text = px(itemName(pool[rng:NextInteger(1, #pool)]))
+		show(pool[rng:NextInteger(1, #pool)])
 		AudioController.play("UiBlip", 0.5, 1.6, true)
 		task.wait(delay)
 		delay *= 1.16
 	end
-	name.Text = px(itemName(result))
+	show(result)
 	name.TextColor3 = accent
-	local stroke = box:FindFirstChildOfClass("UIStroke")
-	if stroke then
-		stroke.Color = accent
-	end
-	sub.Text = px(
-		if duplicate
-			then string.format(S.duplicate, refund)
-			else string.format(S.newItem, StoreCatalog.Rarities[rarity].label)
-	)
+	outline.Color = accent
+	sub.Text = if duplicate
+		then string.format(S.duplicate, refund)
+		else string.format(S.newItem, StoreCatalog.Rarities[rarity].label)
 	AudioController.play(if rarity == "legendary" or rarity == "epic" then "StingerWin" else "Switch", 0.7, nil, true)
 	button({
+		Variant = "primary",
 		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, -10),
-		Size = UDim2.fromOffset(160, 26),
+		Position = UDim2.fromScale(0.5, 1),
+		Size = UDim2.new(1, 0, 0, Theme.TouchMin),
 		Text = "OK",
+		TextSize = 16,
 		Parent = box,
 	}, function()
 		o.Visible = false
@@ -1050,453 +1095,1031 @@ local function playReel(
 	end)
 end
 
+-- ===================== BAÚS =====================
+
+local function openChest(chest: StoreCatalog.Chest)
+	animating = true
+	local result = request("open_chest", chest.id)
+	if not result or not result.ok then
+		animating = false
+		return
+	end
+	local data = result.data
+	if not data.ok then
+		animating = false
+		setMessage(data.message)
+		return
+	end
+	setMessage(nil)
+	local pool = {}
+	for _, line in Economy.chestOdds(chest) do
+		for _, id in line.items do
+			table.insert(pool, id)
+		end
+	end
+	task.spawn(playReel, pool, data.item, data.rarity, data.duplicate == true, data.refund or 0)
+end
+
 local function renderChests(c: ScrollingFrame)
 	setLayout(c, false)
 	local restricted = attr("PaidRandomRestricted", true) == true
 	for index, chest in StoreCatalog.Chests do
 		local blocked = chest.paidRandom and restricted
-		local box = card(c, index, if chest.paidRandom then Theme.Hazard else Theme.TextDim)
-		box.Size = UDim2.new(1, -12, 0, 120)
+		local fichas = chest.currency == "fichas"
+		local box = Components.panel({
+			Name = `Chest_{chest.id}`,
+			Size = UDim2.new(1, -4, 0, if shortStore then 176 elseif compactStore then 214 else 168),
+			LayoutOrder = index,
+			Parent = c,
+		})
+		Components.padding(box, 14)
+		local tile = Create("Frame", {
+			Size = UDim2.fromOffset(72, 72),
+			BackgroundColor3 = (if fichas then Theme.Wood else Theme.GoldDeep):Lerp(Theme.Bg, 0.4),
+			BorderSizePixel = 0,
+			Parent = box,
+		})
+		Components.corner(tile, Theme.CornerSmall)
+		Components.icon(tile, "Chest", 48, if fichas then Theme.Gold else Theme.GoldLight, {
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.5),
+		})
 		label({
-			Position = UDim2.fromOffset(12, 12),
-			Size = UDim2.new(0.6, 0, 0, 24),
-			Text = px(chest.name),
-			TextSize = Theme.SizeLarge,
+			Position = UDim2.fromOffset(86, 0),
+			Size = UDim2.new(1, -86, 0, 26),
+			Text = chest.name,
+			TextSize = 20,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			Parent = box,
 		})
-		-- Chances resumidas sempre visíveis no card (antes de qualquer compra).
-		local summary = {}
-		for _, line in Economy.chestOdds(chest) do
-			table.insert(summary, `{StoreCatalog.Rarities[line.rarity].label} {percent(line.percent)}%`)
+		Components.text({
+			Position = UDim2.fromOffset(86, 28),
+			Size = UDim2.new(1, -86, 0, 18),
+			FontFace = Theme.FontNote,
+			TextSize = 13,
+			TextColor3 = Theme.TextSecondary,
+			Text = if chest.paidRandom
+				then "Item aleatório pago com Créditos. Repetido vira Fichas."
+				else "Item aleatório com Fichas ganhas jogando. Repetido vira Fichas.",
+			Parent = box,
+		})
+		-- Barra de chances por raridade (tamanho = chance real) + rótulos com %.
+		local odds = Economy.chestOdds(chest)
+		local bar = Create("Frame", {
+			Name = "OddsBar",
+			Position = UDim2.fromOffset(86, 54),
+			Size = UDim2.new(1, -86, 0, 12),
+			BackgroundColor3 = Theme.BgSunken,
+			BorderSizePixel = 0,
+			ClipsDescendants = true,
+			Parent = box,
+		}, {
+			Create(
+				"UIListLayout",
+				{ FillDirection = Enum.FillDirection.Horizontal, SortOrder = Enum.SortOrder.LayoutOrder }
+			),
+		})
+		Components.corner(bar, Theme.CornerPill)
+		local legend = Create("Frame", {
+			Position = UDim2.fromOffset(86, 70),
+			Size = UDim2.new(1, -86, 0, 18),
+			BackgroundTransparency = 1,
+			Parent = box,
+		}, {
+			Create("UIListLayout", {
+				FillDirection = Enum.FillDirection.Horizontal,
+				Padding = UDim.new(0, 10),
+				SortOrder = Enum.SortOrder.LayoutOrder,
+			}),
+		})
+		for order, line in odds do
+			local rarity = StoreCatalog.Rarities[line.rarity]
+			Create("Frame", {
+				LayoutOrder = order,
+				Size = UDim2.fromScale(line.percent / 100, 1),
+				BackgroundColor3 = rgb(rarity.color),
+				BorderSizePixel = 0,
+				Parent = bar,
+			})
+			Components.text({
+				LayoutOrder = order,
+				Size = UDim2.fromOffset(0, 18),
+				AutomaticSize = Enum.AutomaticSize.X,
+				FontFace = Theme.Font,
+				TextSize = 12,
+				TextWrapped = false,
+				TextColor3 = rgb(rarity.color),
+				Text = `{rarity.label} {percent(line.percent)}%`,
+				Parent = legend,
+			})
 		end
-		label({
-			Position = UDim2.fromOffset(12, 42),
-			Size = UDim2.new(0.62, 0, 0, 40),
-			Text = px(table.concat(summary, "  ·  ")),
-			TextSize = Theme.SizeSmall,
-			TextColor3 = Theme.TextDim,
-			TextXAlignment = Enum.TextXAlignment.Left,
+		local actions = Create("Frame", {
+			AnchorPoint = Vector2.new(0, 1),
+			Position = UDim2.fromScale(0, 1),
+			Size = UDim2.new(1, 0, 0, if compactStore then 2 * Theme.TouchMin + 8 else Theme.TouchMin),
+			BackgroundTransparency = 1,
 			Parent = box,
 		})
-		local price = if chest.currency == "fichas"
-			then string.format(S.fichas, chest.price)
-			else string.format(S.creditos, chest.price)
-		button({
+		local have = walletOf(chest.currency)
+		local open = button({
 			Name = `Open_{chest.id}`,
-			Position = UDim2.new(0.66, 0, 0, 14),
-			Size = UDim2.new(0.32, -6, 0, 34),
-			Text = if blocked then S.restricted else string.format(S.open, price),
-			TextColor3 = if blocked then Theme.TextDim else Theme.Hazard,
-			Parent = box,
+			Variant = "primary",
+			Size = if compactStore then UDim2.new(1, 0, 0, Theme.TouchMin) else UDim2.new(0.6, -5, 1, 0),
+			Text = if blocked
+				then S.restricted
+				elseif have < chest.price then `FALTAM {priceText(chest.currency, chest.price - have)}`
+				else `ABRIR · {priceText(chest.currency, chest.price)}`,
+			TextSize = 15,
+			Parent = actions,
 		}, function()
 			if blocked then
 				setMessage("store_restricted")
 				return
 			end
-			animating = true
-			local result = request("open_chest", chest.id)
-			if not result or not result.ok then
-				animating = false
+			-- Confirmação antes de gastar (o sorteio acontece no servidor).
+			local o = clearOverlay()
+			if not o then
 				return
 			end
-			local data = result.data
-			if not data.ok then
-				animating = false
-				setMessage(data.message)
-				return
-			end
-			setMessage(nil)
-			local pool = {}
-			for _, line in Economy.chestOdds(chest) do
-				for _, id in line.items do
-					table.insert(pool, id)
-				end
-			end
-			task.spawn(playReel, pool, data.item, data.rarity, data.duplicate == true, data.refund or 0)
+			local dialog = modalBox(o, UDim2.fromOffset(if compactStore then 340 else 420, 0))
+			dialog.AutomaticSize = Enum.AutomaticSize.Y
+			Components.padding(dialog, 18)
+			Create(
+				"UIListLayout",
+				{ Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder, Parent = dialog }
+			)
+			Components.title({
+				Size = UDim2.fromScale(1, 0),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				TextWrapped = true,
+				TextXAlignment = Enum.TextXAlignment.Center,
+				Text = `ABRIR {chest.name}?`,
+				TextSize = 20,
+				LayoutOrder = 1,
+				Parent = dialog,
+			})
+			Components.text({
+				Size = UDim2.fromScale(1, 0),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				TextXAlignment = Enum.TextXAlignment.Center,
+				FontFace = Theme.FontNote,
+				TextColor3 = Theme.TextSecondary,
+				Text = `Custa {priceText(chest.currency, chest.price)}. O item é sorteado; veja as chances antes. Depois você fica com {priceText(
+					chest.currency,
+					have - chest.price
+				)}.`,
+				TextSize = 15,
+				LayoutOrder = 2,
+				Parent = dialog,
+			})
+			local row = Create("Frame", {
+				Size = UDim2.new(1, 0, 0, Theme.TouchMin),
+				BackgroundTransparency = 1,
+				LayoutOrder = 3,
+				Parent = dialog,
+			})
+			button({
+				Variant = "secondary",
+				Size = UDim2.new(0.5, -5, 1, 0),
+				Text = "CANCELAR",
+				TextSize = 16,
+				Parent = row,
+			}, function()
+				o.Visible = false
+			end)
+			button({
+				Name = "Confirm",
+				Variant = "primary",
+				AnchorPoint = Vector2.new(1, 0),
+				Position = UDim2.fromScale(1, 0),
+				Size = UDim2.new(0.5, -5, 1, 0),
+				Text = "ABRIR",
+				TextSize = 16,
+				Parent = row,
+			}, function()
+				o.Visible = false
+				openChest(chest)
+			end)
 		end)
+		Components.setDisabled(open, blocked or have < chest.price)
 		button({
 			Name = `Odds_{chest.id}`,
-			Position = UDim2.new(0.66, 0, 0, 56),
-			Size = UDim2.new(0.32, -6, 0, 28),
-			Text = S.odds,
-			Parent = box,
+			Variant = "secondary",
+			AnchorPoint = if compactStore then Vector2.new(0, 1) else Vector2.new(1, 0),
+			Position = if compactStore then UDim2.fromScale(0, 1) else UDim2.fromScale(1, 0),
+			Size = if compactStore then UDim2.new(1, 0, 0, Theme.TouchMin) else UDim2.new(0.4, -5, 1, 0),
+			Text = "VER CHANCES",
+			TextSize = 15,
+			Parent = actions,
 		}, function()
 			showOdds(string.format(S.oddsTitle, chest.name), oddsLines(chest))
 		end)
 	end
 end
 
-local function renderDaily(c: ScrollingFrame)
-	setLayout(c, false)
+-- ===================== DIÁRIO + ROLETA =====================
+
+local function dailyCalendar(c: ScrollingFrame)
 	local streak = attr("DailyStreak", 1)
 	local claimable = attr("DailyClaimable", false) == true
-	local calendar = card(c, 1, Theme.Hazard)
-	calendar.Size = UDim2.new(1, -12, 0, 130)
+	local box = Components.panel({
+		Name = "Daily",
+		Size = UDim2.new(1, -4, 0, if compactStore then 262 else 250),
+		LayoutOrder = 1,
+		Parent = c,
+	})
+	Components.padding(box, 14)
+	Components.icon(box, "Daily", 24, Theme.Gold)
+	label({
+		Position = UDim2.fromOffset(32, 0),
+		Size = UDim2.new(1, -32, 0, 24),
+		Text = "PRÊMIO DIÁRIO",
+		TextSize = 19,
+		TextColor3 = Theme.Gold,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = box,
+	})
+	Components.text({
+		Position = UDim2.fromOffset(0, 26),
+		Size = UDim2.new(1, 0, 0, 18),
+		FontFace = Theme.FontNote,
+		TextSize = 13,
+		TextColor3 = Theme.TextSecondary,
+		Text = "Volte todo dia: o prêmio cresce até o dia 7. Se perder um dia, a sequência volta ao dia 1.",
+		Parent = box,
+	})
+	local row = Create("Frame", {
+		Name = "Days",
+		Position = UDim2.fromOffset(0, 52),
+		Size = UDim2.new(1, 0, 0, 112),
+		BackgroundTransparency = 1,
+		Parent = box,
+	}, {
+		Create("UIListLayout", {
+			FillDirection = Enum.FillDirection.Horizontal,
+			Padding = UDim.new(0, 6),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		}),
+	})
+	local days = #StoreCatalog.Daily
 	for day, reward in StoreCatalog.Daily do
-		local current = day == streak
 		local done = day < streak or (day == streak and not claimable)
+		local today = day == streak and claimable
+		local final = day == days
 		local cell = Create("Frame", {
-			Position = UDim2.new((day - 1) / 7, 6, 0, 12),
-			Size = UDim2.new(1 / 7, -10, 0, 64),
-			BackgroundColor3 = if current then Color3.fromRGB(40, 34, 16) else Color3.fromRGB(22, 22, 24),
+			Name = `Day_{day}`,
+			LayoutOrder = day,
+			Size = UDim2.new(if final then 1.4 / (days + 0.4) else 1 / (days + 0.4), -6, 1, 0),
+			BackgroundColor3 = if today
+				then Theme.GoldDeep
+				elseif done then Theme.Success:Lerp(Theme.Bg, 0.7)
+				else Theme.BgSunken,
 			BorderSizePixel = 0,
-			Parent = calendar,
-		}, {
-			Create("UIStroke", { Color = if current then Theme.Hazard else Theme.TextDim, Thickness = 1 }),
+			Parent = row,
 		}) :: Frame
-		local parts = {}
-		if reward.fichas then
-			table.insert(parts, `{reward.fichas} F`)
-		end
-		if reward.creditos then
-			table.insert(parts, `{reward.creditos} C`)
-		end
+		cell:SetAttribute("State", if today then "today" elseif done then "done" else "future")
+		Components.corner(cell, Theme.CornerSmall)
+		Components.stroke(
+			cell,
+			if today then Theme.Gold elseif done then Theme.Success else Theme.Border,
+			if today then 2 else 1,
+			if today or done then 0 else 0.5
+		)
 		label({
-			Size = UDim2.fromScale(1, 0.45),
-			Text = px(string.format(S.dailyDay, day)),
-			TextSize = Theme.SizeSmall,
-			TextColor3 = if done then Theme.Good else Theme.Text,
+			Size = UDim2.new(1, 0, 0, 22),
+			Text = `DIA {day}`,
+			TextSize = 13,
+			TextColor3 = if today then Theme.GoldLight elseif done then Theme.Success else Theme.TextSecondary,
 			Parent = cell,
 		})
+		Components.icon(
+			cell,
+			if done then "Check" elseif reward.creditos then "Gem" else "Coin",
+			if final then 36 else 24,
+			if done then Theme.Success elseif reward.creditos then Theme.Info else Theme.Coin,
+			{
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.fromScale(0.5, 0.48),
+			}
+		)
 		label({
-			Position = UDim2.fromScale(0, 0.45),
-			Size = UDim2.fromScale(1, 0.55),
-			Text = table.concat(parts, " + "),
-			TextSize = Theme.SizeSmall,
-			TextColor3 = Theme.Hazard,
+			AnchorPoint = Vector2.new(0, 1),
+			Position = UDim2.new(0, 2, 1, -4),
+			Size = UDim2.new(1, -4, 0, 30),
+			Text = table.concat(rewardParts(reward), "\n"),
+			TextSize = 11,
+			TextColor3 = Theme.TextPrimary,
 			Parent = cell,
 		})
 	end
-	button({
+	local claim = button({
 		Name = "ClaimDaily",
-		Position = UDim2.new(0, 12, 1, -42),
-		Size = UDim2.new(0.5, -18, 0, 30),
-		Text = if claimable then string.format(S.daily, streak) else string.format(S.dailyDone, streak % 7 + 1),
-		TextColor3 = if claimable then Theme.Hazard else Theme.TextDim,
-		Parent = calendar,
+		Variant = if claimable then "primary" else "secondary",
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.fromScale(0, 1),
+		Size = UDim2.new(1, 0, 0, Theme.TouchMin),
+		Text = if claimable then string.format(S.daily, streak) else string.format(S.dailyDone, streak % days + 1),
+		TextSize = 15,
+		Parent = box,
 	}, function()
 		if claimable then
 			local result = request("claim_daily")
 			if result and result.ok then
 				setMessage(result.data.message)
+				if result.data.ok then
+					AudioController.play("Pickup", 0.8, nil, true)
+				end
 			end
 			render()
 		end
 	end)
+	Components.setDisabled(claim, not claimable)
+end
 
-	-- Roleta: faixa de segmentos; o destaque desacelera até o resultado do servidor.
-	local wheel = card(c, 2, Theme.TextDim)
-	wheel.Size = UDim2.new(1, -12, 0, 150)
-	local cells: { Frame } = {}
-	for i, segment in StoreCatalog.Spin do
-		local cell = Create("Frame", {
-			Position = UDim2.new((i - 1) / #StoreCatalog.Spin, 6, 0, 14),
-			Size = UDim2.new(1 / #StoreCatalog.Spin, -10, 0, 56),
-			BackgroundColor3 = Color3.fromRGB(22, 22, 24),
-			BorderSizePixel = 0,
+local SPIN_COLORS = {
+	Color3.fromRGB(70, 92, 130),
+	Color3.fromRGB(150, 104, 52),
+	Color3.fromRGB(92, 142, 108),
+	Color3.fromRGB(112, 82, 140),
+	Color3.fromRGB(176, 136, 62),
+	Color3.fromRGB(66, 132, 168),
+}
+
+-- Roda desenhada com raios finos (sem imagens): cada fatia tem o ângulo da chance real.
+local function buildWheel(parent: Instance, size: number): (Frame, { { number } })
+	local arcs = StoreView.spinArcs(StoreCatalog.Spin)
+	local holder = Create("Frame", {
+		Name = "WheelHolder",
+		Size = UDim2.fromOffset(size, size + 18),
+		BackgroundTransparency = 1,
+		Parent = parent,
+	})
+	local wheel = Create("Frame", {
+		Name = "Wheel",
+		Position = UDim2.fromOffset(0, 18),
+		Size = UDim2.fromOffset(size, size),
+		Rotation = wheelRotation,
+		BackgroundColor3 = Theme.BgSunken,
+		BorderSizePixel = 0,
+		Parent = holder,
+	}) :: Frame
+	Components.corner(wheel, Theme.CornerPill)
+	Components.stroke(wheel, Theme.Gold, 3, 0)
+	local rays = 120
+	local radius = size / 2
+	local thickness = math.ceil(2 * math.pi * radius / rays) + 2
+	-- GuiObject gira em torno do PRÓPRIO centro: cada raio fica num quadro do tamanho da roda
+	-- (mesmo centro), e é esse quadro que gira.
+	local function spoke(name: string, angle: number, width: number, color: Color3)
+		local pivot = Create("Frame", {
+			Name = name,
+			Size = UDim2.fromScale(1, 1),
+			Rotation = angle,
+			BackgroundTransparency = 1,
 			Parent = wheel,
-		}) :: Frame
-		label({ Size = UDim2.fromScale(1, 1), Text = px(segment.label), TextSize = Theme.SizeSmall, Parent = cell })
-		table.insert(cells, cell)
+		})
+		Create("Frame", {
+			AnchorPoint = Vector2.new(0.5, 0),
+			Position = UDim2.new(0.5, 0, 0, 3),
+			Size = UDim2.new(0, width, 0.5, -3),
+			BackgroundColor3 = color,
+			BorderSizePixel = 0,
+			Parent = pivot,
+		})
 	end
-	local spins = attr("SpinsLeft", 0)
-	label({
-		Position = UDim2.new(0.55, 0, 1, -64),
-		Size = UDim2.new(0.43, 0, 0, 20),
-		Text = px(string.format(S.spinsLeft, spins)),
-		TextColor3 = Theme.TextDim,
-		TextSize = Theme.SizeSmall,
+	for ray = 0, rays - 1 do
+		local angle = (ray + 0.5) * 360 / rays
+		local index = 1
+		for i, arc in arcs do
+			if angle >= arc[1] and angle < arc[2] then
+				index = i
+			end
+		end
+		spoke("Ray", angle, thickness, SPIN_COLORS[(index - 1) % #SPIN_COLORS + 1])
+	end
+	for index, arc in arcs do
+		-- Divisória na borda de cada fatia e rótulo no meio dela.
+		spoke("Divider", arc[1], 2, Theme.Overlay)
+		local mid = (arc[1] + arc[2]) / 2
+		local rad = math.rad(mid)
+		local segment = StoreCatalog.Spin[index]
+		-- Fatia estreita: texto ao longo do raio (de dentro para fora) para não invadir a vizinha.
+		local narrow = arc[2] - arc[1] < 45
+		local reach = if narrow then 0.3 else 0.31
+		local text = Components.title({
+			Name = `Label_{segment.id}`,
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5 + math.sin(rad) * reach, 0.5 - math.cos(rad) * reach),
+			Size = UDim2.fromOffset(if narrow then radius * 0.62 else radius * 0.7, if narrow then 16 else 30),
+			Rotation = if narrow then mid - 90 else mid,
+			Text = segment.label,
+			TextSize = if size < 240 then 11 else 13,
+			TextXAlignment = Enum.TextXAlignment.Center,
+			TextWrapped = true,
+			Parent = wheel,
+		})
+		text.TextStrokeColor3 = Theme.Overlay
+		text.TextStrokeTransparency = 0.3
+	end
+	local hub = Create("Frame", {
+		Name = "Hub",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromScale(0.2, 0.2),
+		BackgroundColor3 = Theme.Bg,
+		BorderSizePixel = 0,
 		Parent = wheel,
 	})
-	button({
+	Components.corner(hub, Theme.CornerPill)
+	Components.stroke(hub, Theme.Gold, 2, 0)
+	Components.icon(hub, "Drum", 24, Theme.Gold, {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+	})
+	-- Ponteiro fixo no topo (fora da roda que gira).
+	local pointer = Create("Frame", {
+		Name = "Pointer",
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 2),
+		Size = UDim2.fromOffset(24, 26),
+		BackgroundTransparency = 1,
+		ZIndex = 3,
+		Parent = holder,
+	})
+	Icons.pixel(pointer, "Pointer", Theme.GoldLight)
+	return wheel, arcs
+end
+
+local function spinWheel(c: ScrollingFrame)
+	local spins = tonumber(attr("SpinsLeft", 0)) or 0
+	local box = Components.panel({
 		Name = "Spin",
-		Position = UDim2.new(0, 12, 1, -42),
-		Size = UDim2.new(0.42, -12, 0, 30),
-		Text = S.spin,
-		TextColor3 = if spins > 0 then Theme.Hazard else Theme.TextDim,
-		Parent = wheel,
+		Size = UDim2.new(1, -4, 0, if compactStore then 560 else 340),
+		LayoutOrder = 2,
+		Parent = c,
+	})
+	Components.padding(box, 14)
+	local wheelSize = if compactStore then 260 else 300
+	local wheel, arcs = buildWheel(box, wheelSize)
+	local infoX = if compactStore then 0 else wheelSize + 24
+	local infoY = if compactStore then wheelSize + 28 else 0
+	local info = Create("Frame", {
+		Name = "Info",
+		Position = UDim2.fromOffset(infoX, infoY),
+		Size = UDim2.new(1, -infoX, 1, -infoY),
+		BackgroundTransparency = 1,
+		Parent = box,
+	})
+	label({
+		Size = UDim2.new(1, 0, 0, 24),
+		Text = "ROLETA GRÁTIS",
+		TextSize = 19,
+		TextColor3 = Theme.Gold,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = info,
+	})
+	Components.text({
+		Position = UDim2.fromOffset(0, 28),
+		Size = UDim2.new(1, 0, 0, 40),
+		FontFace = Theme.FontNote,
+		TextSize = 13,
+		TextColor3 = Theme.TextSecondary,
+		Text = "Um giro grátis por dia (VIP ganha mais um). O tamanho de cada fatia é a chance real do prêmio.",
+		Parent = info,
+	})
+	local count =
+		Components.chip(string.format(S.spinsLeft, spins), if spins > 0 then Theme.Gold else Theme.TextMuted, {
+			Position = UDim2.fromOffset(0, 74),
+			Parent = info,
+		})
+	count.Name = "SpinsLeft"
+	local result = Components.title({
+		Name = "Result",
+		Position = UDim2.fromOffset(0, 106),
+		Size = UDim2.new(1, 0, 0, 30),
+		Text = "",
+		TextSize = 22,
+		TextColor3 = Theme.Success,
+		Parent = info,
+	})
+	local spin: TextButton
+	spin = button({
+		Name = "Spin",
+		Variant = "primary",
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.new(0, 0, 1, -(Theme.TouchMin + 8)),
+		Size = UDim2.new(1, 0, 0, Theme.TouchMin),
+		Text = if spins > 0 then S.spin else "VOLTE AMANHÃ PARA GIRAR",
+		TextSize = 16,
+		Parent = info,
 	}, function()
-		if spins <= 0 then
-			setMessage("spin_used")
+		if spins <= 0 or animating then
 			return
 		end
 		animating = true
-		local result = request("spin")
-		if not result or not result.ok or not result.data.ok then
+		Components.setDisabled(spin, true)
+		local response = request("spin")
+		if not response or not response.ok or not response.data.ok then
 			animating = false
-			if result and result.ok then
-				setMessage(result.data.message)
+			if response and response.ok then
+				setMessage(response.data.message)
 			end
+			render()
 			return
 		end
+		-- O prêmio já foi decidido e pago pelo servidor; a roda só mostra o resultado.
 		local target = 1
 		for i, segment in StoreCatalog.Spin do
-			if segment.id == result.data.segment then
+			if segment.id == response.data.segment then
 				target = i
 			end
 		end
+		local finish = StoreView.spinRotation(arcs, target, Random.new():NextNumber(), 5)
+		local start = wheel.Rotation % 360
 		task.spawn(function()
-			local steps = #cells * 3 + target
-			local delay = 0.03
-			for step = 1, steps do
-				local index = (step - 1) % #cells + 1
-				for i, cell in cells do
-					cell.BackgroundColor3 = if i == index then Theme.Hazard else Color3.fromRGB(22, 22, 24)
+			local duration = if Settings.motionEnabled() then 4.2 else 0.6
+			local elapsed, lastTick = 0, start
+			while elapsed < duration do
+				local dt = RunService.RenderStepped:Wait()
+				elapsed += dt
+				local t = math.clamp(elapsed / duration, 0, 1)
+				local eased = 1 - (1 - t) ^ 4
+				wheel.Rotation = start + (finish - start) * eased
+				-- Clique a cada fatia de 30° que passa pelo ponteiro.
+				if wheel.Rotation - lastTick >= 30 then
+					lastTick = wheel.Rotation
+					AudioController.play("UiBlip", 0.35, 1.8, true)
 				end
-				AudioController.play("UiBlip", 0.4, 1.8, true)
-				task.wait(delay)
-				delay = math.min(0.3, delay * 1.07)
 			end
+			wheel.Rotation = finish
+			wheelRotation = finish % 360
 			AudioController.play("Switch", 0.7, 1.2, true)
-			task.wait(0.8)
+			local segment = StoreCatalog.Spin[target]
+			result.Text = `+ {segment.label}`
+			setMessage(`VOCÊ GANHOU {segment.label}!`)
+			task.wait(1.6)
 			animating = false
 			render()
-			-- O prêmio aparece depois do giro (o saldo já veio do servidor).
-			local segment = StoreCatalog.Spin[target]
-			if message and segment then
-				message.Text = px("+ " .. segment.label)
-			end
 		end)
 	end)
+	Components.setDisabled(spin, spins <= 0)
 	button({
-		Position = UDim2.new(0.55, 0, 1, -42),
-		Size = UDim2.new(0.43, -6, 0, 30),
-		Text = S.spinOdds,
-		Parent = wheel,
+		Name = "SpinOdds",
+		Variant = "secondary",
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.fromScale(0, 1),
+		Size = UDim2.new(1, 0, 0, Theme.TouchMin),
+		Text = "VER CHANCES",
+		TextSize = 15,
+		Parent = info,
 	}, function()
 		local lines = {}
-		for _, segment in StoreCatalog.Spin do
-			table.insert(lines, `{segment.label}: {segment.weight}%`)
+		for index, segment in StoreCatalog.Spin do
+			table.insert(lines, `{segment.label}: {percent(arcs[index][3])}%`)
 		end
+		table.insert(lines, "  Sorteio feito no servidor. Grátis: não usa Robux nem Créditos.")
 		showOdds(S.spinOdds, lines)
 	end)
 end
 
+local function renderDaily(c: ScrollingFrame)
+	setLayout(c, false)
+	local list = c:FindFirstChildOfClass("UIListLayout")
+	if list then
+		list.Padding = UDim.new(0, 12)
+	end
+	dailyCalendar(c)
+	spinWheel(c)
+end
+
+-- ===================== COLEÇÃO =====================
+
 local function renderCollection(c: ScrollingFrame)
-	setLayout(c, true)
+	setLayout(c, false)
 	local tapes = jsonSet("Tapes")
 	local count = 0
 	for _ in tapes do
 		count += 1
 	end
-	if message then
-		message.Text = px(string.format(S.tapes, count))
-	end
-	for index, tape in StoreCatalog.Tapes do
-		local found = tapes[tape.id] == true
-		local box = card(c, index, if found then Theme.Hazard else Theme.TextDim)
-		label({
-			Position = UDim2.fromOffset(8, 10),
-			Size = UDim2.new(1, -16, 0, 22),
-			Text = px(if found then tape.title else S.tapeMissing),
-			TextColor3 = if found then Theme.Hazard else Theme.TextDim,
-			Parent = box,
-		})
-		label({
-			Position = UDim2.fromOffset(8, 36),
-			Size = UDim2.new(1, -16, 0, 80),
-			Text = if found then tape.line else "",
-			FontFace = Theme.FontNote,
-			TextSize = Theme.SizeBody,
-			Parent = box,
-		})
-	end
-	local order = #StoreCatalog.Tapes
+	local total = #StoreCatalog.Tapes
+	-- Progresso e marcos (4, 8, 12 fitas) com a arte real da recompensa.
+	local summary = Components.panel({
+		Name = "CollectionSummary",
+		Size = UDim2.new(1, -4, 0, 176),
+		LayoutOrder = 1,
+		Parent = c,
+	})
+	Components.padding(summary, 14)
+	Components.icon(summary, "Tape", 24, Theme.Gold)
+	label({
+		Position = UDim2.fromOffset(32, 0),
+		Size = UDim2.new(1, -32, 0, 24),
+		Text = `FITAS VHS · {count}/{total}`,
+		TextSize = 19,
+		TextColor3 = Theme.Gold,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = summary,
+	})
+	Components.text({
+		Position = UDim2.fromOffset(0, 26),
+		Size = UDim2.new(1, 0, 0, 18),
+		FontFace = Theme.FontNote,
+		TextSize = 13,
+		TextColor3 = Theme.TextSecondary,
+		Text = "Uma fita aparece escondida em cada partida. Quando alguém acha, o time todo ganha.",
+		Parent = summary,
+	})
+	local progressBar, setTrack = Components.progress({
+		Position = UDim2.fromOffset(0, 54),
+		Size = UDim2.new(1, 0, 0, 8),
+	}, Theme.Gold)
+	progressBar.Parent = summary
+	setTrack(count / total)
 	local amounts = {}
 	for amount in StoreCatalog.TapeMilestones do
 		table.insert(amounts, amount)
 	end
 	table.sort(amounts)
-	for _, amount in amounts do
+	local milestones = Create("Frame", {
+		Position = UDim2.fromOffset(0, 72),
+		Size = UDim2.new(1, 0, 0, 76),
+		BackgroundTransparency = 1,
+		Parent = summary,
+	}, {
+		Create("UIListLayout", {
+			FillDirection = Enum.FillDirection.Horizontal,
+			Padding = UDim.new(0, 8),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		}),
+	})
+	for order, amount in amounts do
 		local reward = StoreCatalog.TapeMilestones[amount]
-		order += 1
-		local box = card(c, order, if count >= amount then Theme.Good else Theme.TextDim)
-		local parts = {}
-		if reward.item then
-			table.insert(parts, itemName(reward.item))
-		end
-		if reward.fichas then
-			table.insert(parts, `{reward.fichas} FICHAS`)
-		end
-		if reward.creditos then
-			table.insert(parts, `{reward.creditos} CRÉDITOS`)
-		end
+		local reached = count >= amount
+		local cell = Create("Frame", {
+			Name = `Milestone_{amount}`,
+			LayoutOrder = order,
+			Size = UDim2.new(1 / #amounts, -8, 1, 0),
+			BackgroundColor3 = if reached then Theme.Success:Lerp(Theme.Bg, 0.7) else Theme.BgSunken,
+			BorderSizePixel = 0,
+			Parent = milestones,
+		})
+		Components.corner(cell, Theme.CornerSmall)
+		Components.stroke(cell, if reached then Theme.Success else Theme.Border, 1, 0.3)
+		local art = Create("Frame", {
+			Position = UDim2.fromOffset(6, 6),
+			Size = UDim2.fromOffset(64, 64),
+			BackgroundTransparency = 1,
+			Parent = cell,
+		})
+		rewardArt(art, reward)
 		label({
-			Position = UDim2.fromOffset(8, 12),
-			Size = UDim2.new(1, -16, 1, -24),
-			Text = px(string.format(S.milestone, amount, table.concat(parts, " + "))),
-			Parent = box,
+			Position = UDim2.fromOffset(78, 6),
+			Size = UDim2.new(1, -84, 0, 20),
+			Text = `{amount} FITAS`,
+			TextSize = 14,
+			TextColor3 = if reached then Theme.Success else Theme.TextPrimary,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			Parent = cell,
+		})
+		label({
+			Position = UDim2.fromOffset(78, 28),
+			Size = UDim2.new(1, -84, 0, 40),
+			Text = (if reached then "RECEBIDO: " else "") .. table.concat(rewardParts(reward), " + "),
+			TextSize = 11,
+			TextColor3 = Theme.TextSecondary,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			TextYAlignment = Enum.TextYAlignment.Top,
+			Parent = cell,
+		})
+	end
+	local grid = Create("Frame", {
+		Name = "Tapes",
+		Size = UDim2.fromScale(1, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		BackgroundTransparency = 1,
+		LayoutOrder = 2,
+		Parent = c,
+	}, {
+		Create("UIGridLayout", {
+			CellSize = UDim2.new(if compactStore then 0.5 else 1 / 3, -8, 0, 96),
+			CellPadding = UDim2.fromOffset(8, 8),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		}),
+	})
+	for index, tape in StoreCatalog.Tapes do
+		local found = tapes[tape.id] == true
+		local cell = Components.panel({ Name = `Tape_{tape.id}`, LayoutOrder = index, Parent = grid })
+		Components.padding(cell, 10)
+		Components.icon(cell, if found then "Tape" else "Lock", 24, if found then Theme.Gold else Theme.TextMuted)
+		label({
+			Position = UDim2.fromOffset(32, 0),
+			Size = UDim2.new(1, -32, 0, 24),
+			Text = if found then tape.title else `FITA {index} · NÃO ENCONTRADA`,
+			TextSize = 14,
+			TextColor3 = if found then Theme.GoldLight else Theme.TextMuted,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			Parent = cell,
+		})
+		Components.text({
+			Position = UDim2.fromOffset(0, 30),
+			Size = UDim2.new(1, 0, 1, -30),
+			FontFace = Theme.FontNote,
+			TextSize = 13,
+			TextYAlignment = Enum.TextYAlignment.Top,
+			TextColor3 = if found then Theme.TextPrimary else Theme.TextMuted,
+			Text = if found then `“{tape.line}”` else "Procure pela casa durante as partidas.",
+			Parent = cell,
 		})
 	end
 end
 
-local function rewardText(reward: StoreCatalog.Reward?): string
-	if not reward then
-		return Text.Season.empty
-	end
-	local parts = {}
-	if reward.item then
-		table.insert(parts, itemName(reward.item))
-	end
-	if reward.fichas then
-		table.insert(parts, string.format(Text.Rewards.fichas, reward.fichas))
-	end
-	if reward.creditos then
-		table.insert(parts, string.format(Text.Rewards.creditos, reward.creditos))
-	end
-	return table.concat(parts, " · ")
-end
+-- ===================== TEMPORADA =====================
 
 local function renderSeason(c: ScrollingFrame)
 	setLayout(c, false)
+	local list = c:FindFirstChildOfClass("UIListLayout")
+	if list then
+		list.Padding = UDim.new(0, 12)
+	end
 	local season = SeasonCatalog.SeasonById[attr("SeasonId", "")]
 	if not season then
-		label({ Size = UDim2.new(1, -12, 0, 64), Text = Text.Season.none, Parent = c })
+		Components.text({ Size = UDim2.new(1, -12, 0, 64), Text = Text.Season.none, FontFace = Theme.Font, Parent = c })
 		return
 	end
 	local tier, into, need = Season.tierInfo(season, attr("SeasonXp", 0))
 	local premium = attr("SeasonPremium", false) == true
-	local intro = card(c, 0, Theme.Hazard)
-	intro.Name = "SeasonSummary"
-	intro.Size = UDim2.new(1, -12, 0, 172)
+	local intro = Components.panel({
+		Name = "SeasonSummary",
+		Size = UDim2.new(1, -4, 0, if shortStore then 176 elseif compactStore then 214 else 168),
+		LayoutOrder = 0,
+		Parent = c,
+	})
+	Components.padding(intro, 14)
+	Components.icon(intro, "Season", 24, Theme.Gold)
 	label({
-		Position = UDim2.fromOffset(12, 8),
-		Size = UDim2.new(1, -24, 0, 26),
+		Position = UDim2.fromOffset(32, 0),
+		Size = UDim2.new(1, -32, 0, 24),
 		Text = string.format(Text.Season.header, season.number, season.name),
-		TextColor3 = Theme.Hazard,
+		TextSize = 19,
+		TextColor3 = Theme.Gold,
+		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = intro,
 	})
+	local days = Season.daysLeft(season, os.time())
+	Components.chip(
+		if days <= 1 then Text.Season.lastDay else string.format(Text.Season.daysLeft, days),
+		Theme.Info,
+		{ AnchorPoint = Vector2.new(1, 0), Position = UDim2.fromScale(1, 0), Parent = intro }
+	)
 	label({
-		Position = UDim2.fromOffset(12, 36),
-		Size = UDim2.new(1, -24, 0, 24),
+		Position = UDim2.fromOffset(0, 32),
+		Size = UDim2.new(1, 0, 0, 20),
 		Text = string.format(Text.Season.tier, tier, #season.tiers)
-			.. " · "
+			.. "  ·  "
 			.. string.format(Text.Season.xp, into, need),
+		TextSize = 14,
+		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = intro,
 	})
-	label({
-		Position = UDim2.fromOffset(12, 62),
-		Size = UDim2.new(1, -24, 0, 40),
-		Text = Text.Season.how,
-		TextSize = Theme.SizeSmall,
-		Parent = intro,
-	})
-	local progress = Create("Frame", {
-		Name = "SeasonProgress",
-		Parent = intro,
-		Position = UDim2.fromOffset(12, 104),
-		Size = UDim2.new(1, -24, 0, 5),
-		BackgroundColor3 = Theme.PanelLight,
-		BorderSizePixel = 0,
-	}) :: Frame
-	Create("Frame", {
-		Name = "Fill",
-		Parent = progress,
-		Size = UDim2.fromScale(if need > 0 then math.clamp(into / need, 0, 1) else 1, 1),
-		BackgroundColor3 = Theme.Hazard,
-		BorderSizePixel = 0,
-	})
-	label({
-		Position = UDim2.fromOffset(12, 112),
-		Size = UDim2.new(0.4, -18, 0, 44),
-		Text = string.format(Text.Season.daysLeft, Season.daysLeft(season, os.time())),
-		TextSize = Theme.SizeSmall,
+	local bar, setBar =
+		Components.progress({ Position = UDim2.fromOffset(0, 56), Size = UDim2.new(1, 0, 0, 8) }, Theme.Gold)
+	bar.Name = "SeasonProgress"
+	bar.Parent = intro
+	setBar(if need > 0 then into / need else 1)
+	Components.text({
+		Position = UDim2.fromOffset(0, 70),
+		Size = UDim2.new(1, 0, 0, 30),
+		FontFace = Theme.FontNote,
+		TextSize = 13,
+		TextColor3 = Theme.TextSecondary,
+		Text = "XP da temporada vem de partidas, fugas, fitas e do prêmio diário. As recompensas são entregues sozinhas ao alcançar cada nível.",
 		Parent = intro,
 	})
 	local product = StoreCatalog.ProductByKey[season.passKey]
-	button({
-		Name = "BuySeason",
-		Position = UDim2.new(0.4, 0, 0, 112),
-		Size = UDim2.new(0.6, -12, 0, 44),
-		Text = if premium then Text.Season.owned else string.format(Text.Season.buy, product.robux),
-		TextColor3 = if premium then Theme.Good else Theme.Hazard,
+	local passRow = Create("Frame", {
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.fromScale(0, 1),
+		Size = UDim2.new(1, 0, 0, if compactStore then Theme.TouchMin else 36),
+		BackgroundTransparency = 1,
 		Parent = intro,
-	}, function()
-		if premium then
-			return
-		end
-		local result = request("buy_product", season.passKey)
-		if result then
-			setMessage(if result.ok then result.data.message else result.error)
-		end
-		task.delay(0.6, render)
-	end)
+	})
+	if premium then
+		Components.chip(Text.Season.owned, Theme.Success, { Parent = passRow })
+	elseif product and (product.id > 0 or RunService:IsStudio()) then
+		-- ID 0 só existe para simulação no Studio (MONETIZATION.md); ao vivo o botão some.
+		button({
+			Name = "BuySeason",
+			Variant = "success",
+			Size = UDim2.fromScale(if compactStore then 1 else 0.5, 1),
+			Text = if product.id > 0
+				then string.format(Text.Season.buy, product.robux)
+				else `{string.format(Text.Season.buy, product.robux)} · SIMULAÇÃO STUDIO`,
+			TextSize = 14,
+			Parent = passRow,
+		}, function()
+			local result = request("buy_product", season.passKey)
+			if result then
+				setMessage(if result.ok then result.data.message else result.error)
+			end
+			task.delay(0.6, render)
+		end)
+	else
+		Components.chip("TRILHA PAGA AINDA NÃO ESTÁ À VENDA", Theme.TextMuted, { Parent = passRow })
+	end
+
+	-- Trilha horizontal: nível no topo, GRÁTIS em cima e PAGA embaixo, com a arte real.
+	local columnWidth = if compactStore then 116 else 132
+	local cellHeight, rowGap = 112, 8
+	-- Rótulos GRÁTIS/PAGA fixos à esquerda; só os níveis rolam na horizontal.
+	local trackBox = Create("Frame", {
+		Name = "SeasonTrackBox",
+		Size = UDim2.new(1, -4, 0, 34 + 2 * (cellHeight + rowGap) + 8),
+		BackgroundTransparency = 1,
+		LayoutOrder = 1,
+		Parent = c,
+	})
+	for row, trackName in { "free", "premium" } do
+		local tag = Create("Frame", {
+			Name = `Row_{trackName}`,
+			Position = UDim2.fromOffset(0, 34 + (row - 1) * (cellHeight + rowGap)),
+			Size = UDim2.fromOffset(76, cellHeight),
+			BackgroundColor3 = if trackName == "free" then Theme.BgElevated else Theme.GoldDeep,
+			BorderSizePixel = 0,
+			Parent = trackBox,
+		})
+		Components.corner(tag, Theme.CornerSmall)
+		label({
+			Size = UDim2.fromScale(1, 1),
+			Text = if trackName == "free" then "GRÁTIS" else "PAGA",
+			TextSize = 14,
+			TextColor3 = if trackName == "free" then Theme.TextPrimary else Theme.GoldLight,
+			Parent = tag,
+		})
+	end
+	local strip = Create("ScrollingFrame", {
+		Name = "SeasonTrack",
+		Position = UDim2.fromOffset(84, 0),
+		Size = UDim2.new(1, -84, 1, 0),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ScrollingDirection = Enum.ScrollingDirection.X,
+		ScrollBarThickness = 6,
+		ScrollBarImageColor3 = Theme.Gold,
+		CanvasSize = UDim2.fromOffset(#season.tiers * (columnWidth + 8), 0),
+		Parent = trackBox,
+	}) :: ScrollingFrame
 	for index, entry in season.tiers do
 		local reached = index <= tier
-		local box = card(c, index, if reached then Theme.Good else Theme.TextDim)
-		box.Name = `SeasonTier_{index}`
-		box.Size = UDim2.new(1, -12, 0, 154)
-		label({
-			Position = UDim2.fromOffset(8, 4),
-			Size = UDim2.new(1, -16, 0, 20),
-			Text = string.format(Text.Season.tierLabel, index),
-			Parent = box,
+		local x = (index - 1) * (columnWidth + 8)
+		local current = index == tier
+		local head = Create("Frame", {
+			Name = `SeasonTier_{index}`,
+			Position = UDim2.fromOffset(x, 0),
+			Size = UDim2.fromOffset(columnWidth, 28),
+			BackgroundColor3 = if current
+				then Theme.Gold
+				elseif reached then Theme.Success:Lerp(Theme.Bg, 0.6)
+				else Theme.BgSunken,
+			BorderSizePixel = 0,
+			Parent = strip,
 		})
-		for column, trackName in { "free", "premium" } do
+		Components.corner(head, Theme.CornerPill)
+		label({
+			Size = UDim2.fromScale(1, 1),
+			Text = string.format(Text.Season.tierLabel, index),
+			TextSize = 13,
+			TextColor3 = if current then Theme.Bg elseif reached then Theme.Success else Theme.TextMuted,
+			Parent = head,
+		})
+		for row, trackName in { "free", "premium" } do
+			local reward = if trackName == "free" then entry.free else entry.premium
 			local unlocked = reached and (trackName == "free" or premium)
-			local text = if trackName == "free" then Text.Season.free else Text.Season.premium
-			local trackPanel = Create("Frame", {
+			local lockedByPass = trackName == "premium" and not premium
+			local cell = Create("Frame", {
 				Name = trackName,
-				Parent = box,
-				Position = UDim2.new((column - 1) * 0.5, 8, 0, 28),
-				Size = UDim2.new(0.5, -16, 1, -38),
-				BackgroundColor3 = Theme.Panel,
+				Position = UDim2.fromOffset(x, 34 + (row - 1) * (cellHeight + rowGap)),
+				Size = UDim2.fromOffset(columnWidth, cellHeight),
+				BackgroundColor3 = Theme.BgPanel,
 				BorderSizePixel = 0,
-			}, { Create("UICorner", { CornerRadius = Theme.CornerSmall }) }) :: Frame
+				Parent = strip,
+			}) :: Frame
+			cell:SetAttribute("State", if unlocked then "received" elseif lockedByPass then "pass" else "locked")
+			Components.corner(cell, Theme.CornerSmall)
+			Components.stroke(
+				cell,
+				if unlocked then Theme.Success elseif trackName == "premium" then Theme.Gold else Theme.Border,
+				1,
+				if unlocked then 0 else 0.5
+			)
+			local art = Create("Frame", {
+				Position = UDim2.fromOffset(8, 8),
+				Size = UDim2.new(1, -16, 0, 54),
+				BackgroundTransparency = 1,
+				Parent = cell,
+			})
+			rewardArt(art, reward)
 			label({
 				Name = "TrackPreview",
-				Position = UDim2.fromOffset(6, 4),
-				Size = UDim2.new(1, -12, 1, -8),
-				Text = text .. " · " .. (if unlocked
-					then Text.Season.received
-					elseif not reached then `Nível {index}`
-					else "Requer passe premium") .. "\n" .. rewardText(
-					if trackName == "free" then entry.free else entry.premium
-				),
-				TextSize = Theme.SizeSmall,
-				TextColor3 = if unlocked
-					then Theme.Good
-					elseif trackName == "premium" then Theme.Hazard
-					else Theme.TextDim,
-				TextWrapped = true,
-				Parent = trackPanel,
+				Position = UDim2.fromOffset(6, 64),
+				Size = UDim2.new(1, -12, 0, 28),
+				Text = if reward then table.concat(rewardParts(reward), " + ") else Text.Season.empty,
+				TextSize = 11,
+				Parent = cell,
 			})
+			local stateText = if unlocked
+				then Text.Season.received
+				elseif lockedByPass then "TRILHA PAGA"
+				else `NÍVEL {index}`
+			label({
+				AnchorPoint = Vector2.new(0, 1),
+				Position = UDim2.new(0, 6, 1, -4),
+				Size = UDim2.new(1, -12, 0, 16),
+				Text = stateText,
+				TextSize = 11,
+				TextColor3 = if unlocked then Theme.Success elseif lockedByPass then Theme.Gold else Theme.TextMuted,
+				Parent = cell,
+			})
+			if not unlocked then
+				-- Véu leve + cadeado: dá para ver o prêmio, mas fica claro que ainda não é seu.
+				local veil = Create("Frame", {
+					Size = UDim2.fromScale(1, 1),
+					BackgroundColor3 = Theme.Overlay,
+					BackgroundTransparency = 0.55,
+					BorderSizePixel = 0,
+					Parent = cell,
+				})
+				Components.corner(veil, Theme.CornerSmall)
+				Components.icon(veil, "Lock", 24, Theme.TextSecondary, {
+					AnchorPoint = Vector2.new(1, 0),
+					Position = UDim2.new(1, -6, 0, 6),
+				})
+			end
 		end
 	end
+	-- Abre a trilha no nível atual.
+	task.defer(function()
+		strip.CanvasPosition = Vector2.new(math.max(0, (tier - 2) * (columnWidth + 8)), 0)
+	end)
 end
+
+-- ===================== CRÉDITOS (Robux) =====================
 
 local function renderRobux(c: ScrollingFrame)
 	setLayout(c, false)
+	Components.text({
+		Size = UDim2.new(1, -4, 0, 36),
+		FontFace = Theme.FontNote,
+		TextSize = 13,
+		TextColor3 = Theme.TextSecondary,
+		Text = "Compras com Robux abrem a janela oficial do Roblox. Nada é cobrado sem a sua confirmação lá.",
+		LayoutOrder = 0,
+		Parent = c,
+	})
+	local studio = RunService:IsStudio()
 	for index, product in StoreCatalog.Products do
 		local owned = (product.key == "vip" and attr("Vip", false) == true)
 			or (product.key == "pacote_inicial" and attr("StarterBought", false) == true)
 			or (product.key == "turno_extra_s1" and attr("SeasonPremium", false) == true)
-		local box = card(c, index, if product.kind == "pass" then Theme.Hazard else Theme.TextDim)
-		box.Size = UDim2.new(1, -12, 0, 74)
+		local box = Components.panel({
+			Name = `Product_{product.key}`,
+			Size = UDim2.new(1, -4, 0, if compactStore then 132 else 84),
+			LayoutOrder = index,
+			Parent = c,
+		})
+		Components.padding(box, 12)
+		local grant = product.grant
+		local tile = Create("Frame", { Size = UDim2.fromOffset(56, 56), BackgroundTransparency = 1, Parent = box })
+		rewardArt(tile, grant)
 		label({
-			Position = UDim2.fromOffset(12, 10),
-			Size = UDim2.new(0.62, 0, 0, 24),
-			Text = px(product.name),
+			Position = UDim2.fromOffset(68, 0),
+			Size = UDim2.new(if compactStore then 1 else 0.62, -68, 0, 22),
+			Text = product.name,
+			TextSize = 16,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			Parent = box,
 		})
-		label({
-			Position = UDim2.fromOffset(12, 36),
-			Size = UDim2.new(0.62, 0, 0, 32),
-			Text = product.description,
+		Components.text({
+			Position = UDim2.fromOffset(68, 24),
+			Size = UDim2.new(if compactStore then 1 else 0.62, -68, 0, 34),
 			FontFace = Theme.FontNote,
-			TextSize = Theme.SizeSmall,
-			TextColor3 = Theme.TextDim,
-			TextXAlignment = Enum.TextXAlignment.Left,
+			TextSize = 13,
+			TextColor3 = Theme.TextSecondary,
+			Text = product.description,
 			Parent = box,
 		})
-		button({
+		local configured = product.id > 0
+		local buy = button({
 			Name = `Buy_{product.key}`,
-			Position = UDim2.new(0.66, 0, 0, 18),
-			Size = UDim2.new(0.32, -6, 0, 36),
-			Text = if owned then S.owned else string.format(S.buyRobux, product.robux),
-			TextColor3 = if owned then Theme.Good else Theme.Hazard,
+			Variant = if owned then "success" else "primary",
+			AnchorPoint = if compactStore then Vector2.new(0, 1) else Vector2.new(1, 0.5),
+			Position = if compactStore then UDim2.fromScale(0, 1) else UDim2.fromScale(1, 0.5),
+			Size = if compactStore then UDim2.new(1, 0, 0, Theme.TouchMin) else UDim2.new(0.34, 0, 0, Theme.TouchMin),
+			Text = if owned
+				then S.owned
+				elseif configured then string.format(S.buyRobux, product.robux)
+				elseif studio then `{string.format(S.buyRobux, product.robux)} · SIMULAÇÃO`
+				else "AINDA NÃO ESTÁ À VENDA",
+			TextSize = 14,
 			Parent = box,
 		}, function()
 			if owned then
@@ -1508,6 +2131,8 @@ local function renderRobux(c: ScrollingFrame)
 			end
 			task.delay(0.6, render)
 		end)
+		-- Produto sem ID: só simulável no Studio (MONETIZATION.md); ao vivo não há botão de compra ativo.
+		Components.setDisabled(buy, owned or (not configured and not studio))
 	end
 end
 
@@ -1924,6 +2549,8 @@ local function build()
 		Size = UDim2.fromScale(1, 1),
 		BackgroundColor3 = Theme.Overlay,
 		BackgroundTransparency = 0.3,
+		-- Ativo: cliques no véu não atravessam para abas e cartões atrás do diálogo.
+		Active = true,
 		Visible = false,
 		ZIndex = 5,
 		Parent = p,
@@ -2071,6 +2698,11 @@ function StoreController.Start()
 			elseif command == "buy" and item and (extra == "fichas" or extra == "creditos") then
 				-- Equivale a tocar CONFIRMAR no diálogo.
 				purchase(item, extra :: StoreCatalog.Currency)
+			elseif command == "tab" and table.find(TABS, arg :: any) then
+				tab = arg :: Tab
+				render()
+			elseif command == "press" and arg and qaActions[arg] then
+				qaActions[arg]()
 			elseif command == "close" then
 				if overlay then
 					overlay.Visible = false

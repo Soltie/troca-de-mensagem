@@ -111,6 +111,36 @@ preservada, `MenuQARequest`), `Client/Controllers/StoreController.luau` (rolagem
 | Celular 844×390 | PASSOU | `f4-melhorias-celular.jpg` |
 | Estoque cheio (99) desativa a compra | NÃO TESTADO | regra lida de `Perks.MAX_STOCK`; sem fixture com 99 |
 
+## Fase 5 — Temporada, diário, roleta, baús, coleção e créditos (17/10/2026)
+
+**Arquivos:** `Client/Controllers/StoreController.luau` (abas TEMPORADA, BAÚS, DIÁRIO, COLEÇÃO, CRÉDITOS; véu
+ativo; `press:`/`tab:` no QA), `Shared/Game/StoreView.luau` (`spinArcs`, `spinRotation`), `Client/UI/Icons.luau`
+(ponteiro), `Tests/Specs/StoreView.luau`. **Não alterado:** pesos da roleta, chances dos baús, calendário,
+trilhas e XP da temporada, produtos, StoreService.
+
+| Caso | Status | Evidência |
+|---|---|---|
+| Check / runner do Studio | PASSOU | ALL GREEN (297) · Studio 309 aprovados, 0 falhas |
+| Console do cliente | PASSOU | nenhum aviso/erro do projeto |
+| Roleta: fatias com ângulo = chance real; ângulo final dentro da fatia sorteada | PASSOU | spec `StoreView` (spinArcs/spinRotation) |
+| Giro mostra o prêmio do SERVIDOR | PASSOU | +50 Fichas → ponteiro em 124,5° (fatia 108°–198° = 50 FICHAS); +25 Fichas → fatia 25 FICHAS; +150 XP |
+| Giro consome o giro do dia; botão vira "VOLTE AMANHÃ" | PASSOU | `SpinsLeft` 1 → 0; `f5-roleta-final.jpg` |
+| "VER CHANCES" da roleta com % reais e aviso de que é grátis | PASSOU | lista gerada de `spinArcs` |
+| Diário: 7 dias, Dia 7 destacado, estado por ícone, resgate | PASSOU | +40 Fichas; 2º resgate → `daily_claimed`; `f5-diario-pc.jpg` |
+| Baús: barra de chances do tamanho real + % por raridade | PASSOU | `f5-baus.jpg` |
+| Baú com Fichas pede confirmação e mostra o rolo com a arte do item | PASSOU | 715 → 465 Fichas; Lanterna Militar; `f5-confirmar-bau.jpg`, `f5-rolo-bau.jpg` |
+| Baú pago restrito pela política: desativado "INDISPONÍVEL PARA SUA CONTA" | PASSOU | `PaidRandomRestricted = true` no Studio |
+| Temporada: trilha horizontal grátis/paga com arte real, nível atual, RECEBIDO automático | PASSOU | `f5-temporada-pc.jpg`; Fichas da trilha entregues ao subir de nível |
+| Coleção: progresso, marcos 4/8/12 com recompensa real, fitas faltando | PASSOU | `f5-colecao.jpg` |
+| Fita encontrada (estado colorido + frase) | NÃO TESTADO | `DebugBridge tape` não registrou fora da partida |
+| Créditos: produto com `id = 0` só simulável no Studio; ao vivo botão desativado "AINDA NÃO ESTÁ À VENDA" | PASSOU (Studio) | `f5-creditos.jpg`; ao vivo NÃO TESTADO |
+| Celular 844×390 (temporada, diário) | PASSOU | `f5-temporada-celular.jpg`, `f5-diario-celular.jpg` |
+
+**Correções durante o QA:** raios da roda giravam em torno do próprio centro (agora cada raio fica num quadro do
+tamanho da roda); rótulos de fatias estreitas seguem o raio; a roda redesenhada mantém o prêmio sob o ponteiro;
+rótulos GRÁTIS/PAGA fixos fora da rolagem; resumo da temporada sem sobrepor o botão; o véu dos diálogos agora é
+ativo (antes cliques atravessavam e acionavam abas/cartões atrás do diálogo).
+
 **Sobre os cliques automatizados:** com a janela do Studio sem foco, o módulo de câmera padrão do Roblox mantém
 o mouse travado no centro e os cliques simulados caem no meio da tela. Para o jogador (janela em foco) o
 `CameraController` libera o cursor no lobby. Por isso os fluxos foram exercitados pelo atributo

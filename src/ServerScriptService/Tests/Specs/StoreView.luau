@@ -63,6 +63,32 @@ return {
 				t.expect(value >= 0 and value <= 255).toBe(true)
 			end
 		end)
+		t.it("spin wheel slices match the real weights and close the circle", function()
+			local arcs = StoreView.spinArcs(StoreCatalog.Spin)
+			t.expect(#arcs).toBe(#StoreCatalog.Spin)
+			local total = 0
+			for _, segment in StoreCatalog.Spin do
+				total += segment.weight
+			end
+			for index, arc in arcs do
+				local expected = StoreCatalog.Spin[index].weight / total * 360
+				t.expect(math.abs((arc[2] - arc[1]) - expected) < 1e-6).toBe(true)
+				t.expect(math.abs(arc[3] - StoreCatalog.Spin[index].weight / total * 100) < 1e-6).toBe(true)
+			end
+			t.expect(math.abs(arcs[#arcs][2] - 360) < 1e-6).toBe(true)
+		end)
+		t.it("spin rotation lands the pointer inside the server's segment", function()
+			local arcs = StoreView.spinArcs(StoreCatalog.Spin)
+			for index, arc in arcs do
+				for _, fraction in { 0, 0.5, 1 } do
+					local rotation = StoreView.spinRotation(arcs, index, fraction, 4)
+					t.expect(rotation >= 4 * 360).toBe(true)
+					-- O ponteiro no topo aponta para o ângulo (-rotação) mod 360 da roda.
+					local pointed = (360 - rotation % 360) % 360
+					t.expect(pointed > arc[1] and pointed < arc[2]).toBe(true)
+				end
+			end
+		end)
 		t.it("items of a kind keep rarity order and cover the catalog", function()
 			local total = 0
 			for _, kind in StoreCatalog.KINDS do

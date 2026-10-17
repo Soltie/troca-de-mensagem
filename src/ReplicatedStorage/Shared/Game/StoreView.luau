@@ -178,6 +178,34 @@ function StoreView.grade(color: StoreCatalog.RGB, filter: Item): StoreCatalog.RG
 	return out
 end
 
+-- Roleta: cada fatia ocupa um ângulo PROPORCIONAL ao peso (o que a criança vê = a chance real).
+-- Retorna { start, finish, percent } em graus, começando no topo (0°) e girando no sentido horário.
+function StoreView.spinArcs(segments: { StoreCatalog.SpinSegment }): { { number } }
+	local total = 0
+	for _, segment in segments do
+		total += segment.weight
+	end
+	local arcs = {}
+	local angle = 0
+	for _, segment in segments do
+		local size = if total > 0 then segment.weight / total * 360 else 0
+		table.insert(arcs, { angle, angle + size, if total > 0 then segment.weight / total * 100 else 0 })
+		angle += size
+	end
+	return arcs
+end
+
+-- Rotação final da roda para o ponteiro (no topo) parar dentro da fatia `index`.
+-- `fraction` (0..1) escolhe o ponto da fatia, longe das bordas; `turns` voltas completas antes.
+function StoreView.spinRotation(arcs: { { number } }, index: number, fraction: number, turns: number): number
+	local arc = arcs[index]
+	if not arc then
+		return 0
+	end
+	local inside = arc[1] + (arc[2] - arc[1]) * (0.15 + 0.7 * math.clamp(fraction, 0, 1))
+	return turns * 360 + (360 - inside)
+end
+
 -- Itens de um tipo em ordem de raridade e nome (mesma ordem da loja antiga).
 function StoreView.itemsOfKind(kind: StoreCatalog.ItemKind): { Item }
 	local list = {}
