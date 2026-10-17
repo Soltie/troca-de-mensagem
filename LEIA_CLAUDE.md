@@ -316,3 +316,10 @@ Build pronta: `build/Casa_TERROR_POLISH.rbxlx`, SHA256 914DB5D6E52C897B72E56CC93
 Relatório: `docs/HORROR_ATMOSPHERE.md` no worktree desta frente. Snapshot de mapa congelado antes de house-levels, não é o mapa final dessa outra frente.
 Integração: aplicar SOMENTE os seis arquivos de src/commit desta branch ao mapa final; nunca substituir src inteiro. Não editei mapa, roda, props, UI, rig ou animações.
 Studio próprio Casa_TERROR_POLISH_FINAL (991e6729-cfb1-4d17-8140-daf7fcb043e5) liberado em Edit; demais Studios preservados. Sem push/publicação.
+
+**CODEX — LEVELS + REVISÃO PÓS-TESTE ENTREGUES (chat 01a146fe, 16/10/2026).**
+Branch codex/house-levels, worktree .cache/house-levels. Map fa19cf9 + atmosfera e1b7be1 integrados.
+Código da revisão em a03623a e d39669f: armário selecionável, barreiras por missão, pátio frontal sem buracos, entrada sem trancar colegas, História sequencial versus Desafio paralelo, menu/HUD/câmeras corrigidos, disponibilidade segura durante checkpoint.
+Check 270 ALL GREEN; Studio 280/0; História 2 clientes 79 checks e Desafio 2 clientes 81 checks, incluindo derrota, retry, resgate, cinco capítulos, fuga, reinício por voto e console limpo. Testes usam seleção normal do cliente; teleporte/IA congelada só preparam cenários. Diversão, balanceamento e celular físico ainda exigem avaliação humana.
+Build atual: build/Casa_QUALIDADE_VALIDADA.rbxlx (cópia também no projeto principal). SHA256 97F6B3BD563234537FBCC055406E65EC42EE88A7C56AD457A3AA3725285A65F1. Relatório docs/QUALITY_REVIEW.md; evidências docs/evidence/quality-review.
+Studio próprio Casa_QUALIDADE_CORRIGIDA (3820fb81-8966-495e-b0dd-3d0981335c94) LIBERADO EM EDIT; clientes encerrados, sem reserva ativa. Sem push/publicação. Não substituir src concorrente inteiro: fontes integradas estão neste worktree/branch.

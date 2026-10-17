@@ -1,0 +1,79 @@
+2026-10-17T01:09:28.081Z,46.081566,1c08,6,Info [FLog::CreatorOutput] [HouseQA] PASS defeat presents retry state
+2026-10-17T01:09:54.245Z,72.245308,64e8,6,Info [FLog::CreatorOutput] [HouseQA] PASS automatic retry restores same stage with no stale progress
+2026-10-17T01:09:54.381Z,72.381340,64e8,6,Info [FLog::CreatorOutput] [HouseQA] PASS no flashlight before collection
+2026-10-17T01:09:55.129Z,73.129677,7930,6,Info [FLog::CreatorOutput] [HouseQA] PASS reject remote collection from forest
+2026-10-17T01:09:55.135Z,73.135155,7930,6,Info [FLog::CreatorOutput] [HouseQA] PASS capture is individual
+2026-10-17T01:09:56.130Z,74.130501,1c08,6,Info [FLog::CreatorOutput] [HouseQA] PASS rescue request accepted
+2026-10-17T01:09:58.432Z,76.432243,1c08,6,Info [FLog::CreatorOutput] [HouseQA] PASS rescue returns teammate
+2026-10-17T01:09:58.472Z,76.472260,1c08,6,Info [FLog::CreatorOutput] [HouseQA] PASS selected mode preserved
+2026-10-17T01:09:58.473Z,76.473267,1c08,6,Info [FLog::CreatorOutput] [HouseQA] PASS story transitions differ from challenge
+2026-10-17T01:09:59.693Z,77.693695,7930,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 1 task_2 button 1: solved
+2026-10-17T01:10:00.411Z,78.411354,1c08,6,Info [FLog::CreatorOutput] [HouseQA] PASS no duplicate flashlight
+2026-10-17T01:10:00.411Z,78.411354,1c08,6,Info [FLog::CreatorOutput] [HouseQA] PASS shared flashlight
+2026-10-17T01:10:00.412Z,78.412346,1c08,6,Info [FLog::CreatorOutput] [HouseQA] PASS shared flashlight
+2026-10-17T01:10:01.379Z,79.379280,1c08,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 1 task_3 button 1: solved
+2026-10-17T01:10:02.096Z,80.096130,1c08,6,Info [FLog::CreatorOutput] [HouseQA] PASS no duplicate key_living
+2026-10-17T01:10:03.077Z,81.077629,1c08,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 1 task_4 button 1: solved
+2026-10-17T01:10:03.811Z,81.811249,7930,6,Info [FLog::CreatorOutput] [HouseQA] PASS no duplicate key_kitchen
+2026-10-17T01:10:04.813Z,82.813515,89c0,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 1 task_5 button 1: solved
+2026-10-17T01:10:05.610Z,83.610947,64e8,6,Info [FLog::CreatorOutput] [HouseQA] PASS no duplicate key_dining
+2026-10-17T01:10:06.595Z,84.595062,6e74,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 1 task_6 button 1: solved
+2026-10-17T01:10:07.562Z,85.562805,1c08,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 1 task_7 button 1: solved
+2026-10-17T01:10:07.563Z,85.563812,1c08,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 1 transition
+2026-10-17T01:10:22.026Z,100.026978,89c0,6,Info [FLog::CreatorOutput] [HouseQA] PASS selected mode preserved
+2026-10-17T01:10:22.028Z,100.028976,89c0,6,Info [FLog::CreatorOutput] [HouseQA] PASS story transitions differ from challenge
+2026-10-17T01:10:23.010Z,101.010719,1c08,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 2 task_1 button 1: solved
+2026-10-17T01:10:23.727Z,101.727760,89c0,6,Info [FLog::CreatorOutput] [HouseQA] PASS no duplicate fuse_1
+2026-10-17T01:10:24.727Z,102.727394,64e8,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 2 task_2 button 1: solved
+2026-10-17T01:10:25.476Z,103.476227,7930,6,Info [FLog::CreatorOutput] [HouseQA] PASS no duplicate fuse_2
+2026-10-17T01:10:26.603Z,104.603569,88a0,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 2 task_3 button 1: solved
+2026-10-17T01:10:27.372Z,105.372063,1c08,6,Info [FLog::CreatorOutput] [HouseQA] PASS no duplicate fuse_3
+2026-10-17T01:10:28.592Z,106.592941,64e8,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 2 task_4 button 1: solved
+2026-10-17T01:10:28.592Z,106.592941,64e8,6,Info [FLog::CreatorOutput] [HouseQA] PASS library cabinet discoverable by client
+2026-10-17T01:10:29.577Z,107.577232,89c0,6,Info [FLog::CreatorOutput] [HouseQA] PASS enter physical hide through remote
+2026-10-17T01:10:32.610Z,110.610458,64e8,6,Info [FLog::CreatorOutput] [HouseQA] PASS tutorial consumes real oxygen
+2026-10-17T01:10:33.327Z,111.327385,64e8,6,Info [FLog::CreatorOutput] [HouseQA] PASS exit restores hide state
+2026-10-17T01:10:34.310Z,112.310692,7930,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 2 task_7 button 1: solved
+2026-10-17T01:10:34.310Z,112.310692,7930,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 2 transition
+2026-10-17T01:10:47.993Z,125.993324,64e8,6,Info [FLog::CreatorOutput] [HouseQA] PASS selected mode preserved
+2026-10-17T01:10:48.007Z,126.007355,64e8,6,Info [FLog::CreatorOutput] [HouseQA] PASS story transitions differ from challenge
+2026-10-17T01:10:48.977Z,126.977142,64e8,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 3 task_1 button 1: solved
+2026-10-17T01:10:50.509Z,128.509109,1c08,6,Info [FLog::CreatorOutput] [HouseQA] PASS no duplicate clock
+2026-10-17T01:10:51.509Z,129.509613,1c08,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 3 task_2 button 1: solved
+2026-10-17T01:10:52.242Z,130.242783,88a0,6,Info [FLog::CreatorOutput] [HouseQA] PASS no duplicate mask
+2026-10-17T01:10:53.224Z,131.224731,1c08,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 3 task_3 button 1: solved
+2026-10-17T01:10:54.209Z,132.209564,64e8,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 3 task_4 button 1: solved
+2026-10-17T01:10:54.926Z,132.926651,64e8,6,Info [FLog::CreatorOutput] [HouseQA] PASS no duplicate photo
+2026-10-17T01:10:55.909Z,133.909592,7930,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 3 task_5 button 4: progress
+2026-10-17T01:10:56.875Z,134.875793,64e8,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 3 task_5 button 2: progress
+2026-10-17T01:10:57.858Z,135.858826,7930,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 3 task_5 button 1: progress
+2026-10-17T01:10:58.824Z,136.824951,1c08,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 3 task_5 button 3: solved
+2026-10-17T01:10:58.824Z,136.824951,1c08,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 3 transition
+2026-10-17T01:11:12.676Z,150.676575,64e8,6,Info [FLog::CreatorOutput] [HouseQA] PASS selected mode preserved
+2026-10-17T01:11:12.676Z,150.676575,64e8,6,Info [FLog::CreatorOutput] [HouseQA] PASS story transitions differ from challenge
+2026-10-17T01:11:13.657Z,151.657394,89c0,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 4 task_1 button 1: solved
+2026-10-17T01:11:14.641Z,152.641846,1c08,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 4 task_2 button 3: progress
+2026-10-17T01:11:15.624Z,153.624832,7930,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 4 task_2 button 1: progress
+2026-10-17T01:11:16.609Z,154.609848,7930,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 4 task_2 button 2: progress
+2026-10-17T01:11:17.610Z,155.610535,64e8,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 4 task_2 button 4: solved
+2026-10-17T01:11:18.591Z,156.591019,7930,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 4 task_3 button 1: solved
+2026-10-17T01:11:19.592Z,157.592758,88a0,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 4 task_4 button 3: progress
+2026-10-17T01:11:20.574Z,158.574600,1c08,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 4 task_4 button 4: progress
+2026-10-17T01:11:21.557Z,159.557297,7930,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 4 task_4 button 2: progress
+2026-10-17T01:11:22.527Z,160.527832,1c08,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 4 task_4 button 1: solved
+2026-10-17T01:11:23.491Z,161.491379,7930,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 4 task_5 button 1: solved
+2026-10-17T01:11:24.225Z,162.225739,88a0,6,Info [FLog::CreatorOutput] [HouseQA] PASS no duplicate artifact
+2026-10-17T01:11:25.207Z,163.207611,1c08,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 4 task_6 button 1: solved
+2026-10-17T01:11:25.207Z,163.207611,1c08,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 4 transition
+2026-10-17T01:11:38.975Z,176.975525,1c08,6,Info [FLog::CreatorOutput] [HouseQA] PASS selected mode preserved
+2026-10-17T01:11:38.975Z,176.975525,1c08,6,Info [FLog::CreatorOutput] [HouseQA] PASS story transitions differ from challenge
+2026-10-17T01:11:39.972Z,177.972580,89c0,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 5 task_1 button 1: solved
+2026-10-17T01:11:40.923Z,178.923950,88a0,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 5 task_2 button 1: solved
+2026-10-17T01:11:41.925Z,179.925293,64e8,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 5 task_3 button 1: solved
+2026-10-17T01:11:42.926Z,180.926514,7930,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 5 task_4 button 1: solved
+2026-10-17T01:11:43.922Z,181.922699,7930,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 5 task_5 button 1: solved
+2026-10-17T01:11:43.922Z,181.922699,7930,6,Info [FLog::CreatorOutput] [HouseQA] PASS chapter 5 transition
+2026-10-17T01:11:43.922Z,181.922699,7930,6,Info [FLog::CreatorOutput] [HouseQA] PASS all five chapters
+2026-10-17T01:11:44.441Z,182.441650,64e8,6,Info [FLog::CreatorOutput] [HouseQA] PASS main ending after real exit zone
+2026-10-17T01:11:59.226Z,197.226181,7930,6,Info [FLog::CreatorOutput] [HouseQA] PASS victory restart clears inventory and progression
+2026-10-17T01:11:59.226Z,197.226181,7930,6,Info [FLog::CreatorOutput] [HouseQA] RESULT {"players":2,"success":true,"checks":78,"phase":"Playing","stage":1}

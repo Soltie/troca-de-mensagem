@@ -1,0 +1,10 @@
+{
+  "runner": "[Tests] 274 passed, 0 failed, 0 skipped specs",
+  "projectWarnings": [],
+  "campaign2": {"ok": true, "result": {"players": 2, "success": true, "checks": 66, "phase": "Won", "stage": 5}},
+  "scope": "Integrated map, exterior missions, ordered energy repair, internal service stair. Before final gables, pavilion lamps and random passage presence. Final frozen build must be checked separately.",
+  "initialFailures": [
+    "Legacy navigation fixture did not create exterior geometry; moved exterior checks to dedicated fixture.",
+    "Service stair QA endpoint was inside an existing attic table; changed endpoint to free room floor and verified the stair waypoints."
+  ]
+}

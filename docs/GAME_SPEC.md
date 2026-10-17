@@ -1,5 +1,10 @@
 # GAME_SPEC — TUNG TUNG SAHUR: THE CURSED HOUSE
 
+> **Revisão pós-teste humano (16/10/2026):** armários selecionáveis no cliente, barreiras físicas
+> alinhadas à missão, entrada cooperativa sem trancar colegas, História sequencial com gravações
+> exclusivas e Desafio com tarefas independentes disponíveis em paralelo. Menu, HUD compacto e
+> câmeras da abertura revisados. Entrega, critérios e evidências: [QUALITY_REVIEW.md](QUALITY_REVIEW.md).
+
 > **Levels da propriedade (16/10/2026):** Desafio alterna interiores e exteriores: etapa 3 externa,
 > etapa 4 externa ou interna pela seed; até 16 passagens opcionais, salões conectados e escada de
 > serviço em uma ala sorteada. Jardim, estufa, mirante e pátio têm objetivos jogáveis. História mantém
