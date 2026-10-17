@@ -2,6 +2,9 @@
 
 Versão atual de 17/10/2026: vãos da casa corrigidos, floresta de terror com 26 objetivos e epílogo com Tung Tung Sahur e Crocodilo Armadilho. Oito capítulos e modos História/Desafio preservados. Relatório: [FLORESTA_TERROR_FINAL.md](docs/FLORESTA_TERROR_FINAL.md).
 
+Correção adicional: mouse capturado automaticamente durante a partida, com liberação em menus e cenas.
+Validação e limite do teste de movimento: [CAMERA_MOUSE_FIX.md](docs/CAMERA_MOUSE_FIX.md).
+
 Pasta independente: `C:/Users/xpg/Documents/tung-tung-sahur`.
 Separação realizada em 17/10/2026. Código base: `19ace468f25f780b58b9c7625b533c0c26f9f9ec`.
 
@@ -37,7 +40,7 @@ rojo build default.project.json --output build/TungTungSahur.rbxlx
 - Base copiada sem alterações de gameplay, com histórico Git local próprio.
 - `lune run scripts/check`: **ALL GREEN**, 283 testes aprovados,
   zero falhas; 7 specs exclusivas do Studio puladas no Lune.
-- Build atual: `9703A276DD3FE5EFD62CB7F15E1B3CBAC27A8BA9BBCA5D565A74A874F6583D13`. A remasterização anterior foi preservada em `build/TungTungSahur_ANTES_TERROR.rbxlx`.
+- Build atual: `40659DD56F8080DFB580EDA4E988066FB22919D6DCED899A0194DE1B9CFE65E5`. A remasterização anterior foi preservada em `build/TungTungSahur_ANTES_TERROR.rbxlx`.
 - Auditoria das fontes embutidas: consulte `build/TungTungSahur.audit.json`.
 - Relatório da versão: [VISUAL_REMASTER.md](docs/VISUAL_REMASTER.md).
 - A separação original é histórica. Os novos testes e limites de QA estão em `docs/FLORESTA_TERROR_FINAL.md`.

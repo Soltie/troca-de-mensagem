@@ -21,6 +21,8 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local GuiService = game:GetService("GuiService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require("@game/ReplicatedStorage/Shared/Config")
 local CharacterController = require("./CharacterController")
@@ -37,6 +39,8 @@ local cinemaFocus = Vector3.zero
 local cinemaReturnFrame: CFrame? = nil
 
 local mode: Mode = "normal"
+local windowFocused = true
+local modalButtons: { [GuiButton]: boolean } = {}
 local applied = CFrame.identity
 local appliedCamera: Camera? = nil
 
@@ -78,6 +82,47 @@ local function rootPart(): BasePart?
 	local character = player.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart")
 	return if root and root:IsA("BasePart") then root else nil
+end
+
+-- Recupera o mouse depois do lobby, de cenas e de painéis. Botões modais visíveis
+-- continuam liberando o cursor; um botão dentro de um painel fechado não interfere.
+local function updatePointer()
+	if not UserInputService.MouseEnabled or not windowFocused then
+		return
+	end
+	local campaign = ReplicatedStorage:FindFirstChild("CampaignState")
+	local free = mode == "cinema"
+		or mode == "capture"
+		or mode == "spectate"
+		or player:GetAttribute("ModeMenuOpen") == true
+		or (campaign ~= nil and campaign:GetAttribute("Phase") == "Lost")
+		or GuiService.MenuIsOpen
+		or UserInputService:GetFocusedTextBox() ~= nil
+	if not free then
+		for button in modalButtons do
+			if not button.Modal then
+				continue
+			end
+			local visible = true
+			local ancestor: Instance? = button
+			while ancestor and ancestor ~= player.PlayerGui do
+				if
+					(ancestor:IsA("GuiObject") and not ancestor.Visible)
+					or (ancestor:IsA("ScreenGui") and not ancestor.Enabled)
+				then
+					visible = false
+					break
+				end
+				ancestor = ancestor.Parent
+			end
+			if visible and ancestor == player.PlayerGui then
+				free = true
+				break
+			end
+		end
+	end
+	UserInputService.MouseBehavior = if free then Enum.MouseBehavior.Default else Enum.MouseBehavior.LockCenter
+	UserInputService.MouseIconEnabled = free
 end
 
 local function approach(current: number, target: number, rate: number, dt: number): number
@@ -422,6 +467,7 @@ end
 function CameraController.debugState(): { [string]: any }
 	return {
 		mode = mode,
+		mouseBehavior = UserInputService.MouseBehavior.Name,
 		spectating = if spectateTarget then spectateTarget.UserId else nil,
 		trauma = trauma,
 		fear = fearSmooth,
@@ -432,11 +478,33 @@ function CameraController.debugState(): { [string]: any }
 end
 
 function CameraController.Start()
+	local playerGui = player:WaitForChild("PlayerGui")
+	local function track(instance: Instance)
+		if instance:IsA("GuiButton") then
+			modalButtons[instance] = true
+		end
+	end
+	for _, instance in playerGui:GetDescendants() do
+		track(instance)
+	end
+	playerGui.DescendantAdded:Connect(track)
+	playerGui.DescendantRemoving:Connect(function(instance: Instance)
+		if instance:IsA("GuiButton") then
+			modalButtons[instance] = nil
+		end
+	end)
+	UserInputService.WindowFocused:Connect(function()
+		windowFocused = true
+	end)
+	UserInputService.WindowFocusReleased:Connect(function()
+		windowFocused = false
+	end)
 	CharacterController.onLanded(function(intensity: number)
 		CameraController.land(intensity)
 	end)
 	RunService:BindToRenderStep("S9CameraUndo", Enum.RenderPriority.Camera.Value - 1, undo)
 	RunService:BindToRenderStep("S9CameraApply", Enum.RenderPriority.Camera.Value + 1, apply)
+	RunService:BindToRenderStep("S9CameraPointer", Enum.RenderPriority.Last.Value + 1, updatePointer)
 end
 
 return CameraController
