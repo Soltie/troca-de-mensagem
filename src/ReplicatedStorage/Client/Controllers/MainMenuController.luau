@@ -40,6 +40,7 @@ local Components = require("../UI/Components")
 local Create = require("../UI/Create")
 local MenuLayout = require("../UI/MenuLayout")
 local Theme = require("../UI/Theme")
+local ViewportQA = require("../UI/ViewportQA")
 local AudioController = require("./AudioController")
 local Cinema = require("./CinematicController")
 local Store = require("./StoreController")
@@ -1629,17 +1630,7 @@ local function selectTab(id: TabId)
 end
 
 -- Só no Studio: atributo MenuViewportQA = "844x390" simula a tela de um celular (capturas de QA).
-local function qaViewport(): (number?, number?)
-	if not RunService:IsStudio() then
-		return nil, nil
-	end
-	local raw = player:GetAttribute("MenuViewportQA")
-	if type(raw) ~= "string" then
-		return nil, nil
-	end
-	local width, height = string.match(raw, "^(%d+)x(%d+)$")
-	return tonumber(width), tonumber(height)
-end
+local qaViewport = ViewportQA.size
 
 -- Selo de notificação: só quando há prêmio diário ou giro disponível de verdade.
 local function dailyReady(): boolean

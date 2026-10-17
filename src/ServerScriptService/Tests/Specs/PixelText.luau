@@ -12,8 +12,9 @@ local spec: TestKit.Spec = {
 			t.expect(PixelText.normalize("sem acento")).toBe("sem acento")
 		end)
 
-		t.it("normalizes UI texts but keeps notes untouched", function()
-			t.expect(Text.Prompts.Fuse).toBe("PEGAR FUSIVEL")
+		t.it("UI texts keep full accents (interface fonts draw them)", function()
+			t.expect(Text.Prompts.Fuse).toBe("PEGAR FUSÍVEL")
+			t.expect(Text.Store.tabs.chests).toBe("BAÚS")
 			t.expect(string.find(Text.Notes.note_order, "fusíveis", 1, true) ~= nil).toBe(true)
 		end)
 	end,

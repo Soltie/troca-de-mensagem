@@ -24,9 +24,13 @@ local StoreCatalog = require("@game/ReplicatedStorage/Shared/Game/StoreCatalog")
 local Season = require("@game/ReplicatedStorage/Shared/Game/Season")
 local SeasonCatalog = require("@game/ReplicatedStorage/Shared/Game/SeasonCatalog")
 local Text = require("@game/ReplicatedStorage/Shared/Game/Text")
+local StoreView = require("@game/ReplicatedStorage/Shared/Game/StoreView")
 local Types = require("@game/ReplicatedStorage/Shared/Types")
+local Components = require("../UI/Components")
 local Create = require("../UI/Create")
+local ItemPreview = require("../UI/ItemPreview")
 local Theme = require("../UI/Theme")
+local ViewportQA = require("../UI/ViewportQA")
 local AudioController = require("./AudioController")
 
 type Tab = "shop" | "season" | "chests" | "daily" | "collection" | "robux"
@@ -38,14 +42,33 @@ local S = Text.Store
 local panel: Frame? = nil
 local content: ScrollingFrame? = nil
 local overlay: Frame? = nil
-local header: TextLabel? = nil
-local xpFill: Frame? = nil
 local message: TextLabel? = nil
 local hintLabel: TextLabel? = nil
 local toastHolder: Frame? = nil
 local tabButtons: { [Tab]: TextButton } = {}
+local kindButtons: { [string]: TextButton } = {}
 local tab: Tab = "shop"
 local kindFilter: StoreCatalog.ItemKind = "flashlight"
+-- Remaster: item em foco no painel de detalhe, layout da janela e setters da barra superior.
+local selectedItem: string? = nil
+local detail: Frame? = nil
+local kindsBar: Frame? = nil
+local compactStore = false
+local shortStore = false
+local twoPane = true
+local setFichasBadge: ((number) -> ())? = nil
+local setCreditosBadge: ((number) -> ())? = nil
+local setXpBar: ((number) -> ())? = nil
+local levelChip: TextLabel? = nil
+
+local TAB_ICONS: { [Tab]: string } = {
+	shop = "Store",
+	season = "Season",
+	chests = "Chest",
+	daily = "Daily",
+	collection = "Tape",
+	robux = "Gem",
+}
 local isOpen = false
 -- Animação em curso (roleta/baú): mudanças de atributo não redesenham a aba no meio dela.
 local animating = false
@@ -84,16 +107,6 @@ local function jsonSet(name: string): { [string]: boolean }
 	return set
 end
 
-local function isOwned(item: StoreCatalog.Item, owned: { [string]: boolean }): boolean
-	if item.source == "default" then
-		return true
-	end
-	if item.source == "vip" then
-		return attr("Vip", false) == true
-	end
-	return owned[item.id] == true
-end
-
 local function equippedId(kind: StoreCatalog.ItemKind): string
 	local names = { flashlight = "EquipFlashlight", uniform = "EquipUniform", filter = "EquipFilter", title = "Title" }
 	return attr((names :: any)[kind], StoreCatalog.defaultFor(kind))
@@ -119,31 +132,20 @@ local function label(props: { [string]: any }): TextLabel
 	return Create("TextLabel", base) :: TextLabel
 end
 
+-- Botão do tema. A cor de texto legada vira variante: destaque (Hazard) = principal,
+-- verde (Good) = sucesso, apagado (TextDim) ou demais = secundário. O clique sempre chega.
 local function button(props: { [string]: any }, onClick: () -> ()): TextButton
-	local base: { [string]: any } = {
-		BackgroundColor3 = Theme.Panel,
-		BorderSizePixel = 0,
-		AutoButtonColor = true,
-		FontFace = Theme.Font,
-		TextColor3 = Theme.Text,
-		TextSize = Theme.SizeSmall,
-		TextWrapped = true,
-	}
-	for key, value in props do
-		base[key] = value
+	local color = props.TextColor3
+	local variant: Components.Variant = props.Variant
+		or (if color == Theme.Hazard then "primary" elseif color == Theme.Good then "success" else "secondary")
+	props.Variant, props.TextColor3, props.BackgroundColor3 = nil, nil, nil
+	if props.TextSize == nil then
+		props.TextSize = Theme.SizeSmall
 	end
-	local b = Create("TextButton", base, {
-		Create("UIStroke", {
-			Color = Theme.TextDim,
-			Thickness = 1,
-			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-		}),
-	}) :: TextButton
-	b.Activated:Connect(function()
+	return Components.button(variant, props, function()
 		AudioController.play("UiBlip", 1, 1.1, true)
 		onClick()
 	end)
-	return b
 end
 
 local function setMessage(key: string?)
@@ -339,13 +341,13 @@ local function setLayout(c: ScrollingFrame, grid: boolean)
 end
 
 local function card(parent: Instance, order: number, accent: Color3): Frame
-	return Create("Frame", {
-		BackgroundColor3 = Color3.fromRGB(16, 16, 18),
+	local box = Create("Frame", {
+		BackgroundColor3 = Theme.BgPanel,
 		BorderSizePixel = 0,
 		LayoutOrder = order,
 		Parent = parent,
 	}, {
-		Create("UIStroke", { Color = accent, Thickness = 2 }),
+		Create("UIStroke", { Color = accent, Thickness = 1, Transparency = 0.3 }),
 		Create("Frame", {
 			Name = "Bar",
 			Size = UDim2.new(1, 0, 0, 4),
@@ -353,122 +355,547 @@ local function card(parent: Instance, order: number, accent: Color3): Frame
 			BorderSizePixel = 0,
 		}),
 	}) :: Frame
+	Components.corner(box, Theme.CornerSmall)
+	return box
 end
 
 local render: () -> ()
 
-local function renderShop(c: ScrollingFrame)
-	setLayout(c, true)
+local function priceText(currency: StoreCatalog.Currency, price: number): string
+	return `{Components.formatNumber(price)} {if currency == "fichas" then "FICHAS" else "CRÉDITOS"}`
+end
+
+local function walletOf(currency: StoreCatalog.Currency): number
+	return tonumber(attr(if currency == "fichas" then "Fichas" else "Creditos", 0)) or 0
+end
+
+local function clearOverlay(): Frame?
+	local o = overlay
+	if not o then
+		return nil
+	end
+	for _, child in o:GetChildren() do
+		child:Destroy()
+	end
+	o.Visible = true
+	return o
+end
+
+local function modalBox(o: Frame, size: UDim2): Frame
+	local box = Components.panel({
+		Name = "Modal",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = size,
+		BackgroundColor3 = Theme.BgPanel,
+		BackgroundTransparency = 0,
+		Parent = o,
+	})
+	local outline = box:FindFirstChildOfClass("UIStroke")
+	if outline then
+		outline.Color, outline.Transparency = Theme.Gold, 0.3
+	end
+	return box
+end
+
+local function buyResult(result: Types.Result<any>?)
+	if not result then
+		return
+	end
+	if result.ok then
+		setMessage(result.data.message)
+		if result.data.ok then
+			AudioController.play("Switch", 0.6, 1.4, true)
+		end
+	else
+		setMessage("store_error")
+	end
+end
+
+-- Pedido de compra confirmado: o servidor valida preço, saldo e posse (StoreService).
+local function purchase(item: StoreCatalog.Item, currency: StoreCatalog.Currency)
+	if overlay then
+		overlay.Visible = false
+	end
+	buyResult(request(if currency == "fichas" then "buy_fichas" else "buy_creditos", item.id))
+	render()
+end
+
+-- Compra com moeda do jogo: mostra item, preço e o saldo que sobra antes de pedir ao servidor.
+local function confirmPurchase(item: StoreCatalog.Item, option: StoreView.PriceOption)
+	local o = clearOverlay()
+	if not o then
+		return
+	end
+	local box = modalBox(o, UDim2.fromOffset(if compactStore then 360 else 440, 0))
+	box.AutomaticSize = Enum.AutomaticSize.Y
+	Components.padding(box, 18)
+	Create("UIListLayout", {
+		Padding = UDim.new(0, 10),
+		HorizontalAlignment = Enum.HorizontalAlignment.Center,
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Parent = box,
+	})
+	local thumb = Create("Frame", {
+		Name = "Thumb",
+		Size = UDim2.fromOffset(96, 96),
+		BackgroundTransparency = 1,
+		LayoutOrder = 1,
+		Parent = box,
+	})
+	ItemPreview.thumbnail(thumb, item)
+	Components.title({
+		Size = UDim2.fromScale(1, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		TextWrapped = true,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Text = `COMPRAR {item.name}?`,
+		TextSize = 20,
+		LayoutOrder = 2,
+		Parent = box,
+	})
+	local left = walletOf(option.currency) - option.price
+	Components.text({
+		Size = UDim2.fromScale(1, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		FontFace = Theme.FontNote,
+		TextColor3 = Theme.TextSecondary,
+		Text = `Custa {priceText(option.currency, option.price)}. Depois você fica com {priceText(
+			option.currency,
+			left
+		)}.`,
+		TextSize = 15,
+		LayoutOrder = 3,
+		Parent = box,
+	})
+	local row = Create("Frame", {
+		Name = "Actions",
+		Size = UDim2.new(1, 0, 0, Theme.TouchMin),
+		BackgroundTransparency = 1,
+		LayoutOrder = 4,
+		Parent = box,
+	})
+	button({
+		Name = "Cancel",
+		Variant = "secondary",
+		Size = UDim2.new(0.5, -5, 1, 0),
+		Text = "CANCELAR",
+		TextSize = 16,
+		Parent = row,
+	}, function()
+		o.Visible = false
+	end)
+	button({
+		Name = "Confirm",
+		Variant = "primary",
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.fromScale(1, 0),
+		Size = UDim2.new(0.5, -5, 1, 0),
+		Text = "CONFIRMAR",
+		TextSize = 16,
+		Parent = row,
+	}, function()
+		purchase(item, option.currency)
+	end)
+end
+
+local openDetailModal: (StoreCatalog.Item) -> ()
+
+-- Conteúdo do detalhe: prévia (3D girável quando há modelo), raridade, quem vê, como obter e ação.
+local function fillDetail(container: Frame, item: StoreCatalog.Item, inModal: boolean)
+	local rarity = StoreCatalog.Rarities[item.rarity]
+	local accent = rgb(rarity.color)
 	local owned = jsonSet("Owned")
-	local fichas = attr("Fichas", 0)
-	local creditos = attr("Creditos", 0)
-	local items = {}
-	for _, item in StoreCatalog.Items do
-		if item.kind == kindFilter then
-			table.insert(items, item)
+	local vip = attr("Vip", false) == true
+	local state = StoreView.state(item, owned, equippedId(item.kind), vip)
+	-- A prévia cede espaço para o texto: nome, selos, quem vê e como obter precisam de ~140 px
+	-- além dos botões (1 ou 2). Painel ainda sem medida (primeiro quadro) usa a proporção padrão.
+	local buttonCount = if state == "buyable"
+		then #StoreView.prices(item, walletOf("fichas"), walletOf("creditos"))
+		elseif state == "locked" then 0
+		else 1
+	local height = container.AbsoluteSize.Y - 24
+	local previewHeight = 0.44
+	if height > 0 then
+		local free = height - 150 - buttonCount * (Theme.TouchMin + 8)
+		previewHeight = math.clamp(free / height, 0.22, 0.5)
+	end
+	local preview = Create("Frame", {
+		Name = "Preview",
+		Size = UDim2.fromScale(1, previewHeight),
+		BackgroundColor3 = Theme.BgSunken,
+		BorderSizePixel = 0,
+		ClipsDescendants = true,
+		Parent = container,
+	}, {
+		Create("UIGradient", {
+			Rotation = 90,
+			Color = ColorSequence.new(Theme.BgElevated, Theme.BgSunken),
+		}),
+	})
+	Components.corner(preview, Theme.CornerSmall)
+	Components.stroke(preview, accent, 1, 0.4)
+	local viewport = ItemPreview.model(preview, item)
+	if viewport then
+		Components.text({
+			Name = "RotateHint",
+			AnchorPoint = Vector2.new(0.5, 1),
+			Position = UDim2.new(0.5, 0, 1, -6),
+			Size = UDim2.new(1, -12, 0, 16),
+			TextXAlignment = Enum.TextXAlignment.Center,
+			Text = "ARRASTE PARA GIRAR",
+			TextSize = 11,
+			TextColor3 = Theme.TextMuted,
+			Parent = preview,
+		})
+	else
+		local holder = Create("Frame", {
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.5),
+			Size = UDim2.fromScale(0.8, 0.8),
+			BackgroundTransparency = 1,
+			Parent = preview,
+		}, { Create("UIAspectRatioConstraint", { AspectRatio = if item.kind == "title" then 2 else 1.3 }) })
+		ItemPreview.thumbnail(holder, item)
+	end
+	if inModal then
+		Components.iconButton("secondary", "Close", nil, {
+			Name = "Back",
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, -6, 0, 6),
+			Size = UDim2.fromOffset(Theme.TouchMin, Theme.TouchMin),
+			Parent = preview,
+		}, function()
+			AudioController.play("UiBlip", 1, 1.1, true)
+			if overlay then
+				overlay.Visible = false
+			end
+		end)
+	end
+
+	local actions: { { variant: Components.Variant, text: string, disabled: boolean, run: (() -> ())? } } = {}
+	if state == "equipped" then
+		table.insert(actions, { variant = "success", text = "EQUIPADO", disabled = true })
+	elseif state == "owned" then
+		table.insert(actions, {
+			variant = "primary",
+			text = "EQUIPAR",
+			disabled = false,
+			run = function()
+				local result = request("equip", item.id)
+				if result and result.ok then
+					setMessage(result.data.message)
+				end
+				if inModal and overlay then
+					overlay.Visible = false
+				end
+				render()
+			end,
+		})
+	elseif state == "buyable" then
+		local options = StoreView.prices(item, walletOf("fichas"), walletOf("creditos"))
+		for index, option in options do
+			table.insert(actions, {
+				variant = if index == 1 then "primary" else "secondary",
+				text = if option.affordable
+					then `COMPRAR · {priceText(option.currency, option.price)}`
+					else `FALTAM {priceText(option.currency, option.missing)}`,
+				disabled = not option.affordable,
+				run = function()
+					confirmPurchase(item, option)
+				end,
+			})
 		end
 	end
-	table.sort(items, function(a, b)
-		local ra, rb = StoreCatalog.Rarities[a.rarity].order, StoreCatalog.Rarities[b.rarity].order
-		return if ra == rb then a.name < b.name else ra < rb
-	end)
+	local actionHeight = #actions * (Theme.TouchMin + 8)
+	local info = Create("Frame", {
+		Name = "Info",
+		Position = UDim2.new(0, 0, previewHeight, 10),
+		Size = UDim2.new(1, 0, 1 - previewHeight, -(10 + actionHeight)),
+		BackgroundTransparency = 1,
+		Parent = container,
+	}, {
+		Create("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }),
+	})
+	label({
+		Name = "ItemName",
+		Size = UDim2.fromScale(1, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		Text = item.name,
+		TextSize = if compactStore then 19 else 22,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextColor3 = Theme.TextPrimary,
+		LayoutOrder = 1,
+		Parent = info,
+	})
+	local chips = Create("Frame", {
+		Name = "Chips",
+		Size = UDim2.new(1, 0, 0, 24),
+		BackgroundTransparency = 1,
+		LayoutOrder = 2,
+		Parent = info,
+	}, {
+		Create("UIListLayout", {
+			FillDirection = Enum.FillDirection.Horizontal,
+			Padding = UDim.new(0, 6),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		}),
+	})
+	Components.chip(rarity.label, accent, { LayoutOrder = 1, Parent = chips })
+	local stateLabel, stateColor = "BLOQUEADO", Theme.TextMuted
+	if state == "equipped" then
+		stateLabel, stateColor = "EQUIPADO", Theme.Success
+	elseif state == "owned" then
+		stateLabel, stateColor = "ADQUIRIDO", Theme.Success
+	elseif state == "buyable" then
+		stateLabel, stateColor = "À VENDA", Theme.Gold
+	end
+	Components.chip(stateLabel, stateColor, { LayoutOrder = 2, Parent = chips })
+	Components.text({
+		Name = "KindNote",
+		Size = UDim2.fromScale(1, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		FontFace = Theme.FontNote,
+		TextSize = 14,
+		TextColor3 = Theme.TextSecondary,
+		Text = StoreView.kindNote(item.kind),
+		LayoutOrder = 3,
+		Parent = info,
+	})
+	local how = Create("Frame", {
+		Name = "HowToGet",
+		Size = UDim2.fromScale(1, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		BackgroundTransparency = 1,
+		LayoutOrder = 4,
+		Parent = info,
+	})
+	Components.icon(
+		how,
+		if state == "locked" then "Lock" elseif state == "buyable" then "Coin" else "Check",
+		24,
+		if state == "locked" then Theme.TextMuted elseif state == "buyable" then Theme.Coin else Theme.Success
+	)
+	Components.text({
+		Position = UDim2.fromOffset(32, 0),
+		Size = UDim2.new(1, -32, 0, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		FontFace = Theme.Font,
+		TextSize = 14,
+		TextColor3 = Theme.TextPrimary,
+		Text = if (state == "owned" or state == "equipped") and item.source ~= "default"
+			then "VOCÊ JÁ TEM ESTE ITEM."
+			else StoreView.howToGet(item),
+		Parent = how,
+	})
+	for index, action in actions do
+		local b = button({
+			Name = `Action_{index}`,
+			Variant = action.variant,
+			AnchorPoint = Vector2.new(0, 1),
+			Position = UDim2.new(0, 0, 1, -(#actions - index) * (Theme.TouchMin + 8)),
+			Size = UDim2.new(1, 0, 0, Theme.TouchMin),
+			Text = action.text,
+			TextSize = 16,
+			Parent = container,
+		}, function()
+			local run = action.run
+			if run then
+				run()
+			end
+		end)
+		Components.setDisabled(b, action.disabled)
+	end
+end
+
+local function renderDetail()
+	local d = detail
+	if not d then
+		return
+	end
+	for _, child in d:GetChildren() do
+		if child:IsA("GuiObject") then
+			child:Destroy()
+		end
+	end
+	local item = if selectedItem then StoreCatalog.ItemById[selectedItem] else nil
+	if not item or item.kind ~= kindFilter then
+		item = StoreCatalog.ItemById[equippedId(kindFilter)]
+	end
+	if not item then
+		return
+	end
+	selectedItem = item.id
+	fillDetail(d, item, false)
+end
+
+openDetailModal = function(item: StoreCatalog.Item)
+	local o = clearOverlay()
+	if not o then
+		return
+	end
+	local box = modalBox(o, UDim2.new(1, -24, 1, -24))
+	Create("UISizeConstraint", { MaxSize = Vector2.new(460, 620), Parent = box })
+	Components.padding(box, 12)
+	fillDetail(box, item, true)
+end
+
+-- Grade da loja: miniatura real, nome, raridade e estado; tocar abre o detalhe.
+local function renderShop(c: ScrollingFrame)
+	setLayout(c, true)
+	local grid = c:FindFirstChildOfClass("UIGridLayout")
+	local width = math.max(c.AbsoluteSize.X - 16, 200)
+	local columns = if compactStore then (if width >= 520 then 3 else 2) else math.clamp(math.floor(width / 186), 2, 5)
+	-- Tela baixa: mais colunas para que uma linha inteira de cartões caiba na altura visível.
+	local visibleHeight = c.AbsoluteSize.Y
+	if visibleHeight > 0 then
+		local widest = math.floor((visibleHeight - 12) / 1.16)
+		columns = math.clamp(math.max(columns, math.ceil((width + 10) / (widest + 10))), 2, 6)
+	end
+	local cellWidth = math.floor((width - (columns - 1) * 10) / columns)
+	if grid then
+		grid.CellSize = UDim2.fromOffset(cellWidth, math.floor(cellWidth * 1.16))
+		grid.CellPadding = UDim2.fromOffset(10, 10)
+	end
+	local owned = jsonSet("Owned")
+	local vip = attr("Vip", false) == true
+	local fichas, creditos = walletOf("fichas"), walletOf("creditos")
+	local items = StoreView.itemsOfKind(kindFilter)
+	local current = if selectedItem then StoreCatalog.ItemById[selectedItem] else nil
+	if not current or current.kind ~= kindFilter then
+		selectedItem = equippedId(kindFilter)
+	end
+	local strokes: { [string]: UIStroke } = {}
 	for index, item in items do
 		local rarity = StoreCatalog.Rarities[item.rarity]
 		local accent = rgb(rarity.color)
-		local box = card(c, index, accent)
+		local state = StoreView.state(item, owned, equippedId(item.kind), vip)
+		local cell = Create("TextButton", {
+			Name = `Item_{item.id}`,
+			Text = "",
+			AutoButtonColor = false,
+			BackgroundColor3 = Theme.BgPanel,
+			BorderSizePixel = 0,
+			LayoutOrder = index,
+			Parent = c,
+		}) :: TextButton
+		cell:SetAttribute("State", state)
+		Components.corner(cell, Theme.CornerSmall)
+		local selected = twoPane and item.id == selectedItem
+		local outline = Components.stroke(
+			cell,
+			if selected then Theme.Gold else accent,
+			if selected then 2 else 1,
+			if selected then 0 else 0.45
+		)
+		strokes[item.id] = outline
+		Create("Frame", {
+			Name = "RarityBar",
+			Size = UDim2.new(1, 0, 0, 3),
+			BackgroundColor3 = accent,
+			BorderSizePixel = 0,
+			Parent = cell,
+		})
+		local thumb = Create("Frame", {
+			Name = "ThumbHolder",
+			Position = UDim2.fromOffset(6, 9),
+			Size = UDim2.new(1, -12, 0.56, -9),
+			BackgroundTransparency = 1,
+			Parent = cell,
+		})
+		ItemPreview.thumbnail(thumb, item)
 		label({
-			Position = UDim2.fromOffset(8, 10),
-			Size = UDim2.new(1, -16, 0, 36),
-			Text = px(item.name),
+			Name = "ItemName",
+			Position = UDim2.new(0, 8, 0.56, 6),
+			Size = UDim2.new(1, -16, 0, 30),
+			Text = item.name,
+			TextSize = 13,
 			TextXAlignment = Enum.TextXAlignment.Left,
-			Parent = box,
+			TextYAlignment = Enum.TextYAlignment.Top,
+			Parent = cell,
 		})
 		label({
-			Position = UDim2.fromOffset(8, 46),
-			Size = UDim2.new(1, -16, 0, 16),
-			Text = px(rarity.label),
+			Name = "Rarity",
+			Position = UDim2.new(0, 8, 0.56, 38),
+			Size = UDim2.new(1, -16, 0, 14),
+			Text = rarity.label,
+			TextSize = 11,
 			TextColor3 = accent,
-			TextSize = Theme.SizeSmall,
 			TextXAlignment = Enum.TextXAlignment.Left,
-			Parent = box,
+			Parent = cell,
 		})
-		local swatch = item.body or item.shirt or item.tint or item.color
-		if swatch then
-			Create("Frame", {
-				Position = UDim2.new(1, -30, 0, 48),
-				Size = UDim2.fromOffset(20, 12),
-				BackgroundColor3 = rgb(swatch),
-				BorderSizePixel = 0,
-				Parent = box,
+		local status = Create("Frame", {
+			Name = "Status",
+			AnchorPoint = Vector2.new(0, 1),
+			Position = UDim2.new(0, 8, 1, -6),
+			Size = UDim2.new(1, -16, 0, 20),
+			BackgroundTransparency = 1,
+			Parent = cell,
+		}, {
+			Create("UIListLayout", {
+				FillDirection = Enum.FillDirection.Horizontal,
+				VerticalAlignment = Enum.VerticalAlignment.Center,
+				Padding = UDim.new(0, 4),
+				SortOrder = Enum.SortOrder.LayoutOrder,
+			}),
+		})
+		local function statusText(text: string, color: Color3, order: number)
+			label({
+				Size = UDim2.fromOffset(0, 20),
+				AutomaticSize = Enum.AutomaticSize.X,
+				Text = text,
+				TextSize = 12,
+				TextWrapped = false,
+				TextColor3 = color,
+				LayoutOrder = order,
+				Parent = status,
 			})
 		end
-		local mine = isOwned(item, owned)
-		if mine then
-			local equipped = equippedId(item.kind) == item.id
-			button({
-				Position = UDim2.new(0, 8, 1, -34),
-				Size = UDim2.new(1, -16, 0, 26),
-				Text = if equipped then S.equipped else S.equip,
-				TextColor3 = if equipped then Theme.Good else Theme.Text,
-				Parent = box,
-			}, function()
-				if not equipped then
-					local result = request("equip", item.id)
-					if result and result.ok then
-						setMessage(result.data.message)
-					end
-					render()
-				end
-			end)
-		elseif item.source == "store" then
-			local options = {}
-			if item.fichas then
-				table.insert(options, {
-					action = "buy_fichas",
-					text = string.format(S.buyFichas, item.fichas),
-					can = fichas >= item.fichas,
-				})
-			end
-			if item.creditos then
-				table.insert(options, {
-					action = "buy_creditos",
-					text = string.format(S.buyCreditos, item.creditos),
-					can = creditos >= item.creditos,
-				})
-			end
-			for i, option in options do
-				local width = 1 / #options
-				button({
-					Position = UDim2.new(width * (i - 1), if i == 1 then 8 else 2, 1, -34),
-					Size = UDim2.new(width, -10, 0, 26),
-					Text = option.text,
-					TextColor3 = if option.can then Theme.Hazard else Theme.TextDim,
-					Parent = box,
-				}, function()
-					local result = request(option.action, item.id)
-					if result then
-						if result.ok then
-							setMessage(result.data.message)
-							if result.data.ok then
-								AudioController.play("Switch", 0.6, 1.4, true)
-							end
-						else
-							setMessage("store_error")
-						end
-					end
-					render()
-				end)
+		if state == "equipped" then
+			Components.icon(status, "Check", 12, Theme.Success, { LayoutOrder = 1 })
+			statusText("EQUIPADO", Theme.Success, 2)
+		elseif state == "owned" then
+			statusText("ADQUIRIDO", Theme.TextSecondary, 1)
+		elseif state == "buyable" then
+			for order, option in StoreView.prices(item, fichas, creditos) do
+				local fichasOption = option.currency == "fichas"
+				Components.icon(
+					status,
+					if fichasOption then "Coin" else "Gem",
+					12,
+					if option.affordable then (if fichasOption then Theme.Coin else Theme.Info) else Theme.TextMuted,
+					{ LayoutOrder = order * 2 - 1 }
+				)
+				statusText(
+					Components.formatNumber(option.price),
+					if option.affordable then Theme.TextPrimary else Theme.TextMuted,
+					order * 2
+				)
 			end
 		else
-			label({
-				Position = UDim2.new(0, 8, 1, -34),
-				Size = UDim2.new(1, -16, 0, 26),
-				Text = px(string.format(S.locked, (S.sources :: any)[item.source] or "")),
-				TextColor3 = Theme.TextDim,
-				TextSize = Theme.SizeSmall,
-				Parent = box,
-			})
+			Components.icon(status, "Lock", 12, Theme.TextMuted, { LayoutOrder = 1 })
+			statusText("BLOQUEADO", Theme.TextMuted, 2)
 		end
+		cell.Activated:Connect(function()
+			AudioController.play("UiBlip", 1, 1.1, true)
+			selectedItem = item.id
+			if twoPane then
+				for id, stroke in strokes do
+					local entry = StoreCatalog.ItemById[id]
+					local mine = id == item.id
+					stroke.Color = if mine then Theme.Gold else rgb(StoreCatalog.Rarities[entry.rarity].color)
+					stroke.Thickness = if mine then 2 else 1
+					stroke.Transparency = if mine then 0 else 0.45
+				end
+				renderDetail()
+			else
+				openDetailModal(item)
+			end
+		end)
+	end
+	if twoPane then
+		renderDetail()
 	end
 end
 
@@ -1084,30 +1511,111 @@ local function renderRobux(c: ScrollingFrame)
 	end
 end
 
+-- Distribui a janela conforme a tela: PC (janela central, grade + detalhe ao lado) ou toque/tela
+-- pequena (quase tela cheia; detalhe abre por cima). O Studio pode simular um aparelho (ViewportQA).
+local function applyLayout()
+	local p = panel
+	local c = content
+	if not p or not c then
+		return
+	end
+	local qaWidth, qaHeight = ViewportQA.size()
+	local viewport = workspace.CurrentCamera.ViewportSize
+	compactStore = qaWidth ~= nil or UserInputService.TouchEnabled or viewport.X < 1000 or viewport.Y < 600
+	local width, height
+	if qaWidth and qaHeight then
+		p.Size = UDim2.fromOffset(qaWidth - 16, qaHeight - 16)
+		width, height = qaWidth - 16, qaHeight - 16
+	elseif compactStore then
+		p.Size = UDim2.new(1, -16, 1, -16)
+		width, height = viewport.X - 16, viewport.Y - 16
+	else
+		p.Size = UDim2.fromScale(0.92, 0.9)
+		width, height = math.min(viewport.X * 0.92, 1180), math.min(viewport.Y * 0.9, 780)
+	end
+	-- Celular na horizontal é baixo: uma coluna de grade e detalhe por cima (openDetailModal).
+	shortStore = height < 520
+	twoPane = width >= 760 and not shortStore
+	local shop = tab == "shop"
+	local pad = if shortStore then 8 elseif compactStore then 10 else 16
+	local headerHeight = if shortStore then 40 elseif compactStore then 44 else 52
+	local tabsY = pad + headerHeight + (if shortStore then 4 else 6)
+	local tabsHeight = if shortStore then 40 else 44
+	local kindsHeight = if shortStore then 36 else 40
+	local kindsY = tabsY + tabsHeight + (if shortStore then 6 else 8)
+	local contentY = if shop then kindsY + kindsHeight + 8 else tabsY + tabsHeight + 8
+	local footer = if shortStore then 26 else 40
+	local m = message
+	if m then
+		m.Size = UDim2.new(1, -2 * pad, 0, footer - 6)
+		m.Position = UDim2.new(0, pad, 1, -4)
+	end
+	local kinds = kindsBar
+	if kinds then
+		kinds.Visible = shop
+		kinds.Position = UDim2.fromOffset(pad, kindsY)
+		kinds.Size = UDim2.new(1, -2 * pad, 0, kindsHeight)
+	end
+	local topBar = p:FindFirstChild("TopBar")
+	if topBar and topBar:IsA("Frame") then
+		topBar.Position = UDim2.fromOffset(pad, pad)
+		topBar.Size = UDim2.new(1, -2 * pad, 0, headerHeight)
+	end
+	local tabBar = p:FindFirstChild("Tabs")
+	if tabBar and tabBar:IsA("GuiObject") then
+		tabBar.Position = UDim2.fromOffset(pad, tabsY)
+		tabBar.Size = UDim2.new(1, -2 * pad, 0, tabsHeight + 4)
+	end
+	local split = shop and twoPane
+	c.Position = UDim2.fromOffset(pad, contentY)
+	c.Size = UDim2.new(if split then 0.62 else 1, if split then -pad - 6 else -2 * pad, 1, -(contentY + footer + pad))
+	local d = detail
+	if d then
+		d.Visible = split
+		d.Position = UDim2.new(0.62, 6, 0, contentY)
+		d.Size = UDim2.new(0.38, -pad - 6, 1, -(contentY + footer + pad))
+	end
+	-- Abas: no PC dividem a largura; no toque têm largura fixa e rolam na horizontal.
+	for index, key in TABS do
+		local b = tabButtons[key :: Tab]
+		if b then
+			if compactStore then
+				b.Size = UDim2.fromOffset(146, tabsHeight)
+			else
+				b.Size = UDim2.new(1 / #TABS, -6, 0, tabsHeight)
+			end
+			b.LayoutOrder = index
+		end
+	end
+end
+
 render = function()
 	local c = clearContent()
 	if not c or not isOpen then
 		return
 	end
-	-- Cabeçalho: saldo, nível e XP.
+	applyLayout()
+	-- Barra superior: saldo, nível e XP (atributos publicados pelo StoreService).
 	local xp = attr("Xp", 0)
 	local level, into, need = Economy.levelInfo(xp)
-	if header then
-		local vip = if attr("Vip", false) == true then "   ·   " .. S.vip else ""
-		header.Text = px(
-			string.format(S.balance, attr("Fichas", 0), attr("Creditos", 0))
-				.. "   ·   "
-				.. string.format(S.level, level)
-				.. "  "
-				.. string.format(S.xp, into, need)
-				.. vip
-		)
+	if setFichasBadge then
+		setFichasBadge(tonumber(attr("Fichas", 0)) or 0)
 	end
-	if xpFill then
-		xpFill.Size = UDim2.fromScale(math.clamp(into / math.max(need, 1), 0, 1), 1)
+	if setCreditosBadge then
+		setCreditosBadge(tonumber(attr("Creditos", 0)) or 0)
+	end
+	if levelChip then
+		local vip = if attr("Vip", false) == true then " · VIP" else ""
+		levelChip.Text = px(string.format(S.level, level) .. vip)
+	end
+	if setXpBar then
+		setXpBar(into / math.max(need, 1))
 	end
 	for key, b in tabButtons do
-		b.TextColor3 = if key == tab then Theme.Hazard else Theme.TextDim
+		Components.setVariant(b, if key == tab then "secondary" else "ghost")
+	end
+	for kind, b in kindButtons do
+		Components.setVariant(b, if kind == kindFilter then "secondary" else "ghost")
 	end
 	c.CanvasPosition = Vector2.zero
 	if tab == "shop" then
@@ -1159,6 +1667,8 @@ local function build()
 		Name = "StoreUi",
 		ResetOnSpawn = false,
 		ScreenInsets = Enum.ScreenInsets.CoreUISafeInsets,
+		-- Camadas por hierarquia: diálogos dentro do Overlay ficam acima do véu escuro.
+		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 		DisplayOrder = 220,
 		Parent = player:WaitForChild("PlayerGui"),
 	}) :: ScreenGui
@@ -1189,16 +1699,17 @@ local function build()
 		Name = "Store",
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.fromScale(0.9, 0.86),
-		BackgroundColor3 = Theme.Panel,
-		BackgroundTransparency = 0.04,
+		Size = UDim2.fromScale(0.92, 0.9),
+		BackgroundColor3 = Theme.Bg,
+		BackgroundTransparency = 0.03,
 		BorderSizePixel = 0,
 		Visible = false,
 		Parent = screen,
 	}, {
-		Create("UIStroke", { Color = Theme.TextDim, Thickness = 2 }),
-		Create("UISizeConstraint", { MaxSize = Vector2.new(1100, 760) }),
+		Create("UISizeConstraint", { MaxSize = Vector2.new(1180, 780) }),
 	}) :: Frame
+	Components.corner(p, Theme.CornerLarge)
+	Components.stroke(p, Theme.Gold, 1, 0.55)
 	panel = p
 	-- Modal: libera o mouse da trava de primeira pessoa enquanto a loja está aberta.
 	Create("TextButton", {
@@ -1209,57 +1720,120 @@ local function build()
 		Modal = true,
 		Parent = p,
 	})
-	label({
-		Position = UDim2.fromOffset(16, 10),
-		Size = UDim2.new(0.4, 0, 0, 30),
-		Text = S.title,
-		TextSize = Theme.SizeLarge,
-		TextColor3 = Theme.Hazard,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		Parent = p,
-	})
-	header = label({
-		Position = UDim2.new(0.4, 0, 0, 10),
-		Size = UDim2.new(0.6, -16, 0, 22),
-		Text = "",
-		TextSize = Theme.SizeSmall,
-		TextXAlignment = Enum.TextXAlignment.Right,
-		Parent = p,
-	})
-	local bar = Create("Frame", {
-		Position = UDim2.new(0.6, 0, 0, 36),
-		Size = UDim2.new(0.4, -16, 0, 6),
-		BackgroundColor3 = Color3.fromRGB(30, 30, 32),
-		BorderSizePixel = 0,
-		Parent = p,
-	}) :: Frame
-	xpFill = Create("Frame", {
-		Size = UDim2.fromScale(0, 1),
-		BackgroundColor3 = Theme.Good,
-		BorderSizePixel = 0,
-		Parent = bar,
-	}) :: Frame
 
+	-- Barra superior: título, moedas, nível/XP e fechar.
+	local top = Create("Frame", {
+		Name = "TopBar",
+		Position = UDim2.fromOffset(16, 14),
+		Size = UDim2.new(1, -32, 0, 48),
+		BackgroundTransparency = 1,
+		Parent = p,
+	})
+	Components.icon(top, "Store", 24, Theme.Gold, {
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.fromScale(0, 0.5),
+	})
+	local title = Components.title({
+		Name = "Title",
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, 34, 0.5, 0),
+		Size = UDim2.fromOffset(160, 34),
+		Text = S.title,
+		TextSize = 26,
+		TextColor3 = Theme.GoldLight,
+		Parent = top,
+	})
+	title.TextStrokeColor3 = Theme.Overlay
+	title.TextStrokeTransparency = 0.3
+	local status = Create("Frame", {
+		Name = "Status",
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.fromScale(1, 0.5),
+		Size = UDim2.new(1, -180, 1, 0),
+		BackgroundTransparency = 1,
+		Parent = top,
+	}, {
+		Create("UIListLayout", {
+			FillDirection = Enum.FillDirection.Horizontal,
+			HorizontalAlignment = Enum.HorizontalAlignment.Right,
+			VerticalAlignment = Enum.VerticalAlignment.Center,
+			Padding = UDim.new(0, 8),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		}),
+	})
+	local _, setF =
+		Components.currency("fichas", { Size = UDim2.fromOffset(124, 38), LayoutOrder = 1, Parent = status })
+	local _, setC =
+		Components.currency("creditos", { Size = UDim2.fromOffset(124, 38), LayoutOrder = 2, Parent = status })
+	setFichasBadge, setCreditosBadge = setF, setC
+	local level = Create("Frame", {
+		Name = "Level",
+		Size = UDim2.fromOffset(150, 38),
+		BackgroundColor3 = Theme.BgSunken,
+		BackgroundTransparency = 0.15,
+		BorderSizePixel = 0,
+		LayoutOrder = 3,
+		Parent = status,
+	}) :: Frame
+	Components.corner(level, Theme.CornerPill)
+	Components.stroke(level, Theme.Success, 1, 0.55)
+	levelChip = Components.text({
+		Name = "LevelText",
+		Position = UDim2.fromOffset(12, 3),
+		Size = UDim2.new(1, -24, 0, 18),
+		FontFace = Theme.Font,
+		TextSize = 13,
+		TextWrapped = false,
+		TextColor3 = Theme.TextPrimary,
+		Text = "",
+		Parent = level,
+	})
+	local xpTrack, setXp = Components.progress({
+		Name = "Xp",
+		Position = UDim2.new(0, 12, 1, -12),
+		Size = UDim2.new(1, -24, 0, 5),
+	}, Theme.Success)
+	xpTrack.Parent = level
+	setXpBar = setXp
+	local close = Components.iconButton("secondary", "Close", "FECHAR", {
+		Name = "Close",
+		Size = UDim2.fromOffset(124, 44),
+		TextSize = 15,
+		LayoutOrder = 4,
+		Parent = status,
+	}, function()
+		AudioController.play("UiBlip", 1, 1.1, true)
+		setOpen(false)
+	end)
+	close:SetAttribute("Hint", S.close)
+
+	-- Abas com ícones.
 	local tabBar = Create("ScrollingFrame", {
 		Name = "Tabs",
 		Parent = p,
-		Position = UDim2.fromOffset(16, 46),
+		Position = UDim2.fromOffset(16, 72),
 		Size = UDim2.new(1, -32, 0, 48),
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
-		ScrollBarThickness = 3,
+		ScrollBarThickness = 0,
 		CanvasSize = UDim2.new(),
+		AutomaticCanvasSize = Enum.AutomaticSize.X,
 		ScrollingDirection = Enum.ScrollingDirection.X,
+	}, {
+		Create("UIListLayout", {
+			FillDirection = Enum.FillDirection.Horizontal,
+			Padding = UDim.new(0, 6),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		}),
 	}) :: ScrollingFrame
-	for i, key in TABS do
-		tabButtons[key :: Tab] = button({
+	for _, key in TABS do
+		tabButtons[key :: Tab] = Components.iconButton("ghost", TAB_ICONS[key :: Tab], (S.tabs :: any)[key], {
 			Name = `Tab_{key}`,
-			Position = UDim2.fromScale((i - 1) / #TABS, 0),
-			Size = UDim2.new(1 / #TABS, -8, 0, 44),
-			Text = (S.tabs :: any)[key],
-			TextSize = Theme.SizeBody,
+			Size = UDim2.fromOffset(132, 44),
+			TextSize = 15,
 			Parent = tabBar,
 		}, function()
+			AudioController.play("UiBlip", 1, 1.1, true)
 			tab = key :: Tab
 			track("view", key)
 			setMessage(nil)
@@ -1269,20 +1843,31 @@ local function build()
 	-- Filtro por tipo (só na aba LOJA).
 	local kinds = Create("Frame", {
 		Name = "Kinds",
-		Position = UDim2.fromOffset(16, 100),
-		Size = UDim2.new(1, -32, 0, 44),
+		Position = UDim2.fromOffset(16, 128),
+		Size = UDim2.new(1, -32, 0, 40),
 		BackgroundTransparency = 1,
 		Parent = p,
+	}, {
+		Create("UIListLayout", {
+			FillDirection = Enum.FillDirection.Horizontal,
+			Padding = UDim.new(0, 8),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		}),
 	}) :: Frame
+	kindsBar = kinds
 	for i, kind in StoreCatalog.KINDS do
-		button({
+		kindButtons[kind] = button({
 			Name = `Kind_{kind}`,
-			Position = UDim2.fromScale((i - 1) / #StoreCatalog.KINDS, 0),
-			Size = UDim2.new(1 / #StoreCatalog.KINDS, -8, 1, 0),
+			Variant = "ghost",
+			Size = UDim2.new(1 / #StoreCatalog.KINDS, -6, 1, 0),
 			Text = (S.kinds :: any)[kind],
+			TextSize = 14,
+			LayoutOrder = i,
 			Parent = kinds,
 		}, function()
 			kindFilter = kind :: StoreCatalog.ItemKind
+			selectedItem = nil
+			setMessage(nil)
 			track("view", kind)
 			tab = "shop"
 			render()
@@ -1290,60 +1875,85 @@ local function build()
 	end
 	content = Create("ScrollingFrame", {
 		Name = "Content",
-		Position = UDim2.fromOffset(16, 152),
-		Size = UDim2.new(1, -32, 1, -214),
+		Position = UDim2.fromOffset(16, 178),
+		Size = UDim2.new(1, -32, 1, -230),
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		ScrollBarThickness = 6,
+		ScrollBarImageColor3 = Theme.Gold,
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		CanvasSize = UDim2.new(),
 		Parent = p,
 	}, {
-		Create("UIPadding", { PaddingTop = UDim.new(0, 4), PaddingLeft = UDim.new(0, 4) }),
+		Create("UIPadding", {
+			PaddingTop = UDim.new(0, 4),
+			PaddingLeft = UDim.new(0, 2),
+			PaddingRight = UDim.new(0, 10),
+			PaddingBottom = UDim.new(0, 6),
+		}),
 	}) :: ScrollingFrame
+	-- Painel de detalhe do item (PC); no toque o detalhe abre por cima (openDetailModal).
+	local d = Components.panel({
+		Name = "Detail",
+		BackgroundColor3 = Theme.BgPanel,
+		BackgroundTransparency = 0.05,
+		Parent = p,
+	})
+	Components.padding(d, 12)
+	detail = d
 	message = label({
+		Name = "Message",
 		AnchorPoint = Vector2.new(0, 1),
-		Position = UDim2.new(0, 16, 1, -12),
-		Size = UDim2.new(1, -190, 0, 44),
+		Position = UDim2.new(0, 16, 1, -10),
+		Size = UDim2.new(1, -32, 0, 30),
 		Text = "",
-		TextColor3 = Theme.Hazard,
+		TextSize = 14,
+		TextColor3 = Theme.Gold,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = p,
 	})
-	button({
-		Name = "Close",
-		AnchorPoint = Vector2.new(1, 1),
-		Position = UDim2.new(1, -16, 1, -10),
-		Size = UDim2.fromOffset(150, 44),
-		Text = S.close,
-		Parent = p,
-	}, function()
-		setOpen(false)
-	end)
 	overlay = Create("Frame", {
 		Name = "Overlay",
 		Size = UDim2.fromScale(1, 1),
-		BackgroundColor3 = Theme.Black,
-		BackgroundTransparency = 0.35,
+		BackgroundColor3 = Theme.Overlay,
+		BackgroundTransparency = 0.3,
 		Visible = false,
 		ZIndex = 5,
 		Parent = p,
 	}) :: Frame
+	local last = ""
 	RunService.RenderStepped:Connect(function()
 		local touch = UserInputService.TouchEnabled
-		if touch then
-			p.Size = UDim2.new(1, -16, 1, -16)
-			tabBar.CanvasSize = UDim2.fromOffset(#TABS * 112, 0)
-			for index, key in TABS do
-				local b = tabButtons[key :: Tab]
-				b.Position, b.Size = UDim2.fromOffset((index - 1) * 112, 0), UDim2.fromOffset(104, 44)
+		if isOpen then
+			-- Mudou a classe da tela (rotação, janela, simulação no Studio): redistribui e redesenha.
+			local qaWidth, qaHeight = ViewportQA.size()
+			local viewport = workspace.CurrentCamera.ViewportSize
+			local key = `{qaWidth or 0}x{qaHeight or 0}/{math.floor(viewport.X)}x{math.floor(viewport.Y)}`
+			if key ~= last then
+				last = key
+				if not animating and not (overlay and overlay.Visible) then
+					render()
+				end
 			end
-			if toastHolder then
-				toastHolder.Visible = player:GetAttribute("ModeMenuOpen") ~= true
-					and player:GetAttribute("FieldGuideOpen") ~= true
-					and player:GetAttribute("ComfortMenuOpen") ~= true
-					and player:GetAttribute("TouchBackpackOpen") ~= true
+			-- No toque, sobram só ícone e moedas na barra superior.
+			close.Size = if compactStore then UDim2.fromOffset(44, 44) else UDim2.fromOffset(124, 44)
+			local closeLabel = close:FindFirstChild("Label")
+			if closeLabel and closeLabel:IsA("GuiObject") then
+				closeLabel.Visible = not compactStore
 			end
+			local closeIcon = close:FindFirstChild("IconSlot")
+			if closeIcon and closeIcon:IsA("GuiObject") then
+				closeIcon.AnchorPoint = if compactStore then Vector2.new(0.5, 0.5) else Vector2.new(0, 0.5)
+				closeIcon.Position = if compactStore then UDim2.fromScale(0.5, 0.5) else UDim2.new(0, 14, 0.5, 0)
+			end
+			level.Visible = not compactStore
+			title.Visible = not (compactStore and p.AbsoluteSize.X < 560)
+		end
+		if touch and toastHolder then
+			toastHolder.Visible = player:GetAttribute("ModeMenuOpen") ~= true
+				and player:GetAttribute("FieldGuideOpen") ~= true
+				and player:GetAttribute("ComfortMenuOpen") ~= true
+				and player:GetAttribute("TouchBackpackOpen") ~= true
 		end
 		if hintLabel and touch then
 			hintLabel.Visible = false
@@ -1424,6 +2034,40 @@ function StoreController.Start()
 		player:GetAttributeChangedSignal(name):Connect(function()
 			if isOpen and not animating and not (overlay and overlay.Visible) then
 				render()
+			end
+		end)
+	end
+	-- QA no Studio (automação sem foco de janela): o atributo StoreQARequest executa o mesmo
+	-- caminho dos cliques. "kind:uniform" | "select:<id>" | "detail:<id>" | "confirm:<id>:fichas|creditos".
+	if RunService:IsStudio() then
+		player:GetAttributeChangedSignal("StoreQARequest"):Connect(function()
+			local raw = player:GetAttribute("StoreQARequest")
+			if type(raw) ~= "string" then
+				return
+			end
+			local command, arg, extra = string.match(raw, "^(%a+):([%w_]+):?(%a*)$")
+			local item = if arg then StoreCatalog.ItemById[arg] else nil
+			if command == "kind" and table.find(StoreCatalog.KINDS, arg :: any) then
+				tab, kindFilter, selectedItem = "shop", arg :: any, nil
+				render()
+			elseif command == "select" and item then
+				tab, kindFilter, selectedItem = "shop", item.kind, item.id
+				render()
+			elseif command == "detail" and item then
+				openDetailModal(item)
+			elseif command == "confirm" and item then
+				for _, option in StoreView.prices(item, walletOf("fichas"), walletOf("creditos")) do
+					if option.currency == extra then
+						confirmPurchase(item, option)
+					end
+				end
+			elseif command == "buy" and item and (extra == "fichas" or extra == "creditos") then
+				-- Equivale a tocar CONFIRMAR no diálogo.
+				purchase(item, extra :: StoreCatalog.Currency)
+			elseif command == "close" then
+				if overlay then
+					overlay.Visible = false
+				end
 			end
 		end)
 	end

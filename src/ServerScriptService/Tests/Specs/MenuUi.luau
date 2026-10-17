@@ -25,6 +25,8 @@ local MENU_ICONS = {
 	"Plus",
 	"Close",
 	"Drum",
+	"Chest",
+	"Tape",
 }
 
 return {

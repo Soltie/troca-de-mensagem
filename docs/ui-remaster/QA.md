@@ -50,3 +50,46 @@ espaço vazio do cartão História mostra o progresso real (vencidos e sem queda
   "PASSE INDISPONÍVEL"/"BÔNUS INDISPONÍVEL" como botões mortos. A aba MELHORIAS ainda mostra "INDISPONÍVEL"
   (fase 4).
 - Abas MELHORIAS, SERVIDORES e AMIGOS herdaram só o novo estilo de botão/cartão; o redesenho delas é da fase 4/6.
+
+## Fase 3 — Loja, prévias e compra/equipar (17/10/2026)
+
+**Arquivos:** `Shared/Game/StoreView.luau` (novo, puro), `Client/UI/ItemPreview.luau` (novo),
+`Client/UI/ViewportQA.luau` (novo), `Client/Controllers/StoreController.luau` (moldura, aba LOJA, detalhe,
+confirmação), `Client/UI/Icons.luau` (baú, fita), `Shared/Game/Text.luau` (acentos), `Tests/Specs/StoreView.luau`
+(novo), `Tests/Specs/PixelText.luau`, `Tests/Specs/MenuUi.luau`.
+
+**Não alterado:** StoreService, StoreCatalog (preços, itens, raridades), Economy, remotes, dados, chances.
+As abas TEMPORADA, BAÚS, DIÁRIO, COLEÇÃO e CRÉDITOS ganharam só a moldura/estilo novos (fase 5).
+
+| Caso | Status | Evidência |
+|---|---|---|
+| Check (format, lint, tipos strict, testes) | PASSOU | ALL GREEN, 295 testes puros |
+| Runner do Studio na build final | PASSOU | 307 aprovados, 0 falhas, 0 pulados |
+| Console do cliente com a loja aberta | PASSOU | nenhum aviso/erro do projeto; StoreUi com 741 descendentes |
+| Todo item do catálogo explica como obter, com número real (nível, fitas, capítulo, nível do passe) | PASSOU | spec `StoreView` |
+| Miniaturas reais por item (cores do catálogo): lanternas, fardas, filtros, títulos | PASSOU | `f3-loja-pc-acentos.jpg`, `f3-loja-fardas-hazmat.jpg`, `f3-filtros.jpg`, `f3-titulos.jpg` |
+| Prévia 3D girável (lanterna e farda) só no detalhe; limpa ao trocar | PASSOU (visual) | capturas; arrastar com o mouse NÃO TESTADO por automação |
+| Filtro: cena com a mesma correção de cor do jogo (brilho, contraste, saturação, tinta) | PASSOU | spec `StoreView` (grade) + `f3-filtros.jpg` |
+| Saldo e nível na barra superior atualizam ao mudar o atributo | PASSOU | 100 → 1.500 Fichas após `storeGrant` |
+| Compra com Fichas pede confirmação (item, preço, saldo depois) | PASSOU | `f3-confirmacao-compra.jpg` |
+| Compra debita uma vez e concede | PASSOU | 1.500 → 500 Fichas; `lanterna_retro` em Owned; mensagem "COMPRADO!" |
+| Segunda compra do mesmo item não cobra | PASSOU | servidor respondeu `store_owned`; saldo continuou 500 |
+| Saldo insuficiente: botão desativado com "FALTAM N CRÉDITOS" | PASSOU | captura Hazmat / Neon |
+| Equipar atualiza cartão e detalhe | PASSOU | `EquipFlashlight = lanterna_retro`; antigo virou ADQUIRIDO; `f3-equipado-apos-compra.jpg` |
+| Item bloqueado explica a origem (sem empurrar compra) | PASSOU | "RECOMPENSA AO CHEGAR NO NÍVEL 3." |
+| PC 1094×674: grade + detalhe lado a lado | PASSOU | capturas |
+| Celular 844×390: 5 colunas, detalhe por cima com voltar de 48 px | PASSOU | `f3-celular-844x390.jpg`, `f3-celular-detalhe.jpg` |
+| Compra com Créditos (com saldo) | NÃO TESTADO | conta de teste sem Créditos; mesmo caminho do servidor (`buy_creditos`) |
+| Smartphone físico / toque real | NÃO TESTADO | depende do dono |
+
+**Correções feitas durante o QA:** feixe da miniatura deixou de ser uma "bola"; modelo 3D maior e mais claro;
+acentos restaurados em toda a interface (o `Text.luau` tirava É/Í/Ó/Ú de tudo por causa da antiga fonte Arcade,
+que hoje só existe em placas do cenário — essas continuam normalizando no próprio builder); diálogos da loja
+ficavam atrás do véu (ScreenGui agora usa `ZIndexBehavior.Sibling`); em tela baixa a loja usa uma coluna e
+mais colunas de cartões; detalhe ajusta a altura da prévia para o texto não sumir atrás dos botões.
+
+**Sobre os cliques automatizados:** com a janela do Studio sem foco, o módulo de câmera padrão do Roblox mantém
+o mouse travado no centro e os cliques simulados caem no meio da tela. Para o jogador (janela em foco) o
+`CameraController` libera o cursor no lobby. Por isso os fluxos foram exercitados pelo atributo
+`StoreQARequest` (só no Studio), que chama as mesmas funções dos botões: `kind:`, `select:`, `detail:`,
+`confirm:<id>:<moeda>`, `buy:<id>:<moeda>` (= tocar CONFIRMAR), `close:x`.

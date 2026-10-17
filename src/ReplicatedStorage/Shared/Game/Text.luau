@@ -1,11 +1,10 @@
 --!strict
 --[[
 	Todos os textos do jogo (PT-BR) num lugar só. A UI e o servidor usam as chaves daqui.
-	Tudo que aparece em fonte pixel passa por PixelText.normalize (ver PixelText.luau);
-	os bilhetes (Notes) usam outra fonte e mantêm a acentuação completa.
+	Acentuação completa: as fontes da interface (FredokaOne/Gotham) desenham todas as letras.
+	Só placas do cenário em fonte pixel (Arcade) passam por PixelText.normalize, no próprio
+	builder (World/Build, CosmeticService, ActivityBuilder).
 ]]
-
-local PixelText = require("./PixelText")
 
 local Text = {
 	Title = "TUNG TUNG SAHUR: THE CURSED HOUSE",
@@ -309,22 +308,4 @@ local Text = {
 	Flashlight = "LANTERNA",
 }
 
--- Normaliza tudo, menos os bilhetes.
-local function normalize(value: any): any
-	if type(value) == "string" then
-		return PixelText.normalize(value)
-	elseif type(value) == "table" then
-		local out = {}
-		for key, item in value do
-			out[key] = normalize(item)
-		end
-		return out
-	end
-	return value
-end
-
-local notes = Text.Notes
-local result = normalize(Text)
-result.Notes = notes
-
-return table.freeze(result :: typeof(Text))
+return table.freeze(Text)
