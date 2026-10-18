@@ -7,6 +7,10 @@
 			"$className": "Lighting",
 			"$properties": { "Technology": "Future", "LightingStyle": "Realistic", "PrioritizeLightingQuality": true }
 		},
+		"MaterialService": {
+			"$className": "MaterialService",
+			"$path": "src/MaterialService"
+		},
 		"ReplicatedStorage": {
 			"$path": "src/ReplicatedStorage"
 		},

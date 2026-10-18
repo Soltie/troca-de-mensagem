@@ -36,3 +36,30 @@ Pendências deste lote (ficam para lotes seguintes):
   mais feia do hall; é gameplay, então só a aparência pode mudar, com cuidado (lote de portas/barreiras).
 - Telas dos quadros são cor lisa; trocar por pinturas reais em domínio público quando houver envio de imagens.
 - Escada principal e corrimões ainda são os originais.
+
+## Lote 2 — Materiais PBR e móveis 3D no hall e corredores (18/10/2026)
+
+O lote 1 usava só peças básicas com materiais nativos e ficou abaixo do padrão pedido. O lote 2 substitui:
+
+| Antes (lote 1, procedural) | Depois | Código |
+| --- | --- | --- |
+| Paredes lisas de reboco | Papel de parede vitoriano ogival envelhecido (MaterialVariant PBR), em todas as paredes internas acima do porão | `HouseMaterials` |
+| Paredes externas lisas por dentro | Revestimento interno fino com o mesmo papel (fora fica a fachada) | `HouseMaterials.skins` |
+| Piso de tábua nativo | Tábuas escuras PBR (corredores, cômodos, patamares, escadas) | `HouseMaterials` |
+| Forros cor sólida | Gesso PBR (forros, tetos dos cômodos) | `HouseMaterials` |
+| Madeira cor sólida (lambri, portas, batentes, guarda-corpos) | Nogueira PBR | `HouseMaterials` |
+| Passadeira vinho lisa | Jacquard quadrifólio vinho PBR | `HouseMaterials` |
+| Lustre de caixas e cilindros | Lustre de velas 3D (Chandelier_03) + medalhão de gesso | `HouseProps` |
+| Relógio de blocos | Relógio de pêndulo 3D parado às 03:12 | `HouseProps` |
+| Aparador, espelho e vela de blocos | Console gótico, espelho em arco e lamparina 3D | `HouseProps` |
+| Banco de blocos, abajur, vasos-esfera, cabideiro | Sofá vitoriano, criado-mudo com lamparina, poltrona 3D (vasos e cabideiro removidos) | `HouseProps` |
+| Quadros de cor lisa | Molduras rococó/landscape/oval 3D com pinturas (hall e 18 no corredor) | `HouseProps` |
+| Arandelas de blocos | Arandelas 3D de latão | `HouseProps` |
+
+Luzes: as PointLights ficam em peças invisíveis (`HallChandelier`, `HallSconce`, `Candle`, `HallLampShade`) criadas com
+`Build.light`, para o `WorldFxController` continuar controlando sombra, visibilidade e piscadas.
+`ConnectedRoomWall`/`PassageLintel` do `HouseLevelBuilder` herdam o `MaterialVariant` da parede original.
+Sem `Assets/MansionProps` (place de Script Sync sem o `.rbxm`), `HouseProps` não cria nada (fallback seguro).
+
+Pendências: portas ainda são placas com almofadas simples (próximo: porta 3D modelada no Blender, só visual,
+soldada ao painel); barreira de progressão da escada com aparência de caixote; cômodos, porão, fachada, floresta e luz.

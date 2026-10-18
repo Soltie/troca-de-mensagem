@@ -1,9 +1,10 @@
 --!strict
 --[[
-	Acabamento da mansão (só visual), montado depois do HouseScenery:
-	- forros e sancas no corredor e no hall, passadeiras e quadros;
+	Acabamento arquitetônico da mansão (só visual), montado depois do HouseScenery:
+	- forros e sancas no corredor e no hall, passadeiras, lambris com almofadas e rodapés;
 	- almofadas e maçanetas nas portas (soldadas ao painel, que continua sendo o mesmo objeto interativo);
-	- hall de entrada com lambri, lustre, relógio de pêndulo, aparador com espelho e banco.
+	- guarda-corpos maciços vestidos com almofadas e pilares.
+	Móveis e luminárias com modelos 3D ficam em HouseProps; materiais PBR em HouseMaterials.
 
 	Regras: nada colide, nada recebe raycast, nada fica entre a porta de entrada, o corredor e as escadas.
 	Planta, tamanhos e nomes da arquitetura não mudam (HouseLayout/HouseCatalog continuam a referência).
@@ -24,10 +25,7 @@ local WOOD_LIGHT = rgb(92, 61, 42)
 local TRIM = rgb(150, 122, 86)
 local BRASS = rgb(168, 132, 70)
 local RUNNER = rgb(92, 30, 34)
-local RUNNER_EDGE = rgb(54, 22, 24)
-local WARM = rgb(255, 196, 132)
--- Retratos escurecidos pelo tempo: legíveis como pintura, sem competir com as pistas.
-local CANVASES = { rgb(104, 92, 84), rgb(118, 96, 70), rgb(78, 96, 90), rgb(120, 82, 78) }
+local RUNNER_EDGE = rgb(40, 18, 20)
 
 local function deco(
 	parent: Instance,
@@ -47,40 +45,6 @@ local function deco(
 	if detail then
 		part:SetAttribute("VisualDetail", true)
 	end
-	return part
-end
-
-local function ball(
-	parent: Instance,
-	name: string,
-	center: Vector3,
-	diameter: number,
-	color: Color3,
-	material: Enum.Material
-)
-	local part = deco(parent, name, V3(diameter, diameter, diameter), CFrame.new(center), color, material, true);
-	(part :: Part).Shape = Enum.PartType.Ball
-	return part
-end
-
-local function disc(
-	parent: Instance,
-	name: string,
-	center: Vector3,
-	diameter: number,
-	height: number,
-	color: Color3,
-	material: Enum.Material
-)
-	local part = deco(
-		parent,
-		name,
-		V3(height, diameter, diameter),
-		CFrame.new(center) * CFrame.Angles(0, 0, math.rad(90)),
-		color,
-		material
-	);
-	(part :: Part).Shape = Enum.PartType.Cylinder
 	return part
 end
 
@@ -114,95 +78,6 @@ local function wallRun(parent: Instance, from: Vector3, to: Vector3, normal: Vec
 			true
 		)
 	end
-end
-
--- Quadro pendurado: `center` na face da parede, `normal` para dentro do cômodo.
-local function picture(parent: Instance, center: Vector3, normal: Vector3, size: Vector2, canvas: Color3)
-	local right = normal:Cross(UP)
-	local frame = CFrame.fromMatrix(center + normal * 0.07, right, UP)
-	deco(parent, "FinishFrame", V3(size.X, size.Y, 0.12), frame, BRASS:Lerp(WOOD, 0.35))
-	deco(parent, "FinishCanvas", V3(size.X - 0.5, size.Y - 0.5, 0.14), frame, canvas, Enum.Material.SmoothPlastic, true)
-end
-
-local function chandelier(parent: Instance, ceiling: Vector3, radius: number, range: number, brightness: number)
-	disc(
-		parent,
-		"FinishMedallion",
-		ceiling - UP * 0.08,
-		radius * 1.4,
-		0.12,
-		CEILING:Lerp(TRIM, 0.3),
-		Enum.Material.Plaster
-	)
-	local drop = 2.6
-	deco(
-		parent,
-		"FinishChain",
-		V3(0.12, drop, 0.12),
-		CFrame.new(ceiling - UP * (drop / 2)),
-		rgb(40, 34, 30),
-		Enum.Material.Metal
-	)
-	local hub = ceiling - UP * (drop + 0.4)
-	local body = deco(parent, "HallChandelier", V3(0.7, 1.1, 0.7), CFrame.new(hub), BRASS, Enum.Material.Metal)
-	Build.light(body, "Street", WARM, range, brightness, true, true)
-	disc(parent, "FinishChandelierRing", hub - UP * 0.5, radius * 2, 0.18, BRASS, Enum.Material.Metal)
-	for index = 1, 6 do
-		local angle = index / 6 * math.pi * 2
-		local spot = hub + V3(math.cos(angle) * radius, -0.25, math.sin(angle) * radius)
-		deco(
-			parent,
-			"FinishCandle",
-			V3(0.22, 0.55, 0.22),
-			CFrame.new(spot),
-			rgb(232, 222, 198),
-			Enum.Material.SmoothPlastic,
-			true
-		)
-		deco(parent, "FinishBulb", V3(0.16, 0.22, 0.16), CFrame.new(spot + UP * 0.38), WARM, Enum.Material.Neon, true)
-	end
-end
-
-local function clock(parent: Instance, base: Vector3)
-	-- Relógio de pêndulo encostado na parede leste (frente para -X), parado às 03:12.
-	local face = -Vector3.xAxis
-	local function box(name: string, size: Vector3, y: number, color: Color3, material: Enum.Material?)
-		return deco(parent, name, size, CFrame.new(base + UP * (y + size.Y / 2)), color, material)
-	end
-	box("ClockPlinth", V3(1.3, 1.2, 2.3), 0, WOOD)
-	box("ClockCase", V3(1.1, 5, 1.8), 1.2, WOOD_LIGHT)
-	box("ClockHood", V3(1.3, 1.9, 2.2), 6.2, WOOD)
-	box("ClockCrown", V3(1.4, 0.35, 2.5), 8.1, TRIM)
-	local dial = base + UP * 7.15 + face * 0.66
-	disc(parent, "ClockDial", dial, 1.5, 0.05, rgb(222, 210, 180), Enum.Material.SmoothPlastic).CFrame =
-		CFrame.new(dial)
-	local hands = { { angle = (3 + 12 / 60) * 30, length = 0.42 }, { angle = 12 * 6, length = 0.62 } }
-	for _, hand in hands do
-		local theta = math.rad(hand.angle)
-		local direction = UP * math.cos(theta) + Vector3.zAxis * math.sin(theta)
-		local center = dial + face * 0.05 + direction * (hand.length / 2)
-		deco(
-			parent,
-			"ClockHand",
-			V3(0.04, hand.length, 0.07),
-			CFrame.new(center) * CFrame.Angles(theta, 0, 0),
-			rgb(30, 26, 24),
-			Enum.Material.Metal,
-			true
-		)
-	end
-	local glass = deco(
-		parent,
-		"ClockWindow",
-		V3(0.05, 2.8, 1),
-		CFrame.new(base + UP * 3.9 + face * 0.57),
-		rgb(120, 130, 128),
-		Enum.Material.Glass
-	)
-	glass.Transparency = 0.55
-	local bob = base + UP * 3 + face * 0.4
-	disc(parent, "ClockPendulum", bob, 0.6, 0.06, BRASS, Enum.Material.Metal).CFrame = CFrame.new(bob)
-	deco(parent, "ClockRod", V3(0.04, 2, 0.06), CFrame.new(bob + UP * 1.2), BRASS, Enum.Material.Metal, true)
 end
 
 -- Painéis em relevo e maçanetas nas duas faces; soldados ao painel, acompanham a animação da porta.
@@ -275,6 +150,18 @@ local function dressGuard(parent: Instance, guard: BasePart)
 	end
 end
 
+local function runner(parent: Instance, name: string, center: Vector3, length: number)
+	deco(
+		parent,
+		name .. "Edge",
+		V3(7, 0.05, length + 1),
+		CFrame.new(center + UP * 0.025),
+		RUNNER_EDGE,
+		Enum.Material.Fabric
+	)
+	deco(parent, name, V3(5.8, 0.07, length), CFrame.new(center + UP * 0.035), RUNNER, Enum.Material.Fabric)
+end
+
 local function corridor(parent: Instance, y: number)
 	local length = 96.5
 	local centerZ = -36.25
@@ -289,25 +176,8 @@ local function corridor(parent: Instance, y: number)
 	for _, side in { -1, 1 } do
 		deco(parent, "CorridorCrown", V3(0.3, 0.45, length), CFrame.new(side * 7.32, y + 14.6, centerZ), TRIM)
 	end
-	if y < 0 then
-		return
-	end
-	deco(
-		parent,
-		"CorridorRunnerEdge",
-		V3(6.6, 0.05, 94),
-		CFrame.new(0, y + 0.025, -36),
-		RUNNER_EDGE,
-		Enum.Material.Fabric
-	)
-	deco(parent, "CorridorRunner", V3(5.4, 0.07, 93), CFrame.new(0, y + 0.035, -36), RUNNER, Enum.Material.Fabric)
-	-- Um quadro por cômodo, no trecho de parede sem a placa do cômodo.
-	for _, side in { -1, 1 } do
-		for row = 1, 3 do
-			local z = 28 - row * 32 - 10.5
-			local canvas = CANVASES[(row + (if side > 0 then 1 else 0) + y // 16) % #CANVASES + 1]
-			picture(parent, V3(side * 7.5, y + 7, z), V3(-side, 0, 0), Vector2.new(3, 3.6), canvas)
-		end
+	if y >= 0 then
+		runner(parent, "CorridorRunner", V3(0, y, -36), 93)
 	end
 end
 
@@ -318,6 +188,18 @@ local function foyerCeiling(parent: Instance, y: number)
 		local center = V3((rect.x0 + rect.x1) / 2, y + 14.94, (rect.z0 + rect.z1) / 2)
 		deco(parent, "FoyerCeilingPanel", size, CFrame.new(center), CEILING, Enum.Material.Plaster)
 	end
+	-- Medalhão de gesso onde pende o lustre.
+	local medallion = deco(
+		parent,
+		"FinishMedallion",
+		V3(0.12, 3.6, 3.6),
+		CFrame.new(0, y + 14.83, 40),
+		CEILING,
+		Enum.Material.Plaster
+	)
+	medallion.CFrame *= CFrame.Angles(0, 0, math.rad(90))
+	local disc = medallion :: Part
+	disc.Shape = Enum.PartType.Cylinder
 end
 
 local function foyerWalls(parent: Instance, y: number)
@@ -336,103 +218,9 @@ local function foyerWalls(parent: Instance, y: number)
 	-- Fundo do hall: frente dos cômodos (abaixo das janelas), dos dois lados do corredor.
 	wallRun(parent, V3(west, y, 12.5), V3(-8.5, y, 12.5), Vector3.zAxis, ground)
 	wallRun(parent, V3(8.5, y, 12.5), V3(east, y, 12.5), Vector3.zAxis, ground)
-end
-
-local function entranceHall(parent: Instance)
-	-- Passadeira da porta até o corredor e capacho na entrada.
-	deco(parent, "HallRunnerEdge", V3(7.4, 0.05, 48), CFrame.new(0, 0.025, 37.5), RUNNER_EDGE, Enum.Material.Fabric)
-	deco(parent, "HallRunner", V3(6.2, 0.07, 47), CFrame.new(0, 0.035, 37.5), RUNNER, Enum.Material.Fabric)
-	deco(parent, "HallDoormat", V3(8, 0.09, 2.6), CFrame.new(0, 0.045, 62), rgb(66, 54, 40), Enum.Material.Fabric)
-	chandelier(parent, V3(0, 15, 40), 1.9, 34, 0.75)
-	-- Arandelas ao lado da porta.
-	for _, x in { -8.5, 8.5 } do
-		local sconce =
-			deco(parent, "HallSconce", V3(0.6, 1.1, 0.5), CFrame.new(x, 7.2, 63.2), BRASS, Enum.Material.Metal)
-		Build.light(sconce, "Street", WARM, 16, 0.45, true)
-		deco(parent, "FinishBulb", V3(0.35, 0.45, 0.35), CFrame.new(x, 7.95, 63.05), WARM, Enum.Material.Neon, true)
+	if y > 0 then
+		runner(parent, "HallRunner", V3(0, y, 37), 45)
 	end
-	-- Aparador com espelho à direita da porta (o lado esquerdo é a descida do porão).
-	local consoleX = 15
-	deco(parent, "ConsoleTop", V3(5.4, 0.25, 1.5), CFrame.new(consoleX, 3.1, 62.6), WOOD_LIGHT)
-	deco(parent, "ConsoleApron", V3(5.2, 0.6, 1.3), CFrame.new(consoleX, 2.7, 62.65), WOOD)
-	for _, dx in { -2.4, 2.4 } do
-		deco(parent, "ConsoleLeg", V3(0.25, 2.4, 0.25), CFrame.new(consoleX + dx, 1.2, 62.2), WOOD)
-	end
-	deco(parent, "MirrorFrame", V3(3.6, 4.4, 0.15), CFrame.new(consoleX, 6.4, 63.4), BRASS:Lerp(WOOD, 0.3))
-	local mirror = deco(
-		parent,
-		"Mirror",
-		V3(3, 3.8, 0.16),
-		CFrame.new(consoleX, 6.4, 63.38),
-		rgb(150, 160, 162),
-		Enum.Material.Glass
-	)
-	mirror.Reflectance = 0.25
-	local lamp = deco(
-		parent,
-		"Candle",
-		V3(0.3, 0.9, 0.3),
-		CFrame.new(consoleX - 1.8, 3.7, 62.6),
-		rgb(236, 226, 204),
-		Enum.Material.SmoothPlastic
-	)
-	Build.light(lamp, "Street", WARM, 12, 0.5, true, true)
-	deco(
-		parent,
-		"FinishBulb",
-		V3(0.14, 0.24, 0.14),
-		CFrame.new(consoleX - 1.8, 4.27, 62.6),
-		WARM,
-		Enum.Material.Neon,
-		true
-	)
-	deco(parent, "ConsoleBox", V3(1.2, 0.5, 0.8), CFrame.new(consoleX + 1.4, 3.48, 62.6), rgb(60, 40, 34))
-	-- Canto leste (ao lado da escada principal): relógio, banco, quadros e plantas.
-	clock(parent, V3(43.6, 0, 30))
-	deco(parent, "BenchSeat", V3(2, 0.35, 6), CFrame.new(43, 1.8, 46), WOOD_LIGHT)
-	deco(parent, "BenchCushion", V3(1.8, 0.25, 5.6), CFrame.new(43, 2.1, 46), rgb(86, 40, 44), Enum.Material.Fabric)
-	deco(parent, "BenchBack", V3(0.3, 2.6, 6), CFrame.new(44.2, 3.2, 46), WOOD)
-	for _, dz in { -2.7, 2.7 } do
-		deco(parent, "BenchLeg", V3(1.8, 1.6, 0.3), CFrame.new(43, 0.8, 46 + dz), WOOD)
-	end
-	for _, z in { 20, 38 } do
-		picture(parent, V3(44.5, 7.5, z), -Vector3.xAxis, Vector2.new(3.4, 4.4), CANVASES[(z // 10) % #CANVASES + 1])
-	end
-	picture(parent, V3(44.5, 7.8, 46), -Vector3.xAxis, Vector2.new(5, 3.2), CANVASES[1])
-	picture(parent, V3(-15, 7.5, 63.5), -Vector3.zAxis, Vector2.new(4, 3), CANVASES[3])
-	for _, spot in { V3(41.8, 0, 56), V3(41.8, 0, 24) } do
-		deco(parent, "PlanterPot", V3(1.6, 1.6, 1.6), CFrame.new(spot + UP * 0.8), rgb(84, 62, 52), Enum.Material.Slate)
-		ball(parent, "PlanterLeaves", spot + UP * 2.6, 2.6, rgb(38, 62, 42), Enum.Material.Grass)
-	end
-	-- O canto fica atrás da escada: luz própria, senão vira mancha preta.
-	deco(
-		parent,
-		"FloorLampPole",
-		V3(0.22, 5.2, 0.22),
-		CFrame.new(42.6, 2.6, 51.2),
-		rgb(40, 34, 30),
-		Enum.Material.Metal
-	)
-	deco(parent, "FloorLampBase", V3(1.2, 0.2, 1.2), CFrame.new(42.6, 0.1, 51.2), rgb(40, 34, 30), Enum.Material.Metal)
-	local shade = deco(
-		parent,
-		"HallLampShade",
-		V3(1.6, 1.3, 1.6),
-		CFrame.new(42.6, 5.6, 51.2),
-		rgb(196, 160, 118),
-		Enum.Material.Fabric
-	)
-	Build.light(shade, "Street", WARM, 20, 0.6, true)
-	for _, z in { 26, 34 } do
-		local sconce =
-			deco(parent, "HallSconce", V3(0.5, 1, 0.6), CFrame.new(44.25, 7.4, z), BRASS, Enum.Material.Metal)
-		Build.light(sconce, "Street", WARM, 18, 0.45, true)
-		deco(parent, "FinishBulb", V3(0.35, 0.45, 0.35), CFrame.new(44.05, 8.1, z), WARM, Enum.Material.Neon, true)
-	end
-	-- Cabideiro perto da porta.
-	deco(parent, "CoatRackPole", V3(0.25, 6.5, 0.25), CFrame.new(41.5, 3.25, 61.5), WOOD)
-	deco(parent, "CoatRackBase", V3(1.6, 0.2, 1.6), CFrame.new(41.5, 0.1, 61.5), WOOD)
-	deco(parent, "Coat", V3(0.8, 2.6, 1.2), CFrame.new(41.5, 4.8, 61.9), rgb(48, 44, 52), Enum.Material.Fabric)
 end
 
 function Finish.build(root: Instance)
@@ -448,24 +236,9 @@ function Finish.build(root: Instance)
 			foyerWalls(folder, y)
 		end
 	end
-	entranceHall(folder)
-	-- Pendentes nos patamares de cima e lâmpada nua no porão.
-	for _, y in { 16, 32 } do
-		chandelier(folder, V3(0, y + 15, 40), 1.3, 26, 0.55)
-		deco(
-			folder,
-			"HallRunnerEdge",
-			V3(7.4, 0.05, 46),
-			CFrame.new(0, y + 0.025, 37),
-			RUNNER_EDGE,
-			Enum.Material.Fabric
-		)
-		deco(folder, "HallRunner", V3(6.2, 0.07, 45), CFrame.new(0, y + 0.035, 37), RUNNER, Enum.Material.Fabric)
-	end
-	local bulb =
-		deco(folder, "BasementBulb", V3(0.6, 0.8, 0.6), CFrame.new(0, -4.5, 40), rgb(255, 214, 160), Enum.Material.Neon)
-	Build.light(bulb, "Street", rgb(255, 190, 130), 24, 0.55, true, true)
-	deco(folder, "FinishChain", V3(0.08, 3.5, 0.08), CFrame.new(0, -2.35, 40), rgb(40, 34, 30), Enum.Material.Metal)
+	-- Entrada: passadeira até o corredor e capacho.
+	runner(folder, "HallRunner", V3(0, 0, 37.5), 47)
+	deco(folder, "HallDoormat", V3(8, 0.09, 2.6), CFrame.new(0, 0.045, 62), rgb(66, 54, 40), Enum.Material.Fabric)
 	local architecture = root:FindFirstChild("Architecture")
 	if architecture then
 		for _, part in architecture:GetChildren() do

@@ -1,0 +1,10 @@
+{
+	"mansion_wallpaper": { "color": "rbxassetid://119280303855266", "normal": "rbxassetid://119561048228562", "roughness": "rbxassetid://131429105408660", "source": "gerada (padrao ogival proprio) + decrepit_wallpaper (Poly Haven, Rob Tuytel, CC0)" },
+	"dark_wood": { "color": "rbxassetid://105161362237978", "normal": "rbxassetid://80496199455633", "roughness": "rbxassetid://117126738439221", "source": "Poly Haven dark_wood (Dario Barresi, Dimitrios Savva, Rico Cilliers), CC0" },
+	"plastered_wall_04": { "color": "rbxassetid://113850638890704", "normal": "rbxassetid://117984142836097", "roughness": "rbxassetid://135975362631044", "source": "Poly Haven plastered_wall_04 (Rob Tuytel), CC0" },
+	"dark_wooden_planks": { "color": "rbxassetid://133532545825863", "normal": "rbxassetid://128313306467177", "roughness": "rbxassetid://99643762401471", "source": "Poly Haven dark_wooden_planks (Amal Kumar), CC0" },
+	"quatrefoil_jacquard_fabric": { "color": "rbxassetid://140252000546382", "normal": "rbxassetid://105762213189783", "roughness": "rbxassetid://114254149529712", "source": "Poly Haven quatrefoil_jacquard_fabric (Rico Cilliers, colormass), CC0" },
+	"mansion_walnut": { "color": "rbxassetid://121556846015075", "normal": "rbxassetid://80496199455633", "roughness": "rbxassetid://117126738439221", "source": "dark_wood (Poly Haven, CC0) recolorida para nogueira" },
+	"mansion_runner": { "color": "rbxassetid://74819500113913", "normal": "rbxassetid://105762213189783", "roughness": "rbxassetid://114254149529712", "source": "quatrefoil_jacquard_fabric (Poly Haven, CC0) recolorida para vinho" },
+	"fabric_leather_02": { "color": "rbxassetid://79874351547915", "normal": "rbxassetid://98187868366641", "roughness": "rbxassetid://88991407739262", "source": "Poly Haven fabric_leather_02 (Rob Tuytel), CC0" }
+}

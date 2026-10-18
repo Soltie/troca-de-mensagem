@@ -25,3 +25,19 @@ NÃO TESTADO neste lote:
 - celular físico (desempenho e legibilidade em tela pequena);
 - partida humana com a criatura ativa (perseguição passando pelo hall);
 - campanha completa em dupla/seis jogadores (os testes de navegação cobrem rotas, não o ritmo).
+
+## Lote 2 — Materiais PBR e móveis 3D (18/10/2026, build `TungTung_ENV_L2c/L2d.rbxlx`)
+
+| Verificação | Resultado |
+| --- | --- |
+| `lune run scripts/check` | ALL GREEN, 297 testes puros |
+| `Tests.Run` no Studio (L2c) | 309 aprovados, 0 falhas |
+| Erros/avisos do jogo no `LogService` do servidor (L2c) | 0 |
+| Modelos criados no capítulo 1 | 45 (pasta `CursedHouse.Props`) |
+| Texturas carregadas (`ContentProvider`) | Success para wallpaper/walnut/runner |
+| MaterialVariant por script em jogo | **impossível** (capability Plugin): vão no place via `src/MaterialService` |
+| Bug encontrado e corrigido | telas dos quadros escondidas pelo revestimento: peças de parede agora ficam 0,1 stud à frente |
+| Capturas | `docs/evidence/environment/after-lote2/` |
+
+NÃO TESTADO: celular físico; partida humana com a criatura ativa; place compartilhado `tungtung` (a integração
+é feita pelo Codex, integrador único).

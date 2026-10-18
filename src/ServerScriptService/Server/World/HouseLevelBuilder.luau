@@ -239,9 +239,9 @@ function Builder.build(root: Instance, level: Levels.Level)
 					wall.Color,
 					true
 				)
-				p.Material = wall.Material
+				p.Material, p.MaterialVariant = wall.Material, wall.MaterialVariant
 			end
-			piece(
+			local lintel = piece(
 				out,
 				"PassageLintel",
 				V3(opening.x, opening.y + 11, opening.z),
@@ -249,6 +249,7 @@ function Builder.build(root: Instance, level: Levels.Level)
 				wall.Color,
 				true
 			)
+			lintel.Material, lintel.MaterialVariant = wall.Material, wall.MaterialVariant
 		end
 	end
 	if level.serviceStair then
