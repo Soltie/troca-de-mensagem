@@ -141,6 +141,31 @@ tamanho da roda); rótulos de fatias estreitas seguem o raio; a roda redesenhada
 rótulos GRÁTIS/PAGA fixos fora da rolagem; resumo da temporada sem sobrepor o botão; o véu dos diálogos agora é
 ativo (antes cliques atravessavam e acionavam abas/cartões atrás do diálogo).
 
+## Fase 6 — Servidores, amigos, ajustes, HUD e derrota (17/10/2026)
+
+**Arquivos:** `MainMenuController.luau` (SERVIDORES, AMIGOS), `SettingsController.luau` (painel AJUSTES em seções),
+`UI/FieldHud.luau` (cores do tema, ícones próprios), `CampaignController.luau` e `TouchControlsController.luau`
+(textos sem emoji), `ContinueController.luau` (cartão de derrota), `UI/Icons.luau` (chave, fusível).
+**Não alterado:** posições, tamanhos e informação do HUD; regras de preferências, salvamento e atalhos (O, V, B,
+1–8); regra de recomeço grátis; LobbyService.
+
+| Caso | Status | Evidência |
+|---|---|---|
+| Check / runner do Studio | PASSOU | ALL GREEN (297) · Studio 309 aprovados, 0 falhas |
+| Console | PASSOU | só aviso do próprio assistente MCP (troca de câmera do execute_luau) |
+| Servidores: servidor atual + aviso honesto no Studio | PASSOU | `f6-servidores.jpg` |
+| Amigos: convite em destaque + estado vazio útil | PASSOU | `f6-amigos.jpg` |
+| Ajustes: seções GRÁFICOS / CONFORTO / ÁUDIO, estado por texto e cor, barra de volume | PASSOU | `f6-ajustes.jpg` |
+| HUD em partida mantém objetivo, capítulo, destino, dica, fôlego, ar, inventário, moedas, nível, controles | PASSOU | `f6-hud-partida.jpg` |
+| Slots vazios continuam esmaecidos (agora com pictogramas) | PASSOU | chaves 0/3 e fusíveis 0/3 esmaecidos |
+| Derrota: contagem do recomeço grátis com barra; sem venda | PASSOU | `f6-derrota.jpg` |
+| Botão de Continuação com estoque | NÃO TESTADO | conta sem Continuação |
+| Lista de servidores/amigos com dados reais | NÃO TESTADO | depende do jogo publicado e de amigos online |
+| Tela final do protótipo solo (`GameUiController.Finale`) | FORA DO ESCOPO | a campanha usa ContinueController, comemorações e cinemáticas |
+
+**Correções após as capturas (só código, sem nova captura):** "AUTOMÁTICA" em maiúsculas corretas (o
+`string.upper` não converte letras acentuadas); cartão de derrota encolhe quando não há botão de Continuação.
+
 **Sobre os cliques automatizados:** com a janela do Studio sem foco, o módulo de câmera padrão do Roblox mantém
 o mouse travado no centro e os cliques simulados caem no meio da tela. Para o jogador (janela em foco) o
 `CameraController` libera o cursor no lobby. Por isso os fluxos foram exercitados pelo atributo

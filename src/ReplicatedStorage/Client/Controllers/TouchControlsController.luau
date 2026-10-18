@@ -313,7 +313,7 @@ function Controller.Start()
 		if open and state then
 			local items = HttpService:JSONDecode((state:GetAttribute("Inventory") or "{}") :: string)
 			inventoryTitle.Text =
-				`MOCHILA DO TIME\n🔑 {(items.key_living or 0) + (items.key_kitchen or 0) + (items.key_dining or 0)}/3  🔌 {(items.fuse_1 or 0) + (items.fuse_2 or 0) + (items.fuse_3 or 0)}/3  🔮 {items.artifact or 0}`
+				`MOCHILA DO TIME\nCHAVES {(items.key_living or 0) + (items.key_kitchen or 0) + (items.key_dining or 0)}/3 · FUSÍVEIS {(items.fuse_1 or 0) + (items.fuse_2 or 0) + (items.fuse_3 or 0)}/3 · ARTEFATO {items.artifact or 0}`
 		end
 	end)
 end

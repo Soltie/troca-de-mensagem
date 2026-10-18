@@ -29,31 +29,31 @@ function Controller.toggleGuide()
 	end
 end
 local messages: { [string]: string } = {
-	progress = "✨ Etapa certa! Continue seguindo a pista.",
-	solved = "⭐ Objetivo concluído!",
-	need_partner = "👫 Chame um amigo para apertar este mesmo botão!",
+	progress = "Etapa certa! Continue seguindo a pista.",
+	solved = "Objetivo concluído!",
+	need_partner = "Chame um amigo para apertar este mesmo botão!",
 	wrong_sequence = "Ops! Botão errado, mas seus acertos continuam salvos.",
 	repair_order = "Aperte o botão aceso: desligar, trocar o fusível e ligar.",
 	story_order = "Complete as pistas e os itens necessários. H abre o guia.",
 	rescuing = "Ajudando... fique pertinho do seu amigo!",
-	rescued = "🙌 Amigo de pé de novo!",
+	rescued = "Amigo de pé de novo!",
 	rescue_cancelled = "Ajuda interrompida. Chegue perto e tente de novo.",
 	too_far = "Chegue mais perto e mire no objeto.",
-	vote_recorded = "🗳️ Voto registrado! Esperando o time.",
+	vote_recorded = "Voto registrado! Esperando o time.",
 	not_active = "Espere um amigo te ajudar ou o próximo capítulo.",
 	party_full = "O time está cheio. Espere uma vaga.",
-	restarting = "🎬 Nova aventura!",
+	restarting = "Nova aventura!",
 	wait = "Só um instante...",
 	occupied = "Já tem alguém escondido aí!",
-	hide_enter = "🤫 Escondido! E para sair · Espaço/Z para prender o ar",
+	hide_enter = "Escondido! E para sair · Espaço/Z para prender o ar",
 	hide_exit = "Você saiu do esconderijo.",
 	not_available = "Isso não dá para fazer agora.",
 	not_playing = "Espere o próximo capítulo.",
-	door_opened = "🚪 Passagem aberta!",
+	door_opened = "Passagem aberta!",
 	spawn_failed = "Você entra no próximo capítulo.",
-	second_chance = "💖 Segunda chance: você levantou!",
+	second_chance = "Segunda chance: você levantou!",
 	continue_used = "O time volta para o começo deste capítulo.",
-	checkpoint_restored = "🔁 Tentando de novo deste capítulo!",
+	checkpoint_restored = "Tentando de novo deste capítulo!",
 	supply_full = "Já está cheio. Seu item continua na mochila.",
 	need_flashlight = "Recolha a lanterna antes de usar uma pilha.",
 }
@@ -106,23 +106,23 @@ function Controller.Start()
 		if value > shownCoins then
 			local gain = value - shownCoins
 			Juice.count(shownCoins, value, 0.6, function(current)
-				ui.coins.Text = `💰 {current}`
+				ui.coins.Text = `{current}`
 			end)
 			Juice.pop(ui.wallet, 0.2)
 			Juice.floatText(ui.canvas, `+{gain}`, UDim2.new(1, -100, 0, 80), Theme.Coin, 30)
 		else
-			ui.coins.Text = `💰 {value}`
+			ui.coins.Text = `{value}`
 		end
 		shownCoins = value
 	end
 	local shownLevel = (tonumber(player:GetAttribute("Level")) or 1) :: number
 	local function refreshLevel()
 		local value = (tonumber(player:GetAttribute("Level")) or 1) :: number
-		ui.level.Text = `⭐ NÍVEL {value}`
+		ui.level.Text = `NÍVEL {value}`
 		if value > shownLevel then
 			Juice.pop(ui.level.Parent :: GuiObject, 0.3)
 			Juice.confetti(ui.canvas, Vector2.new(0.5, 0.35), 48)
-			Juice.floatText(ui.canvas, `⭐ NÍVEL {value}! ⭐`, UDim2.fromScale(0.5, 0.62), Theme.Good, 40, 1.6)
+			Juice.floatText(ui.canvas, `NÍVEL {value}!`, UDim2.fromScale(0.5, 0.62), Theme.Good, 40, 1.6)
 		end
 		shownLevel = value
 	end
@@ -146,7 +146,7 @@ function Controller.Start()
 	-- Legenda das batidas do Tung Tung (vem do CreatureVisualController quando ele está perto).
 	player:GetAttributeChangedSignal("TungKnockSerial"):Connect(function()
 		if ui.gui.Enabled then
-			Juice.floatText(ui.canvas, "🥁 TUM... TUM... TUM...", UDim2.fromScale(0.5, 0.3), Theme.Accent, 30, 1.2)
+			Juice.floatText(ui.canvas, "TUM... TUM... TUM...", UDim2.fromScale(0.5, 0.3), Theme.Accent, 30, 1.2)
 		end
 	end)
 	player:GetAttributeChangedSignal("Fichas"):Connect(refreshCoins)
@@ -188,9 +188,9 @@ function Controller.Start()
 		local stage = (state:GetAttribute("Stage") or 0) :: number
 		if phase ~= lastPhase then
 			if phase == "Intermission" then
-				celebrate(false, `⭐ CAPÍTULO {stage} CONCLUÍDO! ⭐`, `💰 {chapterCoins} moedas neste capítulo`)
+				celebrate(false, `CAPÍTULO {stage} CONCLUÍDO!`, `{chapterCoins} moedas neste capítulo`)
 			elseif phase == "Won" then
-				celebrate(true, "🏆 VOCÊS ESCAPARAM! 🏆", `💰 {chapterCoins} moedas no último capítulo`)
+				celebrate(true, "VOCÊS ESCAPARAM!", `{chapterCoins} moedas no último capítulo`)
 			end
 			lastPhase = phase
 		end
@@ -248,9 +248,7 @@ function Controller.Start()
 			lastObjective = title
 			Juice.pop(ui.order, 0.08)
 		end
-		ui.destination.Text = if active and activity
-			then `📍 {Guide.roomName(activity.room)}`
-			else "🏚️ CASA DO TUNG TUNG"
+		ui.destination.Text = if active and activity then `{Guide.roomName(activity.room)}` else "CASA DO TUNG TUNG"
 		ui.action.Text = if active and activity then Guide.instruction(activity, now, activePlayers) else detail
 		if touch then
 			ui.action.Text = ui.action.Text
@@ -296,7 +294,7 @@ function Controller.Start()
 			then Guide.StageTips[math.clamp(stage, 1, #Guide.StageTips)]
 			else Guide.SurvivalTips[(math.floor((tipAge - 16) / 18) % #Guide.SurvivalTips) + 1]
 		if downed and active then
-			ui.tip.Text = `🆘 {downed.name} caiu! Chegue perto, mire e aperte E para ajudar.`
+			ui.tip.Text = `{downed.name} caiu! Chegue perto, mire e aperte E para ajudar.`
 		end
 
 		-- Barras de fôlego, lanterna e ar.
@@ -308,15 +306,15 @@ function Controller.Start()
 		ui.setBar(ui.bars.stamina, breath, `FÔLEGO {math.floor(breath * 100)}%`, breath < 0.2)
 		ui.setBar(ui.bars.battery, light, `LANTERNA {math.floor(light * 100)}%`, light < 0.15)
 		ui.setBar(ui.bars.oxygen, oxygen / 100, `AR {math.floor(oxygen)}%`, oxygen < 25)
-		ui.equipment.Text = if player:GetAttribute("Stance") == "Crouch" then "🤫 AGACHADO (silencioso)" else ""
+		ui.equipment.Text = if player:GetAttribute("Stance") == "Crouch" then "AGACHADO (silencioso)" else ""
 		if phase == "Extracting" then
-			ui.action.Text = `🏃 {if stage >= 6 then "CORRA PARA O RESGATE!" else "FUJA PARA O PORTÃO!"} {math.max(
+			ui.action.Text = `{if stage >= 6 then "CORRA PARA O RESGATE!" else "FUJA PARA O PORTÃO!"} {math.max(
 				0,
 				math.ceil(((state:GetAttribute("EscapeEndsAt") or 0) :: number) - now)
 			)}s`
 		end
 		if oxygen < 15 then
-			ui.action.Text = "😮‍💨 O AR ESTÁ ACABANDO! Solte a respiração!"
+			ui.action.Text = "O AR ESTÁ ACABANDO! Solte a respiração!"
 		end
 
 		-- Inventário do time e itens pessoais.
@@ -339,31 +337,31 @@ function Controller.Start()
 
 		if ui.dossier.Visible then
 			local lines = {
-				`🎭 SEU PAPEL: {roleTitle}\n{roleDescription}`,
+				`SEU PAPEL: {roleTitle}\n{roleDescription}`,
 				if story
-					then "🗺️ MISSÃO\nFaçam os objetivos na ordem abaixo. O marcado é o próximo. São oito capítulos: fujam da casa, atravessem a floresta e alcancem o resgate!"
-					else "🗺️ DESAFIO\nDividam as tarefas disponíveis entre colegas. Coletem em qualquer ordem; mecanismos exigem as pistas e os itens. A seta é uma sugestão.",
-				"✅ OBJETIVOS",
+					then "MISSÃO\nFaçam os objetivos na ordem abaixo. O marcado é o próximo. São oito capítulos: fujam da casa, atravessem a floresta e alcancem o resgate!"
+					else "DESAFIO\nDividam as tarefas disponíveis entre colegas. Coletem em qualquer ordem; mecanismos exigem as pistas e os itens. A seta é uma sugestão.",
+				"OBJETIVOS",
 			}
 			for n, item in tasks do
 				table.insert(
 					lines,
 					`{if item.solved
-						then "✅"
-						elseif item.available == false then "🔒"
-						elseif n == index then "👉"
-						else "◆"} {n}. {Guide.roomName(item.room)}\n{item.title or Catalog.KindNames[item.kind]}{if item.solved
+						then "[FEITO]"
+						elseif item.available == false then "[TRANCADO]"
+						elseif n == index then "[AGORA]"
+						else "-"} {n}. {Guide.roomName(item.room)}\n{item.title or Catalog.KindNames[item.kind]}{if item.solved
 						then ""
 						elseif item.available == false then "\nComplete as pistas e os itens anteriores."
 						else `\n{Guide.instruction(item, now, activePlayers)}`}`
 				)
 			end
-			table.insert(lines, "👫 TIME")
+			table.insert(lines, "TIME")
 			local statusTitles: { [string]: string } = {
-				Active = "🟢 na ativa",
-				Downed = "🆘 precisa de ajuda",
-				Waiting = "⏳ esperando",
-				Escaped = "🏁 a salvo",
+				Active = "na ativa",
+				Downed = "precisa de ajuda",
+				Waiting = "esperando",
+				Escaped = "a salvo",
 			}
 			for _, member in roster do
 				local remaining = if member.status == "Downed"
@@ -384,26 +382,23 @@ function Controller.Start()
 							and (point.Position - character:GetPivot().Position).Magnitude
 								<= Config.Campaign.ScoutRange
 						then
-							table.insert(
-								lines,
-								`🦅 RADAR: {model:GetAttribute("RoomLabel") or "objetivo"} por perto!`
-							)
+							table.insert(lines, `RADAR: {model:GetAttribute("RoomLabel") or "objetivo"} por perto!`)
 						end
 					end
 				end
 			end
-			table.insert(lines, "🛡️ COMO SOBREVIVER\n" .. table.concat(Guide.SurvivalTips, "\n\n"))
+			table.insert(lines, "COMO SOBREVIVER\n" .. table.concat(Guide.SurvivalTips, "\n\n"))
 			table.insert(
 				lines,
-				"🎮 CONTROLES\nWASD andar · E usar · F lanterna\nShift correr · C agachar · Z/LB prender o ar\n1 pilha · 2 ar extra · 3 isca\nH guia · segure TAB para ver o time\nSetas: trocar de amigo quando estiver assistindo"
+				"CONTROLES\nWASD andar · E usar · F lanterna\nShift correr · C agachar · Z/LB prender o ar\n1 pilha · 2 ar extra · 3 isca\nH guia · segure TAB para ver o time\nSetas: trocar de amigo quando estiver assistindo"
 			)
 			ui.pages.Text = table.concat(lines, "\n\n")
 			if touch then
 				ui.pages.Text = ui.pages.Text:gsub("aperte E", "toque AÇÃO"):gsub("Aperte E", "Toque AÇÃO")
-				local controlsAt = ui.pages.Text:find("🎮 CONTROLES", 1, true)
+				local controlsAt = ui.pages.Text:find("CONTROLES", 1, true)
 				if controlsAt then
 					ui.pages.Text = ui.pages.Text:sub(1, controlsAt - 1)
-						.. "🎮 CONTROLES DE TOQUE\nArraste no lado livre da tela para olhar. Use o direcional para andar e o botão do Roblox para pular.\nAÇÃO usa o objeto na mira, ajuda colegas e sai do armário.\nCORRER liga/desliga a corrida; AGACHAR reduz o barulho.\nNo armário, segure O AR e solte para respirar.\nMOCHILA abre pilhas, ar extra e iscas. GUIA mostra objetivos e time; AJUSTES controla efeitos e áudio."
+						.. "CONTROLES DE TOQUE\nArraste no lado livre da tela para olhar. Use o direcional para andar e o botão do Roblox para pular.\nAÇÃO usa o objeto na mira, ajuda colegas e sai do armário.\nCORRER liga/desliga a corrida; AGACHAR reduz o barulho.\nNo armário, segure O AR e solte para respirar.\nMOCHILA abre pilhas, ar extra e iscas. GUIA mostra objetivos e time; AJUSTES controla efeitos e áudio."
 				end
 			end
 			local bounds = TextService:GetTextSize(
@@ -440,7 +435,7 @@ function Controller.Start()
 					math.clamp(y, top, math.max(top, height - (if touch then 140 else 170)))
 				ui.waypoint.Position = UDim2.fromOffset(x, y)
 				local distance = math.floor((target - camera.CFrame.Position).Magnitude / 3.57)
-				local direction = if onScreen then "◆" elseif x < width / 2 then "◀" else "▶"
+				local direction = if onScreen then "" elseif x < width / 2 then "" else ""
 				local name = if phase == "Extracting"
 					then (if stage >= 6 then "RESGATE" else "SAÍDA DA CASA")
 					else Guide.roomName((activity :: Guide.Activity).room)

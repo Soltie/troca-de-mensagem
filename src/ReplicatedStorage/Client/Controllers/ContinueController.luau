@@ -18,6 +18,7 @@ local Config = require("@game/ReplicatedStorage/Shared/Config")
 local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
 local Text = require("@game/ReplicatedStorage/Shared/Game/Text")
 local Remotes = require("@game/ReplicatedStorage/Shared/Net/Remotes")
+local Components = require("../UI/Components")
 local Create = require("../UI/Create")
 local Juice = require("../UI/Juice")
 local Theme = require("../UI/Theme")
@@ -31,6 +32,7 @@ local panel: Frame? = nil
 local primary: TextButton? = nil
 local status: TextLabel? = nil
 local body: TextLabel? = nil
+local setCountdown: ((number) -> ())? = nil
 local busy = false
 local shown = false
 local shownAt = 0
@@ -83,75 +85,75 @@ local function build()
 		IgnoreGuiInset = true,
 		Parent = player:WaitForChild("PlayerGui"),
 	})
-	local p = Create("Frame", {
+	-- Cartão da derrota: tom calmo (terror leve), contagem visível e nenhuma oferta de compra.
+	local p = Components.panel({
 		Name = "Offer",
 		AnchorPoint = Vector2.new(0.5, 1),
 		Position = UDim2.new(0.5, 0, 1, -40),
-		Size = UDim2.fromOffset(600, 150),
-		BackgroundColor3 = Theme.Panel,
-		BackgroundTransparency = 0.05,
-		BorderSizePixel = 0,
+		Size = UDim2.new(1, -32, 0, 176),
+		BackgroundColor3 = Theme.Bg,
+		BackgroundTransparency = 0.04,
 		Visible = false,
 		Parent = gui,
 	}, {
-		Create("UICorner", { CornerRadius = Theme.Corner }),
-		Create("UIStroke", { Color = Theme.Accent, Thickness = 3 }),
-	}) :: Frame
-	Create("TextLabel", {
+		Create("UISizeConstraint", { MaxSize = Vector2.new(620, 220) }),
+	})
+	local outline = p:FindFirstChildOfClass("UIStroke")
+	if outline then
+		outline.Color, outline.Thickness, outline.Transparency = Theme.Danger:Lerp(Theme.Gold, 0.4), 2, 0
+	end
+	Components.padding(p, 16, 14)
+	Components.icon(p, "Replay", 36, Theme.GoldLight)
+	Components.title({
 		Name = "Title",
-		Position = UDim2.fromOffset(18, 12),
-		Size = UDim2.new(1, -36, 0, 30),
-		BackgroundTransparency = 1,
-		FontFace = Theme.Font,
-		Text = "💥 O TUNG TUNG PEGOU O TIME!",
-		TextColor3 = Theme.Accent,
-		TextSize = 26,
-		TextXAlignment = Enum.TextXAlignment.Left,
+		Position = UDim2.fromOffset(48, 0),
+		Size = UDim2.new(1, -48, 0, 36),
+		Text = "O TUNG TUNG PEGOU O TIME!",
+		TextColor3 = Theme.GoldLight,
+		TextSize = 24,
+		TextTruncate = Enum.TextTruncate.AtEnd,
 		Parent = p,
 	})
-	body = Create("TextLabel", {
+	body = Components.text({
 		Name = "Body",
-		Position = UDim2.fromOffset(18, 46),
-		Size = UDim2.new(1, -36, 0, 44),
-		BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(0, 42),
+		Size = UDim2.new(1, 0, 0, 40),
 		FontFace = Theme.FontNote,
 		Text = "",
-		TextColor3 = Theme.Text,
 		TextSize = 15,
-		TextWrapped = true,
-		TextXAlignment = Enum.TextXAlignment.Left,
 		TextYAlignment = Enum.TextYAlignment.Top,
 		Parent = p,
 	}) :: TextLabel
-	local b = Create("TextButton", {
+	local track, setTrack = Components.progress({
+		Name = "Countdown",
+		Position = UDim2.fromOffset(0, 88),
+		Size = UDim2.new(1, 0, 0, 8),
+	}, Theme.Gold)
+	track.Parent = p
+	setCountdown = setTrack
+	local b = Components.button("success", {
 		Name = "Continue",
-		Position = UDim2.fromOffset(18, 98),
-		Size = UDim2.fromOffset(330, 38),
-		AutoButtonColor = true,
-		BackgroundColor3 = Theme.Good,
-		BorderSizePixel = 0,
-		FontFace = Theme.Font,
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.fromScale(0, 1),
+		Size = UDim2.new(0.6, -6, 0, Theme.TouchMin),
 		Text = "",
-		TextColor3 = Theme.Ink,
-		TextSize = Theme.SizeBody,
+		TextSize = 15,
 		Visible = false,
 		Parent = p,
-	}, { Create("UICorner", { CornerRadius = Theme.CornerSmall }) }) :: TextButton
-	b.Activated:Connect(function()
+	}, function()
 		AudioController.play("UiBlip", 0.5, 1.1, true)
 		task.spawn(useContinue)
 	end)
-	status = Create("TextLabel", {
+	b.Modal = true
+	status = Components.text({
 		Name = "Status",
-		Position = UDim2.fromOffset(360, 98),
-		Size = UDim2.new(1, -378, 0, 38),
-		BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(1, 1),
+		Position = UDim2.fromScale(1, 1),
+		Size = UDim2.new(0.4, -6, 0, Theme.TouchMin),
 		FontFace = Theme.Font,
 		Text = "",
-		TextColor3 = Theme.Text,
-		TextSize = Theme.SizeSmall,
-		TextWrapped = true,
-		TextXAlignment = Enum.TextXAlignment.Left,
+		TextSize = 13,
+		TextColor3 = Theme.TextSecondary,
 		Parent = p,
 	}) :: TextLabel
 	panel = p
@@ -193,9 +195,16 @@ function Controller.Start()
 			text.Text = if remaining > 0
 				then `Calma! Todo mundo volta no começo deste capítulo em {remaining}s, de graça. Os capítulos que vocês já terminaram ficam salvos.`
 				else "Voltando para o começo do capítulo..."
+			local fill = setCountdown
+			if fill then
+				-- Barra esvazia até o recomeço grátis (mesma contagem do texto).
+				fill(remaining / math.max(Config.Campaign.IntermissionSeconds, 1))
+			end
 			local count = stock()
 			b.Visible = count > 0 and remaining > 0
-			b.Text = `⏩ VOLTAR AGORA (CONTINUAÇÕES: {count})`
+			-- Sem Continuação no estoque não há botão: o cartão encolhe em vez de sobrar espaço vazio.
+			p.Size = UDim2.new(1, -32, 0, if b.Visible then 176 else 124)
+			b.Text = `VOLTAR AGORA · CONTINUAÇÕES: {count}`
 		end
 	end)
 end

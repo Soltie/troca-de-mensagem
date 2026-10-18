@@ -192,15 +192,6 @@ local function frame(props: { [string]: any }, children: { any }?): Frame
 	return result
 end
 
-local function stroke(color: Color3, thickness: number?, transparency: number?): Instance
-	return Create("UIStroke", {
-		Color = color,
-		Thickness = thickness or 1,
-		Transparency = transparency or 0,
-		ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-	})
-end
-
 local function click()
 	AudioController.play("UiBlip", 0.5, 1.1, true)
 end
@@ -896,96 +887,165 @@ local function fetchServers()
 	end)
 end
 
+-- Lista rolável padrão das abas sociais (uma única rolagem vertical).
+local function socialList(parent: Instance, top: number): ScrollingFrame
+	return Create("ScrollingFrame", {
+		Name = "List",
+		Position = UDim2.fromOffset(0, top),
+		Size = UDim2.new(1, 0, 1, -top),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ScrollBarThickness = 6,
+		ScrollBarImageColor3 = Theme.Gold,
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		CanvasSize = UDim2.new(),
+		Parent = parent,
+	}, {
+		Create("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder }),
+		Create("UIPadding", { PaddingRight = UDim.new(0, 10) }),
+	}) :: ScrollingFrame
+end
+
+-- Estado vazio/aviso com ícone: explica o que acontece e o que fazer, sem botão falso.
+local function emptyState(parent: Instance, icon: string, title: string, message: string)
+	local box = Components.panel({ Name = "Empty", Size = UDim2.new(1, 0, 0, 92), LayoutOrder = 0, Parent = parent })
+	Components.padding(box, 14)
+	Components.icon(box, icon, 36, Theme.TextMuted, {
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.fromScale(0, 0.5),
+	})
+	label({
+		Position = UDim2.fromOffset(52, 4),
+		Size = UDim2.new(1, -52, 0, 22),
+		Text = title,
+		TextSize = 16,
+		Parent = box,
+	})
+	note({
+		Position = UDim2.fromOffset(52, 30),
+		Size = UDim2.new(1, -52, 0, 34),
+		Text = message,
+		TextSize = 13,
+		Parent = box,
+	})
+end
+
 local function buildServers(b: Frame)
 	local data = serverCache
 	if not data or os.clock() - lastServerFetch > 20 then
 		fetchServers()
 	end
-	local top = frame({ Size = UDim2.new(1, 0, 0, 40), BackgroundTransparency = 1, Parent = b })
 	local current = if data then data.current else nil
+	local head = Components.panel({ Name = "Current", Size = UDim2.new(1, -10, 0, 64), Parent = b })
+	Components.padding(head, 12, 8)
+	Components.icon(head, "Servers", 24, Theme.Gold, {
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.fromScale(0, 0.5),
+	})
 	label({
-		Size = UDim2.new(1, -170, 1, 0),
+		Position = UDim2.fromOffset(34, 0),
+		Size = UDim2.new(1, -194, 0.5, 0),
+		Text = "ESTE SERVIDOR",
+		TextSize = 13,
+		TextColor3 = Theme.TextSecondary,
+		Parent = head,
+	})
+	label({
+		Name = "CurrentStatus",
+		Position = UDim2.new(0, 34, 0.5, 0),
+		Size = UDim2.new(1, -194, 0.5, 0),
 		Text = if current
-			then `ESTE SERVIDOR: {current.players}/{current.max} · {PHASE_NAMES[current.phase] or current.phase}`
+			then `{current.players}/{current.max} JOGADORES · {PHASE_NAMES[current.phase] or current.phase}`
 			else "CARREGANDO...",
-		TextColor3 = Theme.Hazard,
-		Parent = top,
+		TextSize = 16,
+		TextColor3 = Theme.Gold,
+		Parent = head,
 	})
 	button({
 		Name = "Refresh",
-		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, 0, 0, 4),
-		Size = UDim2.fromOffset(160, 30),
+		Variant = "secondary",
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.fromScale(1, 0.5),
+		Size = UDim2.fromOffset(150, Theme.TouchMin),
 		Text = "ATUALIZAR",
-		TextSize = Theme.SizeSmall,
-		Parent = top,
+		TextSize = 14,
+		Parent = head,
 	}, fetchServers)
-	local list = Create("ScrollingFrame", {
-		Position = UDim2.fromOffset(0, 50),
-		Size = UDim2.new(1, 0, 1, -50),
-		BackgroundTransparency = 1,
-		BorderSizePixel = 0,
-		ScrollBarThickness = 6,
-		AutomaticCanvasSize = Enum.AutomaticSize.Y,
-		CanvasSize = UDim2.new(),
-		Parent = b,
-	}, { Create("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }) }) :: ScrollingFrame
+	local list = socialList(b, 76)
 	if not data then
+		emptyState(list, "Servers", "PROCURANDO SERVIDORES...", "A lista aparece em instantes.")
 		return
 	end
 	if not data.online then
-		note({
-			Size = UDim2.new(1, 0, 0, 60),
-			Text = "A lista de servidores funciona no jogo publicado. No Studio só existe este servidor.",
-			Parent = list,
-		})
+		emptyState(
+			list,
+			"Servers",
+			"SÓ NO JOGO PUBLICADO",
+			"A lista de outros servidores funciona no jogo publicado. No Studio só existe este servidor."
+		)
 		return
 	end
 	local servers = if type(data.servers) == "table" then data.servers else {}
 	if #servers == 0 then
-		note({
-			Size = UDim2.new(1, 0, 0, 40),
-			Text = "Nenhum outro servidor aberto agora. Chame amigos!",
-			Parent = list,
-		})
+		emptyState(list, "Friends", "NENHUM OUTRO SERVIDOR ABERTO", "Chame amigos pela aba AMIGOS e joguem juntos.")
 	end
 	for i, entry in servers do
-		local row = frame({
-			Name = `Server_{i}`,
-			Size = UDim2.new(1, -10, 0, 52),
-			BackgroundTransparency = 0.08,
-			LayoutOrder = i,
-			Parent = list,
+		local full = entry.players >= entry.max
+		local row =
+			Components.panel({ Name = `Server_{i}`, Size = UDim2.new(1, 0, 0, 72), LayoutOrder = i, Parent = list })
+		Components.padding(row, 12, 10)
+		local chips = Create("Frame", {
+			Size = UDim2.new(1, -170, 0, 24),
+			BackgroundTransparency = 1,
+			Parent = row,
 		}, {
-			stroke(Theme.TextDim, 1, 0.7),
+			Create("UIListLayout", {
+				FillDirection = Enum.FillDirection.Horizontal,
+				Padding = UDim.new(0, 6),
+				SortOrder = Enum.SortOrder.LayoutOrder,
+			}),
 		})
 		local mode = if entry.mode == "Story"
 			then "HISTÓRIA"
-			elseif entry.mode == "Standard" then "CO-OP"
+			elseif entry.mode == "Standard" then "DESAFIO"
 			else "VOTANDO"
-		local stage = if (entry.stage or 0) > 0 then ` · ETAPA {entry.stage}` else ""
+		Components.chip(
+			PHASE_NAMES[entry.phase] or tostring(entry.phase),
+			Theme.Info,
+			{ LayoutOrder = 1, Parent = chips }
+		)
+		Components.chip(mode, Theme.Gold, { LayoutOrder = 2, Parent = chips })
+		if (entry.stage or 0) > 0 then
+			Components.chip(`CAPÍTULO {entry.stage}`, Theme.TextSecondary, { LayoutOrder = 3, Parent = chips })
+		end
+		Components.icon(row, "Friends", 12, Theme.TextSecondary, { Position = UDim2.fromOffset(0, 36) })
 		label({
-			Position = UDim2.fromOffset(14, 0),
-			Size = UDim2.new(1, -200, 1, 0),
-			Text = `{PHASE_NAMES[entry.phase] or entry.phase} · {mode}{stage} · {entry.players}/{entry.max}`,
+			Position = UDim2.fromOffset(18, 30),
+			Size = UDim2.fromOffset(80, 22),
+			Text = `{entry.players}/{entry.max}`,
+			TextSize = 14,
 			Parent = row,
 		})
-		local full = entry.players >= entry.max
-		button({
+		local bar, setBar = Components.progress({
+			Position = UDim2.fromOffset(90, 38),
+			Size = UDim2.new(1, -270, 0, 6),
+		}, if full then Theme.Danger else GREEN)
+		bar.Parent = row
+		setBar(entry.players / math.max(entry.max, 1))
+		local join = button({
 			Name = "Join",
+			Variant = "success",
 			AnchorPoint = Vector2.new(1, 0.5),
-			Position = UDim2.new(1, -12, 0.5, 0),
-			Size = UDim2.fromOffset(150, 32),
+			Position = UDim2.fromScale(1, 0.5),
+			Size = UDim2.fromOffset(150, Theme.TouchMin),
 			Text = if full then "CHEIO" else "ENTRAR",
-			TextSize = Theme.SizeSmall,
-			Accent = if full then Theme.TextDim else GREEN,
+			TextSize = 15,
 			Parent = row,
 		}, function()
-			if not full then
-				local result, err = invoke("Lobby", "join", entry.job)
-				say(err or (if type(result) == "table" then result.message else nil))
-			end
+			local result, err = invoke("Lobby", "join", entry.job)
+			say(err or (if type(result) == "table" then result.message else nil))
 		end)
+		Components.setDisabled(join, full)
 	end
 end
 
@@ -1024,52 +1084,41 @@ local function buildFriends(b: Frame)
 	if not friendsCache then
 		fetchFriends()
 	end
-	local top = frame({ Size = UDim2.new(1, 0, 0, 44), BackgroundTransparency = 1, Parent = b })
-	button({
+	local head = Components.panel({ Name = "Invite", Size = UDim2.new(1, -10, 0, 64), Parent = b })
+	Components.padding(head, 8)
+	Components.iconButton("primary", "Friends", "CONVIDAR AMIGOS", {
 		Name = "Invite",
-		Size = UDim2.fromOffset(260, 38),
-		Text = "CONVIDAR AMIGOS",
-		TextSize = Theme.SizeLarge,
-		Accent = GREEN,
-		BackgroundColor3 = Color3.fromRGB(28, 44, 30),
-		Parent = top,
-	}, invite)
+		Size = UDim2.new(1, -168, 1, 0),
+		TextSize = 17,
+		Parent = head,
+	}, function()
+		AudioController.play("UiBlip", 0.5, 1.1, true)
+		invite()
+	end)
 	button({
 		Name = "Refresh",
+		Variant = "secondary",
 		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, 0, 0, 4),
-		Size = UDim2.fromOffset(160, 30),
+		Position = UDim2.fromScale(1, 0),
+		Size = UDim2.new(0, 158, 1, 0),
 		Text = "ATUALIZAR",
-		TextSize = Theme.SizeSmall,
-		Parent = top,
+		TextSize = 14,
+		Parent = head,
 	}, fetchFriends)
-	local list = Create("ScrollingFrame", {
-		Position = UDim2.fromOffset(0, 54),
-		Size = UDim2.new(1, 0, 1, -54),
-		BackgroundTransparency = 1,
-		BorderSizePixel = 0,
-		ScrollBarThickness = 6,
-		AutomaticCanvasSize = Enum.AutomaticSize.Y,
-		CanvasSize = UDim2.new(),
-		Parent = b,
-	}, { Create("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }) }) :: ScrollingFrame
+	local list = socialList(b, 76)
 	local friends = friendsCache
 	if not friends then
-		note({ Size = UDim2.new(1, 0, 0, 30), Text = "Procurando amigos online...", Parent = list })
+		emptyState(list, "Friends", "PROCURANDO AMIGOS ONLINE...", "A lista aparece em instantes.")
 		return
 	end
 	if friendsError then
-		note({
-			Size = UDim2.new(1, 0, 0, 40),
-			Text = "Não foi possível ler seus amigos agora. Tente atualizar.",
-			Parent = list,
-		})
+		emptyState(list, "Friends", "NÃO DEU PARA LER SEUS AMIGOS", "Tente ATUALIZAR em alguns segundos.")
 		return
 	end
 	if #friends == 0 then
-		note({ Size = UDim2.new(1, 0, 0, 40), Text = "Nenhum amigo online agora. Use CONVIDAR AMIGOS.", Parent = list })
+		emptyState(list, "Friends", "NENHUM AMIGO ONLINE AGORA", "Use CONVIDAR AMIGOS para chamar alguém para a casa.")
 	end
-	-- Quem está na Subestação 9 primeiro.
+	-- Quem está neste jogo aparece primeiro.
 	table.sort(friends, function(a, c)
 		local inA = a.PlaceId == game.PlaceId and game.PlaceId ~= 0
 		local inC = c.PlaceId == game.PlaceId and game.PlaceId ~= 0
@@ -1080,45 +1129,46 @@ local function buildFriends(b: Frame)
 	end)
 	for i, friend in friends do
 		local here = friend.PlaceId == game.PlaceId and game.PlaceId ~= 0
-		local row = frame({
-			Name = `Friend_{i}`,
-			Size = UDim2.new(1, -10, 0, 52),
-			BackgroundTransparency = 0.08,
-			LayoutOrder = i,
-			Parent = list,
-		}, {
-			stroke(if here then GREEN else Theme.TextDim, 1, 0.6),
-		})
-		Create("ImageLabel", {
-			Position = UDim2.fromOffset(8, 6),
-			Size = UDim2.fromOffset(40, 40),
-			BackgroundTransparency = 1,
+		local row =
+			Components.panel({ Name = `Friend_{i}`, Size = UDim2.new(1, 0, 0, 68), LayoutOrder = i, Parent = list })
+		Components.padding(row, 10)
+		local face = Create("ImageLabel", {
+			Size = UDim2.fromOffset(48, 48),
+			BackgroundColor3 = Theme.BgSunken,
+			BorderSizePixel = 0,
 			Image = `rbxthumb://type=AvatarHeadShot&id={friend.VisitorId}&w=48&h=48`,
 			Parent = row,
 		})
+		Components.corner(face, Theme.CornerPill)
+		Components.stroke(face, if here then GREEN else Theme.Border, 2, if here then 0 else 0.5)
 		label({
-			Position = UDim2.fromOffset(58, 6),
-			Size = UDim2.new(1, -230, 0, 20),
+			Position = UDim2.fromOffset(60, 2),
+			Size = UDim2.new(1, -230, 0, 22),
 			Text = tostring(friend.DisplayName or friend.UserName or "?"),
+			TextSize = 16,
+			TextWrapped = false,
+			TextTruncate = Enum.TextTruncate.AtEnd,
 			Parent = row,
 		})
 		label({
-			Position = UDim2.fromOffset(58, 26),
+			Position = UDim2.fromOffset(60, 26),
 			Size = UDim2.new(1, -230, 0, 18),
-			Text = if here then "NA TUNG TUNG SAHUR" else tostring(friend.LastLocation or "ONLINE"),
-			TextSize = Theme.SizeSmall,
-			TextColor3 = if here then GREEN else Theme.TextDim,
+			Text = if here then "JOGANDO TUNG TUNG SAHUR" else tostring(friend.LastLocation or "ONLINE"),
+			TextSize = 12,
+			TextWrapped = false,
+			TextTruncate = Enum.TextTruncate.AtEnd,
+			TextColor3 = if here then GREEN else Theme.TextSecondary,
 			Parent = row,
 		})
 		if here then
 			button({
 				Name = "JoinFriend",
+				Variant = "success",
 				AnchorPoint = Vector2.new(1, 0.5),
-				Position = UDim2.new(1, -12, 0.5, 0),
-				Size = UDim2.fromOffset(150, 32),
+				Position = UDim2.fromScale(1, 0.5),
+				Size = UDim2.fromOffset(150, Theme.TouchMin),
 				Text = "ENTRAR",
-				TextSize = Theme.SizeSmall,
-				Accent = GREEN,
+				TextSize = 15,
 				Parent = row,
 			}, function()
 				local result, err = invoke("Lobby", "friend", tostring(friend.VisitorId))

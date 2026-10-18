@@ -33,6 +33,9 @@ local MENU_ICONS = {
 	"Steps",
 	"Heart",
 	"Replay",
+	"Key",
+	"Fuse",
+	"Pointer",
 }
 
 return {

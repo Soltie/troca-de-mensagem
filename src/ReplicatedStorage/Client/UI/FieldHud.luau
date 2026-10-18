@@ -19,9 +19,9 @@ end
 
 local function stroke(color: Color3?, thickness: number?, transparency: number?): Instance
 	return Create("UIStroke", {
-		Color = color or Theme.Stroke,
+		Color = color or Theme.Border,
 		Thickness = thickness or 1,
-		Transparency = transparency or 0.28,
+		Transparency = transparency or 0.35,
 		ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 	}) :: UIStroke
 end
@@ -33,15 +33,15 @@ local function card(parent: Instance, name: string, size: UDim2, position: UDim2
 		AnchorPoint = anchor or Vector2.zero,
 		Position = position,
 		Size = size,
-		BackgroundColor3 = Theme.Panel,
-		BackgroundTransparency = 0.05,
+		BackgroundColor3 = Theme.Bg,
+		BackgroundTransparency = 0.08,
 		BorderSizePixel = 0,
 	}, {
 		corner(),
 		stroke(),
 		Create("UIGradient", {
 			Rotation = 90,
-			Color = ColorSequence.new(Theme.PanelLight, Theme.Panel),
+			Color = ColorSequence.new(Theme.BgPanel, Theme.Bg),
 		}),
 	}) :: Frame
 end
@@ -109,18 +109,44 @@ local function bar(parent: Instance, name: string, _icon: string, color: Color3,
 	return { frame = frame, fill = fill, label = text }
 end
 
+local SLOT_COLORS: { [string]: Color3 } = {
+	Key = Theme.Gold,
+	Fuse = Theme.Info,
+	Star = Color3.fromRGB(190, 140, 240),
+	Battery = Theme.Gold,
+	Lungs = Color3.fromRGB(140, 220, 255),
+	Drum = Color3.fromRGB(214, 160, 110),
+}
+
 local function slot(parent: Instance, name: string, icon: string, order: number, key: string?): Slot
 	local frame = Create("Frame", {
 		Name = name,
 		Parent = parent,
 		LayoutOrder = order,
 		Size = UDim2.fromOffset(58, 58),
-		BackgroundColor3 = Theme.Panel,
+		BackgroundColor3 = Theme.Bg,
 		BackgroundTransparency = 0.15,
 		BorderSizePixel = 0,
-	}, { corner(Theme.CornerSmall), stroke(Theme.TextDim, 2, 0.4) }) :: Frame
+	}, { corner(Theme.CornerSmall), stroke(Theme.Border, 2, 0.4) }) :: Frame
 	local iconLabel = label(frame, "Icon", Theme.Font, 28, Theme.Text, UDim2.fromOffset(0, -2), UDim2.fromScale(1, 1))
-	iconLabel.Text = icon
+	-- Pictograma próprio (sem emoji). O controller esmaece o slot vazio via TextTransparency do rótulo.
+	iconLabel.Text = ""
+	local art = Create("Frame", {
+		Name = "Art",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromOffset(36, 36),
+		BackgroundTransparency = 1,
+		Parent = iconLabel,
+	})
+	Icons.pixel(art, icon, SLOT_COLORS[icon] or Theme.Text)
+	iconLabel:GetPropertyChangedSignal("TextTransparency"):Connect(function()
+		for _, px in art:GetDescendants() do
+			if px:IsA("Frame") and px.Name == "Px" then
+				px.BackgroundTransparency = iconLabel.TextTransparency
+			end
+		end
+	end)
 	local count = label(
 		frame,
 		"Count",
@@ -235,7 +261,7 @@ function Hud.build(parent: Instance)
 		UDim2.new(1, -28, 0, 18),
 		Enum.TextXAlignment.Left
 	)
-	tipTitle.Text = "💡 DICA"
+	tipTitle.Text = "DICA"
 	local tip = label(
 		tipPanel,
 		"Tip",
@@ -251,9 +277,9 @@ function Hud.build(parent: Instance)
 	-- Status (canto inferior esquerdo): fôlego, lanterna e ar.
 	local footer = card(canvas, "Equipment", UDim2.fromOffset(260, 118), UDim2.new(0, 16, 1, -16), Vector2.new(0, 1))
 	local bars = {
-		stamina = bar(footer, "Stamina", "⚡", Theme.Hazard, 10),
-		battery = bar(footer, "Battery", "🔦", Theme.Info, 38),
-		oxygen = bar(footer, "Oxygen", "💨", Color3.fromRGB(140, 220, 255), 66),
+		stamina = bar(footer, "Stamina", "", Theme.Hazard, 10),
+		battery = bar(footer, "Battery", "", Theme.Info, 38),
+		oxygen = bar(footer, "Oxygen", "", Color3.fromRGB(140, 220, 255), 66),
 	}
 	local equipment = label(
 		footer,
@@ -283,12 +309,12 @@ function Hud.build(parent: Instance)
 		}),
 	}) :: Frame
 	local slots = {
-		keys = slot(tray, "Keys", "🔑", 1),
-		fuses = slot(tray, "Fuses", "🔌", 2),
-		artifact = slot(tray, "Artifact", "🔮", 3),
-		battery = slot(tray, "Battery", "🔋", 4, "1"),
-		oxygen = slot(tray, "Oxygen", "🎈", 5, "2"),
-		decoy = slot(tray, "Decoy", "🥁", 6, "3"),
+		keys = slot(tray, "Keys", "Key", 1),
+		fuses = slot(tray, "Fuses", "Fuse", 2),
+		artifact = slot(tray, "Artifact", "Star", 3),
+		battery = slot(tray, "Battery", "Battery", 4, "1"),
+		oxygen = slot(tray, "Oxygen", "Lungs", 5, "2"),
+		decoy = slot(tray, "Decoy", "Drum", 6, "3"),
 	}
 	-- Texto legado (lido por testes antigos); fica invisível atrás dos slots.
 	local inventory = label(tray, "Readout", Theme.Font, 1, Theme.Text, UDim2.new(), UDim2.fromOffset(0, 0))
@@ -302,11 +328,20 @@ function Hud.build(parent: Instance)
 		Theme.Font,
 		22,
 		Theme.Coin,
-		UDim2.fromOffset(12, 0),
-		UDim2.new(1, -24, 1, 0),
+		UDim2.fromOffset(42, 0),
+		UDim2.new(1, -54, 1, 0),
 		Enum.TextXAlignment.Left
 	)
-	coins.Text = "💰 0"
+	coins.Text = "0"
+	local coinArt = Create("Frame", {
+		Name = "CoinIcon",
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, 10, 0.5, 0),
+		Size = UDim2.fromOffset(24, 24),
+		BackgroundTransparency = 1,
+		Parent = wallet,
+	})
+	Icons.pixel(coinArt, "Coin", Theme.Coin)
 	local levelBadge = card(canvas, "Level", UDim2.fromOffset(170, 34), UDim2.new(1, -16, 0, 66), Vector2.new(1, 0))
 	local level = label(
 		levelBadge,
@@ -314,11 +349,20 @@ function Hud.build(parent: Instance)
 		Theme.Font,
 		16,
 		Theme.Text,
-		UDim2.fromOffset(12, 0),
-		UDim2.new(1, -24, 1, 0),
+		UDim2.fromOffset(36, 0),
+		UDim2.new(1, -48, 1, 0),
 		Enum.TextXAlignment.Left
 	)
-	level.Text = "⭐ NÍVEL 1"
+	level.Text = "NÍVEL 1"
+	local starArt = Create("Frame", {
+		Name = "LevelIcon",
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, 10, 0.5, 0),
+		Size = UDim2.fromOffset(18, 18),
+		BackgroundTransparency = 1,
+		Parent = levelBadge,
+	})
+	Icons.pixel(starArt, "Star", Theme.Gold)
 
 	local controls = label(
 		canvas,
@@ -348,13 +392,13 @@ function Hud.build(parent: Instance)
 		UDim2.new(1, -150, 0, 30),
 		Enum.TextXAlignment.Left
 	)
-	heading.Text = "📖 GUIA DA CASA"
+	heading.Text = "GUIA DA CASA"
 	local close = Create("TextButton", {
 		Name = "Close",
 		Parent = dossier,
 		Position = UDim2.new(1, -118, 0, 10),
 		Size = UDim2.fromOffset(104, 32),
-		BackgroundColor3 = Theme.Accent,
+		BackgroundColor3 = Theme.BgElevated,
 		Text = "FECHAR [H]",
 		FontFace = Theme.Font,
 		TextSize = 15,

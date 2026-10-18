@@ -21,6 +21,7 @@ local HttpService = game:GetService("HttpService")
 local Remotes = require("@game/ReplicatedStorage/Shared/Net/Remotes")
 local Config = require("@game/ReplicatedStorage/Shared/Config")
 local Text = require("@game/ReplicatedStorage/Shared/Game/Text")
+local Components = require("../UI/Components")
 local Create = require("../UI/Create")
 local Theme = require("../UI/Theme")
 local Quality = require("@game/ReplicatedStorage/Shared/Game/VisualQuality")
@@ -51,15 +52,13 @@ local pending: { [string]: number } = {}
 local acknowledged: { [string]: number } = {}
 local qualityNames = { [0] = "Automática", [0.25] = "Baixa", [0.5] = "Média", [1] = "Alta" }
 
-local ON_COLOR = Color3.fromRGB(47, 89, 72)
-local OFF_COLOR = Theme.PanelLight
-
 local function refreshMenu()
 	for index, key in KEYS do
 		local button = buttons[key]
 		if button then
-			button.Text = `{index}  {(Text.Options :: any)[key]}: {if values[key] then Text.On else Text.Off}`
-			button.BackgroundColor3 = if values[key] then ON_COLOR else OFF_COLOR
+			-- [n] = atalho numérico do teclado; o estado também vem por texto, não só por cor.
+			button.Text = `[{index}] {(Text.Options :: any)[key]}: {if values[key] then Text.On else Text.Off}`
+			Components.setVariant(button, if values[key] then "success" else "secondary")
 		end
 	end
 	local labels = {
@@ -73,14 +72,20 @@ local function refreshMenu()
 		local button = buttons[key]
 		if button then
 			button.Text = `{labels[key]} {math.floor(value * 100)}%`
-			button.BackgroundColor3 = if value > 0 then Theme.PanelLight else OFF_COLOR
+			local fill = button:FindFirstChild("Fill", true)
+			if fill and fill:IsA("Frame") then
+				fill.Size = UDim2.fromScale(math.clamp(value, 0, 1), 1)
+			end
 		end
 	end
 	if buttons.shaders then
-		buttons.shaders.Text = `Shaders: {if shaders then "ON" else "OFF"}`
+		buttons.shaders.Text = `EFEITOS DE LUZ (SHADERS): {if shaders then "LIGADO" else "DESLIGADO"}`
+		Components.setVariant(buttons.shaders, if shaders then "success" else "secondary")
 	end
 	if buttons.quality then
-		buttons.quality.Text = `Qualidade visual: {qualityNames[visualQuality]}`
+		-- string.upper não converte letras acentuadas (UTF-8): nomes já em maiúsculas.
+		local upper = { [0] = "AUTOMÁTICA", [0.25] = "BAIXA", [0.5] = "MÉDIA", [1] = "ALTA" }
+		buttons.quality.Text = `QUALIDADE VISUAL: {upper[visualQuality] or qualityNames[visualQuality]}`
 	end
 	if status then
 		local saved = Players.LocalPlayer:GetAttribute("HousePreferencesSaved")
@@ -182,138 +187,191 @@ function SettingsController.Init()
 		ResetOnSpawn = false,
 		DisplayOrder = 250,
 		ScreenInsets = Enum.ScreenInsets.CoreUISafeInsets,
+		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 		Parent = Players.LocalPlayer:WaitForChild("PlayerGui"),
 	}) :: ScreenGui
 	local safe = Create(
 		"Frame",
 		{ Name = "SafeArea", Parent = gui, Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1 }
 	) :: Frame
-	local panel = Create("Frame", {
+	local panel = Components.panel({
 		Name = "Options",
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
 		Size = UDim2.new(0.92, 0, 0, 420),
-		BackgroundColor3 = Theme.Panel,
-		BackgroundTransparency = 0.04,
+		BackgroundColor3 = Theme.Bg,
+		BackgroundTransparency = 0.03,
 		Visible = false,
 		Parent = safe,
 	}, {
-		Create("UICorner", { CornerRadius = Theme.Corner }),
-		Create("UIStroke", { Color = Theme.Stroke, Thickness = 3 }),
-		Create("UISizeConstraint", { MaxSize = Vector2.new(680, 600) }),
-	}) :: Frame
+		Create("UISizeConstraint", { MaxSize = Vector2.new(760, 640) }),
+	})
+	local outline = panel:FindFirstChildOfClass("UIStroke")
+	if outline then
+		outline.Color, outline.Transparency = Theme.Gold, 0.45
+	end
 	menu = panel
-	Create("TextLabel", {
+	Components.icon(panel, "Settings", 24, Theme.Gold, { Position = UDim2.fromOffset(18, 18) })
+	Components.title({
 		Name = "Title",
-		Position = UDim2.fromOffset(20, 12),
-		Size = UDim2.new(1, -140, 0, 34),
-		BackgroundTransparency = 1,
-		FontFace = Theme.Font,
+		Position = UDim2.fromOffset(50, 12),
+		Size = UDim2.new(1, -200, 0, 34),
 		TextSize = 26,
-		TextColor3 = Theme.Hazard,
-		TextXAlignment = Enum.TextXAlignment.Left,
+		TextColor3 = Theme.GoldLight,
 		Text = "AJUSTES",
 		Parent = panel,
 	})
-	Create("TextLabel", {
+	Components.text({
 		Name = "Hint",
-		Position = UDim2.fromOffset(20, 46),
-		Size = UDim2.new(1, -40, 0, 34),
-		BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(18, 48),
+		Size = UDim2.new(1, -36, 0, 18),
 		FontFace = Theme.FontNote,
 		TextSize = 13,
-		TextColor3 = Theme.TextDim,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		Text = "Shaders: efeitos oficiais. OFF preserva pistas e perigo. Toque para alternar.",
-		TextWrapped = true,
+		TextColor3 = Theme.TextSecondary,
+		Text = "Toque numa opção para mudar. Pistas e sinais de perigo continuam visíveis em qualquer qualidade.",
 		Parent = panel,
 	})
+	status = Components.text({
+		Name = "SaveStatus",
+		Position = UDim2.fromOffset(18, 68),
+		Size = UDim2.new(1, -36, 0, 16),
+		FontFace = Theme.FontNote,
+		TextSize = 11,
+		TextColor3 = Theme.TextMuted,
+		Text = "Aplicado localmente · salvamento não confirmado",
+		Parent = panel,
+	}) :: TextLabel
 	local scroll = Create("ScrollingFrame", {
 		Name = "OptionsScroll",
 		Parent = panel,
-		Position = UDim2.fromOffset(12, 100),
-		Size = UDim2.new(1, -24, 1, -112),
+		Position = UDim2.fromOffset(14, 92),
+		Size = UDim2.new(1, -28, 1, -104),
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		ScrollBarThickness = 6,
+		ScrollBarImageColor3 = Theme.Gold,
 		CanvasSize = UDim2.new(),
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		ScrollingDirection = Enum.ScrollingDirection.Y,
+	}, {
+		Create("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder }),
+		Create("UIPadding", { PaddingRight = UDim.new(0, 10), PaddingBottom = UDim.new(0, 8) }),
 	}) :: ScrollingFrame
-	local entries: { TextButton } = {}
-	local function option(key: string, index: number, column: number, callback: () -> ())
-		local button = Create("TextButton", {
-			Name = key,
-			Modal = true,
+	local grids: { UIGridLayout } = {}
+	local function section(order: number, icon: string, title: string): Frame
+		local head = Create("Frame", {
+			Name = `Section_{title}`,
+			Size = UDim2.new(1, 0, 0, 26),
+			BackgroundTransparency = 1,
+			LayoutOrder = order,
 			Parent = scroll,
-			Position = UDim2.new(column * 0.5, if column == 0 then 16 else 6, 0, 74 + (index - 1) * 40),
-			Size = UDim2.new(0.5, -22, 0, 34),
-			BackgroundColor3 = OFF_COLOR,
-			TextColor3 = Theme.Text,
-			TextSize = 14,
-			TextWrapped = true,
-			FontFace = Theme.Font,
-			AutoButtonColor = true,
-			Text = key,
-		}, { Create("UICorner", { CornerRadius = Theme.CornerSmall }) }) :: TextButton
-		buttons[key] = button
-		table.insert(entries, button)
-		button.Activated:Connect(callback)
+		})
+		Components.icon(head, icon, 24, Theme.Gold)
+		Components.title({
+			Position = UDim2.fromOffset(32, 0),
+			Size = UDim2.new(1, -32, 1, 0),
+			Text = title,
+			TextSize = 16,
+			TextColor3 = Theme.Gold,
+			Parent = head,
+		})
+		local grid = Create("Frame", {
+			Name = `Grid_{title}`,
+			Size = UDim2.fromScale(1, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			BackgroundTransparency = 1,
+			LayoutOrder = order + 1,
+			Parent = scroll,
+		}) :: Frame
+		local layout = Create("UIGridLayout", {
+			CellSize = UDim2.new(0.5, -4, 0, Theme.TouchMin + 4),
+			CellPadding = UDim2.fromOffset(8, 8),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+			Parent = grid,
+		}) :: UIGridLayout
+		table.insert(grids, layout)
+		return grid
 	end
-	option("shaders", 1, 0, function()
+	local function option(parent: Instance, key: string, order: number, callback: () -> ())
+		local button = Components.button("secondary", {
+			Name = key,
+			LayoutOrder = order,
+			Text = key,
+			TextSize = 14,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			Parent = parent,
+		}, callback)
+		-- Modal: libera o cursor da primeira pessoa enquanto o painel está aberto.
+		button.Modal = true
+		Components.padding(button, 12, 0)
+		buttons[key] = button
+	end
+	local graphics = section(1, "Star", "GRÁFICOS")
+	option(graphics, "shaders", 1, function()
 		SettingsController.setVisual("shaders", if shaders then 0 else 1)
 	end)
-	option("quality", 1, 1, function()
+	option(graphics, "quality", 2, function()
 		local order = { 0, 0.25, 0.5, 1 }
 		local index = table.find(order, visualQuality) or 1
 		SettingsController.setVisual("quality", order[index % #order + 1])
 	end)
-	status = Create("TextLabel", {
-		Name = "SaveStatus",
-		Parent = panel,
-		Position = UDim2.fromOffset(20, 80),
-		Size = UDim2.new(1, -40, 0, 18),
-		BackgroundTransparency = 1,
-		FontFace = Theme.FontNote,
-		TextSize = 11,
-		TextColor3 = Theme.TextDim,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		Text = "Aplicado localmente · salvamento não confirmado",
-	}) :: TextLabel
+	local comfort = section(3, "Heart", "CONFORTO E TELA")
 	for index, key in KEYS do
-		option(key, index, 0, function()
+		option(comfort, key, index, function()
 			SettingsController.toggle(key :: Key)
 		end)
 	end
+	local audio = section(5, "Drum", "ÁUDIO (TOQUE PARA BAIXAR 25%)")
 	for index, key in { "master", "music", "effects", "breathing", "ambient" } do
-		option(key, index, 1, function()
+		option(audio, key, index, function()
 			mixes[key] = if mixes[key] <= 0 then 1 else math.max(0, mixes[key] - 0.25)
 			Players.LocalPlayer:SetAttribute("Mix_" .. key, mixes[key])
 			pending[key] = mixes[key]
 			Remotes.clientEvent("SetHousePreference"):FireServer(key, mixes[key])
 			refreshMenu()
 		end)
+		local track = Create("Frame", {
+			Name = "Level",
+			AnchorPoint = Vector2.new(1, 0.5),
+			Position = UDim2.fromScale(1, 0.5),
+			Size = UDim2.fromOffset(70, 6),
+			BackgroundColor3 = Theme.BgSunken,
+			BorderSizePixel = 0,
+			Parent = buttons[key],
+		})
+		Components.corner(track, Theme.CornerPill)
+		local fill = Create("Frame", {
+			Name = "Fill",
+			Size = UDim2.fromScale(1, 1),
+			BackgroundColor3 = Theme.Success,
+			BorderSizePixel = 0,
+			Parent = track,
+		})
+		Components.corner(fill, Theme.CornerPill)
 	end
-	option("close", 8, 1, function()
+	local close = Components.iconButton("secondary", "Close", "FECHAR", {
+		Name = "close",
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -12, 0, 10),
+		Size = UDim2.fromOffset(124, 44),
+		TextSize = 15,
+		Parent = panel,
+	}, function()
 		panel.Visible = false
 		Players.LocalPlayer:SetAttribute("ComfortMenuOpen", false)
 	end)
-	buttons.close.Text = "FECHAR"
-	buttons.close.BackgroundColor3 = Theme.Accent
-	buttons.close.Parent = panel
-	buttons.close.Position, buttons.close.Size = UDim2.new(1, -110, 0, 10), UDim2.fromOffset(96, 44)
+	close.Modal = true
+	buttons.close = close
 	RunService.RenderStepped:Connect(function()
 		if not panel.Visible then
 			return
 		end
-		panel.Size = UDim2.new(0.94, 0, 0, math.max(180, math.min(600, safe.AbsoluteSize.Y - 20)))
+		panel.Size = UDim2.new(0.94, 0, 0, math.max(180, math.min(640, safe.AbsoluteSize.Y - 20)))
+		-- Uma coluna em telas estreitas; duas a partir de 560 px.
 		local columns = if panel.AbsoluteSize.X >= 560 then 2 else 1
-		for index, b in entries do
-			if b ~= buttons.close then
-				local row, column = math.floor((index - 1) / columns), (index - 1) % columns
-				b.Position, b.Size = UDim2.new(column / columns, 0, 0, row * 52), UDim2.new(1 / columns, -8, 0, 44)
-			end
+		for _, layout in grids do
+			layout.CellSize = UDim2.new(1 / columns, if columns == 2 then -4 else 0, 0, Theme.TouchMin + 4)
 		end
-		scroll.CanvasSize = UDim2.fromOffset(0, math.ceil((#entries - 1) / columns) * 52)
 	end)
 	refreshMenu()
 end
