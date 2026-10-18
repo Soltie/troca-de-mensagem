@@ -541,6 +541,66 @@ end
 
 -- Em todos os cômodos: tapete persa no centro, mesa baixa no lugar da mesa antiga, janela na fachada
 -- e guarda-roupa por cima do armário-esconderijo (a porta interativa continua a mesma, invisível).
+--[[
+	O modelo do guarda-roupa é uma peça só. Para a porta abrir junto com o esconderijo, uma folha de porta
+	fica soldada à HideDoor (que o WorldService.swingLocker gira) e, atrás dela, um fundo escuro aparece
+	quando ela abre. A folha fica atrás da câmera de quem está escondido (olho 0,1 stud à frente da porta).
+]]
+local function wardrobeDoor(folder: Instance, door: BasePart)
+	local frontZ = door.Size.Z / 2
+	local function piece(name: string, size: Vector3, offset: Vector3, color: Color3, material: Enum.Material): BasePart
+		local part = Build.part(folder, name, size, door.CFrame * CFrame.new(offset), color, {
+			material = material,
+			collide = false,
+			query = false,
+		})
+		part.CanTouch = false
+		return part
+	end
+	piece(
+		"WardrobeInterior",
+		V3(door.Size.X - 0.1, door.Size.Y - 0.1, 0.02),
+		V3(0, 0, frontZ + 0.02),
+		rgb(16, 12, 10),
+		Enum.Material.SmoothPlastic
+	)
+	local leaf = piece(
+		"WardrobeLeaf",
+		V3(door.Size.X, door.Size.Y, 0.06),
+		V3(0, 0, frontZ + 0.09),
+		rgb(200, 196, 192),
+		Enum.Material.Wood
+	)
+	leaf.MaterialVariant = "MansionDarkWood"
+	local parts = { leaf }
+	-- Duas almofadas rebaixadas e a maçaneta de latão.
+	for _, y in { -door.Size.Y * 0.22, door.Size.Y * 0.22 } do
+		local inset = piece(
+			"WardrobeLeafPanel",
+			V3(door.Size.X * 0.7, door.Size.Y * 0.36, 0.03),
+			V3(0, y, frontZ + 0.135),
+			rgb(150, 140, 132),
+			Enum.Material.Wood
+		)
+		inset.MaterialVariant = "MansionDarkWood"
+		table.insert(parts, inset)
+	end
+	local knob = piece(
+		"WardrobeKnob",
+		V3(0.22, 0.22, 0.18),
+		V3(door.Size.X * 0.36, 0, frontZ + 0.21),
+		rgb(168, 132, 70),
+		Enum.Material.Metal
+	)
+	table.insert(parts, knob)
+	for _, part in parts do
+		part.Anchored, part.Massless = false, true
+		local weld = Instance.new("WeldConstraint")
+		weld.Part0, weld.Part1 = door, part
+		weld.Parent = part
+	end
+end
+
 local function common(folder: Instance, root: Instance, room: RoomRef)
 	local basement = room.y < 0
 	conceal(root, room, { Rug = true, AntiqueTable = true, Cord = true })
@@ -564,6 +624,7 @@ local function common(folder: Instance, root: Instance, room: RoomRef)
 					part.Transparency = 1
 				end
 			end
+			wardrobeDoor(folder, door)
 		end
 	end
 end

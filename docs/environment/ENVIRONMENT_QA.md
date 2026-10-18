@@ -111,3 +111,21 @@ No build Rojo isso vem do `Terrain.model.json`; no place compartilhado é uma pr
 
 NÃO TESTADO: floresta dos capítulos 6–8 com o Terrain (só por código), celular físico, partida humana com a chuva
 (conferir se o som não cobre os avisos da criatura), relâmpago visto em jogo (só a curva testada no Lune).
+
+## Lote 7 — Floresta, ladrilho, escada e guarda-roupa (18/10/2026, build `TungTung_ENV_L7.rbxlx`)
+
+| Verificação | Resultado |
+| --- | --- |
+| `lune run scripts/check` | ALL GREEN, 302 testes puros |
+| `Tests.Run` no Studio (estado inicial) | 314 aprovados, 0 falhas |
+| Floresta (`DebugBridge forestChapter 6`) | 841 pinheiros 3D, 94 manchas de mato, Terrain com trilhas; ~9.600 peças no Workspace |
+| Ladrilho | 2 pisos (cozinha e banheiro) |
+| Barricadas da escada | 24 tábuas; volumes `upstairs` invisíveis e ainda colidindo |
+| Guarda-roupas | 17 folhas de porta soldadas; ao girar a HideDoor a folha acompanha (desvio 0,0000) |
+| Erros do jogo | 0 (houve avisos `HttpError: NetFail` ao baixar texturas — falha de rede momentânea, não do código) |
+| Capturas | `docs/evidence/environment/after-lote7/` |
+
+Observação: rodar `Tests.Run` depois de pular para a floresta pelo `DebugBridge` dá 1 falha em `HouseNavigation`
+("Blocked room Basement"): o capítulo 6 fecha a passagem do porão e o teste espera a casa no estado inicial. No estado
+inicial passa. NÃO TESTADO: entrar no guarda-roupa com a câmera real (só a geometria e o giro), floresta com a lanterna
+de um jogador, celular físico.

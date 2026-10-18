@@ -234,6 +234,49 @@ end
 
 --[[ Floresta dos capítulos 6–8 ]]
 
+--[[
+	Pinheiros 3D (tronco com casca + galhos em cartões do atlas fir_tree_01, ~190 triângulos) no lugar das
+	árvores-bloco. O tronco-bloco continua lá, invisível, com a mesma colisão e o mesmo raycast;
+	as copas-bloco (sem colisão) só ficam invisíveis. Mesmo modelo repetido: o motor desenha em lote.
+]]
+local FIRS = { { name = "ForestFirA", height = 55 }, { name = "ForestFirB", height = 44 } }
+
+local function firs(forest: Instance)
+	local source = library()
+	if not source or not source:FindFirstChild("ForestFirA") then
+		return
+	end
+	local folder = Build.folder(forest, "ForestFirs")
+	local rng = Random.new(SEED + 31)
+	local placed = 0
+	for _, part in forest:GetDescendants() do
+		if not part:IsA("BasePart") then
+			continue
+		end
+		if part.Name == "Canopy" then
+			part.Transparency = 1
+			part.CastShadow = false
+		elseif part.Name == "Trunk" and part:GetAttribute("ForestTree") == true then
+			local pick = FIRS[rng:NextInteger(1, #FIRS)]
+			local template = source:FindFirstChild(pick.name)
+			if not template or not template:IsA("Model") then
+				continue
+			end
+			part.Transparency = 1
+			part.CastShadow = false
+			local model = template:Clone()
+			model:ScaleTo(model:GetScale() * part.Size.Y / pick.height * rng:NextNumber(1, 1.12))
+			local base = part.Position - Vector3.yAxis * part.Size.Y / 2
+			model:PivotTo(CFrame.new(base) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0))
+			model.Parent = folder
+			placed += 1
+			if placed % 150 == 0 then
+				task.wait()
+			end
+		end
+	end
+end
+
 local function dressForest(forest: Instance)
 	if forest:FindFirstChild("ForestGrass") then
 		return
@@ -262,6 +305,7 @@ local function dressForest(forest: Instance)
 		return
 	end
 	forestTerrain(trails)
+	firs(forest)
 	local function blocked(x: number, z: number): boolean
 		for _, trail in trails do
 			local offset = trail.CFrame:PointToObjectSpace(V3(x, trail.Position.Y, z))

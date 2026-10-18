@@ -112,3 +112,10 @@ Candidatas para o próximo lote, ainda **não baixadas** (dependem do ok do huma
 | AmbThunder | PSE "Thunder Distant Rumble 1" (rbxassetid 9120018692) | Pro Sound Effects | licenciado pela Roblox, gratuito |
 
 IDs das imagens em `tools/environment/texture_ids.json`.
+
+### Lote 7 — floresta, ladrilho, escada e guarda-roupa (18/10/2026)
+
+| Uso | Fonte | Autor(es) | Licença |
+| --- | --- | --- | --- |
+| ForestFirA/B (pinheiros) | **montados por Claude no Blender** (tronco cônico + ~25 cartões de galho) com as texturas de casca e do atlas de galhos de Poly Haven `fir_tree_01` (o modelo original, com 0,5–4 milhões de triângulos, não foi usado) | Rico Cilliers, Rob Tuytel (texturas) | CC0 |
+| MansionTiles (cozinha e banheiro) | Poly Haven `floor_tiles_06` | Rob Tuytel | CC0 |

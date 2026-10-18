@@ -6,6 +6,7 @@
 	não aparecer do lado de fora; o porão continua de tijolo.
 ]]
 
+local House = require("@game/ReplicatedStorage/Shared/Game/HouseCatalog")
 local Build = require("./Build")
 
 local Materials = {}
@@ -97,6 +98,25 @@ function Materials.apply(part: BasePart, finish: Finish)
 	part.Color = finish.color
 end
 
+-- Cozinha e banheiro: ladrilho xadrez de mármore gasto (Poly Haven floor_tiles_06).
+local TILES: Finish = { variant = "MansionTiles", material = Enum.Material.Slate, color = rgb(214, 206, 196) }
+local TILED: { Vector3 } = {}
+for _, room in House.Rooms do
+	if room.id == "Kitchen" or room.id == "Bath" then
+		table.insert(TILED, Vector3.new(room.x, room.y, room.z))
+	end
+end
+
+local function tiled(position: Vector3): boolean
+	for _, center in TILED do
+		local d = position - center
+		if math.abs(d.X) < 18 and math.abs(d.Z) < 16 and math.abs(d.Y) < 1.5 then
+			return true
+		end
+	end
+	return false
+end
+
 -- Sala de máquinas (térreo, fundo à direita): reboco cru, sem papel de parede.
 local function utility(position: Vector3): boolean
 	return position.X > 8.6 and position.Z < -52.4 and position.Y > -0.5 and position.Y < 15.5
@@ -116,6 +136,8 @@ local function classify(part: BasePart): Finish?
 		-- Porão e sala de máquinas: lajota de pedra em vez de tábua.
 		if utility(part.Position + Vector3.yAxis) then
 			return STONE
+		elseif name == "RoomFloor" and tiled(part.Position) then
+			return TILES
 		end
 		return if basement then (if name == "CorridorFloor" or name == "RoomFloor" then STONE else nil) else PLANKS
 	elseif CEILINGS[name] then

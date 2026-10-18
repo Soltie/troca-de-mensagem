@@ -254,6 +254,94 @@ local function foyerWalls(parent: Instance, y: number)
 	end
 end
 
+--[[
+	Escada bloqueada pela missão: o volume de colisão (HouseAccess, "upstairs") continua o mesmo, só fica
+	invisível. Nas duas pontas de cada lance entra uma barricada de tábuas pregadas com placa; ela aparece
+	enquanto o volume colide e some junto quando a missão libera a escada.
+]]
+local BOARDS = rgb(118, 94, 72)
+
+local function barricade(parent: Instance, base: Vector3, facing: Vector3, width: number): { BasePart }
+	local items: { BasePart } = {}
+	local frame = CFrame.lookAt(base, base + facing)
+	local function board(name: string, size: Vector3, offset: CFrame, color: Color3)
+		table.insert(items, deco(parent, name, size, frame * offset, color, Enum.Material.WoodPlanks))
+	end
+	for _, side in { -1, 1 } do
+		board("BarricadePost", V3(0.6, 7.4, 0.6), CFrame.new(side * (width / 2 - 0.3), 3.7, 0), WOOD)
+	end
+	for index, y in { 1.4, 3.1, 4.9, 6.5 } do
+		local tilt = math.rad(if index % 2 == 0 then 7 else -5)
+		board("BarricadeBoard", V3(width + 1.2, 0.85, 0.22), CFrame.new(0, y, -0.4) * CFrame.Angles(0, 0, tilt), BOARDS)
+	end
+	-- X de tábuas por cima: lê como "interditado" de longe.
+	for _, angle in { 38, -38 } do
+		board(
+			"BarricadeBoard",
+			V3(math.sqrt(width * width + 36), 0.8, 0.22),
+			CFrame.new(0, 3.8, -0.65) * CFrame.Angles(0, 0, math.rad(angle)),
+			BOARDS:Lerp(WOOD, 0.3)
+		)
+	end
+	local sign = Build.sign(
+		parent,
+		"BarricadeSign",
+		(frame * CFrame.new(0, 5.6, -0.85)).Position,
+		facing,
+		Vector2.new(4.4, 1.1),
+		"INTERDITADO",
+		{
+			textColor = rgb(232, 214, 180),
+			background = rgb(70, 26, 22),
+			font = Enum.Font.SpecialElite,
+		}
+	)
+	sign.CanCollide, sign.CanQuery, sign.CanTouch = false, false, false
+	table.insert(items, sign)
+	return items
+end
+
+local function stairBarriers(root: Instance, folder: Instance)
+	local barriers = root:FindFirstChild("ProgressionBarriers")
+	local architecture = root:FindFirstChild("Architecture")
+	if not barriers or not architecture then
+		return
+	end
+	local rays = RaycastParams.new()
+	rays.FilterType = Enum.RaycastFilterType.Include
+	rays.FilterDescendantsInstances = { architecture }
+	for _, part in barriers:GetChildren() do
+		if not part:IsA("BasePart") or part.Name ~= "upstairs" then
+			continue
+		end
+		local items: { BasePart } = {}
+		for _, side in { -1, 1 } do
+			local z = part.Position.Z + side * (part.Size.Z / 2 - 0.4)
+			local top = part.Position.Y + part.Size.Y / 2
+			local hit = workspace:Raycast(V3(part.Position.X, top, z), V3(0, -(part.Size.Y + 2), 0), rays)
+			local floor = if hit then hit.Position.Y else part.Position.Y - part.Size.Y / 2
+			for _, item in barricade(folder, V3(part.Position.X, floor, z), V3(0, 0, side), part.Size.X - 0.6) do
+				table.insert(items, item)
+			end
+		end
+		local function sync()
+			if part.Transparency ~= 1 then
+				part.Transparency = 1
+			end
+			for _, item in items do
+				item.Transparency = if part.CanCollide then 0 else 1
+				local gui = item:FindFirstChildWhichIsA("SurfaceGui")
+				if gui then
+					gui.Enabled = part.CanCollide
+				end
+			end
+		end
+		part:GetPropertyChangedSignal("CanCollide"):Connect(sync)
+		part:GetPropertyChangedSignal("Transparency"):Connect(sync)
+		sync()
+	end
+end
+
 function Finish.build(root: Instance)
 	local old = root:FindFirstChild("Finish")
 	if old then
@@ -330,6 +418,7 @@ function Finish.build(root: Instance)
 			end
 		end
 	end
+	stairBarriers(root, folder)
 end
 
 return Finish

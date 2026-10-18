@@ -147,3 +147,12 @@ Sem downloads novos: tudo com modelos já aprovados (`WindowSet`, `Lantern`, `Ro
 
 Peças de chão por baixo receberam as MaterialVariants (GardenLawn, ForestFloor, DirtTrail, SandPath) como reserva: se o
 Terrain não existir no place (ex.: place compartilhado sem a configuração), o chão ainda fica texturizado.
+
+## Lote 7 — Floresta, ladrilho, escada e guarda-roupa (18/10/2026)
+
+| Antes | Depois |
+| --- | --- |
+| Floresta dos capítulos 6–8: tronco-caixa com duas copas-caixa (~1.100 árvores) | Pinheiros 3D leves (~190 triângulos, dois modelos repetidos) no lugar de cada árvore; o tronco-caixa continua invisível com a mesma colisão e raycast |
+| Pisos de tábua na cozinha e no banheiro | Ladrilho xadrez de mármore gasto (Poly Haven `floor_tiles_06`) |
+| Escada bloqueada por um caixotão de tábuas | Volume invisível (mesma colisão da missão) e barricadas de tábuas pregadas com placa "INTERDITADO" nas pontas; somem quando a missão libera |
+| Porta do guarda-roupa-esconderijo pintada no modelo, parada ao entrar/sair | Folha de porta 3D soldada à HideDoor (gira junto, desvio 0) e fundo escuro que aparece quando ela abre |
