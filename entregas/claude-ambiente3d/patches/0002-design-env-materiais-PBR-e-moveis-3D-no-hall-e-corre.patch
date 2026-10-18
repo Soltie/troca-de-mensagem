@@ -1,7 +1,7 @@
 From a53dc13a7646c9f24ad7b17f55911408db61be13 Mon Sep 17 00:00:00 2001
 From: fashionultraaura <fashionultraaura@gmail.com>
 Date: Sun, 18 Oct 2026 04:13:08 -0300
-Subject: [PATCH 2/2] design(env): materiais PBR e moveis 3D no hall e
+Subject: [PATCH 2/4] design(env): materiais PBR e moveis 3D no hall e
  corredores (lote 2)
 
 MaterialVariant PBR (Poly Haven CC0) em MaterialService: papel de parede

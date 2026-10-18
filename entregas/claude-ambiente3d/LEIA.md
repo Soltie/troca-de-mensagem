@@ -1,8 +1,8 @@
-# Entrega Claude — reforma 3D, lotes 1 e 2 (hall e corredores)
+# Entrega Claude — reforma 3D, lotes 1 a 3 (hall, corredores, cômodos e portas)
 
-- Base: `design/ui-remaster` cde09de. Commits: `ff88474` (lote 1), `a53dc13` (lote 2).
+- Base: `design/ui-remaster` cde09de. Commits: `ff88474` (lote 1), `a53dc13` (lote 2), `c3bbacb` + `54b3829` (lote 3).
 - `patches/*.patch`: aplicar com `git am` sobre uma base que tenha `Server/World` igual ao da referência.
-- `TungTung_ENV_L2d.rbxlx`: build abrível (Rojo) para conferir o visual; **não** é o place compartilhado.
+- `TungTung_ENV_L3c.rbxlx`: build abrível (Rojo) para conferir o visual; **não** é o place compartilhado.
 
 Arquivos: novos `World/HouseFinish`, `World/HouseMaterials`, `World/HouseProps`, `src/MaterialService/*.model.json`,
 `ReplicatedStorage/Assets/MansionProps.rbxm`; edições pequenas em `World/HouseScenery` e `World/HouseLevelBuilder`;

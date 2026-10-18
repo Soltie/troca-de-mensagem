@@ -1,7 +1,7 @@
 From ff88474b723aba16793e08ecb1a5570365dc3d63 Mon Sep 17 00:00:00 2001
 From: fashionultraaura <fashionultraaura@gmail.com>
 Date: Sat, 17 Oct 2026 23:33:06 -0300
-Subject: [PATCH 1/2] design(env): hall de entrada e corredores com acabamento
+Subject: [PATCH 1/4] design(env): hall de entrada e corredores com acabamento
  (lote 1)
 
 Novo HouseFinish (so visual, sem colisao/raycast): forros e sancas, passadeiras,
