@@ -70,3 +70,23 @@ NÃO TESTADO: celular físico; partida humana com criatura ativa; final em ruín
 Pendências conhecidas: cômodos ainda escuros com a energia desligada (lote de iluminação); banheiro/cozinha sem piso de ladrilho;
 fachada, jardim e floresta ainda não reformados. NÃO TESTADO: celular físico, partida humana, esconder-se no guarda-roupa novo
 com a câmera real (a geometria foi alinhada à fresta, mas a vista não foi conferida em jogo).
+## Lote 5 — Iluminação, fachada e jardim (18/10/2026, build `TungTung_ENV_L5d.rbxlx`)
+
+| Verificação | Resultado |
+| --- | --- |
+| `lune run scripts/check` | ALL GREEN, 298 testes puros (novo: luz ambiente interna) |
+| `Tests.Run` no Studio | 310 aprovados, 0 falhas (inclui navegação da casa, do jardim e EstateGround) |
+| Erros/avisos do jogo no `LogService` | 0 |
+| Peças novas com colisão, raycast ou toque | 0 de ~1.590 (casca, jardim e telhado) |
+| Troca de capítulo (GeneratedEstate refeito) | telhado, cerca e terreno vestidos de novo, uma única vez |
+| Ruínas simuladas (pasta `Ruins`) | 1.061/1.061 peças da casca somem; voltam ao remover |
+| Árvores do jardim | 88 árvores presentes no lobby e depois de iniciar o capítulo |
+| Peças no Workspace (cap. 1) | ~4.830 (antes ~3.320; +1.000 da casca, +600 das árvores que antes sumiam) |
+| Ambiente num cômodo sem energia | (44, 37, 34) → cômodo legível; fora da casa continua (19, 22, 32) |
+| Capturas | `docs/evidence/environment/after-lote5/` |
+
+Observação de método: com três Studios abertos a placa de vídeo derrubou a qualidade e as PointLights pararam de
+renderizar (falso "fachada escura"); as capturas finais foram feitas com um Studio só.
+
+Pendências: telhado com Slate do próprio Roblox (falta textura de telhas), sem lucarnas; ladrilho no banheiro/cozinha;
+floresta dos capítulos 6–8. NÃO TESTADO: celular físico (atenção ao total de peças), partida humana, final em ruínas real.

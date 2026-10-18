@@ -111,3 +111,25 @@ Escala: móveis de chão +25% (`FURNITURE`), porque a casa é maior que o real (
 
 Hyper3D: 8 gerações (chave de teste); 6 aproveitadas, 2 descartadas (ursinho e cavalinho saíram deformados).
 Limitação: a porta do guarda-roupa é parte do mesmo modelo, então não acompanha visualmente o balanço da porta do esconderijo.
+## Lote 5 — Iluminação, fachada e jardim (18/10/2026)
+
+Sem downloads novos: tudo com modelos já aprovados (`WindowSet`, `Lantern`, `RockingChair`), texturas já enviadas
+(`MansionPlaster`, `MansionDarkWood`, `MansionFloorPlanks`) e peças procedurais. Código em `World/HouseExterior.luau`.
+
+| Antes | Depois |
+| --- | --- |
+| Paredes externas lisas; papel de parede aparecendo por fora da ala oeste | Casca externa fina sem colisão: reboco PBR claro, soco de tijolo com capa de pedra, faixas de nogueira entre andares, cornija em dois degraus |
+| Quinas retas | Cunhais de pedra alternados nas 5 quinas externas |
+| 40 janelas neon chapadas em 4 fileiras desalinhadas dos andares | 55 janelas com caixilho 3D, vidro, venezianas verde-escuras, peitoril de pedra, verga e frontão; luz quente com cortinas ou quarto escuro (≈60% acesas) |
+| Telhado liso, chaminé de madeira | Testeira e cumeeira com pináculos de ferro; chaminés de tijolo com faixa e potes de barro |
+| Letreiro grande sobre as janelas | Letreiro no frontão, com óculo aceso acima |
+| Varanda dupla (telhadinho + marquise sobrepostos), postes de madeira | Marquise com capa de ardósia, testeiras, colunas torneadas com base de pedra e capitel; lanterna pendurada; deck de tábuas, degrau, capacho, cadeira de balanço |
+| Luzes neon em caixa ao lado da porta | Lanternas de parede em braço de ferro |
+| Postes de cilindro com cubo neon (um deles dentro do pilar da varanda) | Postes vitorianos de ferro com lanterna 3D, reposicionados |
+| Abóboras de 3 esferas | Abóboras de 8 gomos com talo; rosto aceso nas do caminho |
+| 6 lápides iguais dentro do pavilhão "Jardim de Inverno" | Cemitério em lugar livre: lápides em arco, cruzes e obelisco, tortas, com musgo e epitáfios |
+| Cerca de pickets branca (301 peças) atrás do muro | Removida; muro do perímetro vira tijolo com coping e pilares; cerca da frente vira grade de ferro (a colisão original fica) |
+| Chão do jardim lateral com material de madeira, caminhos de madeira | Grama; caminhos e pátio de paralelepípedo; mirante, pavilhões e bancos em nogueira |
+| Árvores do jardim: nunca apareciam (pasta "Forest" apagada pelo ForestBuilder); algumas cairiam dentro dos pavilhões | Pasta `GardenTrees`; árvores secas retorcidas e copas escuras, sem nenhuma dentro de pavilhão, mirante, cerca ou cemitério |
+| Portão: pilares de pedra lilás com esfera neon | Pilares de tijolo com capitel de pedra e lanterna 3D |
+| Cômodos pretos com a energia desligada | Preenchimento ambiente quente só sob o telhado (`LightingProfile.ambient`); noite e floresta inalteradas |

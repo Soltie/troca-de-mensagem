@@ -89,3 +89,8 @@ foi excluído do modelo e não é usado no jogo.
 | Wardrobe, LowTable, KitchenCounter, WindowSet, PersianRug | **modelados/gerados por Claude no Blender** (estampa do tapete gerada por script) | — | próprios |
 
 O `.rbxm` agora é salvo pelo MCP (`SerializationService` + `tools/environment/serve.luau`, POST local), sem depender do menu do Studio.
+### Lote 5 (fachada e jardim)
+
+Nenhum download novo. Reutiliza `WindowSet`, `Lantern` e `RockingChair` (lotes 1–4) e as MaterialVariants já enviadas.
+Candidatas para o próximo lote, ainda **não baixadas** (dependem do ok do humano): `roof_slates_03` (telhado),
+`brick_wall_10` (muro/soco) e `street_lamp_01` (poste), todas Poly Haven CC0.

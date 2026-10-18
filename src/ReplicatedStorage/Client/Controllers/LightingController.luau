@@ -137,9 +137,7 @@ function controller.Start()
 		local world = workspace:FindFirstChild(Tags.WorldFolder)
 		forest = Profile.approach(forest, if world and world:GetAttribute("ForestActive") == true then 1 else 0, delta)
 		-- A mesma composição governa luz funcional e profundidade, inclusive com Shaders OFF.
-		Lighting.Ambient = rgb(Profile.World.ambient)
-			:Lerp(rgb(Profile.World.ambientPower), power)
-			:Lerp(rgb(Profile.Forest.ambient), forest)
+		Lighting.Ambient = rgb(Profile.ambient(indoor, power, forest))
 		Lighting.OutdoorAmbient = rgb(Profile.World.outdoor):Lerp(rgb(Profile.Forest.outdoor), forest)
 		Lighting.FogColor =
 			rgb(Profile.World.fog):Lerp(rgb(Profile.World.fogPower), power):Lerp(rgb(Profile.Forest.fog), forest)

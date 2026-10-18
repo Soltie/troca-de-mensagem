@@ -26,6 +26,19 @@ return {
 				end
 			end
 		end)
+		t.it("interiors get a warm fill without brightening the night or the forest", function()
+			local outside = P.ambient(0, 0, 0)
+			local inside = P.ambient(1, 0, 0)
+			local forest = P.ambient(1, 1, 1)
+			for i = 1, 3 do
+				t.expect(inside[i] >= outside[i]).toBe(true)
+				t.expect(forest[i]).toBeCloseTo(P.Forest.ambient[i])
+				t.expect(inside[i] <= 64).toBe(true)
+			end
+			-- Quente: vermelho acima do azul dentro de casa.
+			t.expect(inside[1] > inside[3]).toBe(true)
+			t.expect(P.ambient(0, 0, 0)[3]).toBe(P.World.ambient[3])
+		end)
 		t.it("fog recovers fully and never extends a shorter existing visibility cap", function()
 			t.expect(P.fogEnd(142, 0)).toBe(142)
 			t.expect(P.fogEnd(142, 1)).toBe(64)

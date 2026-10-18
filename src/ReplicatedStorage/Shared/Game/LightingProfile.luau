@@ -11,6 +11,9 @@ Profile.World = {
 	brightness = 1.05,
 	ambient = { 19, 22, 32 },
 	ambientPower = { 27, 28, 36 },
+	-- Sob o telhado: preenchimento quente e baixo, para nenhum cômodo virar tela preta sem energia.
+	ambientIndoor = { 44, 37, 34 },
+	ambientIndoorPower = { 54, 46, 40 },
 	outdoor = { 65, 74, 100 },
 	fog = { 30, 36, 51 },
 	fogPower = { 35, 40, 53 },
@@ -45,6 +48,22 @@ function Profile.grade(indoor: number, power: number): Grade
 		saturation = -0.035 - inside * 0.025,
 		brightness = 0.005,
 	}
+end
+
+-- Ambiente final: noite fria lá fora, preenchimento quente dentro de casa, mata por cima de tudo.
+function Profile.ambient(indoor: number, power: number, forest: number): RGB
+	local inside = math.clamp(indoor, 0, 1)
+	local on = math.clamp(power, 0, 1)
+	local wild = math.clamp(forest, 0, 1)
+	local out = {}
+	for i = 1, 3 do
+		local night = Profile.World.ambient[i] + (Profile.World.ambientPower[i] - Profile.World.ambient[i]) * on
+		local house = Profile.World.ambientIndoor[i]
+			+ (Profile.World.ambientIndoorPower[i] - Profile.World.ambientIndoor[i]) * on
+		local base = night + (house - night) * inside
+		out[i] = base + (Profile.Forest.ambient[i] - base) * wild
+	end
+	return out
 end
 
 function Profile.exposure(indoor: number, power: number): number
