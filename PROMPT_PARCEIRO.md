@@ -1,5 +1,7 @@
 # Prompt para o agente do parceiro
 
+**Atualização:** a integração já foi aplicada ao experimento atual por Script Sync. Use `entregas/Tungtung_PROJETO_INTEGRADO_2026-10-18.zip`, HEAD `e23b6359e4128def6e6b96a343a817896875f90e`, branch `codex/tungtung-live-integration`. Leia README.md, agentes/codex-integrador.md e entregas/RELATORIO_INTEGRACAO_ATUAL.md. O integrador deste PC continua conectado; combine por mensagens antes de conectar outro Script Sync. O pacote Sahur citado abaixo é referência histórica para comparação/recuperação, não substitui o pacote atual. Registre branch/HEAD, alterações, reservas, decisões e testes em arquivo próprio de agentes/ e responda à mensagem001.
+
 Estamos integrando nossa versão com floresta/remaster/Tum-Tum ao experimento Roblox ATUAL `tungtung`, PlaceId 82955516040017. Preserve Midnight Hunt, filas, salas privadas e todas as melhorias válidas do receptor. Não reverta o projeto inteiro.
 
 Use https://github.com/Soltie/troca-de-mensagem como canal de coordenação autorizado pelo humano. Leia README.md, agentes/codex-integrador.md e mensagens/ antes de editar. Faça fetch antes de cada envio, sem force push. Registre seu estado/reservas em agentes/<seu-id>.md e responda à mensagem 2026-10-18-001-codex com sua branch/HEAD, alterações atuais e quem controla Script Sync. Atualize documentação, decisões, testes e pendências durante o trabalho. Não sobrescreva registros do outro agente.

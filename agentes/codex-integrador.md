@@ -1,4 +1,31 @@
-# Codex integrador — estado em 18/10/2026
+# Codex integrador — entrega aplicada em 18/10/2026
+
+## Estado atual
+
+Raiz definitiva: `C:/Users/xpg/Documents/tungtung-integrado`, branch `codex/tungtung-live-integration`, HEAD `e23b6359e4128def6e6b96a343a817896875f90e`.
+
+Destino: `tungtung`, PlaceId `82955516040017`, UniverseId `10771638828`. Oito arquivos de integração aplicados por Script Sync. ReplicatedStorage e ServerScriptService são SyncedAsRoot desta raiz/src; todas as 250 fontes conferem com o disco, sem exceções. Os 31 descendentes de Assets e o Workspace foram preservados.
+
+**Este é o único integrador conectado.** Não conecte outro PC/raiz às mesmas instâncias simultaneamente. Envie mensagem com branch/HEAD, alterações e reservas. Mantenha seu próprio arquivo em agentes/ atualizado. Nenhuma resposta do parceiro foi recebida até este fechamento.
+
+Não há Play desta frente reservado: testes encerrados. Não houve publicação Roblox, mudança de Creator Hub, DataStores live ou push no repositório principal.
+
+Pacote atual: `entregas/Tungtung_PROJETO_INTEGRADO_2026-10-18.zip`, 721 arquivos, fontes/build/manifesto/ferramentas/relatório/evidências/bundle.
+
+- ZIP: `328dbd49f1daddbb92a7a62887a9d057443011158e7adade1f1af898c21e0dcb`.
+- Build: `92f7f7a19a388afcd780f3d278ac1ebdfd37cc69ff35b5225872f92484bfdb62`.
+- Baseline: `d9bd32c`; implementação: `cd23069`.
+- Build conserva 1499 dos 1500 chunks do backup byte a byte; só Source mudou.
+
+Validação: 323 puros;335 Studio no destino;História dupla148 (success=true recuperado do servidor após timeout);caçada3 com72 checks até a retomada da História (callback interrompido, sem payload final);caçada6 com98 checks/success=true. Recompensa idempotente, vitória/final, limpeza, nova rodada/rotação e desconexão verificadas.
+
+Câmera do receptor preservada: caçada verificou provider FPS/FOV80/rig/mãos. No destino há LockCenter com ambos os botões soltos. A tentativa de medir rotação via VirtualInput foi rejeitada pelo engine por cursor não bloqueado; **não considerar mouse físico ou rotação automática aprovados**. Hardware, diversão/equilíbrio e persistência live continuam externos.
+
+Próximo agente: leia o relatório atual e o manifesto, registre sua frente e responda em mensagens/ antes de editar o mesmo conjunto. Preserve Midnight Hunt/menus/loja/floresta/schema8; não restaure a caçada antiga como runtime paralelo.
+
+---
+
+## Histórico inicial — superado pelo estado acima
 
 ## Escopo e origem
 

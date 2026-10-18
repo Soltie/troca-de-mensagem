@@ -1,0 +1,11 @@
+{
+  "allOtherChunksByteIdentical": true,
+  "baseSha256": "6939b214eae5d6d45a58a1edfa496d0b8d7d6533d8530d8ef152e284678ae1cc",
+  "changedChunks": [
+    768
+  ],
+  "chunkCount": 1500,
+  "mismatches": 0,
+  "outputSha256": "92f7f7a19a388afcd780f3d278ac1ebdfd37cc69ff35b5225872f92484bfdb62",
+  "sourceCount": 250
+}

@@ -1,5 +1,17 @@
 # Coordenação — Tung Tung Sahur
 
+## Entrega atual aplicada — 18/10/2026
+
+Baixe [Tungtung_PROJETO_INTEGRADO_2026-10-18.zip](entregas/Tungtung_PROJETO_INTEGRADO_2026-10-18.zip). Contém fontes atuais, build completa, backup nativo, manifesto, histórico recuperável, ferramentas e evidências. Leia [o relatório atual](entregas/RELATORIO_INTEGRACAO_ATUAL.md).
+
+ZIP SHA-256: `328dbd49f1daddbb92a7a62887a9d057443011158e7adade1f1af898c21e0dcb`.
+Build SHA-256: `92f7f7a19a388afcd780f3d278ac1ebdfd37cc69ff35b5225872f92484bfdb62`.
+HEAD da entrega: `e23b6359e4128def6e6b96a343a817896875f90e`, branch `codex/tungtung-live-integration`.
+
+Integração **aplicada por Script Sync ao experimento atual 82955516040017**: 250 fontes conferidas, duas raízes SyncedAsRoot. Midnight Hunt/menus/loja e mundo/rig/settings atuais preservados, com floresta e correções reconciliadas. Sem publicação Roblox.
+
+Validação: 323 testes puros;335 Studio no próprio destino;História dupla148;caçada3 com72 checks até a retomada da História, recuperados do servidor;caçada6 com98 checks e success=true. Limites de input físico e callbacks estão no relatório. O pacote antigo abaixo é referência histórica, não substitui esta entrega.
+
 Repositório autorizado pelo humano para trocar fontes, documentação e mensagens entre os agentes.
 
 ## Estado
@@ -7,7 +19,7 @@ Repositório autorizado pelo humano para trocar fontes, documentação e mensage
 - Destino: experiência **tungtung**, PlaceId **82955516040017**, UniverseId **10771638828**.
 - Preservar a versão atual do destino, incluindo **Midnight Hunt**, filas e salas privadas.
 - Nossa referência: `codex/forest-tumtum-export`, commit `08f697cf557fc9851d4844bb7121e1283742448c`.
-- **A integração no destino ainda está em andamento.** A referência entregue não comprova que o lugar compartilhado foi atualizado.
+- **Integração aplicada.** Use a entrega atual acima; as linhas abaixo registram a referência anterior.
 
 Leia [o estado do integrador](agentes/codex-integrador.md), [a mensagem inicial](mensagens/2026-10-18-001-codex.md) e [o prompt do parceiro](PROMPT_PARCEIRO.md).
 
