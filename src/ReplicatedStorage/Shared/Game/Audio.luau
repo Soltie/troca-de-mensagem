@@ -20,6 +20,8 @@ local Audio: { [string]: Clip } = {
 	-- Ambiências
 	AmbExterior = { id = "rbxassetid://9112834179", volume = 0.24 }, -- PSE Neighborhood Ambience 4 (noite, grilos)
 	AmbInterior = { id = "rbxassetid://9112839511", volume = 0.15, speed = 0.4 }, -- PSE Oil Refinery Ambience 2 (grave)
+	AmbRain = { id = "rbxassetid://9112856553", volume = 0.32 }, -- PSE Rain On Window 3 (chuva média, laço)
+	AmbThunder = { id = "rbxassetid://9120018692", volume = 0.55 }, -- PSE Thunder Distant Rumble 1 (trovão distante)
 	WindInterior = { id = "rbxassetid://9125742262", volume = 0.12, speed = 0.45 }, -- PSE Plasma Trails Airy Whooshing (vento em frestas)
 	Machinery = { id = "rbxassetid://9118748093", volume = 0.18, speed = 0.6 }, -- PSE Rumble Constant Roar (máquinas com energia)
 	Drips = { id = "rbxassetid://9120527007", volume = 0.35 }, -- PSE Water Drip Single Drops Into Tin Bucket 2

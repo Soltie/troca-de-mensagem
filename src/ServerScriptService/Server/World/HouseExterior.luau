@@ -696,6 +696,26 @@ local function hide(container: Instance?, on: boolean)
 	end
 end
 
+-- Tijolo e ardósia PBR (lote 6). Com textura, Color só tinge: fica claro para não escurecer o mapa.
+local ROOF_NAMES = { EstatePitchedRoof = true, FoyerPitchedRoof = true, PorchRoofCap = true, PavilionRoof = true }
+
+local function pbr(container: Instance?)
+	if not container then
+		return
+	end
+	for _, part in container:GetDescendants() do
+		if not part:IsA("BasePart") then
+			continue
+		end
+		if part.Material == Enum.Material.Brick and part.MaterialVariant == "" then
+			part.MaterialVariant = "GardenBrick"
+			part.Color = if part.Color == BRICK_DARK then rgb(176, 164, 158) else rgb(214, 204, 198)
+		elseif ROOF_NAMES[part.Name] then
+			part.Material, part.MaterialVariant, part.Color = Enum.Material.Slate, "RoofSlate", rgb(150, 150, 158)
+		end
+	end
+end
+
 local ESTATE_WOOD = {
 	ExteriorCornice = true,
 	PavilionColumn = true,
@@ -775,6 +795,7 @@ local function dressEstate(root: Instance)
 			font = Enum.Font.SpecialElite,
 		})
 	title.CanQuery, title.CanTouch = false, false
+	pbr(estate)
 	if root:FindFirstChild("Ruins") then
 		hide(roof, true)
 	end
@@ -1038,6 +1059,10 @@ function Exterior.build(root: Instance)
 	boundary(root, yardFolder)
 	yard(yardFolder)
 	dressEstate(root)
+	pbr(shellFolder)
+	pbr(yardFolder)
+	pbr(root:FindFirstChild("ProgressionBarriers"))
+	pbr(root:FindFirstChild("GatePillars"))
 	root.ChildAdded:Connect(function(child)
 		if child.Name == "GeneratedEstate" then
 			-- O nível monta o GeneratedEstate inteiro na mesma execução; vestir depois que terminar.

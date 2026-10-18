@@ -6,5 +6,12 @@
 	"quatrefoil_jacquard_fabric": { "color": "rbxassetid://140252000546382", "normal": "rbxassetid://105762213189783", "roughness": "rbxassetid://114254149529712", "source": "Poly Haven quatrefoil_jacquard_fabric (Rico Cilliers, colormass), CC0" },
 	"mansion_walnut": { "color": "rbxassetid://121556846015075", "normal": "rbxassetid://80496199455633", "roughness": "rbxassetid://117126738439221", "source": "dark_wood (Poly Haven, CC0) recolorida para nogueira" },
 	"mansion_runner": { "color": "rbxassetid://74819500113913", "normal": "rbxassetid://105762213189783", "roughness": "rbxassetid://114254149529712", "source": "quatrefoil_jacquard_fabric (Poly Haven, CC0) recolorida para vinho" },
-	"fabric_leather_02": { "color": "rbxassetid://79874351547915", "normal": "rbxassetid://98187868366641", "roughness": "rbxassetid://88991407739262", "source": "Poly Haven fabric_leather_02 (Rob Tuytel), CC0" }
+	"fabric_leather_02": { "color": "rbxassetid://79874351547915", "normal": "rbxassetid://98187868366641", "roughness": "rbxassetid://88991407739262", "source": "Poly Haven fabric_leather_02 (Rob Tuytel), CC0" },
+	"leafy_grass": { "color": "rbxassetid://103017495874997", "normal": "rbxassetid://136900417080331", "roughness": "rbxassetid://118650199004762", "source": "Poly Haven leafy_grass (Charlotte Baglioni), CC0" },
+	"forrest_ground_01": { "color": "rbxassetid://103032864651794", "normal": "rbxassetid://132287743229556", "roughness": "rbxassetid://110571934336608", "source": "Poly Haven forrest_ground_01 (Rob Tuytel), CC0" },
+	"forest_ground_06": { "color": "rbxassetid://124646342575550", "normal": "rbxassetid://90316754683799", "roughness": "rbxassetid://76116337063813", "source": "Poly Haven forest_ground_06 (Charlotte Baglioni), CC0" },
+	"sand_03": { "color": "rbxassetid://130566899461999", "normal": "rbxassetid://78970888924983", "roughness": "rbxassetid://98954285358400", "source": "Poly Haven sand_03 (Charlotte Baglioni), CC0" },
+	"roof_slates_03": { "color": "rbxassetid://94168900031000", "normal": "rbxassetid://84790249217758", "roughness": "rbxassetid://81338716392648", "source": "Poly Haven roof_slates_03 (Rob Tuytel), CC0" },
+	"brick_wall_10": { "color": "rbxassetid://84789243428598", "normal": "rbxassetid://131485603109662", "roughness": "rbxassetid://79506602551852", "source": "Poly Haven brick_wall_10 (Dimitrios Savva), CC0" },
+	"rain": { "streak": "rbxassetid://90203797622509", "splash": "rbxassetid://131263262987295", "source": "geradas por script (próprias)" }
 }

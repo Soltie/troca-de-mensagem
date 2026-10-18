@@ -1,0 +1,10 @@
+{
+	"className": "MaterialVariant",
+	"properties": {
+		"BaseMaterial": "Grass",
+		"ColorMap": "rbxassetid://103017495874997",
+		"NormalMap": "rbxassetid://136900417080331",
+		"RoughnessMap": "rbxassetid://118650199004762",
+		"StudsPerTile": 10
+	}
+}

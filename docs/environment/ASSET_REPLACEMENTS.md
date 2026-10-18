@@ -133,3 +133,17 @@ Sem downloads novos: tudo com modelos já aprovados (`WindowSet`, `Lantern`, `Ro
 | Árvores do jardim: nunca apareciam (pasta "Forest" apagada pelo ForestBuilder); algumas cairiam dentro dos pavilhões | Pasta `GardenTrees`; árvores secas retorcidas e copas escuras, sem nenhuma dentro de pavilhão, mirante, cerca ou cemitério |
 | Portão: pilares de pedra lilás com esfera neon | Pilares de tijolo com capitel de pedra e lanterna 3D |
 | Cômodos pretos com a energia desligada | Preenchimento ambiente quente só sob o telhado (`LightingProfile.ambient`); noite e floresta inalteradas |
+
+## Lote 6 — Grama, chão, tijolo, telhado e chuva (18/10/2026)
+
+| Antes | Depois |
+| --- | --- |
+| Chão do jardim e da floresta com material liso de peça | Terrain com a grama 3D animada do Roblox (estilo "Flat Terrain"), 0,1 stud acima do chão de peças (colisão igual); manchas de grama folhosa |
+| Passeios e pátios de material de madeira/pedra lisa | Terrain de paralelepípedo (passeio da frente, pátio dos fundos, caminho até a floresta), areia (passeio lateral), ardósia (pavilhões) |
+| Floresta: chão e trilhas lisos | Terrain com grama; trilha principal de terra batida; ramais de areia (repintados a cada capítulo) |
+| Sem mato | Touceiras altas 3D (Poly Haven) em manchas, longe de caminhos e construções; somem com a distância conforme a qualidade (`VisualDetail`) |
+| Tijolo e ardósia do próprio Roblox | Tijolo e telhado de ardósia PBR (Poly Haven) no soco, chaminés, muro, pilares e telhados |
+| Sem clima | Chuva no cliente (6 células em volta da câmera, para sob telhado), respingos, som abafado dentro de casa, trovões distantes e relâmpago raro (só com a opção de flashes) |
+
+Peças de chão por baixo receberam as MaterialVariants (GardenLawn, ForestFloor, DirtTrail, SandPath) como reserva: se o
+Terrain não existir no place (ex.: place compartilhado sem a configuração), o chão ainda fica texturizado.

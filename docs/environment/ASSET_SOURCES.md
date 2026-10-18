@@ -94,3 +94,21 @@ O `.rbxm` agora é salvo pelo MCP (`SerializationService` + `tools/environment/s
 Nenhum download novo. Reutiliza `WindowSet`, `Lantern` e `RockingChair` (lotes 1–4) e as MaterialVariants já enviadas.
 Candidatas para o próximo lote, ainda **não baixadas** (dependem do ok do humano): `roof_slates_03` (telhado),
 `brick_wall_10` (muro/soco) e `street_lamp_01` (poste), todas Poly Haven CC0.
+
+### Lote 6 — chão, mato e chuva (downloads aprovados em 18/10/2026)
+
+| Uso | Fonte | Autor(es) | Licença |
+| --- | --- | --- | --- |
+| MaterialVariant GardenLawn | Poly Haven `leafy_grass` | Charlotte Baglioni | CC0 |
+| MaterialVariant ForestFloor | Poly Haven `forrest_ground_01` | Rob Tuytel | CC0 |
+| MaterialVariant DirtTrail | Poly Haven `forest_ground_06` | Charlotte Baglioni | CC0 |
+| MaterialVariant SandPath | Poly Haven `sand_03` | Charlotte Baglioni | CC0 |
+| MaterialVariant RoofSlate | Poly Haven `roof_slates_03` | Rob Tuytel | CC0 |
+| MaterialVariant GardenBrick | Poly Haven `brick_wall_10` | Dimitrios Savva | CC0 |
+| TallGrassA/B/Clump (mato alto 3D) | Poly Haven `grass_medium_02` (tufos reduzidos para 1.000–4.600 triângulos, cor + alfa num PNG) | Rico Cilliers | CC0 |
+| Grama rasteira animada | grama decorativa do próprio Terrain do Roblox (`Terrain.Decoration`) | Roblox | motor |
+| Gota e respingo de chuva | texturas geradas por script (próprias) | — | próprias |
+| AmbRain | PSE "Rain On Window 3" (rbxassetid 9112856553) | Pro Sound Effects | licenciado pela Roblox, gratuito |
+| AmbThunder | PSE "Thunder Distant Rumble 1" (rbxassetid 9120018692) | Pro Sound Effects | licenciado pela Roblox, gratuito |
+
+IDs das imagens em `tools/environment/texture_ids.json`.

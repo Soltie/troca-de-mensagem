@@ -90,3 +90,24 @@ renderizar (falso "fachada escura"); as capturas finais foram feitas com um Stud
 
 Pendências: telhado com Slate do próprio Roblox (falta textura de telhas), sem lucarnas; ladrilho no banheiro/cozinha;
 floresta dos capítulos 6–8. NÃO TESTADO: celular físico (atenção ao total de peças), partida humana, final em ruínas real.
+
+## Lote 6 — Grama, chão e chuva (18/10/2026, build `TungTung_ENV_L6b/L6c.rbxlx`)
+
+| Verificação | Resultado |
+| --- | --- |
+| `lune run scripts/check` | ALL GREEN, 302 testes puros (novos: `Weather`) |
+| `Tests.Run` no Studio (L6b) | 314 aprovados, 0 falhas |
+| Erros/avisos do jogo | 0 (fora avisos temporários "content being generated" de imagens recém-enviadas) |
+| Grama do Terrain | aparece e balança (Decoration ligada pelo `places/world/Workspace/Terrain.model.json`) |
+| Chuva | visível, para sob telhado/varanda; 60 fps no Studio com 6 células ativas |
+| Memória do cliente (Studio) | ~1,9 GB |
+| Capturas | `docs/evidence/environment/after-lote6/` |
+
+Ajuste: com `GrassLength` 0,9 o capim escondia as lápides (e poderia esconder itens no chão); reduzido para 0,55.
+Observação: com várias janelas do Studio abertas, a captura de tela derrubou o Studio duas vezes; com uma só, não.
+
+**Integração (Codex):** a grama do Terrain depende de `Workspace.Terrain.Decoration = true` (e `GrassLength = 0.55`) no place.
+No build Rojo isso vem do `Terrain.model.json`; no place compartilhado é uma propriedade a marcar no Studio (não dá por script).
+
+NÃO TESTADO: floresta dos capítulos 6–8 com o Terrain (só por código), celular físico, partida humana com a chuva
+(conferir se o som não cobre os avisos da criatura), relâmpago visto em jogo (só a curva testada no Lune).
