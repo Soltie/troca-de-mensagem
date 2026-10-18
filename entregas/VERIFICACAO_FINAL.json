@@ -1,0 +1,11 @@
+{
+  "manifestFilesVerified": 720,
+  "gitBundleRecoveredHead": "e23b6359e4128def6e6b96a343a817896875f90e",
+  "zipSha256": "328dbd49f1daddbb92a7a62887a9d057443011158e7adade1f1af898c21e0dcb",
+  "portableCheck": "ALL GREEN: 323 passed",
+  "rebuiltSha256": "92f7f7a19a388afcd780f3d278ac1ebdfd37cc69ff35b5225872f92484bfdb62",
+  "sourceCountInDestination": 250,
+  "sourceMatches": true,
+  "rootsSynced": true,
+  "playsStopped": true
+}

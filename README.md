@@ -8,6 +8,8 @@ ZIP SHA-256: `328dbd49f1daddbb92a7a62887a9d057443011158e7adade1f1af898c21e0dcb`.
 Build SHA-256: `92f7f7a19a388afcd780f3d278ac1ebdfd37cc69ff35b5225872f92484bfdb62`.
 HEAD da entrega: `e23b6359e4128def6e6b96a343a817896875f90e`, branch `codex/tungtung-live-integration`.
 
+[Verificação final portátil e do destino](entregas/VERIFICACAO_FINAL.json): 720 arquivos do manifesto conferidos, bundle clonado no HEAD correto, check323 na extração, reconstrução byte-idêntica, 250 fontes correspondentes no destino, raízes sincronizadas e Plays encerrados.
+
 Integração **aplicada por Script Sync ao experimento atual 82955516040017**: 250 fontes conferidas, duas raízes SyncedAsRoot. Midnight Hunt/menus/loja e mundo/rig/settings atuais preservados, com floresta e correções reconciliadas. Sem publicação Roblox.
 
 Validação: 323 testes puros;335 Studio no próprio destino;História dupla148;caçada3 com72 checks até a retomada da História, recuperados do servidor;caçada6 com98 checks e success=true. Limites de input físico e callbacks estão no relatório. O pacote antigo abaixo é referência histórica, não substitui esta entrega.
