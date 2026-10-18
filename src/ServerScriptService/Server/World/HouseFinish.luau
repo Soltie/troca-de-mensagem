@@ -92,8 +92,10 @@ local function doorModel(panel: BasePart): boolean
 		return false
 	end
 	local model = template:Clone()
-	-- Malha: largura em X, espessura em Z, origem no pé. Painel: largura em Z, espessura em X.
-	model:PivotTo(panel.CFrame * CFrame.new(0, -panel.Size.Y / 2, 0) * CFrame.Angles(0, -math.pi / 2, 0))
+	-- Malha: largura em X, espessura em Z. Painel: largura em Z, espessura em X. Centros alinhados.
+	model:PivotTo(panel.CFrame * CFrame.Angles(0, -math.pi / 2, 0))
+	local box = model:GetBoundingBox()
+	model:PivotTo(model:GetPivot() + (panel.Position - box.Position))
 	for _, part in model:GetDescendants() do
 		if part:IsA("BasePart") then
 			part.Anchored, part.Massless = false, true
@@ -265,9 +267,53 @@ function Finish.build(root: Instance)
 			foyerWalls(folder, y)
 		end
 	end
+	-- Forro dos cômodos logo abaixo do teto (o piso de cima e o teto antigo coincidem e piscam).
+	-- Os cômodos do 1º andar no fundo (z = -68) ficam sem forro: a escada de serviço pode abrir esse teto.
+	for _, y in Layout.Floors do
+		for _, side in { -1, 1 } do
+			for row = 1, 3 do
+				local z = 28 - row * 32
+				if not (y == 16 and z == -68) then
+					deco(
+						folder,
+						"RoomCeilingPanel",
+						V3(35, 0.1, 31),
+						CFrame.new(side * 26, y + 14.94, z),
+						CEILING,
+						Enum.Material.Plaster
+					)
+				end
+			end
+		end
+	end
 	-- Entrada: passadeira até o corredor e capacho.
 	runner(folder, "HallRunner", V3(0, 0, 37.5), 47)
 	deco(folder, "HallDoormat", V3(8, 0.09, 2.6), CFrame.new(0, 0.045, 62), rgb(66, 54, 40), Enum.Material.Fabric)
+	-- Final em ruínas (WorldService.houseRuins): tetos e fachadas somem; forros e revestimentos acompanham.
+	local OPEN_IN_RUINS = {
+		CorridorCeilingPanel = true,
+		FoyerCeilingPanel = true,
+		RoomCeilingPanel = true,
+		FinishMedallion = true,
+		WallpaperSkin = true,
+	}
+	local function ruins(on: boolean)
+		for _, part in folder:GetDescendants() do
+			if part:IsA("BasePart") and OPEN_IN_RUINS[part.Name] then
+				part.Transparency = if on then 1 else 0
+			end
+		end
+	end
+	root.ChildAdded:Connect(function(child)
+		if child.Name == "Ruins" then
+			ruins(true)
+		end
+	end)
+	root.ChildRemoved:Connect(function(child)
+		if child.Name == "Ruins" then
+			ruins(false)
+		end
+	end)
 	local architecture = root:FindFirstChild("Architecture")
 	if architecture then
 		for _, part in architecture:GetChildren() do

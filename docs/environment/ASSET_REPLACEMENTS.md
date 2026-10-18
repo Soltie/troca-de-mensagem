@@ -63,3 +63,22 @@ Sem `Assets/MansionProps` (place de Script Sync sem o `.rbxm`), `HouseProps` nã
 
 Pendências: portas ainda são placas com almofadas simples (próximo: porta 3D modelada no Blender, só visual,
 soldada ao painel); barreira de progressão da escada com aparência de caixote; cômodos, porão, fachada, floresta e luz.
+
+## Lote 3 — Cômodos, portas 3D, forros e luz (18/10/2026)
+
+| Antes | Depois | Código |
+| --- | --- | --- |
+| Portas = placa com almofadas de bloco | Porta vitoriana 3D (4 almofadas, latão) soldada ao painel; painel continua colisão/prompt/som | `HouseFinish.doorModel` |
+| Teto dos cômodos piscando (piso de cima coincidente) | Forro de gesso em todos os cômodos (menos onde a escada de serviço abre o teto) | `HouseFinish` |
+| Esferas neon de luz noturna | Lamparinas 3D penduradas com luz própria | `HouseProps.nightLights` |
+| Quadros lisos dos cômodos | Molduras 3D com pinturas | `HouseProps.nightLights` |
+| Sala: sofá de blocos, abajur, vaso-esfera | Sofá vitoriano, poltrona, criado-mudo com lamparina, relógio e castiçais na lareira | `ROOMS.Living` |
+| Jantar: mesa e cadeiras de blocos, velas neon | Mesa redonda, 4 cadeiras góticas, castiçais, cristaleira | `ROOMS.Dining` |
+| Biblioteca/sótãos: estantes de caixas coloridas | Estantes 3D com volumes (as caixas de colisão continuam, invisíveis) | `bookshelves` |
+| Quartos: cama de bloco, guarda-roupa liso | Cama gótica / cama de ferro (infantil), criado-mudo com lamparina, cristaleira | `bedroom` |
+| Escritório: escrivaninha de blocos | Console gótico, cadeira gótica, relógio, castiçal, estante | `ROOMS.Office` |
+| Cozinha/sótãos | Armários pintados, divã, relógios | `ROOMS.Kitchen`, `attic` |
+| Mesa antiga e armários-esconderijo em cor sólida | Nogueira PBR (só material; prompt/porta/tags iguais) | `HouseMaterials` |
+
+Final em ruínas: forros, medalhões e revestimentos ficam transparentes junto com os tetos/fachadas.
+Pendências: lareira e rack da TV ainda procedurais; banheiro, sala de máquinas, porão, fachada, floresta e iluminação global.

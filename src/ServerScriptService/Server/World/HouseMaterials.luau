@@ -48,7 +48,7 @@ local FLOORS = {
 	MainStairs = true,
 	AtticStairs = true,
 }
-local CEILINGS = { RoomCeiling = true, CorridorCeilingPanel = true, FoyerCeilingPanel = true }
+local CEILINGS = { RoomCeiling = true, CorridorCeilingPanel = true, FoyerCeilingPanel = true, RoomCeilingPanel = true }
 local WOOD_NAMES = {
 	Wainscot = true,
 	DoorCasing = true,
@@ -71,7 +71,11 @@ local WOOD_NAMES = {
 	BenchLeg = true,
 	ClockPlinth = true,
 	ClockHood = true,
+	AntiqueTable = true,
 }
+-- Armários e esconderijos (Features): só a aparência muda; porta, prompt e tags ficam iguais.
+local HIDE_NAMES =
+	{ Side = true, Back = true, Top = true, HideDoor = true, ChestLid = true, BedCover = true, Leg = true }
 local WOOD_LIGHT_NAMES = {
 	WainscotPanel = true,
 	ChairRail = true,
@@ -163,6 +167,15 @@ function Materials.build(root: Instance)
 	end
 	for _, name in { "Architecture", "Furnishings", "Doors", "Finish", "GeneratedEstate" } do
 		paint(root:FindFirstChild(name))
+	end
+	local features = root:FindFirstChild("Features")
+	if features then
+		for _, part in features:GetDescendants() do
+			-- A porta do esconderijo debaixo da cama é quase transparente e fica como está.
+			if part:IsA("BasePart") and HIDE_NAMES[part.Name] and part.Transparency < 0.5 then
+				Materials.apply(part, WOOD)
+			end
+		end
 	end
 end
 

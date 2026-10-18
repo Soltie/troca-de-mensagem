@@ -41,3 +41,18 @@ NÃO TESTADO neste lote:
 
 NÃO TESTADO: celular físico; partida humana com a criatura ativa; place compartilhado `tungtung` (a integração
 é feita pelo Codex, integrador único).
+
+## Lote 3 — Cômodos e portas (18/10/2026, build `TungTung_ENV_L3c.rbxlx`)
+
+| Verificação | Resultado |
+| --- | --- |
+| `lune run scripts/check` | ALL GREEN, 297 testes puros |
+| `Tests.Run` no Studio | 309 aprovados, 0 falhas |
+| Erros/avisos do jogo (servidor e cliente) | 0 / 0 |
+| Portas 3D soldadas | 20 de 20, alinhadas ao painel (bug de pivô corrigido) |
+| Peças novas com colisão ou raycast | 0 |
+| Modo ruína simulado (pasta `Ruins`) | 46/46 forros e revestimentos ficaram transparentes; voltaram ao remover |
+| Peças no Workspace (capítulo 1) | ~3.080 |
+| Capturas | `docs/evidence/environment/after-lote3/` |
+
+NÃO TESTADO: celular físico; partida humana com criatura ativa; final em ruínas real (só simulado); place compartilhado.

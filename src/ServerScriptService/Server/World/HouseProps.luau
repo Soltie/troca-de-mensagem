@@ -203,7 +203,15 @@ local ROOMS: { [string]: (folder: Instance, root: Instance, room: RoomRef) -> ()
 
 ROOMS.Living = function(folder, root, room)
 	local at, inward = roomFrame(room)
-	conceal(root, room, { SofaSeat = true, SofaBack = true, SofaArm = true, LampPole = true, LampShade = true })
+	conceal(root, room, {
+		SofaSeat = true,
+		SofaBack = true,
+		SofaArm = true,
+		LampPole = true,
+		LampShade = true,
+		Pot = true,
+		Leaves = true,
+	})
 	Props.place(folder, "Sofa", at(17.5, -6, -0.5), inward, 1.25, "back")
 	Props.place(folder, "Armchair", at(9.5, -12.5, -0.5), inward + V3(0, 0, 0.7), 1.05, "floor")
 	lampOn(folder, at(17.5, -12.5, -0.5), inward)
@@ -253,7 +261,9 @@ local function bedroom(folder: Instance, root: Instance, room: RoomRef, bed: str
 	if not has(bed) then
 		return
 	end
-	conceal(root, room, { Bed = true, Nightstand = true, LampPole = true, LampShade = true })
+	conceal(root, room, { Bed = true, Nightstand = true, LampPole = true, LampShade = true, Wardrobe = true })
+	-- Armário no canto da fachada, sem invadir o esconderijo (ox 7..15, oz 4..10).
+	Props.place(folder, "Cabinet", at(17.5, 12.4, -0.5), inward, 0.85, "back")
 	-- Mesmo lugar da cama antiga (que continua como colisão invisível).
 	Props.place(folder, bed, V3(room.x + 9, room.y - 0.5, room.z - 8), Vector3.zAxis, scale, "floor")
 	lampOn(folder, at(17.5, -14, -0.5), inward)
@@ -318,6 +328,21 @@ local function nightLights(folder: Instance, root: Instance)
 			if Props.place(folder, "Lantern", orb.Position + UP * 1.2, -Vector3.zAxis, 1.9, "ceiling") then
 				orb.Transparency = 1
 				orb:SetAttribute("VisualReplaced", true)
+				-- A esfera neon iluminava o cômodo pelo brilho; a lamparina ganha luz própria.
+				glow(folder, "HallChandelier", orb.Position - UP * 0.4, 26, 0.5, true)
+			end
+		elseif orb:IsA("BasePart") and orb.Name == "PictureFrame" then
+			-- Quadro liso da parede da fachada vira moldura 3D no mesmo lugar.
+			local inward = Vector3.new(-math.sign(orb.Position.X), 0, 0)
+			local name = FRAMES[math.floor(math.abs(orb.Position.Z)) % #FRAMES + 1]
+			local wall = orb.Position - inward * (orb.Size.X / 2)
+			if Props.place(folder, name, wall, inward, 1.7, "wall") then
+				orb.Transparency = 1
+				for _, sibling in dressing:GetChildren() do
+					if sibling:IsA("BasePart") and sibling.Name == "Picture" and sibling.Position == orb.Position then
+						sibling.Transparency = 1
+					end
+				end
 			end
 		end
 	end

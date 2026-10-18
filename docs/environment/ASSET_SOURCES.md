@@ -48,5 +48,24 @@ polígonos, origem na base, texturas 512–1024, exportação GLB, importação 
 | Sconce | industrial_wall_sconce | Ulan Cabanilla | 9.826 → 2.000 |
 | Lantern | Lantern_01 (sem vidro) | Rajil Jose Macatangay | 30.830 → 2.600 |
 
+### Lote 3 (cômodos e porta), downloads aprovados em 18/10/2026
+
+| Modelo | Poly Haven | Autor(es) | Tris originais → finais |
+| --- | --- | --- | --- |
+| Bookshelf (estante + volumes) | wooden_bookshelf_worn + book_encyclopedia_set_01 | Ulan Cabanilla; John Malcolm | 10.106 + 67.000 → 15.200 |
+| GothicBed | GothicBed_01 | Kirill Sannikov | 18.741 → 7.000 |
+| GothicChair | WoodenChair_01 | Jake Mobley | 19.992 → 3.500 |
+| RoundTable | round_wooden_table_01 | Ulan Cabanilla | 8.640 → 3.500 |
+| Cabinet | vintage_cabinet_01 | Rico Cilliers | 61.096 → 9.000 |
+| PaintedCabinet | painted_wooden_cabinet | Kirill Sannikov | 2.227 |
+| MantelClock | mantel_clock_01 (sem rig) | Rico Cilliers, Yann Kervran | 25.721 → 3.000 |
+| Candlestick | wooden_candlestick | Josh Dean | 3.328 → 800 |
+| IronBed | old_bed_frame | Luca B | 49.990 → 5.000 |
+| DayBed | vintage_day_bed | Aron Łyczek | 2.715 |
+| MansionDoor | **modelada no Blender por Claude** (folha de 4 almofadas, latão), textura nogueira acima | — | 5.200 |
+
+`decorative_book_set_01` foi baixado e descartado (70 materiais, pesado demais para celular).
+`vintage_wooden_drawer_01` falhou no download (arquivo do Poly Haven corrompido/Blender 5.2) e não foi usado.
+
 Observação: um objeto de teste antigo (esfera) entrou por engano na primeira importação e foi enviado à conta;
 foi excluído do modelo e não é usado no jogo.
