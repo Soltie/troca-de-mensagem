@@ -56,3 +56,17 @@ NÃO TESTADO: celular físico; partida humana com a criatura ativa; place compar
 | Capturas | `docs/evidence/environment/after-lote3/` |
 
 NÃO TESTADO: celular físico; partida humana com criatura ativa; final em ruínas real (só simulado); place compartilhado.
+## Lote 4 — Arquitetura dos cômodos e assets restantes (18/10/2026, build `TungTung_ENV_L4c.rbxlx`)
+
+| Verificação | Resultado |
+| --- | --- |
+| `lune run scripts/check` | ALL GREEN, 297 testes puros |
+| `Tests.Run` no Studio | 309 aprovados, 0 falhas |
+| Erros/avisos do jogo (servidor) | 0 |
+| Peças novas com colisão/raycast | 0 de 389 modelos |
+| Peças no Workspace (cap. 1) | ~3.320 |
+| Capturas | `docs/evidence/environment/after-lote4/` (08 e 09 são anteriores às tábuas do sótão e à pedra do porão) |
+
+Pendências conhecidas: cômodos ainda escuros com a energia desligada (lote de iluminação); banheiro/cozinha sem piso de ladrilho;
+fachada, jardim e floresta ainda não reformados. NÃO TESTADO: celular físico, partida humana, esconder-se no guarda-roupa novo
+com a câmera real (a geometria foi alinhada à fresta, mas a vista não foi conferida em jogo).

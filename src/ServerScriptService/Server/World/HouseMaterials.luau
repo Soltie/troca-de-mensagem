@@ -18,6 +18,9 @@ export type Finish = { variant: string, material: Enum.Material, color: Color3 }
 local WALLPAPER: Finish = { variant = "MansionWallpaper", material = Enum.Material.Plaster, color = rgb(236, 230, 220) }
 local PLANKS: Finish =
 	{ variant = "MansionFloorPlanks", material = Enum.Material.WoodPlanks, color = rgb(214, 202, 190) }
+local STONE: Finish = { variant = "", material = Enum.Material.Slate, color = rgb(74, 70, 64) }
+local ATTIC: Finish =
+	{ variant = "MansionFloorPlanks", material = Enum.Material.WoodPlanks, color = rgb(170, 150, 132) }
 local PLASTER: Finish = { variant = "MansionPlaster", material = Enum.Material.Plaster, color = rgb(226, 214, 196) }
 local WOOD: Finish = { variant = "MansionDarkWood", material = Enum.Material.Wood, color = rgb(200, 196, 192) }
 local WOOD_LIGHT: Finish = { variant = "MansionDarkWood", material = Enum.Material.Wood, color = rgb(255, 250, 244) }
@@ -94,13 +97,27 @@ function Materials.apply(part: BasePart, finish: Finish)
 	part.Color = finish.color
 end
 
+-- Sala de máquinas (térreo, fundo à direita): reboco cru, sem papel de parede.
+local function utility(position: Vector3): boolean
+	return position.X > 8.6 and position.Z < -52.4 and position.Y > -0.5 and position.Y < 15.5
+end
+
 local function classify(part: BasePart): Finish?
 	local name = part.Name
 	local basement = part.Position.Y < -0.5
 	if INTERIOR_WALLS[name] then
-		return if basement then nil else WALLPAPER
+		-- Sótão (nível 32) é tábua crua, sem papel de parede.
+		return if basement
+			then nil
+			elseif part.Position.Y > 31 then ATTIC
+			elseif name ~= "DoorWall" and name ~= "DoorLintel" and utility(part.Position) then PLASTER
+			else WALLPAPER
 	elseif FLOORS[name] then
-		return if basement and name ~= "CorridorFloor" and name ~= "RoomFloor" then nil else PLANKS
+		-- Porão e sala de máquinas: lajota de pedra em vez de tábua.
+		if utility(part.Position + Vector3.yAxis) then
+			return STONE
+		end
+		return if basement then (if name == "CorridorFloor" or name == "RoomFloor" then STONE else nil) else PLANKS
 	elseif CEILINGS[name] then
 		return PLASTER
 	elseif WOOD_NAMES[name] or string.sub(name, 1, 11) == "house_door_" then
@@ -115,7 +132,7 @@ local function classify(part: BasePart): Finish?
 	return nil
 end
 
--- Revestimento interno das paredes que também são fachada.
+-- Revestimento interno das paredes que também são fachada (um trecho por cômodo).
 local function skins(parent: Instance)
 	local function skin(center: Vector3, size: Vector3)
 		local part = Build.part(parent, "WallpaperSkin", size, CFrame.new(center), WALLPAPER.color, {
@@ -123,16 +140,19 @@ local function skins(parent: Instance)
 			query = false,
 		})
 		part.CanTouch = false
-		Materials.apply(part, WALLPAPER)
+		Materials.apply(part, if center.Y > 31 then ATTIC elseif utility(center) then PLASTER else WALLPAPER)
 	end
 	for _, y in { 0, 16, 32 } do
 		local mid = y + 7.5
 		for _, side in { -1, 1 } do
-			-- Fachadas laterais dos cômodos (x = ±44).
-			skin(V3(side * 43.47, mid, -36), V3(0.04, 15, 96))
+			-- Fachadas laterais dos cômodos (x = ±44), uma por fileira.
+			for row = 1, 3 do
+				skin(V3(side * 43.47, mid, 28 - row * 32), V3(0.04, 15, 32))
+			end
+			-- Fundo da casa (z = -85), metade de cada lado.
+			skin(V3(side * 22, mid, -84.47), V3(43, 15, 0.04))
 		end
-		-- Fundo da casa (z = -85) e laterais da caixa da escada (x = -24 e 45).
-		skin(V3(0, mid, -84.47), V3(87, 15, 0.04))
+		-- Laterais da caixa da escada (x = -24 e 45).
 		skin(V3(-23.47, mid, 38), V3(0.04, 15, 51))
 		skin(V3(44.47, mid, 38), V3(0.04, 15, 51))
 		-- Frente do hall (z = 64), com o vão da porta no térreo.
@@ -173,7 +193,8 @@ function Materials.build(root: Instance)
 		for _, part in features:GetDescendants() do
 			-- A porta do esconderijo debaixo da cama é quase transparente e fica como está.
 			if part:IsA("BasePart") and HIDE_NAMES[part.Name] and part.Transparency < 0.5 then
-				Materials.apply(part, WOOD)
+				-- A cama-esconderijo ganha colcha de jacquard; o resto é nogueira.
+				Materials.apply(part, if part.Name == "BedCover" then RUNNER else WOOD)
 			end
 		end
 	end

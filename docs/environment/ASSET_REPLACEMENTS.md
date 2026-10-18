@@ -82,3 +82,32 @@ soldada ao painel); barreira de progressão da escada com aparência de caixote;
 
 Final em ruínas: forros, medalhões e revestimentos ficam transparentes junto com os tetos/fachadas.
 Pendências: lareira e rack da TV ainda procedurais; banheiro, sala de máquinas, porão, fachada, floresta e iluminação global.
+## Lote 4 — Revisão de arquitetura e troca dos assets restantes (18/10/2026)
+
+Pedido do humano: sofá maior, armário-esconderijo e itens que continuavam primitivos, e cômodos "apertados e mal distribuídos".
+
+Regras de planta adotadas (zonas livres por cômodo): porta, centro das tarefas, esconderijo e a frente dele, e o meio das
+divisórias que a campanha pode abrir (`HouseLevelPlan`, passagens de até 24 studs em z = −20/−52). Móveis só nas paredes
+da fachada, da porta, da frente (fileira 1, abaixo da janela do hall) e do fundo (fileira 3).
+Escala: móveis de chão +25% (`FURNITURE`), porque a casa é maior que o real (portas de 11 studs, cômodos de 36 × 32).
+
+| Antes (primitivo) | Depois |
+| --- | --- |
+| Lareira de tijolo-bloco com fogo neon | Lareira vitoriana (Hyper3D) na parede interna, com relógio e candelabros |
+| Sofá pequeno junto da parede | Sofá 1,8× na fachada, de frente para a lareira; poltronas viradas para o fogo |
+| Armários-esconderijo (caixas lisas) | Guarda-roupa de nogueira com cornija (modelado no Blender), face da porta no plano da fresta da câmera |
+| Balcão branco, fogão cinza, geladeira verde | Bancada de nogueira com tampo de mármore, fogão a lenha de ferro (Hyper3D), geladeira-baú de madeira (Hyper3D), panela esmaltada |
+| Banheira e pia de blocos, pato-cubo | Banheira de pé (Hyper3D), pia de coluna (Hyper3D), espelho, patinho 3D |
+| Máquinas e manômetros de blocos | Caldeiras a vapor (Hyper3D), tubulações industriais, luminária de cano; sala com reboco e piso de pedra |
+| Caixas, baú e barris de blocos | Caixas de madeira, baú marítimo, baú do tesouro, barris e barril quebrado (Poly Haven) |
+| Brinquedos de blocos | Cadeira de balanço, patinho, baú de brinquedos |
+| Velas do ritual (neon) | Castiçais de latão e candelabros nos cantos |
+| Tapetes de cor lisa | Tapete persa com estampa própria |
+| Mesa antiga (bloco que colide) | Mesa baixa de pés torneados no mesmo lugar (a colisão antiga continua) |
+| Quadros lisos na fachada | Janela com caixilho de nogueira e cortinas de veludo (atrás) e moldura 3D (frente) |
+| Esferas neon de luz noturna | Lamparinas penduradas com luz mais forte |
+| Sótão com papel de parede | Tábuas cruas; porão com piso de pedra e sem quadros |
+| Cama-esconderijo de caixote | Colcha de jacquard sobre a mesma estrutura |
+
+Hyper3D: 8 gerações (chave de teste); 6 aproveitadas, 2 descartadas (ursinho e cavalinho saíram deformados).
+Limitação: a porta do guarda-roupa é parte do mesmo modelo, então não acompanha visualmente o balanço da porta do esconderijo.

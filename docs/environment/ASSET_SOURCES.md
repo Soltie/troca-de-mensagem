@@ -69,3 +69,23 @@ polígonos, origem na base, texturas 512–1024, exportação GLB, importação 
 
 Observação: um objeto de teste antigo (esfera) entrou por engano na primeira importação e foi enviado à conta;
 foi excluído do modelo e não é usado no jogo.
+
+### Lote 4 (downloads aprovados em 18/10/2026)
+
+| Modelo | Fonte | Autor(es) | Licença |
+| --- | --- | --- | --- |
+| Crate, SeaChest | wooden_crate_01, wooden_crate_02 | James Ray Cock; Jurita Burger | CC0 |
+| Barrel, BrokenBarrel | wooden_barrels_01 | James Ray Cock | CC0 |
+| TreasureChest | treasure_chest | Rico Cilliers | CC0 |
+| Suitcase | vintage_suitcase | Maximilian Schuster | CC0 |
+| RockingChair | Rockingchair_01 | Jorge Camacho | CC0 |
+| RubberDuck | rubber_duck_toy | Plat251 | CC0 |
+| PipeRun | modular_industrial_pipes_01 | Jorge Camacho | CC0 |
+| PipeLamp | industrial_pipe_lamp | Mateusz Sadek | CC0 |
+| EnamelPot | pot_enamel_01 | Kuutti Siitonen | CC0 |
+| Candelabra, BrassCandle | brass_candleholders | Tina | CC0 |
+| WoodenLantern | wooden_lantern_01 | James Ray Cock | CC0 |
+| Fireplace, Bathtub, PedestalSink, WoodStove, Icebox, Boiler | **gerados no Hyper3D Rodin** (chave de teste do add-on MCP for Blender) | — | conforme termos do Hyper3D |
+| Wardrobe, LowTable, KitchenCounter, WindowSet, PersianRug | **modelados/gerados por Claude no Blender** (estampa do tapete gerada por script) | — | próprios |
+
+O `.rbxm` agora é salvo pelo MCP (`SerializationService` + `tools/environment/serve.luau`, POST local), sem depender do menu do Studio.
