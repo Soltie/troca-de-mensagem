@@ -15,6 +15,7 @@
 local House = require("@game/ReplicatedStorage/Shared/Game/HouseCatalog")
 local Build = require("./Build")
 local Furniture = require("./HouseFurniture")
+local Finish = require("./HouseFinish")
 
 local Scenery = {}
 
@@ -650,6 +651,7 @@ function Scenery.build(root: Instance)
 	forestGate(root)
 	interior(root)
 	Furniture.build(root)
+	Finish.build(root)
 	local sky = game:GetService("Lighting"):FindFirstChildOfClass("Sky")
 	if sky then
 		sky.MoonAngularSize = 18
