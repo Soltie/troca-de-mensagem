@@ -1,0 +1,355 @@
+From ce025eca7d7d1e4d42845245e99b4571835011d3 Mon Sep 17 00:00:00 2001
+From: fashionultraaura <fashionultraaura@gmail.com>
+Date: Sun, 18 Oct 2026 04:26:13 -0300
+Subject: [PATCH 3/8] design(env): codigo dos moveis 3D dos comodos e porta
+ vitoriana (lote 3)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+HouseProps ganha cômodos (sala, jantar, biblioteca, quartos, escritório,
+cozinha, sótãos) e lamparinas no lugar das esferas neon; caixas antigas
+com colisão ficam invisíveis sob o modelo. HouseFinish solda a porta 3D
+ao painel quando o modelo existe. Sem os modelos novos, nada muda.
+Corrige acentos corrompidos em HouseMaterials. Check ALL GREEN.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ .../Server/World/HouseFinish.luau             |  29 +++
+ .../Server/World/HouseMaterials.luau          |  14 +-
+ .../Server/World/HouseProps.luau              | 198 +++++++++++++++++-
+ 3 files changed, 233 insertions(+), 8 deletions(-)
+
+diff --git a/src/ServerScriptService/Server/World/HouseFinish.luau b/src/ServerScriptService/Server/World/HouseFinish.luau
+index cb26ed2..43504b9 100644
+--- a/src/ServerScriptService/Server/World/HouseFinish.luau
++++ b/src/ServerScriptService/Server/World/HouseFinish.luau
+@@ -10,6 +10,8 @@
+ 	Planta, tamanhos e nomes da arquitetura não mudam (HouseLayout/HouseCatalog continuam a referência).
+ ]]
+ 
++local ReplicatedStorage = game:GetService("ReplicatedStorage")
++
+ local Layout = require("@game/ReplicatedStorage/Shared/Game/HouseLayout")
+ local Build = require("./Build")
+ 
+@@ -80,8 +82,35 @@ local function wallRun(parent: Instance, from: Vector3, to: Vector3, normal: Vec
+ 	end
+ end
+ 
++-- Porta vitoriana 3D (Assets/MansionProps/MansionDoor) envolvendo o painel; soldada, acompanha a animação.
++-- O painel continua sendo a peça de colisão, prompt, som e PathfindingModifier.
++local function doorModel(panel: BasePart): boolean
++	local assets = ReplicatedStorage:FindFirstChild("Assets")
++	local library = assets and assets:FindFirstChild("MansionProps")
++	local template = library and library:FindFirstChild("MansionDoor")
++	if not template or not template:IsA("Model") then
++		return false
++	end
++	local model = template:Clone()
++	-- Malha: largura em X, espessura em Z, origem no pé. Painel: largura em Z, espessura em X.
++	model:PivotTo(panel.CFrame * CFrame.new(0, -panel.Size.Y / 2, 0) * CFrame.Angles(0, -math.pi / 2, 0))
++	for _, part in model:GetDescendants() do
++		if part:IsA("BasePart") then
++			part.Anchored, part.Massless = false, true
++			part.CanCollide, part.CanQuery, part.CanTouch = false, false, false
++			local weld = Instance.new("WeldConstraint")
++			weld.Part0, weld.Part1, weld.Parent = panel, part, part
++		end
++	end
++	model.Parent = panel
++	return true
++end
++
+ -- Painéis em relevo e maçanetas nas duas faces; soldados ao painel, acompanham a animação da porta.
+ local function dressDoor(panel: BasePart)
++	if doorModel(panel) then
++		return
++	end
+ 	local function attach(
+ 		name: string,
+ 		size: Vector3,
+diff --git a/src/ServerScriptService/Server/World/HouseMaterials.luau b/src/ServerScriptService/Server/World/HouseMaterials.luau
+index a2c131e..f6141d2 100644
+--- a/src/ServerScriptService/Server/World/HouseMaterials.luau
++++ b/src/ServerScriptService/Server/World/HouseMaterials.luau
+@@ -1,9 +1,9 @@
+ --!strict
+ --[[
+-	Materiais PBR da mansÃ£o (MaterialVariant em MaterialService, texturas CC0 do Poly Haven).
+-	SÃ³ troca aparÃªncia: Material/MaterialVariant/Color. Tamanho, posiÃ§Ã£o, colisÃ£o e nomes nÃ£o mudam.
+-	Paredes externas recebem um revestimento interno fino (sem colisÃ£o) para o papel de parede
+-	nÃ£o aparecer do lado de fora; o porÃ£o continua de tijolo.
++	Materiais PBR da mansão (MaterialVariant em MaterialService, texturas CC0 do Poly Haven).
++	Só troca aparência: Material/MaterialVariant/Color. Tamanho, posição, colisão e nomes não mudam.
++	Paredes externas recebem um revestimento interno fino (sem colisão) para o papel de parede
++	não aparecer do lado de fora; o porão continua de tijolo.
+ ]]
+ 
+ local Build = require("./Build")
+@@ -111,7 +111,7 @@ local function classify(part: BasePart): Finish?
+ 	return nil
+ end
+ 
+--- Revestimento interno das paredes que tambÃ©m sÃ£o fachada.
++-- Revestimento interno das paredes que também são fachada.
+ local function skins(parent: Instance)
+ 	local function skin(center: Vector3, size: Vector3)
+ 		local part = Build.part(parent, "WallpaperSkin", size, CFrame.new(center), WALLPAPER.color, {
+@@ -124,14 +124,14 @@ local function skins(parent: Instance)
+ 	for _, y in { 0, 16, 32 } do
+ 		local mid = y + 7.5
+ 		for _, side in { -1, 1 } do
+-			-- Fachadas laterais dos cÃ´modos (x = Â±44).
++			-- Fachadas laterais dos cômodos (x = ±44).
+ 			skin(V3(side * 43.47, mid, -36), V3(0.04, 15, 96))
+ 		end
+ 		-- Fundo da casa (z = -85) e laterais da caixa da escada (x = -24 e 45).
+ 		skin(V3(0, mid, -84.47), V3(87, 15, 0.04))
+ 		skin(V3(-23.47, mid, 38), V3(0.04, 15, 51))
+ 		skin(V3(44.47, mid, 38), V3(0.04, 15, 51))
+-		-- Frente do hall (z = 64), com o vÃ£o da porta no tÃ©rreo.
++		-- Frente do hall (z = 64), com o vão da porta no térreo.
+ 		if y == 0 then
+ 			skin(V3(-14.75, mid, 63.47), V3(17.5, 15, 0.04))
+ 			skin(V3(25.25, mid, 63.47), V3(38.5, 15, 0.04))
+diff --git a/src/ServerScriptService/Server/World/HouseProps.luau b/src/ServerScriptService/Server/World/HouseProps.luau
+index 1deb51a..08c2e45 100644
+--- a/src/ServerScriptService/Server/World/HouseProps.luau
++++ b/src/ServerScriptService/Server/World/HouseProps.luau
+@@ -9,6 +9,7 @@
+ 
+ local ReplicatedStorage = game:GetService("ReplicatedStorage")
+ 
++local House = require("@game/ReplicatedStorage/Shared/Game/HouseCatalog")
+ local Build = require("./Build")
+ 
+ local Props = {}
+@@ -18,7 +19,9 @@ local rgb = Color3.fromRGB
+ local UP = Vector3.yAxis
+ local WARM = rgb(255, 196, 132)
+ 
+-export type Anchor = "floor" | "wall" | "ceiling"
++-- floor: centro da base; back: meio da aresta de trás da base (móvel encostado na parede);
++-- wall: centro da face de trás; ceiling: centro do topo.
++export type Anchor = "floor" | "back" | "wall" | "ceiling"
+ 
+ local function library(): Instance?
+ 	local assets = ReplicatedStorage:FindFirstChild("Assets")
+@@ -53,6 +56,7 @@ function Props.place(
+ 	local reference = if anchor == "wall"
+ 		then box.Position - look * (size.Z / 2 + 0.1)
+ 		elseif anchor == "ceiling" then box.Position + UP * (size.Y / 2)
++		elseif anchor == "back" then box.Position - look * (size.Z / 2 + 0.1) - UP * (size.Y / 2)
+ 		else box.Position - UP * (size.Y / 2)
+ 	model:PivotTo(model:GetPivot() + (at - reference))
+ 	for _, part in model:GetDescendants() do
+@@ -134,6 +138,191 @@ local function corridors(folder: Instance)
+ 	end
+ end
+ 
++--[[
++	Cômodos. Sistema local: `ox` cresce da porta (−18) para a fachada (+18); `oz` é o eixo Z do mundo.
++	O centro (|ox| < 9) é das tarefas, (ox 9..13, oz 4..12) é do esconderijo: os móveis ficam nas paredes.
++	Caixas antigas que colidem (estantes, camas) ficam como colisão invisível, com o modelo por cima.
++]]
++type RoomRef = { id: string, x: number, y: number, z: number }
++
++local function inRoom(part: BasePart, room: RoomRef): boolean
++	local p = part.Position
++	return math.abs(p.X - room.x) < 18 and math.abs(p.Z - room.z) < 16 and p.Y > room.y - 1 and p.Y < room.y + 15
++end
++
++-- Esconde a peça antiga sem mexer em colisão, consulta ou luz (a luz continua na peça).
++local function conceal(root: Instance, room: RoomRef, names: { [string]: boolean })
++	for _, folderName in { "Furniture", "Furnishings", "Dressing" } do
++		local folder = root:FindFirstChild(folderName)
++		if folder then
++			for _, part in folder:GetDescendants() do
++				if part:IsA("BasePart") and names[part.Name] and inRoom(part, room) then
++					part.Transparency, part.CastShadow = 1, false
++					part:SetAttribute("VisualReplaced", true)
++				end
++			end
++		end
++	end
++end
++
++local function roomFrame(room: RoomRef)
++	local side = if room.x < 0 then -1 else 1
++	local function at(ox: number, oz: number, dy: number?): Vector3
++		return V3(room.x + side * ox, room.y + (dy or 0), room.z + oz)
++	end
++	return at, V3(-side, 0, 0), side
++end
++
++local SHELF_BLOCKS = { Bookshelf = true }
++local LIBRARY_PIECES = { Shelf = true, Book = true, ReadingChair = true, LampPole = true, LampShade = true }
++
++local function has(name: string): boolean
++	local source = library()
++	return source ~= nil and source:FindFirstChild(name) ~= nil
++end
++
++local function bookshelves(folder: Instance, root: Instance, room: RoomRef)
++	-- Estantes 3D sobre as caixas de colisão da parede do fundo (as caixas continuam lá).
++	if not has("Bookshelf") then
++		return
++	end
++	conceal(root, room, SHELF_BLOCKS)
++	for _, dx in { -5, 0, 5, 10 } do
++		Props.place(folder, "Bookshelf", V3(room.x + dx, room.y - 0.5, room.z - 15.5), Vector3.zAxis, 1, "back")
++	end
++end
++
++local function lampOn(folder: Instance, at: Vector3, inward: Vector3)
++	local stand = Props.place(folder, "Nightstand", at, inward, 1, "back")
++	local light = at + inward * 0.9
++	Props.place(folder, "Lantern", V3(light.X, top(stand), light.Z), inward, 1.6, "floor")
++	glow(folder, "LampShade", V3(light.X, top(stand) + 0.9, light.Z), 16, 0.55, true)
++end
++
++local ROOMS: { [string]: (folder: Instance, root: Instance, room: RoomRef) -> () } = {}
++
++ROOMS.Living = function(folder, root, room)
++	local at, inward = roomFrame(room)
++	conceal(root, room, { SofaSeat = true, SofaBack = true, SofaArm = true, LampPole = true, LampShade = true })
++	Props.place(folder, "Sofa", at(17.5, -6, -0.5), inward, 1.25, "back")
++	Props.place(folder, "Armchair", at(9.5, -12.5, -0.5), inward + V3(0, 0, 0.7), 1.05, "floor")
++	lampOn(folder, at(17.5, -12.5, -0.5), inward)
++	-- Relógio e castiçais sobre a lareira.
++	Props.place(folder, "MantelClock", at(16.4, 3, 5.5), inward, 1.4, "floor")
++	for _, oz in { 0.6, 5.4 } do
++		Props.place(folder, "Candlestick", at(16.4, oz, 5.5), inward, 1.6, "floor")
++	end
++end
++
++ROOMS.Dining = function(folder, root, room)
++	local at, inward = roomFrame(room)
++	if not has("RoundTable") then
++		return
++	end
++	conceal(root, room, { DiningTable = true, Chair = true, ChairBack = true, Candle = true, Flame = true })
++	local center = at(12.5, -1, -0.5)
++	local dining = Props.place(folder, "RoundTable", center, inward, 1.2, "floor")
++	for index = 0, 3 do
++		local angle = index * math.pi / 2
++		local offset = V3(math.cos(angle), 0, math.sin(angle)) * 4.6
++		Props.place(folder, "GothicChair", center + offset, -offset, 0.85, "floor")
++	end
++	for _, oz in { -1.8, 0.8 } do
++		Props.place(folder, "Candlestick", V3(center.X, top(dining), center.Z + oz), inward, 1.6, "floor")
++	end
++	glow(folder, "Candle", V3(center.X, top(dining) + 1.2, center.Z - 0.5), 18, 0.6, true)
++	Props.place(folder, "Cabinet", at(0, -15.5, -0.5), Vector3.zAxis, 1, "back")
++end
++
++ROOMS.Library = function(folder, root, room)
++	local at, inward = roomFrame(room)
++	bookshelves(folder, root, room)
++	if not has("Bookshelf") then
++		return
++	end
++	conceal(root, room, LIBRARY_PIECES)
++	for _, oz in { -9.6, -4.6, 0.4 } do
++		Props.place(folder, "Bookshelf", at(17.5, oz, -0.5), inward, 1, "back")
++	end
++	Props.place(folder, "Armchair", at(12, -12.5, -0.5), inward + V3(0, 0, 0.6), 1.05, "floor")
++	lampOn(folder, at(17.5, 13, -0.5), inward)
++end
++
++local function bedroom(folder: Instance, root: Instance, room: RoomRef, bed: string, scale: number)
++	local at, inward = roomFrame(room)
++	if not has(bed) then
++		return
++	end
++	conceal(root, room, { Bed = true, Nightstand = true, LampPole = true, LampShade = true })
++	-- Mesmo lugar da cama antiga (que continua como colisão invisível).
++	Props.place(folder, bed, V3(room.x + 9, room.y - 0.5, room.z - 8), Vector3.zAxis, scale, "floor")
++	lampOn(folder, at(17.5, -14, -0.5), inward)
++end
++
++ROOMS.Bedroom = function(folder, root, room)
++	bedroom(folder, root, room, "GothicBed", 1.45)
++end
++
++ROOMS.Child = function(folder, root, room)
++	bedroom(folder, root, room, "IronBed", 1.5)
++end
++
++ROOMS.Office = function(folder, root, room)
++	local at, inward = roomFrame(room)
++	if not has("GothicChair") then
++		return
++	end
++	conceal(root, room, { Desk = true, Paper = true, OfficeChair = true, Shelf = true, Book = true })
++	local desk = Props.place(folder, "Console", at(17.5, -4, -0.5), inward, 1.05, "back")
++	Props.place(folder, "GothicChair", at(11.5, -4, -0.5), -inward, 0.85, "floor")
++	Props.place(folder, "MantelClock", at(16.6, -6, top(desk) - room.y), inward, 1.3, "floor")
++	Props.place(folder, "Candlestick", at(16.6, -1.5, top(desk) - room.y), inward, 1.6, "floor")
++	Props.place(folder, "Bookshelf", at(17.5, 12.5, -0.5), inward, 1, "back")
++end
++
++ROOMS.Kitchen = function(folder, _root, room)
++	local at = roomFrame(room)
++	for _, ox in { -3, 3 } do
++		Props.place(folder, "PaintedCabinet", at(ox, -15.5, -0.5), Vector3.zAxis, 1.2, "back")
++	end
++end
++
++local function attic(folder: Instance, root: Instance, room: RoomRef)
++	local at, inward = roomFrame(room)
++	bookshelves(folder, root, room)
++	Props.place(folder, "DayBed", at(17.5, -8, -0.5), inward, 1.05, "back")
++	Props.place(folder, "PaintedCabinet", at(17.5, 13, -0.5), inward, 1.1, "back")
++end
++
++ROOMS.Attic = attic
++ROOMS.AtticPhoto = attic
++ROOMS.AtticClock = function(folder, root, room)
++	local at, inward = roomFrame(room)
++	bookshelves(folder, root, room)
++	Props.place(folder, "GrandfatherClock", at(17.5, -6, -0.5), inward, 1, "back")
++	Props.place(folder, "GrandfatherClock", at(17.5, -1, -0.5), inward, 0.9, "back")
++	Props.place(folder, "MantelClock", at(17, 13, 0), inward, 1.4, "floor")
++end
++ROOMS.AtticBook = function(folder, root, room)
++	ROOMS.Library(folder, root, room)
++end
++
++-- Luz noturna: a esfera neon vira uma lamparina pendurada (a luz continua na peça antiga).
++local function nightLights(folder: Instance, root: Instance)
++	local dressing = root:FindFirstChild("Dressing")
++	if not dressing then
++		return
++	end
++	for _, orb in dressing:GetChildren() do
++		if orb:IsA("BasePart") and orb.Name == "NightLight" then
++			if Props.place(folder, "Lantern", orb.Position + UP * 1.2, -Vector3.zAxis, 1.9, "ceiling") then
++				orb.Transparency = 1
++				orb:SetAttribute("VisualReplaced", true)
++			end
++		end
++	end
++end
++
+ function Props.build(root: Instance)
+ 	local old = root:FindFirstChild("Props")
+ 	if old then
+@@ -145,6 +334,13 @@ function Props.build(root: Instance)
+ 	local folder = Build.folder(root, "Props")
+ 	hall(folder)
+ 	corridors(folder)
++	for _, room in House.Rooms do
++		local dress = ROOMS[room.id]
++		if dress then
++			dress(folder, root, room)
++		end
++	end
++	nightLights(folder, root)
+ end
+ 
+ return Props
+-- 
+2.55.0.windows.5
+
