@@ -10,6 +10,8 @@
 	Planta, tamanhos e nomes da arquitetura não mudam (HouseLayout/HouseCatalog continuam a referência).
 ]]
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
 local Layout = require("@game/ReplicatedStorage/Shared/Game/HouseLayout")
 local Build = require("./Build")
 
@@ -80,8 +82,35 @@ local function wallRun(parent: Instance, from: Vector3, to: Vector3, normal: Vec
 	end
 end
 
+-- Porta vitoriana 3D (Assets/MansionProps/MansionDoor) envolvendo o painel; soldada, acompanha a animação.
+-- O painel continua sendo a peça de colisão, prompt, som e PathfindingModifier.
+local function doorModel(panel: BasePart): boolean
+	local assets = ReplicatedStorage:FindFirstChild("Assets")
+	local library = assets and assets:FindFirstChild("MansionProps")
+	local template = library and library:FindFirstChild("MansionDoor")
+	if not template or not template:IsA("Model") then
+		return false
+	end
+	local model = template:Clone()
+	-- Malha: largura em X, espessura em Z, origem no pé. Painel: largura em Z, espessura em X.
+	model:PivotTo(panel.CFrame * CFrame.new(0, -panel.Size.Y / 2, 0) * CFrame.Angles(0, -math.pi / 2, 0))
+	for _, part in model:GetDescendants() do
+		if part:IsA("BasePart") then
+			part.Anchored, part.Massless = false, true
+			part.CanCollide, part.CanQuery, part.CanTouch = false, false, false
+			local weld = Instance.new("WeldConstraint")
+			weld.Part0, weld.Part1, weld.Parent = panel, part, part
+		end
+	end
+	model.Parent = panel
+	return true
+end
+
 -- Painéis em relevo e maçanetas nas duas faces; soldados ao painel, acompanham a animação da porta.
 local function dressDoor(panel: BasePart)
+	if doorModel(panel) then
+		return
+	end
 	local function attach(
 		name: string,
 		size: Vector3,

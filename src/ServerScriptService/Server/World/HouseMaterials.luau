@@ -1,9 +1,9 @@
 --!strict
 --[[
-	Materiais PBR da mansÃ£o (MaterialVariant em MaterialService, texturas CC0 do Poly Haven).
-	SÃ³ troca aparÃªncia: Material/MaterialVariant/Color. Tamanho, posiÃ§Ã£o, colisÃ£o e nomes nÃ£o mudam.
-	Paredes externas recebem um revestimento interno fino (sem colisÃ£o) para o papel de parede
-	nÃ£o aparecer do lado de fora; o porÃ£o continua de tijolo.
+	Materiais PBR da mansão (MaterialVariant em MaterialService, texturas CC0 do Poly Haven).
+	Só troca aparência: Material/MaterialVariant/Color. Tamanho, posição, colisão e nomes não mudam.
+	Paredes externas recebem um revestimento interno fino (sem colisão) para o papel de parede
+	não aparecer do lado de fora; o porão continua de tijolo.
 ]]
 
 local Build = require("./Build")
@@ -111,7 +111,7 @@ local function classify(part: BasePart): Finish?
 	return nil
 end
 
--- Revestimento interno das paredes que tambÃ©m sÃ£o fachada.
+-- Revestimento interno das paredes que também são fachada.
 local function skins(parent: Instance)
 	local function skin(center: Vector3, size: Vector3)
 		local part = Build.part(parent, "WallpaperSkin", size, CFrame.new(center), WALLPAPER.color, {
@@ -124,14 +124,14 @@ local function skins(parent: Instance)
 	for _, y in { 0, 16, 32 } do
 		local mid = y + 7.5
 		for _, side in { -1, 1 } do
-			-- Fachadas laterais dos cÃ´modos (x = Â±44).
+			-- Fachadas laterais dos cômodos (x = ±44).
 			skin(V3(side * 43.47, mid, -36), V3(0.04, 15, 96))
 		end
 		-- Fundo da casa (z = -85) e laterais da caixa da escada (x = -24 e 45).
 		skin(V3(0, mid, -84.47), V3(87, 15, 0.04))
 		skin(V3(-23.47, mid, 38), V3(0.04, 15, 51))
 		skin(V3(44.47, mid, 38), V3(0.04, 15, 51))
-		-- Frente do hall (z = 64), com o vÃ£o da porta no tÃ©rreo.
+		-- Frente do hall (z = 64), com o vão da porta no térreo.
 		if y == 0 then
 			skin(V3(-14.75, mid, 63.47), V3(17.5, 15, 0.04))
 			skin(V3(25.25, mid, 63.47), V3(38.5, 15, 0.04))
