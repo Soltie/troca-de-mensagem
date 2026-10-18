@@ -1968,7 +1968,14 @@ local function renderSeason(c: ScrollingFrame)
 		CanvasSize = UDim2.fromOffset(#season.tiers * (columnWidth + 8), 0),
 		Parent = trackBox,
 	}) :: ScrollingFrame
-	for index, entry in season.tiers do
+	-- Colunas montadas sob demanda (visíveis + vizinhas): 30 níveis com arte pesariam no celular.
+	local built: { [number]: boolean } = {}
+	local function buildColumn(index: number)
+		if built[index] or not season.tiers[index] then
+			return
+		end
+		built[index] = true
+		local entry = season.tiers[index]
 		local reached = index <= tier
 		local x = (index - 1) * (columnWidth + 8)
 		local current = index == tier
@@ -2056,9 +2063,21 @@ local function renderSeason(c: ScrollingFrame)
 			end
 		end
 	end
+	local step = columnWidth + 8
+	local function ensureVisible()
+		local first = math.floor(strip.CanvasPosition.X / step) + 1
+		local count = math.ceil(math.max(strip.AbsoluteSize.X, 400) / step) + 1
+		for index = first - 1, first + count do
+			buildColumn(index)
+		end
+	end
+	strip:GetPropertyChangedSignal("CanvasPosition"):Connect(ensureVisible)
 	-- Abre a trilha no nível atual.
+	strip.CanvasPosition = Vector2.new(math.max(0, (tier - 2) * step), 0)
+	ensureVisible()
 	task.defer(function()
-		strip.CanvasPosition = Vector2.new(math.max(0, (tier - 2) * (columnWidth + 8)), 0)
+		strip.CanvasPosition = Vector2.new(math.max(0, (tier - 2) * step), 0)
+		ensureVisible()
 	end)
 end
 

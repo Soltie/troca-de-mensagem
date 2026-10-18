@@ -166,6 +166,19 @@ ativo (antes cliques atravessavam e acionavam abas/cartões atrás do diálogo).
 **Correções após as capturas (só código, sem nova captura):** "AUTOMÁTICA" em maiúsculas corretas (o
 `string.upper` não converte letras acentuadas); cartão de derrota encolhe quando não há botão de Continuação.
 
+## Fase 7 — QA final (17/10/2026)
+
+| Caso | Status | Evidência |
+|---|---|---|
+| Check final | PASSOU | ALL GREEN, 297 testes puros |
+| Runner do Studio na build final | PASSOU | 309 aprovados, 0 falhas, 0 pulados |
+| Passada por menu (4 abas), ajustes, loja (6 abas, 4 filtros) | PASSOU | console limpo |
+| Rótulo "QUALIDADE VISUAL: AUTOMÁTICA" | PASSOU | lido na build final |
+| Temporada sob demanda | PASSOU | 3.141 → 1.276 instâncias; 179 → 63 ms; colunas 10 → 20 ao rolar; `f7-temporada-sob-demanda.jpg` |
+| Economia, dados e servidor intocados | PASSOU | diff vazio nesses arquivos (ver ENTREGA.md) |
+| Cartão de derrota menor sem botão | NÃO TESTADO VISUALMENTE | ajuste de altura feito após a captura da fase 6 |
+| Smartphone físico, 2–6 jogadores reais, compras Robux reais | NÃO TESTADO | dependem do dono (ENTREGA.md, seção 6) |
+
 **Sobre os cliques automatizados:** com a janela do Studio sem foco, o módulo de câmera padrão do Roblox mantém
 o mouse travado no centro e os cliques simulados caem no meio da tela. Para o jogador (janela em foco) o
 `CameraController` libera o cursor no lobby. Por isso os fluxos foram exercitados pelo atributo
