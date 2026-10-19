@@ -102,11 +102,11 @@ local function update(dt: number)
 		elseif flat < 22 and math.abs(offset.Y) < 26 and now >= nextDustAt then
 			-- Logo acima/abaixo: o teto range e cai poeira.
 			nextDustAt = now + rng:NextNumber(2.2, 3.5)
-			AudioController.play("CreakWood", 1.6, rng:NextNumber(0.55, 0.75))
+			AudioController.play("CreakWood", 1, rng:NextNumber(0.55, 0.75))
 			if offset.Y > 0 then
 				dust(camera)
 			end
-			CameraController.addTrauma(0.18)
+			CameraController.addTrauma(0.08)
 		end
 	else
 		lastDistance = nil
@@ -140,19 +140,19 @@ local function update(dt: number)
 	local inside = type(hidden) == "string" and hidden ~= ""
 	-- Tela tremendo cada vez mais forte (escondido treme menos: o armário abafa).
 	if level > 0.15 then
-		CameraController.addTrauma(dt * level * (if inside then 0.8 else 2.2))
+		CameraController.addTrauma(dt * level * (if inside then 0.3 else 0.85))
 	end
 	-- Lanterna engasgando.
 	if level > 0.4 and now >= nextFlickerAt then
-		nextFlickerAt = now + rng:NextNumber(0.8, 1.6) * (1.3 - level)
-		FlashlightController.flicker(0.2 + 0.4 * level)
+		nextFlickerAt = now + rng:NextNumber(1.6, 2.8) * (1.3 - level)
+		FlashlightController.flicker(0.15 + 0.25 * level)
 	end
 	-- "TUM" do bastão ecoando, mais rápido quanto mais perto.
 	local source = creatureRoot()
 	if source and level > 0.2 and now >= nextKnockAt then
-		nextKnockAt = now + 1.8 - 1.2 * level
+		nextKnockAt = now + 3.2 - 1.6 * level
 		local sound =
-			AudioController.playAtPosition("DoorBang", source.Position, 0.6 + 0.6 * level, rng:NextNumber(0.6, 0.72))
+			AudioController.playAtPosition("DoorBang", source.Position, 0.3 + 0.3 * level, rng:NextNumber(0.6, 0.72))
 		sound.RollOffMinDistance = 18
 		sound.RollOffMaxDistance = 120
 	end

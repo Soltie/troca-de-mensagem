@@ -36,7 +36,8 @@ type Scare = {
 local rng = Random.new()
 
 local function sound(name: string, at: Vector3, volume: number?, speed: number?)
-	local s = AudioController.playAtPosition(name, at, volume, speed)
+	-- Sustos mais contidos: 70% do volume pedido.
+	local s = AudioController.playAtPosition(name, at, (volume or 1) * 0.7, speed)
 	s.RollOffMinDistance = 14
 	s.RollOffMaxDistance = 110
 end
@@ -52,7 +53,7 @@ local SCARES: { Scare } = {
 			-- A porta da frente bate atrás de você.
 			sound("DoorBang", Vector3.new(0, 5, 63), 1.6, 0.7)
 			sound("Fall_box", Vector3.new(0, 3, 63), 1.2, 0.6)
-			CameraController.addTrauma(0.5)
+			CameraController.addTrauma(0.25)
 			WorldFxController.surge(0.9, Vector3.new(0, 4, 50), 40)
 		end,
 	},
@@ -66,7 +67,7 @@ local SCARES: { Scare } = {
 			sound("RadioStatic", Vector3.new(-20, 4, -14), 1.5, 0.75)
 			WorldFxController.surge(1.6, Vector3.new(-26, 4, -4), 30)
 			task.delay(0.9, function()
-				AudioController.play("Whisper", 0.9, 0.8)
+				AudioController.play("Whisper", 0.65, 0.8)
 			end)
 		end,
 	},
@@ -83,7 +84,7 @@ local SCARES: { Scare } = {
 					if i % 2 == 0 then
 						sound("CreakWood", Vector3.new(-34 + i * 3.2, 15, -36), 1.4, 0.6)
 					end
-					CameraController.addTrauma(0.08)
+					CameraController.addTrauma(0.04)
 				end)
 			end
 		end,
@@ -115,7 +116,7 @@ local SCARES: { Scare } = {
 			sound("BreakerFail", Vector3.new(0, 8, -30), 1.2, 0.8)
 			WorldFxController.surge(3, Vector3.new(0, 4, -30), 50)
 			FlashlightController.flicker(1)
-			CameraController.addTrauma(0.3)
+			CameraController.addTrauma(0.15)
 		end,
 	},
 	-- Capítulo 3 -------------------------------------------------------------------------------------------------
@@ -160,7 +161,7 @@ local SCARES: { Scare } = {
 			for i = 0, 2 do
 				task.delay(i * 0.7, function()
 					sound("DoorBang", Vector3.new(-42, -12, -4), 1.5, 0.55)
-					CameraController.addTrauma(0.25)
+					CameraController.addTrauma(0.12)
 				end)
 			end
 		end,
@@ -175,7 +176,7 @@ local SCARES: { Scare } = {
 			sound("Roar", Vector3.new(26, -12, -40), 1.3, 0.7)
 			WorldFxController.surge(2.5, Vector3.new(26, -12, -4), 45)
 			FlashlightController.flicker(0.8)
-			CameraController.addTrauma(0.35)
+			CameraController.addTrauma(0.18)
 		end,
 	},
 }
