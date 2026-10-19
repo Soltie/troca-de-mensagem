@@ -24,9 +24,12 @@ local Presentation = require("@game/ReplicatedStorage/Shared/Game/Presentation")
 local SettingsController = require("./SettingsController")
 local Create = require("../UI/Create")
 local Theme = require("../UI/Theme")
+local Noir = require("../UI/NoirHud")
 
 local STEP = 1 / 12
 local BAR = 0.11
+-- Base do título da cartela (px acima da borda de baixo); o subtítulo fica logo abaixo dele.
+local TITLE_Y = -50
 local NOISE_BARS = 22
 local LID = 0.62
 
@@ -238,30 +241,34 @@ local function build(): Refs
 		Parent = stamp,
 	})
 
+	-- Cartela no estilo do HUD (NoirHud): fonte fina espaçada, pequena, junto da borda de baixo (na faixa preta).
 	local title = text({
 		Name = "Title",
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.44),
-		Size = UDim2.new(0.9, 0, 0, 60),
-		TextSize = 56,
-		TextScaled = true,
+		AnchorPoint = Vector2.new(0.5, 1),
+		Position = UDim2.new(0.5, 0, 1, TITLE_Y),
+		Size = UDim2.new(0.9, 0, 0, 30),
+		FontFace = Noir.SansLight,
+		TextSize = 24,
 		TextWrapped = true,
-		TextColor3 = Theme.Text,
-		TextStrokeTransparency = 0,
+		TextColor3 = Noir.Paper,
+		TextStrokeTransparency = 1,
+		TextYAlignment = Enum.TextYAlignment.Bottom,
 		Visible = false,
 		ZIndex = 11, -- acima das pálpebras: a cartela de etapa aparece no escuro
 		Parent = gui,
 	})
 	local subtitle = text({
 		Name = "Subtitle",
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0.44, 40),
-		Size = UDim2.new(0.86, 0, 0, 44),
-		TextScaled = true,
+		AnchorPoint = Vector2.new(0.5, 1),
+		Position = UDim2.new(0.5, 0, 1, -14),
+		Size = UDim2.new(0.86, 0, 0, 34),
+		FontFace = Noir.Sans,
+		TextSize = 11,
+		LineHeight = 1.35,
 		TextWrapped = true,
-		TextSize = Theme.SizeLarge,
-		TextColor3 = Theme.Hazard,
-		TextStrokeTransparency = 0,
+		TextColor3 = Noir.TextDim,
+		TextStrokeTransparency = 1,
+		TextYAlignment = Enum.TextYAlignment.Bottom,
 		Visible = false,
 		ZIndex = 11,
 		Parent = gui,
@@ -271,8 +278,10 @@ local function build(): Refs
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 1 - BAR / 2),
 		Size = UDim2.new(0.86, 0, BAR, -8),
-		TextScaled = true,
-		TextSize = Theme.SizeLarge,
+		FontFace = Noir.Sans,
+		TextSize = 17,
+		TextColor3 = Noir.Paper,
+		TextStrokeTransparency = 1,
 		TextWrapped = true,
 		Visible = false,
 		ZIndex = 7,
@@ -310,9 +319,6 @@ local function build(): Refs
 		ZIndex = 5,
 		Parent = gui,
 	})
-	Create("UITextSizeConstraint", { Parent = title, MinTextSize = 18, MaxTextSize = 56 })
-	Create("UITextSizeConstraint", { Parent = subtitle, MinTextSize = 12, MaxTextSize = Theme.SizeLarge })
-	Create("UITextSizeConstraint", { Parent = caption, MinTextSize = 12, MaxTextSize = Theme.SizeLarge })
 	stampCamera.Size = UDim2.new(0.64, -28, 0, 32)
 	stampCamera.TextScaled, stampCamera.TextWrapped = true, true
 	stampClockLabel.Size = UDim2.new(0.3, -16, 0, 24)
@@ -576,8 +582,8 @@ function TransitionController.title(title: string?, subtitle: string?)
 		end)
 		return
 	end
-	ui.title.Text = title
-	ui.subtitle.Text = subtitle or ""
+	ui.title.Text = Noir.spaced(string.upper(title), "\u{2009}\u{2009}")
+	ui.subtitle.Text = Noir.spaced(string.upper(subtitle or ""))
 	ui.subtitle.Visible = false
 	ui.subtitle.TextTransparency = 0
 	ui.subtitle.TextStrokeTransparency = 0
@@ -592,7 +598,7 @@ function TransitionController.title(title: string?, subtitle: string?)
 				return
 			end
 			ui.title.Visible = true
-			ui.title.Position = UDim2.new(0.5, offset, 0.44, 0)
+			ui.title.Position = UDim2.new(0.5, offset, 1, TITLE_Y)
 			ui.title.TextTransparency = fades[i]
 			ui.title.TextStrokeTransparency = fades[i]
 			task.wait(STEP)
