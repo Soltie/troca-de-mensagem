@@ -19,6 +19,7 @@ local Noir = require("../UI/NoirHud")
 local Theme = require("../UI/Theme")
 local Character = require("./CharacterController")
 local AudioController = require("./AudioController")
+local GameUi = require("./GameUiController")
 local Flashlight = require("./FlashlightController")
 
 -- Mochila: nome e descrição de cada espaço (o detalhe embaixo da grade).
@@ -258,7 +259,8 @@ function Controller.Start()
 	-- Legenda das batidas do Tung Tung (vem do CreatureVisualController quando ele está perto).
 	player:GetAttributeChangedSignal("TungKnockSerial"):Connect(function()
 		if ui.gui.Enabled then
-			Juice.floatText(ui.canvas, "TUM... TUM... TUM...", UDim2.fromScale(0.5, 0.3), Theme.Accent, 30, 1.2)
+			-- Legenda discreta no rodapé (como os outros avisos), não um letreiro no meio da tela.
+			GameUi.caption("Tum... tum... tum...", 1.6)
 		end
 	end)
 	player:GetAttributeChangedSignal("Fichas"):Connect(refreshCoins)

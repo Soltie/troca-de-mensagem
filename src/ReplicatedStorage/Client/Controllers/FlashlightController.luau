@@ -629,7 +629,9 @@ function FlashlightController.Start()
 		vm.model.Parent = if visible then camera else nil
 		aimGuide(hand, dt)
 		placeViewmodel(hand)
-		part.CFrame = hand * CFrame.new(0, 0, -0.62)
+		-- A fonte da luz fica na cabeça (a câmera nunca entra na parede), apontando para onde a mão aponta. Na ponta
+		-- da lanterna ela atravessava paredes ao encostar e a luz piscava/vazava em cômodos apertados.
+		part.CFrame = CFrame.new(camera.CFrame.Position + camera.CFrame.UpVector * -0.25) * hand.Rotation
 		local volume = part:FindFirstChild("DustVolume")
 		if volume and volume:IsA("BasePart") then
 			volume.CFrame = part.CFrame * CFrame.new(0, 0, -5.5)

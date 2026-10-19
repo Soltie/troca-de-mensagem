@@ -41,7 +41,7 @@ export type TungRig = {
 local TungTungRig = {}
 
 local VISUAL_SCALE = 1.15
-local SKIN_TINT = Color3.fromRGB(196, 146, 102)
+local SKIN_TINT = Color3.fromRGB(170, 140, 106)
 
 -- Clipes decodificados uma vez por cliente: quadro -> lista de CFrames por osso.
 local cache: { [string]: { frames: { { CFrame } }, decoded: ClipCodec.Decoded } } = {}

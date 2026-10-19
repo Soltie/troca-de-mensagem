@@ -27,15 +27,17 @@ Profile.World = {
 Profile.Bloom = { intensity = 0.1, size = 10, threshold = 1.9 }
 -- Lanterna mais forte (aprovada pelo humano em 19/10/2026): o feixe revela o cômodo; fora dele continua escuro.
 -- `halo`: cones extras em volta do feixe (abertura, fração do brilho, fração do alcance) para a luz cair aos poucos.
+-- Foco redondo e nítido (pedido do humano): cone principal mais fechado e forte; auréola fraca só para a borda
+-- não cortar seco; quase nada de luz espalhada em volta da mão.
 Profile.Flashlight = {
-	brightness = 4.6,
-	spill = 0.45,
-	spillRange = 12,
-	angle = 50,
-	range = 62,
+	brightness = 5.6,
+	spill = 0.2,
+	spillRange = 8,
+	angle = 38,
+	range = 64,
 	halo = {
-		{ angle = 72, share = 0.3, reach = 0.75 },
-		{ angle = 100, share = 0.12, reach = 0.55 },
+		{ angle = 54, share = 0.18, reach = 0.8 },
+		{ angle = 74, share = 0.05, reach = 0.5 },
 	},
 }
 -- Filtro de cor "frio" (opção B, escolhida pelo humano): azulado, menos saturado e mais contraste, por cima do tom
