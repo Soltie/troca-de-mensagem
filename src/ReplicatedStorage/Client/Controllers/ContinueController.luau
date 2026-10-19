@@ -18,10 +18,9 @@ local Config = require("@game/ReplicatedStorage/Shared/Config")
 local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
 local Text = require("@game/ReplicatedStorage/Shared/Game/Text")
 local Remotes = require("@game/ReplicatedStorage/Shared/Net/Remotes")
-local Components = require("../UI/Components")
 local Create = require("../UI/Create")
 local Juice = require("../UI/Juice")
-local Theme = require("../UI/Theme")
+local Noir = require("../UI/NoirHud")
 local AudioController = require("./AudioController")
 
 local player = Players.LocalPlayer
@@ -85,77 +84,86 @@ local function build()
 		IgnoreGuiInset = true,
 		Parent = player:WaitForChild("PlayerGui"),
 	})
-	-- Cartão da derrota: tom calmo (terror leve), contagem visível e nenhuma oferta de compra.
-	local p = Components.panel({
+	-- Derrota no estilo do HUD (NoirHud): faixa escura em degradê no rodapé, título fino espaçado, texto discreto,
+	-- linha fina da contagem e o botão como texto. Tom calmo e nenhuma oferta de compra.
+	local p = Create("Frame", {
 		Name = "Offer",
-		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, -40),
-		Size = UDim2.new(1, -32, 0, 176),
-		BackgroundColor3 = Theme.Bg,
-		BackgroundTransparency = 0.04,
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.fromScale(0, 1),
+		Size = UDim2.new(1, 0, 0, 230),
+		BackgroundColor3 = Noir.Ink,
+		BorderSizePixel = 0,
 		Visible = false,
 		Parent = gui,
 	}, {
-		Create("UISizeConstraint", { MaxSize = Vector2.new(620, 220) }),
-	})
-	local outline = p:FindFirstChildOfClass("UIStroke")
-	if outline then
-		outline.Color, outline.Thickness, outline.Transparency = Theme.Danger:Lerp(Theme.Gold, 0.4), 2, 0
+		Create("UIGradient", {
+			Rotation = 90,
+			Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 1),
+				NumberSequenceKeypoint.new(0.45, 0.35),
+				NumberSequenceKeypoint.new(1, 0.08),
+			}),
+		}),
+	}) :: Frame
+	local function label(name: string, size: number, color: Color3, y: number, height: number): TextLabel
+		return Create("TextLabel", {
+			Name = name,
+			AnchorPoint = Vector2.new(0.5, 0),
+			Position = UDim2.new(0.5, 0, 0, y),
+			Size = UDim2.new(0.8, 0, 0, height),
+			BackgroundTransparency = 1,
+			FontFace = Noir.SansLight,
+			TextSize = size,
+			TextColor3 = color,
+			TextWrapped = true,
+			Text = "",
+			Parent = p,
+		}) :: TextLabel
 	end
-	Components.padding(p, 16, 14)
-	Components.icon(p, "Replay", 36, Theme.GoldLight)
-	Components.title({
-		Name = "Title",
-		Position = UDim2.fromOffset(48, 0),
-		Size = UDim2.new(1, -48, 0, 36),
-		Text = "O TUNG TUNG PEGOU O TIME!",
-		TextColor3 = Theme.GoldLight,
-		TextSize = 24,
-		TextTruncate = Enum.TextTruncate.AtEnd,
+	local title = label("Title", 22, Noir.Paper, 70, 30)
+	title.Text = Noir.spaced("O TUNG TUNG PEGOU O TIME", "\u{2009}\u{2009}")
+	body = label("Body", 14, Noir.TextDim, 108, 40)
+	-- Linha fina da contagem (esvazia até o recomeço grátis).
+	local track = Create("Frame", {
+		Name = "Countdown",
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 156),
+		Size = UDim2.fromOffset(260, 2),
+		BackgroundColor3 = Noir.Paper,
+		BackgroundTransparency = 0.82,
+		BorderSizePixel = 0,
 		Parent = p,
 	})
-	body = Components.text({
-		Name = "Body",
-		Position = UDim2.fromOffset(0, 42),
-		Size = UDim2.new(1, 0, 0, 40),
-		FontFace = Theme.FontNote,
-		Text = "",
-		TextSize = 15,
-		TextYAlignment = Enum.TextYAlignment.Top,
-		Parent = p,
-	}) :: TextLabel
-	local track, setTrack = Components.progress({
-		Name = "Countdown",
-		Position = UDim2.fromOffset(0, 88),
-		Size = UDim2.new(1, 0, 0, 8),
-	}, Theme.Gold)
-	track.Parent = p
-	setCountdown = setTrack
-	local b = Components.button("success", {
+	local fillBar = Create("Frame", {
+		Name = "Fill",
+		Size = UDim2.fromScale(1, 1),
+		BackgroundColor3 = Noir.Paper,
+		BorderSizePixel = 0,
+		Parent = track,
+	}) :: Frame
+	setCountdown = function(alpha: number)
+		fillBar.Size = UDim2.fromScale(math.clamp(alpha, 0, 1), 1)
+	end
+	local b = Create("TextButton", {
 		Name = "Continue",
-		AnchorPoint = Vector2.new(0, 1),
-		Position = UDim2.fromScale(0, 1),
-		Size = UDim2.new(0.6, -6, 0, Theme.TouchMin),
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 172),
+		Size = UDim2.fromOffset(360, 36),
+		BackgroundTransparency = 1,
+		AutoButtonColor = false,
+		FontFace = Noir.SansMedium,
+		TextSize = 12,
+		TextColor3 = Noir.Paper,
 		Text = "",
-		TextSize = 15,
 		Visible = false,
 		Parent = p,
-	}, function()
+	}) :: TextButton
+	b.Activated:Connect(function()
 		AudioController.play("UiBlip", 0.5, 1.1, true)
 		task.spawn(useContinue)
 	end)
 	b.Modal = true
-	status = Components.text({
-		Name = "Status",
-		AnchorPoint = Vector2.new(1, 1),
-		Position = UDim2.fromScale(1, 1),
-		Size = UDim2.new(0.4, -6, 0, Theme.TouchMin),
-		FontFace = Theme.Font,
-		Text = "",
-		TextSize = 13,
-		TextColor3 = Theme.TextSecondary,
-		Parent = p,
-	}) :: TextLabel
+	status = label("Status", 12, Noir.TextDim, 206, 18)
 	panel = p
 	primary = b
 end
@@ -202,9 +210,7 @@ function Controller.Start()
 			end
 			local count = stock()
 			b.Visible = count > 0 and remaining > 0
-			-- Sem Continuação no estoque não há botão: o cartão encolhe em vez de sobrar espaço vazio.
-			p.Size = UDim2.new(1, -32, 0, if b.Visible then 176 else 124)
-			b.Text = `VOLTAR AGORA · CONTINUAÇÕES: {count}`
+			b.Text = `{Noir.spaced("VOLTAR AGORA")}      ·      {count}`
 		end
 	end)
 end
