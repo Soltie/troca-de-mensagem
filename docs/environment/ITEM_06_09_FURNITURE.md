@@ -24,3 +24,12 @@ usuário (Poly Haven ou feitos por ele no Hyper3D). Nada publicado.
 - NÃO TESTADO: celular físico, partida multiplayer real.
 
 Capturas em `docs/evidence/environment/{wardrobe,doors,sofa,rug,window}/`.
+
+## Depois dos itens 6–9 (mesmo dia)
+
+- Item 5: alvos cinza de pista/ativar corrigidos (ITEM_05_HANDOFF.md).
+- Item 10: campo de mato denso no jardim (`GrassField`, 250 tapetes; floresta ainda com touceiras antigas).
+- Item 11: chuva fina, sem riscos brancos longos (`RainController`, `Weather.RainRate` 3400).
+- Item 13: vinheta suave sempre ligada (`RetroFxController`, `CinemaVignette`).
+- Tudo aplicado no `tungtung` (sem publicar): 360/360 no Studio.
+- Pendentes: item 12 (movimentação — mudança funcional, apresentar antes), floresta com o mato novo, revisão geral, celular físico NÃO TESTADO.
