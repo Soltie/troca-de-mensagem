@@ -19,6 +19,9 @@ local rng = Random.new()
 local surgeUntil = 0
 local surgeOrigin: Vector3? = nil
 local surgeRadius = math.huge
+local threatLevel = 0
+local threatOrigin = Vector3.zero
+local threatRadius = 0
 local snapshot: GameState.Snapshot? = nil
 type Fixture = { part: BasePart, seed: number, brightness: number, range: number, visibility: number, visible: boolean }
 local fixtures: { [Light]: Fixture } = {}
@@ -112,6 +115,21 @@ local function step()
 				then
 					factor = if rng:NextNumber() < 0.5 then rng:NextNumber(0.25, 0.5) else rng:NextNumber(0.8, 1.2)
 				end
+				-- Aviso do Tung Tung (ThreatWarningController): perto dele as luzes falham forte, apagam e estouram.
+				if
+					threatLevel > 0.05
+					and architectural
+					and kind ~= "Exit"
+					and (instance.Position - threatOrigin).Magnitude <= threatRadius
+				then
+					if flashes then
+						factor *= if rng:NextNumber() < 0.25 + 0.55 * threatLevel
+							then rng:NextNumber(0, 0.08)
+							else rng:NextNumber(0.9, 1 + 0.8 * threatLevel)
+					else
+						factor *= 1 - 0.6 * threatLevel
+					end
+				end
 				if kind == "Beacon" then
 					local on = s ~= nil and s.powerOn and (not flashes or (now * 2.5) % 2 < 1)
 					instance.Transparency = if on then 0 else 0.6
@@ -146,6 +164,13 @@ function WorldFxController.debugState(): { [string]: any }
 		particles = particleCount,
 		details = detailCount,
 	}
+end
+
+-- Aviso de ameaça (0..1): luzes em volta de `origin` falham forte enquanto o Tung Tung se aproxima.
+function WorldFxController.threat(level: number, origin: Vector3, radius: number)
+	threatLevel = math.clamp(level, 0, 1)
+	threatOrigin = origin
+	threatRadius = radius
 end
 
 -- Pico de falha nas luzes por `duration` segundos.

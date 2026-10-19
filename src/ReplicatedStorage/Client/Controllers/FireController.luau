@@ -686,6 +686,10 @@ local function collapseStairs(name: string, x: number, y0: number, y1: number)
 	AudioController.playAtPosition("BeamCrack", center, 1.6, 0.7)
 	AudioController.playAtPosition("WoodSplinter", center, 1.4, 0.8)
 	AudioController.play("AmbThunder", 1.5, 0.5)
+	if name == "MainStairs" then
+		-- O grito dele no meio das chamas quando a escada vem abaixo.
+		AudioController.playAtPosition("Roar", center + Vector3.new(0, 4, 0), 1.3, 0.75)
+	end
 	CameraController.addTrauma(0.5)
 	for index, piece in pieces do
 		fallPiece(piece, {

@@ -38,6 +38,8 @@ local controllers: { any } = {
 	require("./Controllers/ScreenFxController"),
 	require("./Controllers/ThreatFeedbackController"),
 	require("./Controllers/CreatureVisualController"),
+	require("./Controllers/ThreatWarningController"),
+	require("./Controllers/ScareController"),
 	require("./Controllers/GameUiController"),
 	require("./Controllers/InteractionController"),
 	require("./Controllers/HudController"),
