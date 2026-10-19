@@ -643,6 +643,36 @@ function WorldService.locker(id: string): FeatureBuilder.LockerHandle?
 	return getFeatures().lockers[id]
 end
 
+-- Armário com surpresa (ideia G, inspirada no Pressure): uma fração dos armários da casa tem "algo" dentro neste
+-- capítulo. A porta guarda Cursed/EyesAt/EyesFace (o cliente desenha olhos na fresta e uma respiração); quem
+-- entra sem olhar é jogado para fora (CampaignRuntime). O do tutorial da biblioteca e os da floresta ficam fora.
+local curseRng = Random.new()
+function WorldService.curseLockers(fraction: number)
+	local candidates: { FeatureBuilder.LockerHandle } = {}
+	for id, locker in getFeatures().lockers do
+		locker.door:SetAttribute("Cursed", nil)
+		locker.door:SetAttribute("EyesAt", nil)
+		locker.door:SetAttribute("EyesFace", nil)
+		if id ~= "hide_Library" and string.sub(id, 1, 12) ~= "hide_Forest_" then
+			table.insert(candidates, locker)
+		end
+	end
+	if fraction <= 0 or #candidates == 0 then
+		return
+	end
+	local count = math.max(1, math.floor(#candidates * fraction + 0.5))
+	for _ = 1, count do
+		local locker = table.remove(candidates, curseRng:NextInteger(1, #candidates)) :: FeatureBuilder.LockerHandle
+		locker.door:SetAttribute("Cursed", true)
+		locker.door:SetAttribute("EyesAt", locker.inside.Position + Vector3.new(0, 1.6, 0))
+		local face = locker.front - locker.inside.Position
+		locker.door:SetAttribute("EyesFace", Vector3.new(face.X, 0, face.Z).Unit)
+		if #candidates == 0 then
+			break
+		end
+	end
+end
+
 -- Porta do armário abre e fecha (entrada/saída), em passos.
 -- `wide`: alguém caiu de dentro (fresta segurada demais): as folhas abrem de supetão, bem abertas, e só fecham
 -- depois que ele já está no chão.

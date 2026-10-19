@@ -340,6 +340,8 @@ local function stage()
 		plan.sector
 	)
 	WorldService.setHouseStage(session.stage, session.seed, selectedMode)
+	-- Armário com surpresa (WorldService.curseLockers): 1 em cada 10 tem algo dentro neste capítulo.
+	WorldService.curseLockers(if session.stage <= 5 then 0.1 else 0)
 	local world = WorldService.get()
 	-- As trancas da missão solo não podem invalidar o grafo da campanha.
 	local worldAdapter: any = WorldService
@@ -767,6 +769,17 @@ local function interact(player: Player, id: string, _action: string?): { accepte
 				or playerAdapter.sinceExit(player) < Config.Hide.ExitCooldown
 			then
 				return response(false, "too_far")
+			end
+			-- Armário com surpresa: algo lá dentro empurra a porta, joga o jogador no chão e o barulho chama ele.
+			if locker.door:GetAttribute("Cursed") == true then
+				locker.door:SetAttribute("Cursed", nil)
+				locker.door:SetAttribute("EyesAt", nil)
+				nextActionAt[player.UserId] = now + 2
+				WorldService.swingLocker(id, true)
+				player:SetAttribute("HideFellAt", workspace:GetServerTimeNow())
+				CreatureService.makeNoise(locker.front, 70)
+				CreatureService.followScent(locker.front)
+				return response(true, "locker_cursed")
 			end
 			local seen = CreatureService.sawEntry(player)
 			if playerAdapter.enterHide(player, id, locker.inside, locker.eye, locker.exit, locker.front, seen) then

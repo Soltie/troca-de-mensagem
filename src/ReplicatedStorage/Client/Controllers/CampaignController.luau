@@ -78,6 +78,7 @@ local messages: { [string]: string } = {
 	supply_full = "Já está cheio. Seu item continua na mochila.",
 	need_flashlight = "Recolha a lanterna antes de usar uma pilha.",
 	search_empty = "Vazio... procure nos outros móveis do cômodo.",
+	locker_cursed = "Tinha alguma coisa lá dentro! Olhe a fresta antes de entrar num armário.",
 }
 
 function Controller.Start()

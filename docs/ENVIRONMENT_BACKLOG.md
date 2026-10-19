@@ -69,3 +69,6 @@ Decisão do humano (19/10/2026): fazer todas, do mais fácil ao mais difícil, m
 - H (som vira perigo): não fazer.
 - K (mini-jogos físicos): anotado para depois.
 Ordem combinada: B, E, A, I, G, J, C, M, D, L.
+Feitas e testadas: B, E, A, I, G (2 de cada ~10 armários por capítulo; olhos vermelhos numa fresta escura até 14 studs,
+respiração; entrar sem olhar = porta abre, queda no chão, barulho 70 que chama o Tung; fotos em
+docs/evidence/environment/locker).
