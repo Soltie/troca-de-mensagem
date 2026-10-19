@@ -26,6 +26,7 @@ local HINTS: { [string]: string } = {
 	tung = "Ele te ouviu. Quando as luzes piscarem e o coração acelerar, entre num armário ou saia do caminho dele.",
 	lightning = "O raio cai onde o chão brilha. Saia do campo aberto assim que vir o brilho.",
 	fire = "O fogo corre atrás de você. Não pare dentro das chamas: corra pelo meio do caminho.",
+	gust = "Quando as luzes do corredor piscarem e o vento crescer, entre num armário ou num cômodo do lado.",
 }
 
 local phase: GameState.Phase = "Loading"

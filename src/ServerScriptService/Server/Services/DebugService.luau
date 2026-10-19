@@ -24,6 +24,7 @@ local ServerStorage = game:GetService("ServerStorage")
 local Logger = require("@game/ReplicatedStorage/Shared/Logger")
 local CollectibleService = require("./CollectibleService")
 local CreatureService = require("./CreatureService")
+local GustService = require("./GustService")
 local PlayerStateService = require("./PlayerStateService")
 local PropService = require("./PropService")
 local RoundService = require("./RoundService")
@@ -49,6 +50,10 @@ end
 local commands: { [string]: (...any) -> any } = {
 	chapter = function(chapter: number)
 		return (RoundService :: any).debugChapter(chapter)
+	end,
+	gust = function()
+		local player = Players:GetPlayers()[1]
+		return player ~= nil and GustService.trigger(player)
 	end,
 	forestChapter = function(chapter: number)
 		return (RoundService :: any).debugForest(chapter)

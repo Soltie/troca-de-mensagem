@@ -24,6 +24,7 @@ local WorldService = require("../Services/WorldService")
 local CreatureService = require("../Services/CreatureService")
 local LightningService = require("../Services/LightningService")
 local FireService = require("../Services/FireService")
+local GustService = require("../Services/GustService")
 local CollectibleService = require("../Services/CollectibleService")
 -- Vantagens pagas (Claude): Segunda Chance, tempo de resgate e Continuação.
 local PerkService = require("../Services/PerkService")
@@ -1129,6 +1130,10 @@ function Runtime.Init()
 	-- Incêndio da fuga final: ficar no fogo derruba pelo mesmo caminho (resgate, segunda chance).
 	FireService.onBurn(function(player)
 		capture(player, "fire")
+	end)
+	-- Sopro do corredor: quem fica na faixa fora de um armário leva pancada (mesmo caminho da captura).
+	GustService.onHit(function(player)
+		capture(player, "gust")
 	end)
 	restartCampaign()
 end

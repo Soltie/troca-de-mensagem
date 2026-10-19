@@ -69,6 +69,9 @@ Decisão do humano (19/10/2026): fazer todas, do mais fácil ao mais difícil, m
 - H (som vira perigo): não fazer.
 - K (mini-jogos físicos): anotado para depois.
 Ordem combinada: B, E, A, I, G, J, C, M, D, L.
-Feitas e testadas: B, E, A, I, G (2 de cada ~10 armários por capítulo; olhos vermelhos numa fresta escura até 14 studs,
+Feitas e testadas: B, E, A, I, G, J. G (2 de cada ~10 armários por capítulo; olhos vermelhos numa fresta escura até 14 studs,
 respiração; entrar sem olhar = porta abre, queda no chão, barulho 70 que chama o Tung; fotos em
 docs/evidence/environment/locker).
+J (capítulos 2-4, ~1 a cada 3-4 min depois de 60 s): luzes do corredor piscam e o vento cresce por 3 s, depois uma
+parede de névoa gelada corre de parede a parede (38 studs/s). Quem fica na faixa fora de armário leva pancada (fluxo
+da captura, causa "gust", com dica). Depuração: DebugBridge "gust". Fotos em docs/evidence/environment/gust.

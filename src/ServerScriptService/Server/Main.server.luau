@@ -34,6 +34,7 @@ local services: { any } = {
 	require("./Services/FootprintService"),
 	require("./Services/LightningService"),
 	require("./Services/FireService"),
+	require("./Services/GustService"),
 	require("./Services/DebugService"), -- só age no Studio
 }
 
