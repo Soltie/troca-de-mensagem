@@ -301,8 +301,8 @@ ROOMS.Kitchen = function(folder, root, room)
 	against(folder, room, "Icebox", "door", -11, 0.95)
 	local center = at(-11.5, 11.5, 0)
 	Props.place(folder, "RoundTable", center, V3(1, 0, 0), 0.95, "floor")
-	Props.place(folder, "GothicChair", center + V3(0, 0, -4.2), V3(0, 0, 1), 0.75, "floor")
-	Props.place(folder, "GothicChair", center + V3(0, 0, 4), V3(0, 0, -1), 0.75, "floor")
+	Props.place(folder, "GothicChair", center + V3(0, 0, -4.2), V3(0, 0, 1), 0.6, "floor")
+	Props.place(folder, "GothicChair", center + V3(0, 0, 4), V3(0, 0, -1), 0.6, "floor")
 	for _, ox in { -6, 0, 6 } do
 		against(folder, room, "PaintedCabinet", "front", ox, 0.9)
 	end
@@ -317,7 +317,7 @@ ROOMS.Dining = function(folder, root, room)
 	for _, offset in { V3(0, 0, -5), V3(0, 0, 5), V3(5.2, 0, 0), V3(-5.2, 0, 0) } do
 		local spot = center + offset
 		if math.abs(spot.X - room.x) < 17 then
-			Props.place(folder, "GothicChair", spot, -offset, 0.8, "floor")
+			Props.place(folder, "GothicChair", spot, -offset, 0.6, "floor")
 		end
 	end
 	if dining then
@@ -428,7 +428,7 @@ ROOMS.Office = function(folder, root, room)
 	conceal(root, room, { Desk = true, Paper = true, OfficeChair = true, Shelf = true, Book = true })
 	local at = roomFrame(room)
 	local desk = against(folder, room, "Console", "facade", -2, 1.05)
-	Props.place(folder, "GothicChair", at(12.2, -2, 0), V3(1, 0, 0), 0.8, "floor")
+	Props.place(folder, "GothicChair", at(12.2, -2, 0), V3(1, 0, 0), 0.6, "floor")
 	if desk then
 		local box = desk:GetBoundingBox()
 		Props.place(
