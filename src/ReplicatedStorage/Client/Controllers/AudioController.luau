@@ -45,6 +45,8 @@ local musicState: MusicState = "none"
 local fear = 0
 -- Aviso de ameaça 0..1 (ThreatWarningController): o Tung Tung chegando no mesmo andar.
 local threat = 0
+-- Sanidade perdida 0..1 (SanityController): sussurros crescem no escuro.
+local sanityLoss = 0
 local silenceUntil = 0
 local muffleOverride = 0
 local nextCreakAt = 0
@@ -261,6 +263,11 @@ function AudioController.setThreat(value: number)
 end
 
 -- Velocidade atual do batimento (1 = 96 bpm), para sincronizar a vinheta.
+-- Sanidade perdida 0..1 (SanityController).
+function AudioController.setSanity(value: number)
+	sanityLoss = math.clamp(value, 0, 1)
+end
+
 function AudioController.heartbeatSpeed(): number
 	local loop = loops.Heartbeat
 	return if loop then loop.PlaybackSpeed / math.max(speeds.Heartbeat, 1e-3) else 1
@@ -491,7 +498,8 @@ function AudioController.Start()
 		local beat = math.clamp(math.max(fear * 0.7 + near * 0.35, threat * 0.9), 0, 1)
 		targets.Heartbeat = if inPlay then math.min(1, beat * 0.7 + threat * 0.35) else 0
 		loops.Heartbeat.PlaybackSpeed = speeds.Heartbeat * (0.85 + beat * 0.6 + threat * 0.5)
-		targets.Whisper = if inPlay and fear > 0.72 then Audio.Whisper.volume * (fear - 0.72) / 0.28 else 0
+		local whisper = if inPlay and fear > 0.72 then Audio.Whisper.volume * (fear - 0.72) / 0.28 else 0
+		targets.Whisper = if inPlay then math.max(whisper, Audio.Whisper.volume * sanityLoss * 0.8) else 0
 
 		for name, sound in loops do
 			local target = targets[name]

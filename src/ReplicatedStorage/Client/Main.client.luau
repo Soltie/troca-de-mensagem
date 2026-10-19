@@ -41,6 +41,7 @@ local controllers: { any } = {
 	require("./Controllers/ThreatWarningController"),
 	require("./Controllers/ScareController"),
 	require("./Controllers/GuidingLightController"),
+	require("./Controllers/SanityController"),
 	require("./Controllers/GameUiController"),
 	require("./Controllers/InteractionController"),
 	require("./Controllers/HudController"),
