@@ -1,7 +1,7 @@
 From 502b18afca151b5f64e4aa33d6ba9299e6e7a3f8 Mon Sep 17 00:00:00 2001
 From: fashionultraaura <fashionultraaura@gmail.com>
 Date: Sun, 18 Oct 2026 04:44:28 -0300
-Subject: [PATCH 4/8] design(env): moveis 3D nos comodos, portas vitorianas e
+Subject: [PATCH 04/10] design(env): moveis 3D nos comodos, portas vitorianas e
  forros (lote 3)
 
 MansionProps ganha 11 modelos (estante com livros, cama gotica, cadeira
