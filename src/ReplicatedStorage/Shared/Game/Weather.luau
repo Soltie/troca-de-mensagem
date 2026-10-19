@@ -2,7 +2,7 @@
 -- Chuva e relâmpagos: números puros (sem engine), testados no Lune. O RainController aplica no cliente.
 local Weather = {}
 
-Weather.RainRate = 2700 -- gotas/s em qualidade Alta, ao ar livre (somando as células)
+Weather.RainRate = 3400 -- gotas/s em qualidade Alta, ao ar livre (somando as células); finas e escuras, então mais densas
 Weather.SplashRate = 400 -- respingos/s no chão em volta da câmera
 Weather.MinBudget = 0.3 -- qualidade Baixa ainda chove (menos), só sem os efeitos opcionais
 Weather.IndoorVolume = 0.35 -- chuva ouvida de dentro de casa, abafada

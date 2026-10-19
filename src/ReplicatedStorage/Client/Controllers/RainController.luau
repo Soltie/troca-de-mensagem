@@ -114,12 +114,14 @@ function controller.Init()
 		emitter.Lifetime = NumberRange.new(0.55, 0.65)
 		emitter.SpreadAngle = Vector2.new(3, 3)
 		emitter.Acceleration = Vector3.new(4, 0, 1.5) -- vento leve inclina as gotas
-		emitter.Size = NumberSequence.new(1.1)
-		emitter.Squash = NumberSequence.new(2.2) -- positivo = gota alta e fina
-		emitter.Transparency = NumberSequence.new(0.35)
-		emitter.Color = ColorSequence.new(Color3.fromRGB(205, 214, 230))
-		emitter.LightInfluence = 0.25
-		emitter.LightEmission = 0.6
+		-- Gotas finas, curtas e sem brilho próprio: aparecem onde há luz (lanterna, lâmpadas, relâmpago),
+		-- não como riscos brancos longos no escuro (pedido do humano, referência The Mimic).
+		emitter.Size = NumberSequence.new(0.48, 0.12)
+		emitter.Squash = NumberSequence.new(1.6) -- positivo = gota alta e fina
+		emitter.Transparency = NumberSequence.new(0.58, 0.1)
+		emitter.Color = ColorSequence.new(Color3.fromRGB(186, 196, 212))
+		emitter.LightInfluence = 0.7
+		emitter.LightEmission = 0.18
 		emitter.Rate = 0
 		emitter.Parent = cell
 		cell.Parent = folder
