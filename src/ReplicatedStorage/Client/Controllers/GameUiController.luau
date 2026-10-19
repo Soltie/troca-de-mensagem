@@ -192,7 +192,7 @@ local function build(): Refs
 		Parent = gui,
 	})
 	-- Só o texto branco no rodapé (sem caixa nem moldura), no estilo do NoirHud.
-	bottomText(prompt, -100)
+	bottomText(prompt, -156)
 
 	-- Objetivo (canto superior esquerdo)
 	local objectivePanel = frame({
@@ -256,7 +256,7 @@ local function build(): Refs
 	local caption = label({
 		Name = "Caption",
 		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, -210),
+		Position = UDim2.new(0.5, 0, 1, -100),
 		Size = UDim2.new(0.86, 0, 0, 48),
 		Text = "",
 		TextSize = Theme.SizeBody,
@@ -767,10 +767,10 @@ local function showCaption(text: string, duration: number?)
 	task.spawn(function()
 		ui.caption.Visible = true
 		ui.caption.Text = text
-		ui.caption.Position = UDim2.new(0.5, 0, 1, -210)
+		ui.caption.Position = UDim2.new(0.5, 0, 1, -100)
 		if SettingsController.motionEnabled() then
 			ui.caption.Position += UDim2.fromOffset(0, 8)
-			TweenService:Create(ui.caption, TweenInfo.new(0.16), { Position = UDim2.new(0.5, 0, 1, -210) }):Play()
+			TweenService:Create(ui.caption, TweenInfo.new(0.16), { Position = UDim2.new(0.5, 0, 1, -100) }):Play()
 		end
 		ui.caption.TextTransparency = 0.5
 		task.wait(STEP)
@@ -873,11 +873,11 @@ function GameUiController.Init()
 		end
 		if touch then
 			-- Celular: acima dos botões de toque, ainda só texto.
-			ui.prompt.Position = UDim2.new(0.5, 0, 1, -190)
+			ui.prompt.Position = UDim2.new(0.5, 0, 1, -240)
 			ui.prompt.TextSize = 18
 		end
 	end)
-	bottomText(ui.caption, -210)
+	bottomText(ui.caption, -100)
 	local function visibility()
 		(shared :: ScreenGui).Enabled = player:GetAttribute("CinematicActive") ~= true
 			and player:GetAttribute("ComfortMenuOpen") ~= true
