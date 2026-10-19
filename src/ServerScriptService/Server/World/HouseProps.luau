@@ -18,7 +18,11 @@ local V3 = Vector3.new
 local rgb = Color3.fromRGB
 local UP = Vector3.yAxis
 local WARM = rgb(255, 196, 132)
-local FURNITURE = 1.25
+-- Os modelos vêm a 3,6 studs/m; o personagem tem ~5,2 studs (~3 studs/m). 0,85 põe os móveis na escala dele.
+local FURNITURE = 0.85
+-- Peças que cobrem colisões antigas (cama, mesa baixa, guarda-roupa do esconderijo) e tapetes mantêm o tamanho
+-- de antes (fator 1,25), senão a parede invisível antiga aparece para fora do modelo.
+local KEEP = 1.25 / FURNITURE
 
 -- floor: centro da base; back: meio da aresta de trás da base (móvel encostado na parede);
 -- wall: centro da face de trás; ceiling: centro do topo.
@@ -114,12 +118,12 @@ local function hall(folder: Instance)
 	Props.place(folder, "FrameOval", V3(-15, 7.4, 63.5), front, 2.1, "wall")
 	-- Canto leste, atrás da escada: relógio parado às 03:12, sofá, criado-mudo, poltrona e quadros.
 	Props.place(folder, "GrandfatherClock", V3(43.6, 0, 30), west, 1, "floor")
-	Props.place(folder, "Sofa", V3(44.4, 0, 44.5), west, 1.3, "back")
+	Props.place(folder, "Sofa", V3(44.4, 0, 44.5), west, 1, "back")
 	local stand = Props.place(folder, "Nightstand", V3(44.4, 0, 52.5), west, 1, "back")
 	Props.place(folder, "Lantern", V3(42.8, top(stand), 52.5), west, 1.3, "floor")
 	glow(folder, "HallLampShade", V3(42.8, top(stand) + 1, 52.5), 20, 0.6, true)
 	Props.place(folder, "Armchair", V3(40.6, 0, 22.5), V3(-1, 0, 0.45), 1, "floor")
-	Props.place(folder, "PersianRug", V3(36, 0.02, 45), west, 0.75, "floor")
+	Props.place(folder, "PersianRug", V3(36, 0.02, 45), west, 0.75 * KEEP, "floor")
 	Props.place(folder, "FrameRococo", V3(44.5, 7.6, 21), east, 1.55, "wall")
 	Props.place(folder, "FrameLandscape", V3(44.5, 7.9, 45.5), east, 2.2, "wall")
 	for _, z in { 26.5, 33.5 } do
@@ -261,7 +265,7 @@ ROOMS.Living = function(folder, root, room)
 			Props.place(folder, "Candelabra", mantel + V3(0, 0, dz), box.LookVector, 0.55, "floor")
 		end
 	end
-	against(folder, room, "Sofa", "facade", -1.5, 1.45)
+	against(folder, room, "Sofa", "facade", -1.5, 1.05)
 	Props.place(folder, "Armchair", at(-8.6, 10.5, 0), V3(-1, 0, -0.15), 1.05, "floor")
 	Props.place(folder, "Armchair", at(10.5, -11.5, 0), V3(-1, 0, 0.6), 1.05, "floor")
 	lampOn(folder, room, "facade", -14.3)
@@ -309,7 +313,7 @@ ROOMS.Dining = function(folder, root, room)
 	conceal(root, room, { DiningTable = true, Chair = true, ChairBack = true, Candle = true, Flame = true })
 	-- Mesa com quatro cadeiras na metade da fachada, longe das passagens e do esconderijo.
 	local center = at(13.5, -6, 0)
-	local dining = Props.place(folder, "RoundTable", center, V3(1, 0, 0), 1.15, "floor")
+	local dining = Props.place(folder, "RoundTable", center, V3(1, 0, 0), 1, "floor")
 	for _, offset in { V3(0, 0, -5), V3(0, 0, 5), V3(5.2, 0, 0), V3(-5.2, 0, 0) } do
 		local spot = center + offset
 		if math.abs(spot.X - room.x) < 17 then
@@ -384,7 +388,7 @@ local function bedroom(folder: Instance, root: Instance, room: RoomRef, bed: str
 	conceal(root, room, { Bed = true, Nightstand = true, LampPole = true, LampShade = true, Wardrobe = true })
 	-- Cama no lugar da cama antiga (a colisão antiga continua), cabeceira para a divisória.
 	local side = if room.x < 0 then -1 else 1
-	Props.place(folder, bed, V3(room.x + 9, room.y, room.z - 8), Vector3.zAxis, scale, "floor")
+	Props.place(folder, bed, V3(room.x + 9, room.y, room.z - 8), Vector3.zAxis, scale * KEEP, "floor")
 	lampOn(folder, room, "door", -14)
 	against(folder, room, "Cabinet", "facade", 13.2, 0.9)
 	local dresser = against(folder, room, "Console", "door", 11, 0.95)
@@ -451,10 +455,10 @@ local function storage(folder: Instance, root: Instance, room: RoomRef, basement
 	local at = roomFrame(room)
 	against(folder, room, "TreasureChest", "facade", -12.5, 1)
 	against(folder, room, if basement then "Barrel" else "SeaChest", "facade", -7.5, 1)
-	against(folder, room, "Crate", "facade", -1.5, 1.2)
+	against(folder, room, "Crate", "facade", -1.5, 1)
 	Props.place(folder, "Crate", at(16, -1.5, 1.9), V3(-1, 0, 0.2), 1, "floor")
 	against(folder, room, if basement then "Barrel" else "Suitcase", "door", -11, 1)
-	against(folder, room, "Crate", "door", 11, 1.3)
+	against(folder, room, "Crate", "door", 11, 1)
 	Props.place(folder, if basement then "Barrel" else "Suitcase", at(-15.5, 13.5, 0), V3(1, 0, 0.5), 1, "floor")
 	local lantern = at(15.6, 13.5, 0)
 	Props.place(folder, "WoodenLantern", lantern, V3(-1, 0, 0), 1.3, "floor")
@@ -497,13 +501,13 @@ ROOMS.Tunnel = ROOMS.Basement
 local function machinery(folder: Instance, root: Instance, room: RoomRef)
 	conceal(root, room, { Machine = true, Gauge = true, Pipe = true })
 	local at = roomFrame(room)
-	against(folder, room, "Boiler", "facade", -9.5, 1.35)
+	against(folder, room, "Boiler", "facade", -9.5, 1.15)
 	against(folder, room, "Boiler", "facade", -0.3, 1.1)
 	for _, ox in { -8, 0, 8 } do
 		against(folder, room, "PipeRun", "rear", ox, 1.1)
 	end
-	against(folder, room, "Crate", "door", -11, 1.2)
-	local crate = against(folder, room, "Crate", "door", 11, 1.2)
+	against(folder, room, "Crate", "door", -11, 1)
+	local crate = against(folder, room, "Crate", "door", 11, 1)
 	if crate then
 		local box = crate:GetBoundingBox()
 		Props.place(folder, "PipeLamp", V3(box.Position.X, top(crate), box.Position.Z), box.LookVector, 1.4, "floor")
@@ -605,9 +609,9 @@ local function common(folder: Instance, root: Instance, room: RoomRef)
 	local basement = room.y < 0
 	conceal(root, room, { Rug = true, AntiqueTable = true, Cord = true })
 	if not basement and room.id ~= "Bath" and room.id ~= "Kitchen" and room.id ~= "Machine" then
-		Props.place(folder, "PersianRug", V3(room.x, room.y + 0.02, room.z + 1), Vector3.zAxis, 0.8, "floor")
+		Props.place(folder, "PersianRug", V3(room.x, room.y + 0.02, room.z + 1), Vector3.zAxis, 0.8 * KEEP, "floor")
 	end
-	Props.place(folder, "LowTable", V3(room.x, room.y, room.z - 11), Vector3.zAxis, 0.8, "floor")
+	Props.place(folder, "LowTable", V3(room.x, room.y, room.z - 11), Vector3.zAxis, 0.8 * KEEP, "floor")
 	window(folder, room)
 	local features = root:FindFirstChild("Features")
 	local cabinet = features and features:FindFirstChild(`hide_{room.id}`)
@@ -615,7 +619,7 @@ local function common(folder: Instance, root: Instance, room: RoomRef)
 	if cabinet and door and door:IsA("BasePart") and door.Transparency < 0.5 and has("Wardrobe") then
 		-- A fresta da câmera fica 0,1 stud à frente da porta: a frente do guarda-roupa fica no mesmo plano.
 		local front = door.Position + V3(0, -door.Size.Y / 2, door.Size.Z / 2)
-		local model = Props.place(folder, "Wardrobe", front, Vector3.zAxis, 0.85, "floor")
+		local model = Props.place(folder, "Wardrobe", front, Vector3.zAxis, 0.85 * KEEP, "floor")
 		if model then
 			local box, size = model:GetBoundingBox()
 			model:PivotTo(model:GetPivot() + V3(0, 0, front.Z - (box.Position.Z + size.Z / 2)))
