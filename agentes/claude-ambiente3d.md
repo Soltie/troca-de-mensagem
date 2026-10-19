@@ -1,43 +1,37 @@
-# Claude â€” reforma visual 3D da mansÃ£o (18/10/2026)
+# Claude — História do Tung Tung (casa, floresta, sustos) — atualizado 20/10/2026
 
 ## Identidade e origem
 
-- Agente: Claude (Claude Code), PC do humano dono da conta Roblox `fashionultraaura` (mesma conta do experimento `tungtung`).
-- RepositÃ³rio local: `tung-tung-sahur`, branch `design/environment`, criada de `design/ui-remaster` (cde09de).
-- HEAD: `a53dc13` (lote 2: materiais PBR + 12 modelos 3D). Patches e build em `entregas/claude-ambiente3d/`.
-- NÃ£o conectei Script Sync e **nÃ£o escrevi no place 82955516040017**. O Codex integra (decisÃ£o do humano).
+- Agente: Claude (Claude Code), PC do humano dono da conta Roblox `fashionultraaura`.
+- Repositório local: `tung-tung-sahur`, branch `design/environment`.
+- **Código publicado aqui como branch `claude/design-environment`** (deste repositório de coordenação). Puxe por ela.
+- Aplico no place `tungtung` (82955516040017) pelo MCP, **sem Script Sync** (ScriptEditorService, arquivo por arquivo,
+  com inserções pontuais nos scripts que têm código só do place: CampaignRuntime, CampaignController, WorldService,
+  AudioController, Main do cliente/servidor). Não publico o jogo.
 
-## Escopo
+## Escopo (frente "história")
 
-Somente acabamento visual do mundo 3D: materiais, mÃ³veis, decoraÃ§Ã£o, luminÃ¡rias e luz. Sem mexer em UI, gameplay,
-IA, rede, dados, economia, Midnight Hunt, capÃ­tulos ou objetivos. Toda peÃ§a nova Ã© `CanCollide/CanQuery/CanTouch = false`.
+Modo História (casa caps. 1–5 e floresta caps. 6–8): sustos, mecânicas de terror, mapas, jumpscare, loading.
+Não mexo em Midnight Hunt, caçada online/PvP, filas, salas, loja/economia, dados nem nas animações do Codex.
 
-## Reserva de arquivos (visuais)
+## Entregue (todas testadas no Studio do tungtung; Tests.Run 398/398; console sem erros)
 
-Novos:
-- `src/ServerScriptService/Server/World/HouseFinish.luau` (forros, sancas, lambris, passadeiras, almofadas de porta)
-- `src/ServerScriptService/Server/World/HouseMaterials.luau` (MaterialVariant nas paredes/pisos/tetos)
-- `src/ServerScriptService/Server/World/HouseProps.luau` (mÃ³veis 3D clonados de `Assets/MansionProps`)
-- `src/MaterialService/*.model.json` (6 MaterialVariant PBR) + entrada `MaterialService` no `default.project.json`
-- `src/ReplicatedStorage/Assets/MansionProps.rbxm` (12 modelos, MeshParts com SurfaceAppearance)
+Coração e passos que informam, contorno guia e dica ao cair, sanidade no escuro, armário com surpresa, sopro no
+corredor, revista do armário (prender o ar no ritmo), corrida roteirizada da fuga do incêndio (vigas, corredor
+desabando), diretor de tensão, móvel da chave que foge (perninhas), **jumpscare 3D do Tung** (JumpscareController),
+tela de loading nas trocas de capítulo, encaixe/polimento. Floresta v2: capítulo 6 refeito (terreno, ravina, ponte,
+pinheiros 3D, folhas secas, corvos, ponte que desaba com o Tung). Detalhes em `docs/ENVIRONMENT_BACKLOG.md`,
+`docs/FLORESTA_V2.md` e `docs/AVALIACAO_20-10-2026.md` da branch.
 
-EdiÃ§Ãµes pequenas em compartilhados (2â€“3 linhas cada):
-- `World/HouseScenery.luau`: chama `Finish.build`, `Props.build`, `Materials.build` no fim de `Scenery.build`.
-- `World/HouseLevelBuilder.luau`: `ConnectedRoomWall`/`PassageLintel` copiam `MaterialVariant` da parede original.
+## Reservas atuais (vou mexer)
 
-PrÃ³ximos (vou avisar antes): `HouseFurniture`, `HouseScenery` (interior/fachada), `ForestBuilder` (sÃ³ visual),
-`Shared/Game/LightingProfile` e `Client/Controllers/LightingController` (iluminaÃ§Ã£o por Ã¡rea).
+- Floresta: `Shared/Game/ForestMaps.luau`, `ForestCatalog.luau`, `Server/World/ForestV2.luau`, `ForestBuilder.luau`,
+  `Server/Services/ForestHazardService.luau`, `Client/Controllers/ForestFxController.luau` (capítulos 7 e 8 a seguir).
+- Depois: casa que muda por capítulo + túnel do Tung (`HouseBuilder`/`HouseScenery`/`HouseCatalog`), modos Normal/
+  Pesadelo e conquistas (Session/PlayerData com migração), mão/lanterna e móveis novos.
 
-## Assets (todos CC0, Poly Haven; IDs na conta do humano)
+## Decisão do humano sobre o jumpscare
 
-Texturas/MaterialVariant e modelos listados em `docs/environment/ASSET_SOURCES.md` da branch. AtenÃ§Ã£o: `MaterialVariant` e
-`SurfaceAppearance` nÃ£o podem ser criados por script em jogo (capability Plugin); precisam vir no place/rbxm.
-Script Sync **nÃ£o** transporta `MaterialService` nem `.rbxm` â€” o integrador precisa incluÃ­-los no place.
-
-## Testes
-
-Lote 1: check ALL GREEN (297 puros), Studio 309 aprovados, console sem erros. Lote 2 em validaÃ§Ã£o.
-
-## PendÃªncias
-
-Entregar patch + build do lote 2 em `entregas/`; seguir cÃ´modos, porÃ£o, fachada, floresta e luz.
+O humano pediu para **não mudar o que eu já fiz** (20/10/2026). O jumpscare atual (JumpscareController: silêncio,
+duas batidas, Tung de corpo inteiro avançando com o bastão, luz de baixo, pancada e câmera tombando, só na vítima)
+fica como está. A troca de clipes pelo Zombie Headbutt (mensagem 022) não foi feita por mim.
