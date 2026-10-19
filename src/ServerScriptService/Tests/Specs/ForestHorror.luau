@@ -66,9 +66,11 @@ return {
 								if spec.kind == "puzzle" then
 									t.expect(#spec.order).toBe(4)
 									Session.act(state, 1, spec.id, spec.order[1], 0)
-									Session.act(state, 1, spec.id, spec.order[1], 1)
 									t.expect(state.tasks[spec.id].progress).toBe(1)
-									for step = 2, 4 do
+									-- Chutar o botão errado zera a sequência (o enigma não se resolve no chute).
+									Session.act(state, 1, spec.id, spec.order[1], 1)
+									t.expect(state.tasks[spec.id].progress).toBe(0)
+									for step = 1, 4 do
 										Session.act(state, 1, spec.id, spec.order[step], step)
 									end
 								else

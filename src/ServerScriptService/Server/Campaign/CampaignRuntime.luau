@@ -663,10 +663,32 @@ local function interact(player: Player, id: string, _action: string?): { accepte
 		if spec.kind == "explore" or spec.kind == "hide" or spec.kind == "breath" then
 			return response(false, "not_available")
 		end
+		-- Móvel de busca (HiddenStash): abrir faz barulho; vazio só avisa, o certo recolhe o item.
+		if station.search then
+			if station.opened or session.tasks[station.taskId].solved then
+				return response(false, "not_available")
+			end
+			if not Session.taskReady(session, station.taskId) then
+				return response(false, "story_order")
+			end
+			if built then
+				Builder.open(built, id)
+			end
+			CreatureService.makeNoise(focus.Position, 30)
+			if station.decoy then
+				publish()
+				return response(true, "search_empty")
+			end
+		end
 		local previous: Session.Phase = session.phase
 		local ok, message = Session.act(session, player.UserId, station.taskId, station.button, now)
-		if message == "wrong_sequence" then
-			CreatureService.makeNoise(focus.Position, 45)
+		if message == "wrong_sequence" and spec.kind == "repair" then
+			-- Reparo guarda os passos: só avisa qual botão é o próximo.
+			message = "repair_order"
+		elseif message == "wrong_sequence" then
+			-- Chute errado: estalo alto e o Tung Tung vem direto ver quem mexeu no enigma.
+			CreatureService.makeNoise(focus.Position, 90)
+			CreatureService.followScent(focus.Position)
 		end
 		if ok then
 			-- Gasolina espalhada faz barulho (galão batendo, líquido): o Tung Tung vem ver.

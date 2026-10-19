@@ -51,7 +51,7 @@ local messages: { [string]: string } = {
 	progress = "Etapa certa! Continue seguindo a pista.",
 	solved = "Objetivo concluído!",
 	need_partner = "Chame um amigo para apertar este mesmo botão!",
-	wrong_sequence = "Ops! Botão errado, mas seus acertos continuam salvos.",
+	wrong_sequence = "Errado! A sequência voltou ao começo e o barulho chamou o Tung Tung.",
 	repair_order = "Aperte o botão aceso: desligar, trocar o fusível e ligar.",
 	story_order = "Complete as pistas e os itens necessários. H abre o guia.",
 	rescuing = "Ajudando... fique pertinho do seu amigo!",
@@ -77,6 +77,7 @@ local messages: { [string]: string } = {
 	checkpoint_restored = "Tentando de novo deste capítulo!",
 	supply_full = "Já está cheio. Seu item continua na mochila.",
 	need_flashlight = "Recolha a lanterna antes de usar uma pilha.",
+	search_empty = "Vazio... procure nos outros móveis do cômodo.",
 }
 
 function Controller.Start()

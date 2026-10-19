@@ -6,6 +6,7 @@ local Build = require("../World/Build")
 local Plan = require("./HousePlan")
 local Generator = require("./CampaignGenerator")
 local TaskProps = require("../World/HouseTaskProps")
+local Stash = require("./HiddenStash")
 local Progress = require("@game/ReplicatedStorage/Shared/Game/HouseProgression")
 local Activities = {}
 local repairSteps = { "ISOLAR O CIRCUITO", "ENCAIXAR OS FUSÍVEIS", "TESTAR A ENERGIA" }
@@ -26,10 +27,19 @@ local OFFSETS = {
 	{ -8, 0 },
 	{ 0, 8 },
 	{ 0, -8 },
+	{ 7, 7 },
+	{ -7, 7 },
+	{ 7, -7 },
+	{ -7, -7 },
+	{ 10, 0 },
+	{ -10, 0 },
+	{ 0, 10 },
+	{ 0, -10 },
 }
-local OBSTACLES = { "Furniture", "Props", "Furnishings", "Dressing", "Architecture", "Finish", "PrimitiveFinish" }
-local function clearSpot(world: Instance, p: Vector3): Vector3
-	-- Móveis não respondem a consultas de física (CanQuery desligado); confere as caixas na mão, só por perto.
+local OBSTACLES =
+	{ "Furniture", "Props", "Furnishings", "Dressing", "Architecture", "Finish", "PrimitiveFinish", "Doors" }
+-- Móveis não respondem a consultas de física (CanQuery desligado); confere as caixas na mão, só por perto.
+local function obstacles(world: Instance, p: Vector3, radius: number): { BasePart }
 	local nearby: { BasePart } = {}
 	for _, name in OBSTACLES do
 		local folder = world:FindFirstChild(name)
@@ -40,43 +50,98 @@ local function clearSpot(world: Instance, p: Vector3): Vector3
 			if
 				part:IsA("BasePart")
 				and part.Transparency < 1
-				and (part.Position - p).Magnitude < 24
+				and (part.Position - p).Magnitude < radius
 				and math.max(part.Size.X, part.Size.Z) > 0.6
 			then
 				table.insert(nearby, part)
 			end
 		end
 	end
+	return nearby
+end
+
+local function blocked(
+	nearby: { BasePart },
+	at: Vector3,
+	floorY: number,
+	avoid: { Vector3 }?,
+	reach: number,
+	ignore: Instance?
+): boolean
+	for _, other in (avoid or {}) :: { Vector3 } do
+		if (other - at).Magnitude < 4.6 then
+			return true
+		end
+	end
+	for _, part in nearby do
+		if part == ignore then
+			continue
+		end
+		-- Caixa alinhada ao mundo (paredes longas e finas continuam finas).
+		local cf, size = part.CFrame, part.Size / 2
+		local hx = math.abs(cf.RightVector.X) * size.X
+			+ math.abs(cf.UpVector.X) * size.Y
+			+ math.abs(cf.LookVector.X) * size.Z
+		local hy = math.abs(cf.RightVector.Y) * size.X
+			+ math.abs(cf.UpVector.Y) * size.Y
+			+ math.abs(cf.LookVector.Y) * size.Z
+		local hz = math.abs(cf.RightVector.Z) * size.X
+			+ math.abs(cf.UpVector.Z) * size.Y
+			+ math.abs(cf.LookVector.Z) * size.Z
+		if
+			part.Position.Y + hy > floorY + 0.8
+			and part.Position.Y - hy < floorY + 3.5
+			and math.abs(part.Position.X - at.X) < hx + reach
+			and math.abs(part.Position.Z - at.Z) < hz + reach
+		then
+			return true
+		end
+	end
+	return false
+end
+
+local function clearSpot(world: Instance, p: Vector3, avoid: { Vector3 }?): Vector3
+	local nearby = obstacles(world, p, 24)
 	for _, offset in OFFSETS do
 		local at = p + Vector3.new(offset[1], 0, offset[2])
-		local blocked = false
-		for _, part in nearby do
-			-- Caixa alinhada ao mundo (paredes longas e finas continuam finas).
-			local cf, size = part.CFrame, part.Size / 2
-			local hx = math.abs(cf.RightVector.X) * size.X
-				+ math.abs(cf.UpVector.X) * size.Y
-				+ math.abs(cf.LookVector.X) * size.Z
-			local hy = math.abs(cf.RightVector.Y) * size.X
-				+ math.abs(cf.UpVector.Y) * size.Y
-				+ math.abs(cf.LookVector.Y) * size.Z
-			local hz = math.abs(cf.RightVector.Z) * size.X
-				+ math.abs(cf.UpVector.Z) * size.Y
-				+ math.abs(cf.LookVector.Z) * size.Z
-			if
-				part.Position.Y + hy > p.Y + 0.4
-				and part.Position.Y - hy < p.Y + 3.5
-				and math.abs(part.Position.X - at.X) < hx + 2.3
-				and math.abs(part.Position.Z - at.Z) < hz + 2.3
-			then
-				blocked = true
-				break
-			end
-		end
-		if not blocked then
+		if not blocked(nearby, at, p.Y, avoid, 2.3) then
 			return at
 		end
 	end
 	return p
+end
+
+-- Móvel de busca encostado numa parede do cômodo, de frente para o meio dele. A parede é achada com raios
+-- saindo do centro; ao longo dela tenta alguns pontos livres de móveis.
+local function wallSpot(world: Instance, center: Vector3, avoid: { Vector3 }?): (Vector3, Vector3?)
+	local architecture = world:FindFirstChild("Architecture")
+	if not architecture then
+		return clearSpot(world, center, avoid), nil
+	end
+	local rays = RaycastParams.new()
+	rays.FilterType = Enum.RaycastFilterType.Include
+	rays.FilterDescendantsInstances = { architecture }
+	local nearby = obstacles(world, center, 30)
+	local origin = center + Vector3.new(0, 3, 0)
+	local sides = { Vector3.xAxis, -Vector3.xAxis, Vector3.zAxis, -Vector3.zAxis }
+	-- Começa por uma parede diferente a cada móvel (espalha pelo cômodo).
+	local start = #(avoid or {}) % 4
+	for k = 1, 4 do
+		local side = sides[(start + k - 1) % 4 + 1]
+		local hit = workspace:Raycast(origin, side * 24, rays)
+		if not hit or (hit.Position - origin).Magnitude < 4 then
+			continue
+		end
+		local along = Vector3.new(side.Z, 0, -side.X)
+		local wall = center + side * ((hit.Position - origin).Magnitude - 2)
+		for _, shift in { 0, 3, -3, 6, -6, 9, -9, 12, -12 } do
+			local at = wall + along * shift
+			if not blocked(nearby, at, center.Y, avoid, 1.4, hit.Instance) then
+				return at, -side
+			end
+		end
+	end
+	return clearSpot(world, center, avoid), nil
 end
 
 function Activities.build(parent: Instance, plan: Generator.Plan, distance: number): any
@@ -107,6 +172,18 @@ function Activities.build(parent: Instance, plan: Generator.Plan, distance: numb
 			gold,
 			{ collide = false, query = false, transparency = 1 }
 		)
+		-- Itens pequenos ficam escondidos em um de três móveis do cômodo (HiddenStash).
+		if Stash.hideable(plan.stage, spec) then
+			local center = Stash.center(spec) or p
+			for id, target in
+				Stash.build(root, spec, center, function(avoid)
+					return wallSpot(parent, center, avoid)
+				end, distance)
+			do
+				built.targets[id] = target
+			end
+			continue
+		end
 		if spec.kind == "hide" or spec.kind == "breath" or spec.kind == "explore" then
 			continue
 		end
@@ -228,6 +305,14 @@ function Activities.refresh(built: any, tasks: any)
 	for _, target in built.targets do
 		local state = tasks[target.taskId]
 		if not state then
+			continue
+		end
+		-- Móvel de busca (HiddenStash): abre uma vez, só quando a tarefa está liberada.
+		if target.search then
+			target.focus:SetAttribute(
+				Tags.Attr.InteractEnabled,
+				ready[target.taskId] == true and not state.solved and not target.opened
+			)
 			continue
 		end
 		local spec = state.spec

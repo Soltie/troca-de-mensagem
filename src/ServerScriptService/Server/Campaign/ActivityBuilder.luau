@@ -9,7 +9,15 @@ local Palette = require("../World/Palette")
 local Generator = require("./CampaignGenerator")
 local Session = require("./CoopSession")
 
-export type Target = { taskId: string, button: number, focus: BasePart }
+-- `search`: móvel de busca (HiddenStash); `decoy` = vazio; `opened` = já aberto.
+export type Target = {
+	taskId: string,
+	button: number,
+	focus: BasePart,
+	search: boolean?,
+	decoy: boolean?,
+	opened: boolean?,
+}
 export type Built = {
 	root: Folder,
 	targets: { [string]: Target },
@@ -19,6 +27,7 @@ export type Built = {
 	plan: Generator.Plan,
 }
 local HouseActivities = require("./HouseActivities")
+local Stash = require("./HiddenStash")
 local Builder = {}
 local repairNames = { "ISOLAR CIRCUITO", "ENCAIXAR FUSIVEL", "TESTAR ENERGIA" }
 
@@ -223,6 +232,14 @@ function Builder.refresh(built: Built, tasks: { [string]: Session.TaskState }, n
 			lamp:SetAttribute("Progress", state.progress)
 			lamp:SetAttribute("Solved", state.solved)
 		end
+	end
+end
+
+-- Abre um móvel de busca da casa (gaveta ou baú).
+function Builder.open(built: Built, id: string)
+	local target = built.targets[id]
+	if target and target.search then
+		Stash.open(target :: any)
 	end
 end
 

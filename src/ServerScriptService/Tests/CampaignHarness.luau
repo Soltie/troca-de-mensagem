@@ -191,6 +191,24 @@ function Harness.run(runtime: any, args: any)
 					check(result.ok and result.data.accepted, "enter physical hide through remote")
 				elseif spec.kind == "breath" then
 					request(actor, { breath = true })
+				elseif
+					(World.get().root:FindFirstChild("CampaignActivities") :: Folder):FindFirstChild(
+						`search_{spec.id}_1`
+					)
+				then
+					-- Item escondido (HiddenStash): abre os móveis do cômodo até achar.
+					local activities = World.get().root:FindFirstChild("CampaignActivities") :: Folder
+					for n = 1, 3 do
+						if runtime.snapshot().tasks[spec.id].solved then
+							break
+						end
+						local box = activities:FindFirstChild(`search_{spec.id}_{n}`)
+						local target = box and box:FindFirstChild(`search_{spec.id}_{n}`) :: BasePart
+						assert(target, "Search target missing")
+						move(actor, target.Position + Vector3.new(0, 1.4, 5))
+						local result = request(actor, { id = target.Name, select = true })
+						check(result.ok and result.data.accepted, `chapter {chapter} search {target.Name}`)
+					end
 				else
 					for _, button in (if spec.kind == "puzzle" or spec.kind == "repair" then spec.order else { 1 }) do
 						local model = (World.get().root:FindFirstChild("CampaignActivities") :: Folder):FindFirstChild(
