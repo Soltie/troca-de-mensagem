@@ -80,6 +80,7 @@ local messages: { [string]: string } = {
 	search_empty = "Vazio... procure nos outros móveis do cômodo.",
 	locker_cursed = "Tinha alguma coisa lá dentro! Olhe a fresta antes de entrar num armário.",
 	search_passed = "Ele não te ouviu... e foi embora. Por enquanto.",
+	runaway = "O móvel criou perninhas e fugiu! Encurrale ele ou espere ele cansar.",
 }
 
 function Controller.Start()

@@ -7,6 +7,7 @@ local Plan = require("./HousePlan")
 local Generator = require("./CampaignGenerator")
 local TaskProps = require("../World/HouseTaskProps")
 local Stash = require("./HiddenStash")
+local Runaway = require("./RunawayStash")
 local Progress = require("@game/ReplicatedStorage/Shared/Game/HouseProgression")
 local Activities = {}
 local repairSteps = { "ISOLAR O CIRCUITO", "ENCAIXAR OS FUSÍVEIS", "TESTAR A ENERGIA" }
@@ -152,6 +153,14 @@ function Activities.build(parent: Instance, plan: Generator.Plan, distance: numb
 	end
 	local root = Build.folder(parent, "CampaignActivities")
 	local built: any = { root = root, targets = {}, lamps = {}, labels = {}, meters = {}, plan = plan }
+	-- Só uma chave por capítulo foge (sorteada a cada partida): surpresa, não rotina.
+	local keys: { string } = {}
+	for _, spec in plan.activities do
+		if spec.kind == "collect" and string.find(spec.item or "", "key", 1, true) then
+			table.insert(keys, spec.id)
+		end
+	end
+	local runawayId = if #keys > 0 then keys[math.random(1, #keys)] else nil
 	for index, spec in plan.activities do
 		local model = Build.model(root, spec.id)
 		model:SetAttribute("RoomLabel", spec.room)
@@ -181,6 +190,10 @@ function Activities.build(parent: Instance, plan: Generator.Plan, distance: numb
 				end, distance)
 			do
 				built.targets[id] = target
+				-- Chave para continuar: o móvel certo cria perninhas e foge quando alguém chega perto.
+				if not target.decoy and spec.id == runawayId then
+					Runaway.attach(target, center)
+				end
 			end
 			continue
 		end

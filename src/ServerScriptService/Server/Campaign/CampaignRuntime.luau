@@ -32,6 +32,7 @@ local CollectibleService = require("../Services/CollectibleService")
 local PerkService = require("../Services/PerkService")
 local StoreService = require("../Services/StoreService")
 local Builder = require("./ActivityBuilder")
+local Runaway = require("./RunawayStash")
 local Build = require("../World/Build")
 local Session = require("./CoopSession")
 
@@ -698,6 +699,10 @@ local function interact(player: Player, id: string, _action: string?): { accepte
 			end
 			if not Session.taskReady(session, station.taskId) then
 				return response(false, "story_order")
+			end
+			-- Móvel fujão (chave): enquanto corre não abre; mexer nele dormindo o acorda.
+			if not station.decoy and Runaway.fleeing(station) then
+				return response(false, "runaway")
 			end
 			if built then
 				Builder.open(built, id)

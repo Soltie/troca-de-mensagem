@@ -88,3 +88,7 @@ fica para trás (causa "collapse", com dica). Depuração: DebugBridge "blaze". 
 D (TensionModel/TensionDirector): tensão 0..1 por capítulo com fases Build/Peak/Relax (CampaignState.Tension e
 TensionPhase). Pancada = folga de 35 s (o Tung se afasta, sem sopro); pico acaba em 30 s ou quando ele perde o grupo;
 calmo demais por 70 s = ele investiga perto de alguém. Sopro só em Build; sustos esperam o pico passar.
+Móvel fujão (RunawayStash): em cada capítulo, uma das chaves (sorteada) fica num móvel que acorda quando alguém
+chega perto com a tarefa liberada: olhinhos de desenho e perninhas pretas com bolinhas, chacoalha e foge pelo
+cômodo aos pulinhos (até 4), olhando para quem persegue; cada pulo faz barulho. Encurralado ou alcançado numa
+pausa, cansa, senta ofegando e abre normalmente. Fotos em docs/evidence/environment/runaway.
