@@ -18,9 +18,11 @@ local Logger = require("@game/ReplicatedStorage/Shared/Logger")
 local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
 local CreatureBrain = require("../Game/CreatureBrain")
 local ForestThreat = require("@game/ReplicatedStorage/Shared/Game/ForestThreat")
+local Difficulty = require("@game/ReplicatedStorage/Shared/Game/Difficulty")
 local HideRules = require("../Game/HideRules")
 local Layout = require("../World/Layout")
 local WorldService = require("./WorldService")
+local DifficultyService = require("./DifficultyService")
 
 type Target = {
 	player: Player,
@@ -382,6 +384,8 @@ local function brainTick()
 		command.mode,
 		command.speed
 	)
+	-- Modificadores da partida (Pesadelo, Pernas Longas): mais rápido, nunca mais que a corrida do jogador.
+	command.speed = Difficulty.creatureSpeed(command.speed, DifficultyService.modifiers(), Config.Player.SprintSpeed)
 	if feintUntil > now and not perception.canSee and not perception.noisePos then
 		command = { mode = "Investigate", target = feintDestination, speed = 5 }
 	else
@@ -590,6 +594,8 @@ end
 
 -- Barulho em `position` (ouvido se estiver dentro de `radius`).
 function CreatureService.makeNoise(position: Vector3, radius: number)
+	-- Modificadores (Pesadelo, Faro Apurado): o barulho chega mais longe.
+	radius *= Difficulty.factors(DifficultyService.modifiers()).hearing
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Exclude
 	local excluded: { Instance } = {}

@@ -9,6 +9,7 @@ local TaskProps = require("../World/HouseTaskProps")
 local Stash = require("./HiddenStash")
 local Runaway = require("./RunawayStash")
 local Progress = require("@game/ReplicatedStorage/Shared/Game/HouseProgression")
+local WormTunnel = require("@game/ReplicatedStorage/Shared/Game/WormTunnel")
 local Activities = {}
 local repairSteps = { "ISOLAR O CIRCUITO", "ENCAIXAR OS FUSÍVEIS", "TESTAR A ENERGIA" }
 local gold = Color3.fromRGB(219, 171, 80)
@@ -112,6 +113,16 @@ local function clearSpot(world: Instance, p: Vector3, avoid: { Vector3 }?): Vect
 	return p
 end
 
+-- Frente dos buracos do túnel de minhoca fica livre (o Tung sai por ali; móvel na frente esconderia a boca).
+local function nearHole(at: Vector3): boolean
+	for _, hole in WormTunnel.Holes do
+		if math.abs(at.Y - hole.y) < 6 and Vector3.new(at.X - hole.x, 0, at.Z - hole.z).Magnitude < 6 then
+			return true
+		end
+	end
+	return false
+end
+
 -- Móvel de busca encostado numa parede do cômodo, de frente para o meio dele. A parede é achada com raios
 -- saindo do centro; ao longo dela tenta alguns pontos livres de móveis.
 local function wallSpot(world: Instance, center: Vector3, avoid: { Vector3 }?): (Vector3, Vector3?)
@@ -137,7 +148,7 @@ local function wallSpot(world: Instance, center: Vector3, avoid: { Vector3 }?): 
 		local wall = center + side * ((hit.Position - origin).Magnitude - 2)
 		for _, shift in { 0, 3, -3, 6, -6, 9, -9, 12, -12 } do
 			local at = wall + along * shift
-			if not blocked(nearby, at, center.Y, avoid, 1.4, hit.Instance) then
+			if not blocked(nearby, at, center.Y, avoid, 1.4, hit.Instance) and not nearHole(at) then
 				return at, -side
 			end
 		end

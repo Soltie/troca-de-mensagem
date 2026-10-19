@@ -22,6 +22,8 @@ local BatteryModel = require("@game/ReplicatedStorage/Shared/Game/BatteryModel")
 local Config = require("@game/ReplicatedStorage/Shared/Config")
 local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
 local Perks = require("@game/ReplicatedStorage/Shared/Game/Perks")
+local Difficulty = require("@game/ReplicatedStorage/Shared/Game/Difficulty")
+local DifficultyService = require("./DifficultyService")
 local Guard = require("@game/ReplicatedStorage/Shared/Net/Guard")
 local Logger = require("@game/ReplicatedStorage/Shared/Logger")
 local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
@@ -241,7 +243,9 @@ local function tick()
 		end
 		-- Melhoria "Bateria de Lítio" (nível publicado pelo StoreService): a carga dura mais.
 		local level = tonumber(player:GetAttribute("PerkBateria")) or 0
-		if BatteryModel.step(state.battery, TICK, 1 / Perks.factor("bateria", level)) then
+		-- Modificador Pilha Fraca: a carga gasta mais rápido.
+		local drain = Difficulty.factors(DifficultyService.modifiers()).battery / Perks.factor("bateria", level)
+		if BatteryModel.step(state.battery, TICK, drain) then
 			-- Pilha reserva (consumível Pilha Extra, armado pelo PerkService): entra sozinha.
 			if player:GetAttribute("SpareBattery") == true then
 				player:SetAttribute("SpareBattery", false)

@@ -20,6 +20,8 @@ return {
 			fixture.Parent = workspace
 			local ok, failure = pcall(function()
 				local world, features = Builder.build(fixture)
+				-- Catacumba e capela abertas na fixture (tarefas dos caps. 4 e 5 descem para lá).
+				require("@game/ServerScriptService/Server/World/Catacomb").setStage(world.root, 5)
 				for _, door in world.doors do
 					t.expect(math.abs(door.panel.Position.X) > 8).toBe(true)
 				end
@@ -124,6 +126,15 @@ return {
 					local escape = Pathfinding:CreatePath(agent)
 					escape:ComputeAsync(Vector3.new(-26, -16, -68) + offset, Vector3.new(0, 0, 106) + offset)
 					assert(escape.Status == Enum.PathStatus.Success, "Ritual to forest route blocked")
+					local Below = require("@game/ReplicatedStorage/Shared/Game/CatacombLayout")
+					for _, point in { Below.CatacombTask, Below.ChapelTask } do
+						local down = Pathfinding:CreatePath(agent)
+						down:ComputeAsync(
+							Vector3.new(0, 0, 70) + offset,
+							Vector3.new(point.x, point.y + 1, point.z + 4) + offset
+						)
+						assert(down.Status == Enum.PathStatus.Success, `Blocked catacomb route to {point.x}/{point.z}`)
+					end
 				end
 				t.expect(#world.root:GetDescendants() < 4000).toBe(true)
 			end)

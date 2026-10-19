@@ -37,6 +37,7 @@ local StoryRewards = require("@game/ReplicatedStorage/Shared/Game/StoryRewards")
 local Text = require("@game/ReplicatedStorage/Shared/Game/Text")
 local Remotes = require("@game/ReplicatedStorage/Shared/Net/Remotes")
 local Components = require("../UI/Components")
+local DifficultyPanel = require("../UI/DifficultyPanel")
 local Create = require("../UI/Create")
 local MenuLayout = require("../UI/MenuLayout")
 local Theme = require("../UI/Theme")
@@ -1882,7 +1883,9 @@ local function buildPlay(parent: Frame)
 		teamPanel(party, UDim2.new(), UDim2.new(1, 0, 0, rowHeight))
 		kitPanel(party, UDim2.fromOffset(0, rowHeight + 12), UDim2.new(1, 0, 0, rowHeight))
 	end
-	showcase(scroll, 3)
+	-- Dificuldade, modificadores e conquistas (UI/DifficultyPanel).
+	DifficultyPanel.build(scroll, 3, columns)
+	showcase(scroll, 4)
 end
 
 local TITLES: { [string]: { string } } = {

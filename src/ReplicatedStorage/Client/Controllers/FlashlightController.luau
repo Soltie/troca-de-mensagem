@@ -61,7 +61,20 @@ local rng = Random.new()
 type Drop = { start: CFrame, rest: CFrame, at: number, spin: number, landed: boolean }
 local dropped: Drop? = nil
 local lastHand: CFrame? = nil
-local HAND_PARTS = { Hand = true, Thumb = true, Sleeve = true }
+local HAND_PARTS = {
+	Hand = true,
+	Thumb = true,
+	Sleeve = true,
+	Cuff = true,
+	Finger1 = true,
+	Finger2 = true,
+	Finger3 = true,
+	Finger4 = true,
+	Tip1 = true,
+	Tip2 = true,
+	Tip3 = true,
+	Tip4 = true,
+}
 local DROP_FALL = 0.42
 local DROP_BOUNCE = 0.34
 
@@ -136,16 +149,37 @@ local function buildViewmodel(): Viewmodel
 		table.insert(parts, part)
 		return part
 	end
-	local root = add("Body", Vector3.new(0.17, 0.17, 0.85), Color3.fromRGB(38, 40, 44), Enum.Material.Metal)
-	add("Head", Vector3.new(0.27, 0.27, 0.2), Color3.fromRGB(52, 54, 58), Enum.Material.Metal)
-	local lens = add("Lens", Vector3.new(0.22, 0.22, 0.03), Color3.fromRGB(90, 88, 80), Enum.Material.SmoothPlastic)
+	-- Peças redondas (cilindro no eixo X, girado para -Z nos OFFSETS): sem cara de bloco.
+	local function round(name: string, size: Vector3, color: Color3, material: Enum.Material?): BasePart
+		local part = add(name, size, color, material);
+		(part :: Part).Shape = Enum.PartType.Cylinder
+		return part
+	end
+	local skin = Color3.fromRGB(150, 118, 96)
+	local root = round("Body", Vector3.new(0.85, 0.17, 0.17), Color3.fromRGB(38, 40, 44), Enum.Material.Metal)
+	round("Head", Vector3.new(0.2, 0.27, 0.27), Color3.fromRGB(52, 54, 58), Enum.Material.Metal)
+	round("Bezel", Vector3.new(0.04, 0.3, 0.3), Color3.fromRGB(28, 28, 30), Enum.Material.Metal)
+	local lens = round("Lens", Vector3.new(0.03, 0.22, 0.22), Color3.fromRGB(90, 88, 80), Enum.Material.SmoothPlastic)
+	for i = 1, 3 do
+		round(`Grip{i}`, Vector3.new(0.035, 0.185, 0.185), Color3.fromRGB(24, 24, 26), Enum.Material.DiamondPlate)
+	end
+	round("Tail", Vector3.new(0.05, 0.19, 0.19), Color3.fromRGB(28, 28, 30), Enum.Material.Metal)
 	add("Switch", Vector3.new(0.06, 0.04, 0.12), Color3.fromRGB(150, 32, 28))
-	add("Hand", Vector3.new(0.26, 0.24, 0.36), Color3.fromRGB(150, 118, 96))
-	add("Thumb", Vector3.new(0.08, 0.08, 0.18), Color3.fromRGB(140, 110, 90))
-	add("Sleeve", Vector3.new(0.32, 0.32, 0.7), Color3.fromRGB(46, 58, 54), Enum.Material.Fabric)
+	-- Mão segurando por baixo: palma, quatro dedos curvados pelo lado e o polegar por cima.
+	add("Hand", Vector3.new(0.2, 0.15, 0.3), skin)
+	for i = 1, 4 do
+		round(`Finger{i}`, Vector3.new(0.2, 0.072, 0.072), skin)
+		local tip = add(`Tip{i}`, Vector3.new(0.075, 0.075, 0.075), skin);
+		(tip :: Part).Shape = Enum.PartType.Ball
+	end
+	round("Thumb", Vector3.new(0.18, 0.075, 0.075), Color3.fromRGB(140, 110, 90))
+	round("Sleeve", Vector3.new(0.7, 0.34, 0.34), Color3.fromRGB(46, 58, 54), Enum.Material.Fabric)
+	round("Cuff", Vector3.new(0.09, 0.37, 0.37), Color3.fromRGB(34, 44, 40), Enum.Material.Fabric)
 	local leds: { BasePart } = {}
 	for i = 1, BatteryModel.LEDS do
-		local led = add(`Led{i}`, Vector3.new(0.035, 0.03, 0.05), Color3.fromRGB(20, 20, 20), Enum.Material.Neon)
+		-- Plástico, não neon: com o brilho da tela o neon virava uma barra ciano por cima da mão.
+		local led =
+			add(`Led{i}`, Vector3.new(0.03, 0.025, 0.04), Color3.fromRGB(20, 20, 20), Enum.Material.SmoothPlastic)
 		table.insert(leds, led)
 	end
 	-- Ponteiro em cima da lanterna (única orientação do jogo): haste + ponta, gira para o objetivo.
@@ -158,14 +192,29 @@ local function buildViewmodel(): Viewmodel
 end
 
 -- Posições locais (em relação ao corpo da lanterna, -Z = frente).
+local ALONG = CFrame.Angles(0, math.rad(90), 0) -- eixo X do cilindro apontando para -Z (frente)
 local OFFSETS: { [string]: CFrame } = {
-	Body = CFrame.identity,
-	Head = CFrame.new(0, 0, -0.5),
-	Lens = CFrame.new(0, 0, -0.61),
+	Body = ALONG,
+	Head = CFrame.new(0, 0, -0.5) * ALONG,
+	Bezel = CFrame.new(0, 0, -0.6) * ALONG,
+	Lens = CFrame.new(0, 0, -0.615) * ALONG,
+	Grip1 = CFrame.new(0, 0, -0.26) * ALONG,
+	Grip2 = CFrame.new(0, 0, -0.2) * ALONG,
+	Grip3 = CFrame.new(0, 0, 0.36) * ALONG,
+	Tail = CFrame.new(0, 0, 0.43) * ALONG,
 	Switch = CFrame.new(0, 0.1, -0.12),
-	Hand = CFrame.new(0.02, -0.11, 0.08),
-	Thumb = CFrame.new(-0.11, 0.02, -0.02),
-	Sleeve = CFrame.new(0.05, -0.2, 0.6) * CFrame.Angles(math.rad(-12), 0, 0),
+	Hand = CFrame.new(0.03, -0.12, 0.07),
+	Finger1 = CFrame.new(-0.02, -0.06, -0.08) * CFrame.Angles(0, 0, math.rad(150)),
+	Finger2 = CFrame.new(-0.02, -0.06, 0) * CFrame.Angles(0, 0, math.rad(150)),
+	Finger3 = CFrame.new(-0.02, -0.06, 0.08) * CFrame.Angles(0, 0, math.rad(150)),
+	Finger4 = CFrame.new(-0.02, -0.06, 0.16) * CFrame.Angles(0, 0, math.rad(150)),
+	Tip1 = CFrame.new(-0.11, -0.005, -0.08),
+	Tip2 = CFrame.new(-0.11, -0.005, 0),
+	Tip3 = CFrame.new(-0.11, -0.005, 0.08),
+	Tip4 = CFrame.new(-0.11, -0.005, 0.16),
+	Thumb = CFrame.new(0.06, 0.07, -0.04) * CFrame.Angles(0, math.rad(80), 0) * CFrame.Angles(0, 0, math.rad(-12)),
+	Sleeve = CFrame.new(0.05, -0.2, 0.6) * CFrame.Angles(math.rad(-12), 0, 0) * ALONG,
+	Cuff = CFrame.new(0.05, -0.18, 0.27) * CFrame.Angles(math.rad(-12), 0, 0) * ALONG,
 	Led1 = CFrame.new(0, 0.095, 0.06),
 	Led2 = CFrame.new(0, 0.095, 0.12),
 	Led3 = CFrame.new(0, 0.095, 0.18),

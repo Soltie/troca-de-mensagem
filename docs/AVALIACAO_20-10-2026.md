@@ -74,3 +74,17 @@ Piggy trocam de mapa a cada capítulo. É aí que estamos mais longe.
 | I | Modos L (Infecção/Traidor) no PvP | Médio | Médio |
 
 Minha ordem: F (rápido e marcante) → B → C → A → D → E → G → H/I.
+
+## Feito depois da avaliação (20/10/2026, opções A, E e G + floresta)
+- Floresta v2: caps. 6 (neblina e ponte), 7 (lago, jangada, A Voz) e 8 (morro, torre, farol, árvores que caem,
+  Tung no capô da van). Detalhes em `docs/FLORESTA_V2.md`.
+- A: túnel de minhoca só do Tung (caps. 2–5, oito buracos, avisos de arranhado/poeira/olhos, tábua pregada como
+  contra-jogada); catacumba (cap. 4, a pista do cofre desce para lá) e capela do ritual (cap. 5, o altar); a casa
+  estraga a cada capítulo (cadeiras tombadas, garras, quadros tortos, símbolos, poças, canos, velas, janelas tapadas).
+  Diferença do plano: o incêndio continua começando no mecanismo (mudar a origem do fogo arriscava a fuga do cap. 5).
+- E: modificadores no lobby (Pesadelo, Pilha Fraca, Faro Apurado, Pernas Longas) com bônus de Fichas; o Tung nunca
+  passa da corrida do jogador. Oito conquistas com aviso na tela. Badges oficiais: passo humano.
+- G: mão e lanterna novas (redondas), móveis de busca com acabamento; modelos do Poly Haven novos ficaram como
+  pendência (Blender fechado). Listas: `docs/MODELOS_SUBSTITUIVEIS.md` e `docs/PENDENCIAS_HUMANAS.md`.
+- Polimento: fita VHS dos caps. 6–8 nasce na floresta; legenda "ALGO SE MEXEU NA MATA."; rotas da floresta testadas
+  (ForestNavigation, catacumba no HouseNavigation). Lune 354 e Studio 412 testes verdes.

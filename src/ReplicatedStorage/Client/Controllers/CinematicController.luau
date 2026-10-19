@@ -198,6 +198,30 @@ local function updateCameo(current: Shots.Sequence, index: number, dt: number)
 		TungTungRig.place(rig, CFrame.lookAt(position, position + velocity))
 		TungTungRig.play(rig, "walk", 0.3, math.clamp(velocity.Magnitude / 3.5, 0.35, 1))
 		TungTungRig.step(rig, dt)
+	elseif current.name == "ForestRescue" and index == 1 then
+		-- No último segundo ele pula no capô da van, bate no vidro e escorrega quando ela arranca.
+		local actor = ensureCameo()
+		if not actor then
+			return
+		end
+		cameoClock += dt
+		local hood = Vector3.new(0, 6.5, 876.5)
+		local land, slide = 0.9, 2.8
+		local position = hood
+		if cameoClock < land then
+			local k = cameoClock / land
+			position = Vector3.new(-9, 0, 868):Lerp(hood, k) + Vector3.new(0, math.sin(k * math.pi) * 5, 0)
+		elseif cameoClock >= slide then
+			local k = math.min(1, (cameoClock - slide) / 0.7)
+			position = hood + Vector3.new(7 * k, -6.5 * k * k, -3 * k)
+		end
+		TungTungRig.place(actor, CFrame.lookAt(position, Vector3.new(0, position.Y, 890)))
+		TungTungRig.play(actor, if cameoClock >= land and cameoClock < slide then "slash" else "idle", 0.15)
+		TungTungRig.step(actor, dt)
+		if epilogueShot ~= index and cameoClock >= land then
+			epilogueShot = index
+			AudioController.play("DoorBang", 0.9, 0.8)
+		end
 	elseif current.name == "ForestRescue" and (index == 2 or index == 3) then
 		local actor = ensureCameo()
 		if actor then

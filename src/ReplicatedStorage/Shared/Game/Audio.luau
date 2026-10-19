@@ -99,6 +99,9 @@ local Audio: { [string]: Clip } = {
 	BirdsTakeoff = { id = "rbxassetid://9125738421", volume = 0.8 }, -- PSE Pigeon Surges Sudden Bursts Of Birds Flying
 	LeavesCrunch = { id = "rbxassetid://9118586709", volume = 0.9 }, -- PSE Rock Debris 3 (grass or dry leaves crunch)
 	BigSplash = { id = "rbxassetid://9119476512", volume = 1 }, -- PSE Splash Deep Thunking Impact 2
+	WallScurry = { id = "rbxassetid://9118048522", volume = 1 }, -- PSE Rat Footsteps 1 (tocado lento: algo grande na parede)
+	HammerNail = { id = "rbxassetid://9114755820", volume = 0.9 }, -- PSE Hammer Nail Into Wood 2
+	WallBurst = { id = "rbxassetid://9120832269", volume = 1 }, -- PSE Wood Creak Intense Cracking Splintering 1
 }
 
 return table.freeze(Audio)

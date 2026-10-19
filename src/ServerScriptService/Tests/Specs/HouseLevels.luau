@@ -3,6 +3,7 @@ local Levels = require("@game/ServerScriptService/Server/Campaign/HouseLevelPlan
 local Plan = require("@game/ServerScriptService/Server/Campaign/HousePlan")
 local Session = require("@game/ServerScriptService/Server/Campaign/CoopSession")
 local Config = require("@game/ReplicatedStorage/Shared/Config")
+local Catacomb = require("@game/ReplicatedStorage/Shared/Game/CatacombLayout")
 local TestKit = require("../TestKit")
 return {
 	name = "HouseLevels",
@@ -14,7 +15,9 @@ return {
 				t.expect(a.serviceStair).toBe(false)
 				t.expect(#a.passages).toBe(0)
 				for _, spec in b.activities do
-					t.expect(math.abs(spec.x) < 44).toBe(true)
+					local p = { x = spec.x, y = spec.y or 0, z = spec.z }
+					local below = Catacomb.inside(Catacomb.Catacomb, p, 1) or Catacomb.inside(Catacomb.Chapel, p, 1)
+					t.expect(math.abs(spec.x) < 44 or below).toBe(true)
 				end
 			end
 		end)

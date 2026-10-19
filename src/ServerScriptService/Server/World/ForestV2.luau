@@ -92,16 +92,62 @@ local function terrain(map: ForestMaps.Map, rng: Random)
 			end
 		end
 	end
-	-- Trilha de terra sinuosa.
+	-- Morro (cap. 8): colunas de 4 studs até a altura de ForestMaps.groundHeight (a mesma conta das tarefas).
+	local hill = map.hill
+	if hill then
+		local cells = 0
+		for x = hill.x - hill.r1, hill.x + hill.r1, 4 do
+			for z = hill.z - hill.r1, hill.z + hill.r1, 4 do
+				local h = ForestMaps.groundHeight(map, x, z)
+				if h > 0.2 then
+					Terrain:FillBlock(CFrame.new(x, (h - 4) / 2, z), Vector3.new(4, h + 4, 4), Enum.Material.Grass)
+					cells += 1
+					if cells % 300 == 0 then
+						task.wait()
+					end
+				end
+			end
+		end
+		-- Pedras soltas na encosta.
+		for _ = 1, 14 do
+			local a, d = rng:NextNumber(0, math.pi * 2), rng:NextNumber(hill.r0 + 4, hill.r1 - 6)
+			local x, z = hill.x + math.cos(a) * d, hill.z + math.sin(a) * d
+			if ForestMaps.trailDistance(map, x, z) > ForestMaps.TrailWidth / 2 + 4 then
+				Terrain:FillBall(
+					Vector3.new(x, ForestMaps.groundHeight(map, x, z), z),
+					rng:NextNumber(2.5, 4.5),
+					Enum.Material.Rock
+				)
+			end
+		end
+	end
+	-- Trilha de terra sinuosa (no morro, em pedaços curtos que acompanham a encosta).
 	for i = 2, #map.trail do
 		local a, b = map.trail[i - 1], map.trail[i]
-		local from, to = Vector3.new(a.x, -2, a.z), Vector3.new(b.x, -2, b.z)
-		local length = (to - from).Magnitude
-		Terrain:FillBlock(
-			CFrame.lookAt((from + to) / 2, to),
-			Vector3.new(ForestMaps.TrailWidth, 4, length + ForestMaps.TrailWidth),
-			Enum.Material.Ground
-		)
+		local length = math.sqrt((b.x - a.x) ^ 2 + (b.z - a.z) ^ 2)
+		local pieces = if hill then math.max(1, math.ceil(length / 4)) else 1
+		for n = 1, pieces do
+			local k0, k1 = (n - 1) / pieces, n / pieces
+			local x0, z0 = a.x + (b.x - a.x) * k0, a.z + (b.z - a.z) * k0
+			local x1, z1 = a.x + (b.x - a.x) * k1, a.z + (b.z - a.z) * k1
+			local from = Vector3.new(x0, ForestMaps.groundHeight(map, x0, z0) - 2, z0)
+			local to = Vector3.new(x1, ForestMaps.groundHeight(map, x1, z1) - 2, z1)
+			local extra = if pieces == 1 then ForestMaps.TrailWidth else 2
+			Terrain:FillBlock(
+				CFrame.lookAt((from + to) / 2, to),
+				Vector3.new(ForestMaps.TrailWidth, 4, (to - from).Magnitude + extra),
+				Enum.Material.Ground
+			)
+		end
+		-- Curvas do zigue-zague arredondadas (sem quina de grama no meio da trilha).
+		if hill then
+			Terrain:FillCylinder(
+				CFrame.new(b.x, ForestMaps.groundHeight(map, b.x, b.z) - 2, b.z),
+				4,
+				ForestMaps.TrailWidth / 2,
+				Enum.Material.Ground
+			)
+		end
 	end
 	-- Lago: bacia em elipse (fatias de 8 studs), fundo de areia, água até 2 studs abaixo da margem, praia em volta da
 	-- ilha, ilha de grama e banco de areia seco rente à água (a 4 studs de voxel, água rasa já faz nadar) até o norte.
@@ -238,6 +284,7 @@ local function grass(root: Folder, map: ForestMaps.Map, rng: Random)
 			d < ForestMaps.TrailWidth / 2 + 0.5
 			or ForestMaps.inRavine(map, x, z)
 			or ForestMaps.nearLake(map, x, z, 2)
+			or ForestMaps.inClearing(map, x, z)
 		then
 			continue
 		end
@@ -281,6 +328,7 @@ local function guide(root: Folder, map: ForestMaps.Map)
 		local r = map.ravine
 		while nextLamp <= walked + length do
 			local p = from + dir * (nextLamp - walked) + side * (ForestMaps.TrailWidth / 2 + 1.5)
+			p = Vector3.new(p.X, groundY(p.X, p.Z), p.Z)
 			if not (r and p.Z > r.z0 - 3 and p.Z < r.z1 + 3) and not ForestMaps.nearLake(map, p.X, p.Z, 3) then
 				local lamp = Build.block(root, "TrailLantern", p, Vector3.new(0.7, 4, 0.7), 0, WOOD)
 				Build.light(lamp, "ForestGuide", Color3.fromRGB(192, 155, 100), 14, 0.35, true)
@@ -298,6 +346,7 @@ local function guide(root: Folder, map: ForestMaps.Map)
 		end
 		while nextMark <= walked + length do
 			local p = from + dir * (nextMark - walked) - side * (ForestMaps.TrailWidth / 2 + 1)
+			p = Vector3.new(p.X, groundY(p.X, p.Z), p.Z)
 			if not (r and p.Z > r.z0 - 3 and p.Z < r.z1 + 3) and not ForestMaps.nearLake(map, p.X, p.Z, 3) then
 				-- Estaca com a ponta pintada de amarelo (o guarda marcou a trilha).
 				Build.block(
@@ -332,6 +381,9 @@ local function bridge(root: Folder, map: ForestMaps.Map)
 		return
 	end
 	local model = Build.model(root, "RopeBridge")
+	-- Piso inteiro (invisível) que entra quando a ponte sobe: as tábuas com frestas não viram chão para o pathfinding.
+	model:SetAttribute("DeckCFrame", CFrame.new(0, 1.55, (r.z0 + r.z1) / 2))
+	model:SetAttribute("DeckSize", Vector3.new(r.bridgeWidth, 0.4, r.z1 - r.z0 + 7))
 	local half = r.bridgeWidth / 2
 	for _, z in { r.z0 - 3, r.z1 + 3 } do
 		for _, x in { -half - 0.6, half + 0.6 } do
@@ -342,7 +394,8 @@ local function bridge(root: Folder, map: ForestMaps.Map)
 	local index = 0
 	for z = r.z0 - 3, r.z1 + 3, 1.6 do
 		index += 1
-		local rest = CFrame.new(0, 0.05, z) * CFrame.Angles(0, math.rad((index % 3 - 1) * 1.5), 0)
+		-- Tábua no nível do chão (o terreno assenta em y = 2; abaixo disso a cabeceira vira degrau).
+		local rest = CFrame.new(0, 1.75, z) * CFrame.Angles(0, math.rad((index % 3 - 1) * 1.5), 0)
 		local plank = part(planks, "Plank", Vector3.new(r.bridgeWidth, 0.5, 1.35), rest, Color3.fromRGB(92, 74, 52))
 		plank:SetAttribute("RestCFrame", rest)
 		plank:SetAttribute("Index", index)
@@ -360,7 +413,7 @@ local function bridge(root: Folder, map: ForestMaps.Map)
 		Build.cylinder(
 			model,
 			"BridgeRope",
-			Vector3.new(x, 2.6, (r.z0 + r.z1) / 2),
+			Vector3.new(x, 4.3, (r.z0 + r.z1) / 2),
 			Vector3.zAxis,
 			r.z1 - r.z0 + 6,
 			0.25,
@@ -426,6 +479,21 @@ function V2.raiseBridge(forest: Instance)
 	if gate then
 		task.delay(2.5, function()
 			gate:Destroy()
+		end)
+	end
+	local deckCFrame, deckSize = model:GetAttribute("DeckCFrame"), model:GetAttribute("DeckSize")
+	if typeof(deckCFrame) == "CFrame" and typeof(deckSize) == "Vector3" then
+		task.delay(2.5, function()
+			if model.Parent then
+				part(
+					model,
+					"BridgeDeck",
+					deckSize,
+					deckCFrame,
+					WOOD,
+					{ transparency = 1, collide = true, query = true }
+				)
+			end
 		end)
 	end
 end
@@ -765,10 +833,10 @@ local function lakeProps(root: Folder, map: ForestMaps.Map)
 	local c = Vector3.new(l.island.x + 6, 0, l.island.z + 2)
 	for _, dx in { -7, 7 } do
 		for _, dz in { -5, 5 } do
-			Build.block(station, "Post", c + Vector3.new(dx, 0, dz), Vector3.new(0.8, 10, 0.8), 0, WOOD)
+			Build.block(station, "Post", c + Vector3.new(dx, 0, dz), Vector3.new(0.8, 12, 0.8), 0, WOOD)
 		end
 	end
-	Build.block(station, "Roof", c + Vector3.new(0, 10, 0), Vector3.new(16, 0.6, 12), 0, Color3.fromRGB(58, 52, 46), {
+	Build.block(station, "Roof", c + Vector3.new(0, 12, 0), Vector3.new(16, 0.6, 12), 0, Color3.fromRGB(58, 52, 46), {
 		material = Enum.Material.CorrodedMetal,
 	})
 	Build.block(
@@ -792,6 +860,331 @@ local function lakeProps(root: Folder, map: ForestMaps.Map)
 	Build.light(beacon, "ForestGuide", Color3.fromRGB(255, 70, 50), 30, 1.2, true, true)
 end
 
+-- Torre de vigia (cap. 8): pernas de metal, escada reta de 20 degraus pelo lado oeste, plataforma com guarda-corpo,
+-- telhado e o farol (apagado até o evento forest_broadcast, V2.lightBeacon).
+local METAL = Color3.fromRGB(84, 91, 85)
+local function towerProps(root: Folder, map: ForestMaps.Map)
+	local t = map.tower
+	if not t then
+		return
+	end
+	local model = Build.model(root, "Tower")
+	local base = ForestMaps.groundHeight(map, t.x, t.z)
+	local half = t.size / 2
+	local metal = { material = Enum.Material.Metal }
+	local corners = {}
+	for _, sx in { -1, 1 } do
+		for _, sz in { -1, 1 } do
+			local x, z = t.x + sx * (half - 0.6), t.z + sz * (half - 0.6)
+			table.insert(corners, Vector3.new(x, 0, z))
+			Build.block(
+				model,
+				"TowerLeg",
+				Vector3.new(x, base - 1, z),
+				Vector3.new(1.2, t.floor - base + 1, 1.2),
+				0,
+				METAL,
+				metal
+			)
+			Build.block(model, "RoofPost", Vector3.new(x, t.floor, z), Vector3.new(0.6, 8, 0.6), 0, WOOD)
+		end
+	end
+	-- Contraventamento em X nas quatro faces (sem colisão: não prende ninguém na escada).
+	local faces = { { 1, 2 }, { 3, 4 }, { 1, 3 }, { 2, 4 } }
+	for _, face in faces do
+		local a, b = corners[face[1]], corners[face[2]]
+		for _, flip in { false, true } do
+			local from = Vector3.new(a.X, if flip then t.floor - 1 else base + 1, a.Z)
+			local to = Vector3.new(b.X, if flip then base + 1 else t.floor - 1, b.Z)
+			part(
+				model,
+				"TowerBrace",
+				Vector3.new(0.35, 0.35, (to - from).Magnitude),
+				CFrame.lookAt((from + to) / 2, to),
+				METAL,
+				{ material = Enum.Material.Metal, collide = false }
+			)
+		end
+	end
+	part(model, "TowerFloor", Vector3.new(t.size, 1, t.size), CFrame.new(t.x, t.floor - 0.5, t.z), WOOD)
+	part(
+		model,
+		"TowerRoof",
+		Vector3.new(t.size + 2, 0.6, t.size + 2),
+		CFrame.new(t.x, t.floor + 8.3, t.z),
+		Color3.fromRGB(40, 38, 36),
+		{ material = Enum.Material.CorrodedMetal }
+	)
+	-- Escada pelo lado oeste, subindo para o norte; chega ao lado da plataforma, perto do canto noroeste.
+	local stairX = t.x - half - 2.5
+	local steps = math.floor(t.floor - base + 0.5)
+	local run = 1.5
+	local topZ = t.z
+	local startZ = topZ - steps * run
+	for i = 1, steps do
+		part(
+			model,
+			"StairStep",
+			Vector3.new(5, 0.6, run + 0.1),
+			CFrame.new(stairX, base + i - 0.3, startZ + (i - 0.5) * run),
+			WOOD
+		)
+	end
+	part(model, "StairLanding", Vector3.new(5, 1, 5), CFrame.new(stairX, t.floor - 0.5, topZ + 2.5), WOOD)
+	for _, sx in { -2.6, 2.6 } do
+		local from = Vector3.new(stairX + sx, base + 0.5, startZ)
+		local to = Vector3.new(stairX + sx, t.floor - 0.5, topZ)
+		part(model, "Stringer", Vector3.new(0.4, 0.9, (to - from).Magnitude), CFrame.lookAt((from + to) / 2, to), WOOD)
+	end
+	local railFrom = Vector3.new(stairX - 2.6, base + 3.6, startZ)
+	local railTo = Vector3.new(stairX - 2.6, t.floor + 3.4, topZ)
+	part(
+		model,
+		"StairRail",
+		Vector3.new(0.25, 0.25, (railTo - railFrom).Magnitude),
+		CFrame.lookAt((railFrom + railTo) / 2, railTo),
+		WOOD,
+		{ material = Enum.Material.Wood, collide = false }
+	)
+	-- Guarda-corpo: três lados inteiros; no oeste, a abertura de onde chega a escada.
+	local railY = t.floor + 1.75
+	local rails = {
+		{ Vector3.new(t.x, railY, t.z + half - 0.15), Vector3.new(t.size, 3.5, 0.3) },
+		{ Vector3.new(t.x, railY, t.z - half + 0.15), Vector3.new(t.size, 3.5, 0.3) },
+		{ Vector3.new(t.x + half - 0.15, railY, t.z), Vector3.new(0.3, 3.5, t.size) },
+		{ Vector3.new(t.x - half + 0.15, railY, t.z - half + 3.5), Vector3.new(0.3, 3.5, 7) },
+		{ Vector3.new(t.x - half + 0.15, railY, t.z + half - 1), Vector3.new(0.3, 3.5, 2) },
+	}
+	for _, r in rails do
+		part(model, "TowerRail", r[2], CFrame.new(r[1]), WOOD, { material = Enum.Material.Wood, transparency = 0.15 })
+	end
+	-- Farol num mastro acima do telhado (visto de baixo também): base de metal e a cabeça que gira quando acende.
+	Build.cylinder(
+		model,
+		"BeaconBase",
+		Vector3.new(t.x, t.floor + 10.8, t.z),
+		Vector3.yAxis,
+		4.4,
+		1.2,
+		METAL,
+		{ material = Enum.Material.Metal }
+	)
+	local head = part(
+		model,
+		"BeaconHead",
+		Vector3.new(2.4, 2, 3.2),
+		CFrame.new(t.x, t.floor + 14, t.z),
+		Color3.fromRGB(60, 58, 52),
+		{ material = Enum.Material.Metal }
+	)
+	local beam = Instance.new("SpotLight")
+	beam.Name = "Beam"
+	beam.Face = Enum.NormalId.Front
+	beam.Angle = 26
+	beam.Range = 60
+	beam.Brightness = 6
+	beam.Color = Color3.fromRGB(255, 236, 190)
+	beam.Shadows = true
+	beam.Enabled = false
+	beam.Parent = head
+	local glow = Instance.new("PointLight")
+	glow.Name = "Glow"
+	glow.Range = 26
+	glow.Brightness = 1.4
+	glow.Color = Color3.fromRGB(255, 220, 160)
+	glow.Enabled = false
+	glow.Parent = head
+	model:SetAttribute("BeaconPivot", head.CFrame)
+end
+
+-- Farol aceso: a cabeça vira neon e gira varrendo a mata (o Tung Tung vê a luz também).
+function V2.lightBeacon(forest: Instance)
+	local tower = forest:FindFirstChild("Tower")
+	local head = tower and tower:FindFirstChild("BeaconHead")
+	if not tower or not head or not head:IsA("BasePart") or tower:GetAttribute("BeaconLit") then
+		return
+	end
+	tower:SetAttribute("BeaconLit", true)
+	head.Material = Enum.Material.Neon
+	head.Color = Color3.fromRGB(255, 230, 170)
+	for _, light in head:GetChildren() do
+		if light:IsA("Light") then
+			light.Enabled = true
+		end
+	end
+	-- Facho visível de longe (Beam do farol até 70 studs à frente).
+	local near = Instance.new("Attachment")
+	near.Position = Vector3.new(0, 0, -1.7)
+	near.Parent = head
+	local far = Instance.new("Attachment")
+	far.Position = Vector3.new(0, -24, -70)
+	far.Parent = head
+	local shaft = Instance.new("Beam")
+	shaft.Name = "Shaft"
+	shaft.Attachment0, shaft.Attachment1 = near, far
+	shaft.Width0, shaft.Width1 = 2.2, 22
+	shaft.FaceCamera = true
+	shaft.LightEmission = 1
+	shaft.LightInfluence = 0
+	shaft.Color = ColorSequence.new(Color3.fromRGB(255, 236, 190))
+	shaft.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.45),
+		NumberSequenceKeypoint.new(0.6, 0.85),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	shaft.Segments = 1
+	shaft.Parent = head
+	local pivot = head.CFrame
+	task.spawn(function()
+		local t0 = os.clock()
+		while head.Parent do
+			local angle = (os.clock() - t0) * 0.9
+			head.CFrame = pivot * CFrame.Angles(0, angle, 0) * CFrame.Angles(math.rad(-18), 0, 0)
+			task.wait(1 / 20)
+		end
+	end)
+end
+
+-- Estrada do resgate (cap. 8): asfalto, a van onde a cena final filma e o sinal verde da saída.
+local function rescueRoad(root: Folder, map: ForestMaps.Map)
+	if not map.tower then
+		return
+	end
+	local model = Build.model(root, "RescueRoad")
+	part(
+		model,
+		"Asphalt",
+		Vector3.new(270, 0.2, 24),
+		CFrame.new(0, 0.1, 876),
+		Color3.fromRGB(57, 59, 55),
+		{ material = Enum.Material.Asphalt }
+	)
+	local van = Build.model(model, "RescueVan")
+	local body = Color3.fromRGB(179, 184, 159)
+	Build.block(van, "Body", Vector3.new(0, 2, 886), Vector3.new(12, 8, 17), 0, body)
+	Build.block(van, "Hood", Vector3.new(0, 2, 876.5), Vector3.new(12, 4.5, 3), 0, body)
+	Build.block(
+		van,
+		"Windshield",
+		Vector3.new(0, 6.5, 877.3),
+		Vector3.new(10, 3, 0.3),
+		0,
+		Color3.fromRGB(35, 50, 51),
+		{ material = Enum.Material.Glass, transparency = 0.2 }
+	)
+	for _, x in { -6, 6 } do
+		for _, z in { 879, 891 } do
+			Build.cylinder(van, "Wheel", Vector3.new(x, 1.6, z), Vector3.xAxis, 1.5, 3.2, Color3.fromRGB(20, 23, 20))
+		end
+	end
+	for _, x in { -4.2, 4.2 } do
+		local lamp = Build.block(
+			van,
+			"Headlight",
+			Vector3.new(x, 3.6, 874.9),
+			Vector3.new(1.6, 0.9, 0.3),
+			0,
+			Color3.fromRGB(255, 240, 200),
+			{ material = Enum.Material.Neon, collide = false }
+		)
+		local beam = Instance.new("SpotLight")
+		beam.Face = Enum.NormalId.Front
+		beam.Angle = 50
+		beam.Range = 40
+		beam.Brightness = 2.2
+		beam.Color = Color3.fromRGB(255, 236, 200)
+		beam.Parent = lamp
+		lamp.CFrame = CFrame.lookAt(lamp.Position, lamp.Position - Vector3.zAxis)
+	end
+	local safe = Build.block(
+		model,
+		"RescueBeacon",
+		Vector3.new(0, 0, 868),
+		Vector3.new(2, 9, 2),
+		0,
+		Color3.fromRGB(102, 222, 148),
+		{ material = Enum.Material.Neon, collide = false }
+	)
+	Build.light(safe, "Exit", Color3.fromRGB(130, 255, 181), 45, 1.6, true)
+	Build.sign(
+		model,
+		"RescueSign",
+		Vector3.new(14, 6, 866),
+		-Vector3.zAxis,
+		Vector2.new(14, 3),
+		"RESGATE / REÚNAM-SE AQUI",
+		{ textColor = Color3.fromRGB(152, 255, 193), lit = true }
+	)
+end
+
+-- Árvores que caem na descida (cap. 8): de pé na beira da trilha norte; o ForestHazardService as derruba atravessadas
+-- quando alguém chega perto depois do farol. O tronco fecha meia trilha: desviar pelo lado da copa.
+local function fallTrees(root: Folder, map: ForestMaps.Map, rng: Random)
+	local t = map.tower
+	if not t then
+		return
+	end
+	local folder = Build.folder(root, "FallTrees")
+	local firs = { asset("ForestFirA"), asset("ForestFirB") }
+	local startIndex = #map.trail
+	for i, p in map.trail do
+		if p.z >= t.z + 14 then
+			startIndex = i
+			break
+		end
+	end
+	local walked, nextAt, flip = 0, 14, 1
+	for i = startIndex + 1, #map.trail do
+		local a, b = map.trail[i - 1], map.trail[i]
+		local from, to = Vector3.new(a.x, 0, a.z), Vector3.new(b.x, 0, b.z)
+		local length = (to - from).Magnitude
+		local dir = (to - from).Unit
+		while nextAt <= walked + length and (from + dir * (nextAt - walked)).Z < 818 do
+			local onTrail = from + dir * (nextAt - walked)
+			local side = Vector3.new(dir.Z, 0, -dir.X) * flip
+			local base = onTrail + side * (ForestMaps.TrailWidth / 2 + 3.5)
+			base = Vector3.new(base.X, groundY(base.X, base.Z), base.Z)
+			local tree = Build.model(folder, "FallTree")
+			local template = firs[rng:NextInteger(1, 2)]
+			if template then
+				local fir = template:Clone()
+				fir:ScaleTo(fir:GetScale() * 1.05)
+				fir:PivotTo(CFrame.new(base - Vector3.new(0, 0.3, 0)))
+				for _, d in fir:GetDescendants() do
+					if d:IsA("BasePart") then
+						d.CanCollide, d.CanQuery, d.CanTouch = false, false, false
+					end
+				end
+				fir.Parent = tree
+			end
+			local log = part(tree, "Log", Vector3.new(3.6, 12, 3.6), CFrame.new(base + Vector3.new(0, 7.8, 0)), WOOD, {
+				transparency = 1,
+				collide = true,
+			})
+			log:SetAttribute("ForestTree", true)
+			tree.PrimaryPart = log
+			-- Quebra a 1,8 stud do chão (fica o toco). Deitado, o tronco duro (12 studs) fecha só o lado do toco: a copa
+			-- atravessa a trilha mas não colide, então quem desce tem que desviar para o lado da copa.
+			tree:SetAttribute("Base", base + Vector3.new(0, 1.8, 0))
+			Build.cylinder(
+				folder,
+				"Stump",
+				base + Vector3.new(0, 0.9, 0),
+				Vector3.yAxis,
+				1.8,
+				3.4,
+				WOOD,
+				{ material = Enum.Material.Wood }
+			)
+			tree:SetAttribute("Toward", -side)
+			tree:SetAttribute("Trigger", onTrail)
+			flip = -flip
+			nextAt += 24
+		end
+		walked += length
+	end
+end
+
 -- Monta o mapa do capítulo dentro de `root` (pasta Forest).
 function V2.build(root: Folder, map: ForestMaps.Map, seed: number)
 	local rng = Random.new(seed + map.chapter * 104729)
@@ -805,6 +1198,9 @@ function V2.build(root: Folder, map: ForestMaps.Map, seed: number)
 	bridge(root, map)
 	camp(root, map)
 	lakeProps(root, map)
+	towerProps(root, map)
+	rescueRoad(root, map)
+	fallTrees(root, map, rng)
 	if map.biome == "mist" then
 		leaves(root, map, rng)
 		crows(root, map, rng)

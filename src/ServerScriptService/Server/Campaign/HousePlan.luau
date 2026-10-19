@@ -5,6 +5,7 @@ local Generator = require("./CampaignGenerator")
 local Layout = require("../World/ProceduralLayout")
 local Random = require("./SeededRandom")
 local Levels = require("./HouseLevelPlan")
+local Catacomb = require("@game/ReplicatedStorage/Shared/Game/CatacombLayout")
 local Plan = {}
 function Plan.create(seed: number, chapter: number, players: number, mode: string): Generator.Plan
 	if chapter >= 6 then
@@ -40,6 +41,12 @@ function Plan.create(seed: number, chapter: number, players: number, mode: strin
 			offset = 0
 		end
 		local spot = Levels.relocate(level, index)
+		-- Embaixo do jardim: a pista do cofre (cap. 4) na catacumba e o altar (cap. 5) na capela; o cômodo continua o
+		-- mesmo do catálogo (a validação e os rótulos não mudam), só o ponto desce.
+		local below = if spot then nil else Catacomb.relocate(chapter, objective.item, objective.event, index)
+		if below then
+			offset, dx, dz = 0, below.x - room.x, below.z - room.z
+		end
 		local repair = mode == "Standard" and objective.event == "power"
 		table.insert(activities, {
 			id = `task_{index}`,

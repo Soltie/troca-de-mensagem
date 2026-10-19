@@ -50,6 +50,7 @@ local controllers: { any } = {
 	require("./Controllers/EscapeRunController"),
 	require("./Controllers/JumpscareController"),
 	require("./Controllers/ForestFxController"),
+	require("./Controllers/AchievementToastController"),
 	require("./Controllers/GameUiController"),
 	require("./Controllers/InteractionController"),
 	require("./Controllers/HudController"),

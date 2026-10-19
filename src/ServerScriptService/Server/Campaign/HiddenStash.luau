@@ -75,7 +75,7 @@ local function piece(
 	cframe: CFrame,
 	color: Color3,
 	material: Enum.Material?
-): BasePart
+): Part
 	local part = Instance.new("Part")
 	part.Name = name
 	part.Size = size
@@ -156,34 +156,82 @@ local function build(
 		)
 		table.insert(moving, lid)
 		table.insert(moving, lock)
+		-- Acabamento: cantoneiras de latão, rebites nas faixas e alça na tampa (a tampa e a alça giram juntas).
+		for _, x in { -1.7, 1.7 } do
+			for _, z in { -0.98, 0.98 } do
+				piece(
+					model,
+					"ChestCorner",
+					Vector3.new(0.14, 1.62, 0.14),
+					frame * CFrame.new(x, 0.8, z),
+					BRASS,
+					Enum.Material.Metal
+				)
+			end
+			for _, y in { 0.35, 0.8, 1.25 } do
+				local rivet = piece(
+					model,
+					"Rivet",
+					Vector3.new(0.09, 0.09, 0.09),
+					frame * CFrame.new(x * 0.853, y, -1.03),
+					BRASS,
+					Enum.Material.Metal
+				)
+				rivet.Shape = Enum.PartType.Ball
+			end
+		end
+		local handle = piece(
+			model,
+			"ChestHandle",
+			Vector3.new(0.9, 0.12, 0.12),
+			frame * CFrame.new(0, 2.0, 0),
+			BRASS,
+			Enum.Material.Metal
+		)
+		table.insert(moving, handle)
 		local hinge = frame * CFrame.new(0, 1.6, 1.05)
 		return model, frame, moving, hinge, nil, (frame * CFrame.new(0, 1.05, 0)).Position
 	end
 	-- Cômoda: três gavetas; a de cima desliza para fora.
 	piece(model, "DresserBody", Vector3.new(3.8, 3, 1.8), frame * CFrame.new(0, 1.5, 0.05), WOOD)
 	piece(model, "DresserTop", Vector3.new(4, 0.18, 2), frame * CFrame.new(0, 3.08, 0.05), TRIM)
+	-- Acabamento: rodapé, molduras nas laterais e pés torneados.
+	piece(model, "DresserPlinth", Vector3.new(3.95, 0.22, 1.95), frame * CFrame.new(0, 0.11, 0.05), TRIM)
+	for _, x in { -1.91, 1.91 } do
+		piece(model, "SidePanel", Vector3.new(0.04, 2.2, 1.3), frame * CFrame.new(x, 1.55, 0.05), TRIM)
+		for _, z in { -0.8, 0.85 } do
+			local foot = piece(model, "Foot", Vector3.new(0.3, 0.3, 0.3), frame * CFrame.new(x * 0.95, 0.05, z), TRIM)
+			foot.Shape = Enum.PartType.Ball
+		end
+	end
 	for index, y in { 0.55, 1.45 } do
 		piece(model, `DrawerFront{index}`, Vector3.new(3.4, 0.75, 0.12), frame * CFrame.new(0, y, -0.9), TRIM)
-		piece(
-			model,
-			`DrawerKnob{index}`,
-			Vector3.new(0.3, 0.18, 0.14),
-			frame * CFrame.new(0, y, -0.99),
-			BRASS,
-			Enum.Material.Metal
-		)
+		piece(model, `DrawerInlay{index}`, Vector3.new(3.0, 0.45, 0.04), frame * CFrame.new(0, y, -0.97), WOOD)
+		for _, x in { -0.9, 0.9 } do
+			local knob = piece(
+				model,
+				`DrawerKnob{index}`,
+				Vector3.new(0.2, 0.2, 0.2),
+				frame * CFrame.new(x, y, -1.0),
+				BRASS,
+				Enum.Material.Metal
+			)
+			knob.Shape = Enum.PartType.Ball
+		end
 	end
 	local drawer = piece(model, "Drawer", Vector3.new(3.3, 0.6, 1.6), frame * CFrame.new(0, 2.38, -0.05), WOOD)
 	local front = piece(model, "DrawerFront3", Vector3.new(3.4, 0.75, 0.12), frame * CFrame.new(0, 2.35, -0.9), TRIM)
 	local knob = piece(
 		model,
 		"DrawerKnob3",
-		Vector3.new(0.3, 0.18, 0.14),
-		frame * CFrame.new(0, 2.35, -0.99),
+		Vector3.new(0.22, 0.22, 0.22),
+		frame * CFrame.new(0, 2.35, -1.0),
 		BRASS,
 		Enum.Material.Metal
 	)
-	for _, part in { drawer, front, knob } do
+	knob.Shape = Enum.PartType.Ball
+	local inlay = piece(model, "DrawerInlay3", Vector3.new(3.0, 0.45, 0.04), frame * CFrame.new(0, 2.35, -0.97), WOOD)
+	for _, part in { drawer, front, knob, inlay } do
 		table.insert(moving, part)
 	end
 	return model, frame, moving, nil, CFrame.new(frame.LookVector * 1.4), (frame * CFrame.new(0, 2.75, -0.1)).Position

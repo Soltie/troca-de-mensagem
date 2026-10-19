@@ -1,6 +1,7 @@
 --!strict
 local Threat = require("@game/ReplicatedStorage/Shared/Game/ForestThreat")
 local Forest = require("@game/ReplicatedStorage/Shared/Game/ForestCatalog")
+local ForestMaps = require("@game/ReplicatedStorage/Shared/Game/ForestMaps")
 local Layout = require("@game/ServerScriptService/Server/World/ForestLayout")
 local Plan = require("@game/ServerScriptService/Server/Campaign/ForestPlan")
 local Session = require("@game/ServerScriptService/Server/Campaign/CoopSession")
@@ -25,6 +26,10 @@ return {
 			for seed = 1, 20 do
 				local clear = Layout.clearings(seed)
 				for chapter = 6, 8 do
+					-- Mapas novos (floresta v2) não usam essas clareiras: o spec ForestMaps cobre.
+					if ForestMaps.get(chapter) then
+						continue
+					end
 					for _, mode in { "Story", "Standard" } do
 						for _, spec in Plan.create(seed, chapter, 6, mode).activities do
 							t.expect(Layout.reserved(spec.x, spec.z + 5, clear)).toBe(true)

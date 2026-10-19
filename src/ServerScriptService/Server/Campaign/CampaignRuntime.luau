@@ -25,6 +25,7 @@ local CreatureService = require("../Services/CreatureService")
 local LightningService = require("../Services/LightningService")
 local FireService = require("../Services/FireService")
 local GustService = require("../Services/GustService")
+local TunnelService = require("../Services/TunnelService")
 local LockerSearchService = require("../Services/LockerSearchService")
 local EscapeRunService = require("../Services/EscapeRunService")
 local CollectibleService = require("../Services/CollectibleService")
@@ -654,6 +655,10 @@ local function interact(player: Player, id: string, _action: string?): { accepte
 	-- Fita VHS colecionável (Claude, monetização/progressão): mesma validação nos dois modos.
 	if id == CollectibleService.TAPE_ID then
 		return CollectibleService.collect(player)
+	end
+	-- Buraco do túnel de minhoca: pregar tábua (TunnelService).
+	if string.sub(id, 1, 7) == "tunnel_" then
+		return TunnelService.board(player, id)
 	end
 	local member = session.members[player.UserId]
 	local now = workspace:GetServerTimeNow()

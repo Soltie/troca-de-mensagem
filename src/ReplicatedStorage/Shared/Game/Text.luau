@@ -140,6 +140,7 @@ local Text = {
 	-- Eventos da rodada mostrados como legenda.
 	Captions = {
 		awaken = "ALGO SE MEXEU LÁ DENTRO.",
+		awakenForest = "ALGO SE MEXEU NA MATA.",
 		spotted = "ELE TE VIU. CORRA!",
 		lost = "ELE PERDEU SEU RASTRO...",
 		power = "A ENERGIA VOLTOU. ELE SABE ONDE VOCÊ ESTÁ.",

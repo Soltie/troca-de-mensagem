@@ -22,6 +22,8 @@ local DEFINITIONS: { [string]: RemoteKind } = {
 	SetHousePreference = "RemoteEvent",
 	-- Voto de modo no lobby; a maioria da equipe decide antes do início.
 	SelectGameMode = "RemoteFunction",
+	-- Lobby: liga/desliga um modificador da partida (DifficultyService); vale para a equipe toda.
+	SetModifier = "RemoteFunction",
 	-- Cliente pede para interagir com algo: (id, ação opcional "use" | "alt"). Servidor valida tudo.
 	Interact = "RemoteFunction",
 	-- Cliente pede lanterna ligada/desligada; o servidor decide pela bateria (afeta a visão do Vigia).

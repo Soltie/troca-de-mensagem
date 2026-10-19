@@ -47,7 +47,7 @@ end
 local function shelters(root: Folder, list: { { x: number, y: number, z: number } }, features: FeatureBuilder.Built)
 	for index, spot in list do
 		local id = `hide_Forest_{index}`
-		local p = Vector3.new(spot.x, 0, spot.z)
+		local p = Vector3.new(spot.x, spot.y, spot.z)
 		local model = Build.model(root, id)
 		for _, dx in { -2.5, 2.5 } do
 			block(
@@ -404,7 +404,9 @@ function Builder.build(parent: Instance, chapter: number, seed: number, features
 end
 -- Eventos das tarefas que mexem no mapa novo (floresta v2).
 function Builder.event(forest: Instance, event: string)
-	if event == "forest_winch" then
+	if event == "forest_broadcast" then
+		V2.lightBeacon(forest)
+	elseif event == "forest_winch" then
 		V2.raiseBridge(forest)
 	end
 end

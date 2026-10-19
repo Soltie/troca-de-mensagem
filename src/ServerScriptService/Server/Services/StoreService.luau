@@ -39,6 +39,7 @@ local Economy = require("@game/ReplicatedStorage/Shared/Game/Economy")
 local Perks = require("@game/ReplicatedStorage/Shared/Game/Perks")
 local StoryRewards = require("@game/ReplicatedStorage/Shared/Game/StoryRewards")
 local TaskRewards = require("@game/ReplicatedStorage/Shared/Game/TaskRewards")
+local Difficulty = require("@game/ReplicatedStorage/Shared/Game/Difficulty")
 local Guard = require("@game/ReplicatedStorage/Shared/Net/Guard")
 local Logger = require("@game/ReplicatedStorage/Shared/Logger")
 local Remotes = require("@game/ReplicatedStorage/Shared/Net/Remotes")
@@ -50,6 +51,7 @@ local EconomyEvents = require("../Game/EconomyEvents")
 local ServerNet = require("../Net/ServerNet")
 local PlayerDataService = require("./PlayerDataService")
 local TelemetryService = require("./TelemetryService")
+local DifficultyService = require("./DifficultyService")
 
 export type StoreResponse = {
 	ok: boolean,
@@ -694,7 +696,9 @@ function StoreService.awardTask(player: Player, contributed: boolean): Economy.G
 	if
 		not PlayerDataService.update(player, function(data)
 			local reward = TaskRewards.reward(contributed)
-			granted = Economy.applyReward(data, { fichas = reward.fichas, xp = reward.xp })
+			-- Modificadores da partida pagam mais (Difficulty.boost).
+			local fichas = Difficulty.boost(reward.fichas, DifficultyService.modifiers())
+			granted = Economy.applyReward(data, { fichas = fichas, xp = reward.xp })
 			events = EconomyEvents.build(
 				data.wallet,
 				{ { transaction = TX.Gameplay, sku = "campaign_task", granted = granted } }
@@ -715,7 +719,8 @@ function StoreService.awardCoin(player: Player, fichas: number, xp: number): Eco
 	local events: { EconomyEvents.Event } = {}
 	if
 		not PlayerDataService.update(player, function(data)
-			granted = Economy.applyReward(data, { fichas = fichas, xp = xp })
+			granted =
+				Economy.applyReward(data, { fichas = Difficulty.boost(fichas, DifficultyService.modifiers()), xp = xp })
 			events = EconomyEvents.build(
 				data.wallet,
 				{ { transaction = TX.Gameplay, sku = "house_coin", granted = granted } }

@@ -1,5 +1,6 @@
 --!strict
 local Forest = require("@game/ReplicatedStorage/Shared/Game/ForestCatalog")
+local ForestMaps = require("@game/ReplicatedStorage/Shared/Game/ForestMaps")
 local Generator = require("./CampaignGenerator")
 local Layout = require("../World/ProceduralLayout")
 local Random = require("./SeededRandom")
@@ -20,13 +21,14 @@ function Plan.create(seed: number, chapter: number, players: number, mode: strin
 		end
 		uses[room.id] = (uses[room.id] or 0) + 1
 		local offset = if mode == "Standard" then rng.integer(-3, 3) else 0
-		local hide = objective.kind == "hide" or objective.kind == "breath"
+		-- Mapa antigo: esconder fica no corredor de abrigos; nos mapas novos, no próprio lugar (e na altura dele).
+		local hide = (objective.kind == "hide" or objective.kind == "breath") and ForestMaps.get(chapter) == nil
 		table.insert(activities, {
 			id = `task_{index}`,
 			slot = `{room.id}_{index}`,
 			room = room.id,
 			x = if hide then -24 else room.x + (if uses[room.id] % 2 == 1 then -5 else 5) + offset,
-			y = 0,
+			y = if hide then 0 else room.y,
 			z = if hide then 730 else room.z + (uses[room.id] - 1) * 8,
 			kind = objective.kind,
 			item = objective.item,

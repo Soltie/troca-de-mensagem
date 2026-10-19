@@ -16,6 +16,7 @@ local Audio = require("@game/ReplicatedStorage/Shared/Game/Audio")
 local ForestMaps = require("@game/ReplicatedStorage/Shared/Game/ForestMaps")
 local Logger = require("@game/ReplicatedStorage/Shared/Logger")
 local CreatureService = require("./CreatureService")
+local DifficultyService = require("./DifficultyService")
 
 local ForestHazardService = {
 	Name = "ForestHazardService",
@@ -55,6 +56,25 @@ local function sound(
 end
 
 type Body = { player: Player, at: Vector3, crouch: boolean, speed: number }
+
+-- Ponto no chão de verdade (terreno, ponte e cais; árvores não): o chão da mata fica em y ~ 2, não em 0.
+local function onGround(p: Vector3): Vector3
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Include
+	local world = workspace:FindFirstChild("CursedHouse")
+	local forest = world and world:FindFirstChild("Forest")
+	local list: { Instance } = { workspace.Terrain }
+	for _, name in { "RopeBridge", "Lake" } do
+		local found = forest and forest:FindFirstChild(name)
+		if found then
+			table.insert(list, found)
+		end
+	end
+	params.FilterDescendantsInstances = list
+	params.IgnoreWater = true
+	local hit = workspace:Raycast(Vector3.new(p.X, 80, p.Z), Vector3.new(0, -160, 0), params)
+	return if hit then Vector3.new(p.X, hit.Position.Y, p.Z) else p
+end
 
 local function activeBodies(): { Body }
 	local out = {}
@@ -143,6 +163,7 @@ local function collapse(forest: Instance, map: ForestMaps.Map)
 		return
 	end
 	bridgeState[forest] = "fallen"
+	DifficultyService.unlockAll("ponte")
 	local planks = model:FindFirstChild("Planks")
 	if planks then
 		for _, plank in planks:GetChildren() do
@@ -158,7 +179,7 @@ local function collapse(forest: Instance, map: ForestMaps.Map)
 		end
 	end
 	for _, rope in model:GetChildren() do
-		if rope.Name == "BridgeRope" then
+		if rope.Name == "BridgeRope" or rope.Name == "BridgeDeck" then
 			rope:Destroy()
 		end
 	end
@@ -221,7 +242,7 @@ local function collapse(forest: Instance, map: ForestMaps.Map)
 			return
 		end
 		CreatureService.reset()
-		CreatureService.activate(Vector3.new(rng:NextNumber(-20, 20), 0, 905))
+		CreatureService.activate(onGround(Vector3.new(rng:NextNumber(-20, 20), 0, 905)))
 		log.info("came back from the river")
 	end)
 end
@@ -234,14 +255,14 @@ local function stepBridge(forest: Instance, map: ForestMaps.Map)
 	-- Cena roteirizada: ele surge na cabeceira sul e dispara pela ponte atrás de quem passou; no meio, a ponte cede.
 	bridgeState[forest] = "chasing"
 	if not CreatureService.isActive() then
-		CreatureService.activate(Vector3.new(0, 0, r.z0 - 18))
+		CreatureService.activate(onGround(Vector3.new(0, 0, r.z0 - 18)))
 	end
 	CreatureService.setFrozen(true)
 	local north = Vector3.zAxis
 	local start = Vector3.new(0, 0, r.z0 - 18)
 	local breakAt = r.z0 + 8
 	task.spawn(function()
-		CreatureService.scriptPlace(start, north)
+		CreatureService.scriptPlace(onGround(start), north)
 		-- Um instante parado olhando a ponte (dá tempo de quem está do outro lado virar e ver).
 		task.wait(1.2)
 		local t0 = os.clock()
@@ -252,7 +273,7 @@ local function stepBridge(forest: Instance, map: ForestMaps.Map)
 				collapse(forest, map)
 				return
 			end
-			CreatureService.scriptPlace(Vector3.new(0, 0, z), north)
+			CreatureService.scriptPlace(onGround(Vector3.new(0, 0, z)), north)
 			task.wait()
 		end
 	end)
@@ -298,10 +319,10 @@ local function stepRaft(forest: Instance, map: ForestMaps.Map)
 			return
 		end
 		if not CreatureService.isActive() then
-			CreatureService.activate(dockAt)
+			CreatureService.activate(onGround(dockAt))
 		end
 		CreatureService.setFrozen(true)
-		CreatureService.scriptPlace(dockAt + Vector3.new(0, 0, 8), Vector3.zAxis)
+		CreatureService.scriptPlace(onGround(dockAt + Vector3.new(0, 0, 8)), Vector3.zAxis)
 		local anchor = deck
 		for _ = 1, 3 do
 			sound(anchor, Audio.DoorBang, 1.6, rng:NextNumber(0.6, 0.7))
@@ -444,10 +465,10 @@ local function stepVoice(forest: Instance, map: ForestMaps.Map, bodies: { Body }
 				back = if back.Magnitude > 0.1 then back.Unit else Vector3.zAxis
 				local behind = Vector3.new(b.at.X, 0, b.at.Z) + back * 13
 				if not CreatureService.isActive() then
-					CreatureService.activate(behind)
+					CreatureService.activate(onGround(behind))
 				else
 					CreatureService.setFrozen(false)
-					CreatureService.scriptPlace(behind, -back)
+					CreatureService.scriptPlace(onGround(behind), -back)
 				end
 				CreatureService.makeNoise(b.at, 70)
 				CreatureService.followScent(b.at)
@@ -484,6 +505,103 @@ local function stepVoice(forest: Instance, map: ForestMaps.Map, bodies: { Body }
 		v.lantern, v.target, v.expiresAt = spawned, chosen.player, now + 25
 	else
 		v.nextAt = now + 10
+	end
+end
+
+-- A mata acorda (cap. 8): depois do farol, as árvores da descida caem atravessadas quando alguém chega perto
+-- (rangido, queda acelerando, tranco); o tronco deitado fecha meia trilha (desviar pela copa). Na descida, o Tung Tung corta
+-- caminho pelo mato atrás de quem está mais à frente.
+local TREE_TRIGGER = 17
+local PULSE_EVERY = 18
+local towerState: { [Instance]: { pulseAt: number } } = {}
+
+local function topple(forest: Instance, tree: Model)
+	tree:SetAttribute("Fallen", true)
+	local base = tree:GetAttribute("Base")
+	local toward = tree:GetAttribute("Toward")
+	if typeof(base) ~= "Vector3" or typeof(toward) ~= "Vector3" then
+		return
+	end
+	local trunk = tree.PrimaryPart
+	local anchor = trunk or tree
+	sound(anchor, Audio.WoodSplinter, 1.5, 0.6)
+	local up = Vector3.yAxis
+	local axis = up:Cross(toward).Unit
+	local start = tree:GetPivot()
+	local offset = CFrame.new(base):ToObjectSpace(start)
+	task.spawn(function()
+		-- Balança um instante (aviso) e cai acelerando.
+		local t0 = os.clock()
+		while os.clock() - t0 < 0.7 and tree.Parent do
+			local wobble = math.sin((os.clock() - t0) * 22) * math.rad(2.5)
+			tree:PivotTo((CFrame.new(base) * CFrame.fromAxisAngle(axis, wobble)) * offset)
+			task.wait()
+		end
+		local t1 = os.clock()
+		local duration = 1.1
+		while tree.Parent do
+			local k = math.min(1, (os.clock() - t1) / duration)
+			tree:PivotTo((CFrame.new(base) * CFrame.fromAxisAngle(axis, k * k * math.rad(86))) * offset)
+			if k >= 1 then
+				break
+			end
+			task.wait()
+		end
+		if not tree.Parent then
+			return
+		end
+		local landing = base + toward * 12
+		sound(anchor, Audio.BeamCrack, 1.4, 0.7)
+		shake(forest, landing)
+		CreatureService.makeNoise(landing, 60)
+	end)
+end
+
+local function stepTower(forest: Instance, map: ForestMaps.Map, bodies: { Body })
+	if not map.tower then
+		return
+	end
+	if forest:GetAttribute("TreesAwake") ~= true then
+		if forest:GetAttribute("LastEvent") ~= "forest_broadcast" then
+			return
+		end
+		forest:SetAttribute("TreesAwake", true)
+		DifficultyService.unlockAll("farol")
+	end
+	local trees = forest:FindFirstChild("FallTrees")
+	if trees then
+		for _, tree in trees:GetChildren() do
+			local trigger = tree:GetAttribute("Trigger")
+			if not tree:IsA("Model") or tree:GetAttribute("Fallen") or typeof(trigger) ~= "Vector3" then
+				continue
+			end
+			for _, b in bodies do
+				local flat = Vector3.new(b.at.X - trigger.X, 0, b.at.Z - trigger.Z)
+				-- Cai à frente de quem desce (vindo do sul), não em cima.
+				if flat.Magnitude < TREE_TRIGGER and b.at.Z < trigger.Z - 4 then
+					topple(forest, tree)
+					break
+				end
+			end
+		end
+	end
+	local state = towerState[forest]
+	if not state then
+		state = { pulseAt = os.clock() + PULSE_EVERY }
+		towerState[forest] = state
+	end
+	if os.clock() < state.pulseAt then
+		return
+	end
+	state.pulseAt = os.clock() + PULSE_EVERY
+	local lead: Body? = nil
+	for _, b in bodies do
+		if b.at.Z > map.tower.z + 14 and (lead == nil or b.at.Z > lead.at.Z) then
+			lead = b
+		end
+	end
+	if lead then
+		CreatureService.makeNoise(lead.at, 70)
 	end
 end
 
@@ -529,6 +647,7 @@ local function step()
 	stepBridge(forest, map)
 	stepRaft(forest, map)
 	stepVoice(forest, map, bodies)
+	stepTower(forest, map, bodies)
 end
 
 function ForestHazardService.Start()

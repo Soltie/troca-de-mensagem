@@ -16,6 +16,7 @@ local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 
 local Config = require("@game/ReplicatedStorage/Shared/Config")
+local ForestMaps = require("@game/ReplicatedStorage/Shared/Game/ForestMaps")
 local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
 local Logger = require("@game/ReplicatedStorage/Shared/Logger")
 local StoreCatalog = require("@game/ReplicatedStorage/Shared/Game/StoreCatalog")
@@ -178,13 +179,40 @@ local function build(at: CFrame, tapeId: string): BasePart
 	return case
 end
 
+-- Floresta (caps. 6–8): a casa fica longe; a fita vai para perto de um dos lugares do mapa do capítulo, no chão.
+local function forestSpot(stage: number): CFrame?
+	local map = ForestMaps.get(stage)
+	if not map then
+		return nil
+	end
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = exclusions()
+	params.RespectCanCollide = true
+	for _ = 1, 24 do
+		local room = map.rooms[rng:NextInteger(1, #map.rooms)]
+		local x, z = room.x + rng:NextNumber(-9, 9), room.z + rng:NextNumber(-9, 9)
+		if ForestMaps.inLake(map, x, z) or ForestMaps.inRavine(map, x, z) then
+			continue
+		end
+		local hit = workspace:Raycast(Vector3.new(x, room.y + 30, z), Vector3.new(0, -60, 0), params)
+		if hit and hit.Normal.Y > 0.8 and hit.Material ~= Enum.Material.Water and farFromPlayers(hit.Position) then
+			return CFrame.new(hit.Position + Vector3.new(0, 0.09, 0))
+				* CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0)
+		end
+	end
+	return nil
+end
+
 local function spawnTape()
 	clear()
 	local tapeId = chooseTape()
 	if not tapeId then
 		return
 	end
-	local at = findSpot()
+	local state = game:GetService("ReplicatedStorage"):FindFirstChild("CampaignState")
+	local stage = if state then (tonumber(state:GetAttribute("Stage")) or 0) else 0
+	local at = if stage >= 6 then forestSpot(stage) else findSpot()
 	if not at then
 		log.warn("no free spot for a tape this round")
 		return

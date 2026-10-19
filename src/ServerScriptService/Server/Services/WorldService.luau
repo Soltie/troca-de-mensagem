@@ -43,6 +43,8 @@ local HouseLevelBuilder = require("../World/HouseLevelBuilder")
 local HouseAccess = require("../World/HouseAccess")
 local Forest = require("@game/ReplicatedStorage/Shared/Game/ForestCatalog")
 local ForestBuilder = require("../World/ForestBuilder")
+local Catacomb = require("../World/Catacomb")
+local HouseDecay = require("../World/HouseDecay")
 local houseStage = 0
 local outdoorPatrol: { Layout.Point } = {}
 local world: MapBuilder.World? = nil
@@ -918,6 +920,16 @@ end
 function WorldService.setHouseStage(chapter: number, seed: number?, mode: string?)
 	houseStage = chapter
 	getWorld().root:SetAttribute("HouseChapter", chapter)
+	-- Catacumba e capela embaixo do jardim leste (caps. 4 e 5); fecham nos outros capítulos.
+	local okCatacomb: boolean, catacombError: any = pcall(Catacomb.setStage, getWorld().root, chapter)
+	if not okCatacomb then
+		log.warn("catacomb failed: %s", tostring(catacombError))
+	end
+	-- A casa estraga a cada capítulo (enfeite sem colisão).
+	local okDecay: boolean, decayError: any = pcall(HouseDecay.setStage, getWorld().root, chapter)
+	if not okDecay then
+		log.warn("decay failed: %s", tostring(decayError))
+	end
 	getWorld().root:SetAttribute("ForestBlackout", false)
 	ForestBuilder.clear(getWorld().root, getFeatures())
 	getWorld().root:SetAttribute("ForestActive", chapter >= 6)

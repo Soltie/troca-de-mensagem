@@ -806,7 +806,9 @@ local function onState(s: GameState.Snapshot, changed: string?)
 
 	if previous and s.phase == "Playing" then
 		if s.creatureActive and not previous.creatureActive then
-			showCaption(Text.Captions.awaken, 4)
+			local house = workspace:FindFirstChild("CursedHouse")
+			local forest = house and house:FindFirstChild("Forest")
+			showCaption(if forest then Text.Captions.awakenForest else Text.Captions.awaken, 4)
 		end
 		if s.powerOn and not previous.powerOn then
 			showCaption(Text.Captions.power, 5)
