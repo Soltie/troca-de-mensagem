@@ -314,9 +314,27 @@ end
 
 function CreatureVisualController.Start()
 	local function watchDoor(inst: Instance)
-		if not inst:IsA("BasePart") or not string.match(inst.Name, "^door_") then
+		-- Portas do mapa antigo ("door_*") e da casa ("house_door_*").
+		if
+			not inst:IsA("BasePart")
+			or not (string.match(inst.Name, "^door_") or string.match(inst.Name, "^house_door_"))
+		then
 			return
 		end
+		-- Porta batendo sozinha: estrondo de madeira e trinco (som no lugar da porta) e tremor leve para quem está perto.
+		inst:GetAttributeChangedSignal("SlamSerial"):Connect(function()
+			task.delay(0.18, function()
+				local camera = workspace.CurrentCamera
+				local distance = if camera then (camera.CFrame.Position - inst.Position).Magnitude else math.huge
+				if distance > 70 then
+					return
+				end
+				local near = math.clamp(1 - distance / 70, 0, 1)
+				AudioController.playAt("Fall_box", inst, 0.9 + near * 0.6, 0.75)
+				AudioController.playAt("DoorLatch", inst, 1.2, 0.8)
+				CameraController.addTrauma(0.18 + 0.32 * near)
+			end)
+		end)
 		inst:GetAttributeChangedSignal("BangSerial"):Connect(function()
 			local root = serverRoot()
 			if root and (root.Position - inst.Position).Magnitude < 12 then

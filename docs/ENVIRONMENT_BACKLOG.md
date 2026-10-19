@@ -7,3 +7,4 @@
 5. Fresta segurada demais: cair no chão, levantar, folhas do guarda-roupa abrindo mais.
 6. Portas: apertar E várias vezes enchendo a barra; som a cada batida, leve aumento de FOV; ao abrir, som mais alto e tremor.
 7. Barricada "INTERDITADO" da escada parece solta no cômodo (explicar e propor alternativa).
+8. Pancada do Tung Tung: em vez de morrer, o jogador cai e fica rastejando (animação de rastejar) até ser resgatado.

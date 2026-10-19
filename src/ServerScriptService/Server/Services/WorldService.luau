@@ -766,6 +766,42 @@ function WorldService.lockedDoorNear(position: Vector3, range: number): MapBuild
 	return nil
 end
 
+-- Porta que bate sozinha (evento da mansão): fecha em ~0,2 s acelerando e avisa os clientes (SlamSerial) para o
+-- estrondo e o tremor de quem está perto (CreatureVisualController).
+function WorldService.slamDoor(id: string)
+	local door = getWorld().doors[id]
+	if not door then
+		return
+	end
+	setLocked(door, false)
+	local target = angleFor(door, "closed")
+	local from = currentAngle(door)
+	doorStates[door.id] = "closed"
+	door.isOpen = false
+	refreshDoorPrompt(door)
+	local token = (doorTokens[door.id] or 0) + 1
+	doorTokens[door.id] = token
+	door.panel:SetAttribute("SlamSerial", ((door.panel:GetAttribute("SlamSerial") :: number?) or 0) + 1)
+	if math.abs(target - from) < 1e-3 then
+		return
+	end
+	door.busy = true
+	task.spawn(function()
+		local frames = 6
+		for i = 1, frames do
+			if doorTokens[door.id] ~= token then
+				return
+			end
+			local t = i / frames
+			door.panel.CFrame = doorPose(door, from + (target - from) * t * t)
+			task.wait(1 / 30)
+		end
+		if doorTokens[door.id] == token then
+			door.busy = false
+		end
+	end)
+end
+
 function WorldService.bangDoor(door: MapBuilder.DoorHandle)
 	door.panel:SetAttribute("BangSerial", ((door.panel:GetAttribute("BangSerial") :: number?) or 0) + 1)
 	local sound = bangs[door.id]
