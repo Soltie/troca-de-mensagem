@@ -14,9 +14,23 @@ local Guide = require("@game/ReplicatedStorage/Shared/Game/PlayerGuide")
 local Remotes = require("@game/ReplicatedStorage/Shared/Net/Remotes")
 local Hud = require("../UI/FieldHud")
 local Juice = require("../UI/Juice")
+local Noir = require("../UI/NoirHud")
 local Theme = require("../UI/Theme")
 local Character = require("./CharacterController")
 local AudioController = require("./AudioController")
+local Flashlight = require("./FlashlightController")
+
+-- Mochila: nome e descrição de cada espaço (o detalhe embaixo da grade).
+local BAG_TEXT: { [string]: { string } } = {
+	flashlight = { "Lanterna", "Ilumina o caminho. Bateria: %d%%." },
+	keys = { "Chaves", "Chaves da casa encontradas: %d de 3." },
+	fuses = { "Fusíveis", "Fusíveis de porcelana: %d de 3." },
+	artifact = { "Artefato", "O coração da casa. %d com o time." },
+	battery = { "Pilha", "Recarrega a lanterna. Você tem %d." },
+	oxygen = { "Ar extra", "Recupera o fôlego preso. Você tem %d." },
+	decoy = { "Isca", "Faz barulho longe de você. Você tem %d." },
+	empty = { "", "" },
+}
 
 type FieldSlot = Hud.Slot
 
@@ -65,7 +79,57 @@ function Controller.Start()
 	local state = ReplicatedStorage:WaitForChild("CampaignState", 15)
 	assert(state, "[CampaignUI] missing campaign state")
 	local ui = Hud.build(player:WaitForChild("PlayerGui"))
+	local noir = Noir.build(player:WaitForChild("PlayerGui"), UserInputService.TouchEnabled)
+	ui.feedback.FontFace = Noir.Serif
 	local helpOpen, teamHeld = false, false
+	local noteOpen, bagOpen, selected = false, false, "flashlight"
+	-- Evita abrir e fechar no mesmo toque (tecla repetida ou clique duplo).
+	local toggledAt = 0
+	local function debounced(): boolean
+		local now = os.clock()
+		if now - toggledAt < 0.2 then
+			return true
+		end
+		toggledAt = now
+		return false
+	end
+	local function openNote(value: boolean)
+		if debounced() then
+			return
+		end
+		noteOpen, bagOpen = value, false
+		AudioController.play("Pickup", 0.35, 0.8, true)
+	end
+	local function openBag(value: boolean)
+		if debounced() then
+			return
+		end
+		bagOpen, noteOpen = value, false
+		AudioController.play("Pickup", 0.35, 0.65, true)
+	end
+	noir.objectiveButton.Activated:Connect(function()
+		openNote(not noteOpen)
+	end)
+	noir.bagButton.Activated:Connect(function()
+		openBag(not bagOpen)
+	end)
+	for _, slot in noir.slots do
+		slot.button.Activated:Connect(function()
+			if slot.item ~= "empty" then
+				selected = slot.item
+			end
+		end)
+	end
+	noir.useButton.Activated:Connect(function()
+		if selected == "flashlight" then
+			Flashlight.set(not Flashlight.isWanted())
+		elseif selected == "battery" or selected == "oxygen" or selected == "decoy" then
+			require("./InteractionController").useSupply(selected)
+		else
+			return
+		end
+		bagOpen = false
+	end)
 	guideToggle = function()
 		helpOpen = not helpOpen
 	end
@@ -108,8 +172,7 @@ function Controller.Start()
 			Juice.count(shownCoins, value, 0.6, function(current)
 				ui.coins.Text = `{current}`
 			end)
-			Juice.pop(ui.wallet, 0.2)
-			Juice.floatText(ui.canvas, `+{gain}`, UDim2.new(1, -100, 0, 80), Theme.Coin, 30)
+			local _ = gain
 		else
 			ui.coins.Text = `{value}`
 		end
@@ -119,11 +182,8 @@ function Controller.Start()
 	local function refreshLevel()
 		local value = (tonumber(player:GetAttribute("Level")) or 1) :: number
 		ui.level.Text = `NÍVEL {value}`
-		if value > shownLevel then
-			Juice.pop(ui.level.Parent :: GuiObject, 0.3)
-			Juice.confetti(ui.canvas, Vector2.new(0.5, 0.35), 48)
-			Juice.floatText(ui.canvas, `NÍVEL {value}!`, UDim2.fromScale(0.5, 0.62), Theme.Good, 40, 1.6)
-		end
+		-- Sem confete nem número subindo na tela: o nível aparece no fim do capítulo, na anotação.
+		local _ = Theme
 		shownLevel = value
 	end
 	-- Moedas pegas no capítulo atual (para o resumo da comemoração).
@@ -131,17 +191,17 @@ function Controller.Start()
 	player:GetAttributeChangedSignal("CoinPickupSerial"):Connect(function()
 		chapterCoins += 1
 	end)
+	-- Fim de capítulo: a anotação abre e a página vira com o resumo (sem confete nem letreiro gigante).
+	local pageOverride: { string }? = nil
 	local function celebrate(big: boolean, title: string, detail: string)
-		Juice.confetti(ui.canvas, Vector2.new(0.5, 0.3), if big then 90 else 50)
-		if big then
-			Juice.confetti(ui.canvas, Vector2.new(0.2, 0.35), 40)
-			Juice.confetti(ui.canvas, Vector2.new(0.8, 0.35), 40)
-		end
-		Juice.floatText(ui.canvas, title, UDim2.fromScale(0.5, 0.4), Theme.Hazard, if big then 54 else 44, 2.2)
-		task.delay(0.35, function()
-			Juice.floatText(ui.canvas, detail, UDim2.fromScale(0.5, 0.5), Theme.Text, 26, 2)
+		noteOpen, bagOpen = true, false
+		Noir.flip(noir, function()
+			pageOverride = { title, detail }
 		end)
-		AudioController.play("StingerWin", if big then 0.9 else 0.6, 1, true)
+		task.delay(if big then 6 else 4, function()
+			pageOverride = nil
+		end)
+		AudioController.play("StingerWin", if big then 0.7 else 0.45, 1, true)
 	end
 	-- Legenda das batidas do Tung Tung (vem do CreatureVisualController quando ele está perto).
 	player:GetAttributeChangedSignal("TungKnockSerial"):Connect(function()
@@ -160,13 +220,11 @@ function Controller.Start()
 		end
 		if input.KeyCode == Enum.KeyCode.H then
 			helpOpen = not helpOpen
+		elseif input.KeyCode == Enum.KeyCode.J then
+			openNote(not noteOpen)
 		elseif input.KeyCode == Enum.KeyCode.Tab then
-			teamHeld = true
-		end
-	end)
-	UserInputService.InputEnded:Connect(function(input)
-		if input.KeyCode == Enum.KeyCode.Tab then
-			teamHeld = false
+			-- TAB agora é a mochila; o time aparece na anotação do objetivo (J).
+			openBag(not bagOpen)
 		end
 	end)
 	UserInputService.WindowFocusReleased:Connect(function()
@@ -177,6 +235,7 @@ function Controller.Start()
 		slot.icon.TextTransparency = if count > 0 then 0 else 0.6
 	end
 	local elapsed, stageAt, lastStage, lastObjective, lastSolved = 0, 0, "", "", -1
+	local noirObjective = ""
 	local lastPhase = ""
 	RunService.RenderStepped:Connect(function(dt)
 		elapsed += dt
@@ -202,8 +261,11 @@ function Controller.Start()
 		if legacy and legacy:IsA("ScreenGui") then
 			legacy.Enabled = false
 		end
+		noir.gui.Enabled = ui.gui.Enabled
 		if not ui.gui.Enabled then
 			teamHeld = false
+			noteOpen, bagOpen = false, false
+			noir.modal.Visible, noir.modal.Modal = false, false
 			player:SetAttribute("FieldGuideOpen", false)
 			return
 		end
@@ -444,6 +506,119 @@ function Controller.Start()
 				ui.waypoint.Visible = false
 			end
 		end
+		-- HUD de terror (NoirHud): a antiga só guarda o guia (H) e os avisos curtos.
+		ui.order.Visible = false
+		ui.tray.Visible = false
+		ui.waypoint.Visible = false
+		ui.wallet.Visible = false
+		ui.tipPanel.Visible = false
+		ui.controls.Visible = false
+		ui.footer.Visible = false
+		ui.equipment.Visible = false
+		local levelBadge = ui.level.Parent
+		if levelBadge and levelBadge:IsA("GuiObject") then
+			levelBadge.Visible = false
+		end
+		local panelOpen = (noteOpen or bagOpen) and not ui.dossier.Visible
+		noir.note.Visible = noteOpen and not ui.dossier.Visible
+		noir.bag.Visible = bagOpen and not ui.dossier.Visible
+		noir.modal.Visible, noir.modal.Modal = panelOpen, panelOpen
+		local quiet = ui.dossier.Visible or status ~= "Active"
+		local cornerBox = noir.cornerTitle.Parent
+		if cornerBox and cornerBox:IsA("GuiObject") then
+			cornerBox.Visible = not quiet and not noteOpen
+		end
+		noir.cornerChapter.Text = ui.chapter.Text
+		noir.cornerTitle.Text = title
+		noir.stamina.Visible = status == "Active" and not ui.dossier.Visible
+		noir.staminaFill.Size = UDim2.fromScale(breath, 1)
+		noir.air.Visible = status == "Active" and oxygen < 99.5
+		noir.airFill.Size = UDim2.fromScale(oxygen / 100, 1)
+		noir.airFill.BackgroundColor3 = if oxygen < 25 then Noir.Blood else Noir.Paper
+		if title ~= noirObjective then
+			if noirObjective ~= "" then
+				Noir.pulse(noir.objectiveButton)
+				if noteOpen then
+					Noir.flip(noir, function() end)
+				end
+			end
+			noirObjective = title
+		end
+		if pageOverride then
+			noir.noteChapter.Text = ui.chapter.Text
+			noir.noteTitle.Text = pageOverride[1]
+			noir.noteBody.Text = pageOverride[2]
+			noir.noteList.Text = ""
+			noir.noteProgress.Text = `NÍVEL {shownLevel}`
+		else
+			noir.noteChapter.Text = ui.chapter.Text .. "  ·  " .. ui.destination.Text
+			noir.noteTitle.Text = title
+			noir.noteBody.Text = ui.action.Text
+			local list = {}
+			for n, item in tasks do
+				local mark = if item.solved then "✓" elseif n == index then "›" else "·"
+				table.insert(list, `{mark}  {item.title or Catalog.KindNames[item.kind]}`)
+			end
+			if #roster > 1 then
+				table.insert(list, "")
+				for _, member in roster do
+					table.insert(
+						list,
+						`{member.name}: {if member.status == "Active"
+							then "na ativa"
+							elseif member.status == "Downed" then "precisa de ajuda"
+							else string.lower(tostring(member.status))}`
+					)
+				end
+			end
+			noir.noteList.Text = table.concat(list, "\n")
+			noir.noteProgress.Text = `{solved} / {total}`
+		end
+		if bagOpen then
+			local counts: { [string]: number } = {
+				flashlight = if player:GetAttribute("HasFlashlight") == true then math.floor(light * 100) else 0,
+				keys = keys,
+				fuses = fuses,
+				artifact = inventory.artifact or 0,
+				battery = stock.battery or 0,
+				oxygen = stock.oxygen or 0,
+				decoy = stock.decoy or 0,
+				empty = 0,
+			}
+			for _, slot in noir.slots do
+				local count = counts[slot.item] or 0
+				slot.count.Text = if slot.item == "empty"
+					then ""
+					elseif slot.item == "flashlight" then (if count > 0 then `{count}%` else "")
+					elseif slot.item == "keys" or slot.item == "fuses" then `{count}/3`
+					else `{count}`
+				slot.icon.Visible = slot.item ~= "empty"
+				for _, line in slot.icon:GetDescendants() do
+					if line:IsA("Frame") then
+						line.BackgroundTransparency = if count > 0 then 0 else 0.7
+					elseif line:IsA("UIStroke") then
+						line.Transparency = if count > 0 then 0 else 0.7
+					end
+				end
+				local outline = slot.button:FindFirstChild("Outline") :: UIStroke?
+				if outline then
+					outline.Color = if slot.item == selected then Noir.Gold else Noir.GoldDim
+					outline.Transparency = if slot.item == selected then 0 else 0.5
+				end
+			end
+			local info = BAG_TEXT[selected] or BAG_TEXT.empty
+			noir.detailName.Text = info[1]
+			noir.detailText.Text = string.format(info[2], counts[selected] or 0)
+			local usable = selected == "flashlight"
+				or (
+					(selected == "battery" or selected == "oxygen" or selected == "decoy")
+					and (counts[selected] or 0) > 0
+				)
+			noir.useButton.Visible = usable
+			noir.useButton.Text = if selected == "flashlight"
+				then (if Flashlight.isWanted() then "DESLIGAR" else "LIGAR")
+				else "USAR"
+		end
 		if os.clock() > feedbackUntil then
 			ui.feedback.Text = ""
 		end
@@ -475,12 +650,12 @@ function Controller.Start()
 					if request.restart then
 						result = Remotes.clientFunction("RequestRestart", 10):InvokeServer()
 					elseif request.select then
-						local selected = require("./InteractionController").testInteract(request.id)
+						local chosen = require("./InteractionController").testInteract(request.id)
 						result = {
 							ok = true,
 							data = {
-								accepted = selected and player:GetAttribute("CampaignAccepted") == true,
-								message = if selected
+								accepted = chosen and player:GetAttribute("CampaignAccepted") == true,
+								message = if chosen
 									then player:GetAttribute("CampaignFeedback")
 									else "client_target_unavailable",
 							},
