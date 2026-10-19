@@ -667,6 +667,58 @@ local function nightLights(folder: Instance, root: Instance)
 	end
 end
 
+--[[
+	Colisão dos móveis grandes: uma caixa invisível um pouco menor que a base de cada modelo. Não recebe raycast
+	(câmera, lanterna e visão da criatura continuam iguais) nem toque. Cama, mesa baixa e guarda-roupa não entram:
+	por baixo deles já existe a colisão antiga do jogo.
+]]
+local SOLID = {
+	Sofa = true,
+	Armchair = true,
+	RoundTable = true,
+	Bookshelf = true,
+	Cabinet = true,
+	PaintedCabinet = true,
+	Console = true,
+	KitchenCounter = true,
+	WoodStove = true,
+	Icebox = true,
+	Bathtub = true,
+	Fireplace = true,
+	GrandfatherClock = true,
+	Boiler = true,
+	Crate = true,
+	Barrel = true,
+	TreasureChest = true,
+	SeaChest = true,
+	DayBed = true,
+	Nightstand = true,
+}
+
+local function colliders(folder: Instance)
+	for _, model in folder:GetChildren() do
+		if not model:IsA("Model") or not SOLID[model.Name] then
+			continue
+		end
+		local box, size = model:GetBoundingBox()
+		if size.X * size.Z < 1 then
+			continue
+		end
+		local height = math.min(size.Y, 6)
+		local bottom = box.Position.Y - size.Y / 2
+		local part = Build.part(
+			folder,
+			"PropCollider",
+			Vector3.new(size.X * 0.85, height, size.Z * 0.85),
+			CFrame.new(box.Position.X, bottom + height / 2, box.Position.Z) * box.Rotation,
+			rgb(0, 0, 0),
+			{ transparency = 1, collide = true, query = false }
+		)
+		part.CanTouch = false
+		part.CastShadow = false
+	end
+end
+
 function Props.build(root: Instance)
 	local old = root:FindFirstChild("Props")
 	if old then
@@ -689,6 +741,7 @@ function Props.build(root: Instance)
 		end
 	end
 	nightLights(folder, root)
+	colliders(folder)
 end
 
 return Props
