@@ -44,6 +44,7 @@ local controllers: { any } = {
 	require("./Controllers/SanityController"),
 	require("./Controllers/CursedLockerController"),
 	require("./Controllers/GustController"),
+	require("./Controllers/BreathTestController"),
 	require("./Controllers/GameUiController"),
 	require("./Controllers/InteractionController"),
 	require("./Controllers/HudController"),

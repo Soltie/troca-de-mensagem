@@ -79,6 +79,7 @@ local messages: { [string]: string } = {
 	need_flashlight = "Recolha a lanterna antes de usar uma pilha.",
 	search_empty = "Vazio... procure nos outros móveis do cômodo.",
 	locker_cursed = "Tinha alguma coisa lá dentro! Olhe a fresta antes de entrar num armário.",
+	search_passed = "Ele não te ouviu... e foi embora. Por enquanto.",
 }
 
 function Controller.Start()

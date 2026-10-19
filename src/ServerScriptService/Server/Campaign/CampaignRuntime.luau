@@ -25,6 +25,7 @@ local CreatureService = require("../Services/CreatureService")
 local LightningService = require("../Services/LightningService")
 local FireService = require("../Services/FireService")
 local GustService = require("../Services/GustService")
+local LockerSearchService = require("../Services/LockerSearchService")
 local CollectibleService = require("../Services/CollectibleService")
 -- Vantagens pagas (Claude): Segunda Chance, tempo de resgate e Continuação.
 local PerkService = require("../Services/PerkService")
@@ -473,6 +474,26 @@ local function selfRevive(player: Player, expectedVersion: number, message: stri
 end
 
 local function capture(player: Player, cause: string?)
+	-- Revista do armário (ideia C): o Tung Tung para na porta e o jogador segura a respiração no ritmo.
+	local searched = session.members[player.UserId]
+	if
+		(cause == nil or cause == "tung")
+		and playerAdapter
+		and playerAdapter.hiddenId(player)
+		and searched
+		and searched.status == "Active"
+		and session.phase == "Playing"
+		and LockerSearchService.begin(player, function(passed: boolean)
+			if passed then
+				CreatureService.giveUp(player)
+				feedback(player, "search_passed")
+			else
+				capture(player, "search")
+			end
+		end)
+	then
+		return
+	end
 	if playerAdapter then
 		local id = playerAdapter.hiddenId(player)
 		local locker = id and WorldService.locker(id)

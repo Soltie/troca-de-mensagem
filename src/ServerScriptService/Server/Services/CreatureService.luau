@@ -649,6 +649,20 @@ function CreatureService.holdOff(seconds: number)
 	holdUntil = os.clock() + seconds
 end
 
+-- Revista do armário que o jogador venceu (ideia C): esquece quem está escondido, olha em volta e vai embora.
+function CreatureService.giveUp(player: Player)
+	exposure = 0
+	seenPlayers[player.UserId] = nil
+	player:SetAttribute("HiddenSeen", false)
+	local now = os.clock()
+	brain.mode = "Search"
+	brain.searchUntil = now + 3
+	holdUntil = now + 2.5
+	feintUntil, nextFeintAt = now + 14, now + Config.House.FalseExitCooldown
+	feintDestination = nextPatrolNode()
+	frozen = false
+end
+
 -- Segundos desde a última vez que viu o jogador (esconderijo: "viu entrar?").
 function CreatureService.sawEntry(player: Player): boolean
 	return os.clock() - (seenPlayers[player.UserId] or -math.huge) < Config.Hide.SawEntryWindow
