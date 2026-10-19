@@ -4,8 +4,9 @@
 	pelo sul (0, 580) e saem pelo norte (0, 870); tarefas ficam em |x| < 70 e 600 <= z < 880.
 	- trail: pontos da trilha sinuosa (x, z), de largura `TrailWidth`;
 	- rooms: lugares das tarefas; hides: abrigos (6 por capítulo);
-	- ravine (só no 6): faixa z0..z1 de leste a oeste, atravessada pela ponte em x = 0.
-	Capítulos sem mapa novo ainda (7 e 8) devolvem nil e usam o mapa antigo.
+	- ravine (só no 6): faixa z0..z1 de leste a oeste, atravessada pela ponte em x = 0;
+	- lake (só no 7): lago com ilha, cais e banco de areia.
+	Capítulos sem mapa novo ainda devolvem nil e usam o mapa antigo.
 ]]
 
 export type Point = { x: number, z: number }
@@ -18,6 +19,17 @@ export type Map = {
 	hides: { { x: number, y: number, z: number } },
 	ravine: { z0: number, z1: number, depth: number, bridgeWidth: number }?,
 	camp: Point?,
+	-- Lago (só no 7): elipse de água com a ilha do rádio, o cais sul, o cais da ilha e o banco de areia até o norte.
+	lake: {
+		cx: number,
+		cz: number,
+		rx: number,
+		rz: number,
+		island: { x: number, z: number, r: number },
+		southDock: Point,
+		islandDock: Point,
+		sandbar: { Point },
+	}?,
 }
 
 local ForestMaps = {}
@@ -58,7 +70,88 @@ local MIST: Map = {
 	camp = { x = -56, z = 696 },
 }
 
-local MAPS: { [number]: Map } = { [6] = MIST }
+local LAKE: Map = {
+	chapter = 7,
+	biome = "lake",
+	-- A trilha atravessa o lago só no desenho: a água corta o meio (jangada até a ilha, banco de areia até o norte).
+	trail = {
+		{ x = 0, z = 560 },
+		{ x = 0, z = 600 },
+		{ x = -14, z = 632 },
+		{ x = -4, z = 668 },
+		{ x = -4, z = 690 },
+		{ x = 16, z = 721 },
+		{ x = 40, z = 744 },
+		{ x = 46, z = 767 },
+		{ x = 16, z = 792 },
+		{ x = 4, z = 828 },
+		{ x = 0, z = 862 },
+		{ x = 0, z = 890 },
+	},
+	rooms = {
+		{ id = "LakeShore", title = "MARGEM SUL", x = -14, y = 0, z = 612 },
+		{ id = "LakeCamp", title = "ACAMPAMENTO DA MARGEM", x = -46, y = 0, z = 640 },
+		{ id = "LakeDock", title = "CAIS DA JANGADA", x = 6, y = 0, z = 658 },
+		{ id = "RadioIsland", title = "ILHA DO RÁDIO", x = 40, y = 0, z = 730 },
+		{ id = "NorthShore", title = "MARGEM NORTE", x = 12, y = 0, z = 812 },
+		{ id = "LakeRoad", title = "TRILHA DA TORRE", x = 0, y = 0, z = 852 },
+	},
+	hides = {
+		{ x = 22, y = 0, z = 614 },
+		{ x = -62, y = 0, z = 616 },
+		{ x = -30, y = 0, z = 654 },
+		{ x = 50, y = 0, z = 750 },
+		{ x = -24, y = 0, z = 818 },
+		{ x = 28, y = 0, z = 846 },
+	},
+	camp = { x = -54, z = 644 },
+	lake = {
+		cx = 0,
+		cz = 732,
+		rx = 112,
+		rz = 56,
+		island = { x = 40, z = 744, r = 24 },
+		southDock = { x = -4, z = 668 },
+		islandDock = { x = 24, z = 728 },
+		sandbar = { { x = 46, z = 767 }, { x = 32, z = 780 }, { x = 16, z = 792 } },
+	},
+}
+
+local MAPS: { [number]: Map } = { [6] = MIST, [7] = LAKE }
+
+-- Dentro da água do lago (fora da ilha e do banco de areia)?
+function ForestMaps.inLake(map: Map, x: number, z: number): boolean
+	local l = map.lake
+	if not l then
+		return false
+	end
+	local dx, dz = (x - l.cx) / l.rx, (z - l.cz) / l.rz
+	if dx * dx + dz * dz > 1 then
+		return false
+	end
+	if (x - l.island.x) ^ 2 + (z - l.island.z) ^ 2 < l.island.r * l.island.r then
+		return false
+	end
+	for i = 2, #l.sandbar do
+		local a, b = l.sandbar[i - 1], l.sandbar[i]
+		local ex, ez = b.x - a.x, b.z - a.z
+		local k = math.clamp(((x - a.x) * ex + (z - a.z) * ez) / (ex * ex + ez * ez), 0, 1)
+		if (x - (a.x + ex * k)) ^ 2 + (z - (a.z + ez * k)) ^ 2 < 4 * 4 then
+			return false
+		end
+	end
+	return true
+end
+
+-- Perto da água (margem incluída): árvores, capim e lanternas ficam fora.
+function ForestMaps.nearLake(map: Map, x: number, z: number, margin: number): boolean
+	local l = map.lake
+	if not l then
+		return false
+	end
+	local dx, dz = (x - l.cx) / (l.rx + margin), (z - l.cz) / (l.rz + margin)
+	return dx * dx + dz * dz <= 1
+end
 
 function ForestMaps.get(chapter: number): Map?
 	return MAPS[chapter]
@@ -105,6 +198,10 @@ function ForestMaps.treeAllowed(map: Map, x: number, z: number): boolean
 	end
 	local r = map.ravine
 	if r and z > r.z0 - 6 and z < r.z1 + 6 then
+		return false
+	end
+	-- Lago e margem sem árvores (a ilha ganha só algumas, postas à mão).
+	if ForestMaps.nearLake(map, x, z, 6) then
 		return false
 	end
 	for _, room in map.rooms do

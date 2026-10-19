@@ -280,7 +280,8 @@ local function computePath(target: Vector3)
 			AgentCanJump = false,
 			AgentCanClimb = false,
 			WaypointSpacing = 4,
-			Costs = { Door = 2 },
+			-- Não nada: no lago ele dá a volta pela margem e pelo banco de areia.
+			Costs = { Door = 2, Water = math.huge },
 		})
 		local ok, err = pcall(function()
 			path:ComputeAsync(start, target)

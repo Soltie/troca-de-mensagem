@@ -54,7 +54,9 @@ local function sound(
 	return s
 end
 
-local function activeBodies(): { { player: Player, at: Vector3, crouch: boolean, speed: number } }
+type Body = { player: Player, at: Vector3, crouch: boolean, speed: number }
+
+local function activeBodies(): { Body }
 	local out = {}
 	for _, player in Players:GetPlayers() do
 		local character = player.Character
@@ -256,6 +258,235 @@ local function stepBridge(forest: Instance, map: ForestMaps.Map)
 	end)
 end
 
+-- Jangada do lago (cap. 7): ao soltar (evento forest_raft) ela vai e volta entre os cais sem parar, para ninguém
+-- ficar para trás. Na primeira saída, o Tung Tung chega ao cais sul e bate o bastão até a jangada se afastar.
+local raftState: { [Instance]: boolean } = {}
+local function shake(forest: Instance, at: Vector3)
+	forest:SetAttribute("ShakeAt", at)
+	forest:SetAttribute("ShakeSerial", ((forest:GetAttribute("ShakeSerial") :: number?) or 0) + 1)
+end
+
+local function stepRaft(forest: Instance, map: ForestMaps.Map)
+	local l = map.lake
+	if not l or raftState[forest] or forest:GetAttribute("LastEvent") ~= "forest_raft" then
+		return
+	end
+	local lake = forest:FindFirstChild("Lake")
+	local raft = lake and lake:FindFirstChild("Raft")
+	local deck = raft and raft:FindFirstChild("Deck")
+	local align = deck and deck:FindFirstChildOfClass("AlignPosition")
+	local home, away = raft and raft:GetAttribute("Home"), raft and raft:GetAttribute("Away")
+	if
+		not raft
+		or not deck
+		or not deck:IsA("BasePart")
+		or not align
+		or typeof(home) ~= "Vector3"
+		or typeof(away) ~= "Vector3"
+	then
+		return
+	end
+	raftState[forest] = true
+	pcall(function()
+		deck:SetNetworkOwner(nil)
+	end)
+	local dockAt = Vector3.new(l.southDock.x, 0, l.southDock.z)
+	-- O Tung Tung no cais: chega e bate enquanto a jangada sai.
+	task.spawn(function()
+		task.wait(1.5)
+		if not forest.Parent then
+			return
+		end
+		if not CreatureService.isActive() then
+			CreatureService.activate(dockAt)
+		end
+		CreatureService.setFrozen(true)
+		CreatureService.scriptPlace(dockAt + Vector3.new(0, 0, 8), Vector3.zAxis)
+		local anchor = deck
+		for _ = 1, 3 do
+			sound(anchor, Audio.DoorBang, 1.6, rng:NextNumber(0.6, 0.7))
+			shake(forest, dockAt + Vector3.new(0, 0, 10))
+			task.wait(0.9)
+		end
+		sound(anchor, Audio.Roar, 1.2, 0.85)
+		task.wait(3)
+		CreatureService.setFrozen(false)
+	end)
+	task.spawn(function()
+		local toward = true
+		while forest.Parent and raft.Parent do
+			local target: Vector3 = if toward then away else home
+			align.Position = target
+			local t0 = os.clock()
+			while forest.Parent and (deck.Position - target).Magnitude > 1.5 and os.clock() - t0 < 14 do
+				task.wait(0.2)
+			end
+			task.wait(5)
+			toward = not toward
+		end
+	end)
+end
+
+-- A Voz (cap. 7): um lampião acende fora da trilha e chama o nome de alguém. Quem vai até ele cai numa emboscada.
+type Voice = { nextAt: number, lantern: BasePart?, target: Player?, expiresAt: number }
+local voices: { [Instance]: Voice } = {}
+
+local function spawnLantern(forest: Instance, map: ForestMaps.Map, player: Player, at: Vector3): BasePart?
+	for _ = 1, 16 do
+		local angle = rng:NextNumber(0, math.pi * 2)
+		local distance = rng:NextNumber(24, 32)
+		local x, z = at.X + math.cos(angle) * distance, at.Z + math.sin(angle) * distance
+		if
+			math.abs(x) > 130
+			or z < 560
+			or z > 900
+			or ForestMaps.nearLake(map, x, z, 3)
+			or ForestMaps.trailDistance(map, x, z) < 12
+		then
+			continue
+		end
+		-- Lampião pendurado num poste torto, acima do capim: tem que ser visto de longe (é a isca).
+		local lantern = Instance.new("Part")
+		lantern.Name = "VoiceLantern"
+		lantern.Size = Vector3.new(1.3, 1.7, 1.3)
+		lantern.Material = Enum.Material.Neon
+		lantern.Color = Color3.fromRGB(255, 140, 50)
+		lantern.Transparency = 0.25
+		lantern.Anchored, lantern.CanCollide, lantern.CanQuery, lantern.CanTouch = true, false, false, false
+		lantern.CFrame = CFrame.new(x, 5.6, z)
+		local function piece(name: string, size: Vector3, cf: CFrame, color: Color3, material: Enum.Material)
+			local p = Instance.new("Part")
+			p.Name = name
+			p.Size = size
+			p.CFrame = cf
+			p.Color = color
+			p.Material = material
+			p.Anchored, p.CanCollide, p.CanQuery, p.CanTouch = true, false, false, false
+			p.Parent = lantern
+			return p
+		end
+		local wood = Color3.fromRGB(58, 42, 30)
+		piece(
+			"Post",
+			Vector3.new(0.5, 7.4, 0.5),
+			CFrame.new(x + 1.4, 3.4, z) * CFrame.Angles(0, 0, 0.06),
+			wood,
+			Enum.Material.Wood
+		)
+		piece("Arm", Vector3.new(1.8, 0.3, 0.3), CFrame.new(x + 0.7, 7, z), wood, Enum.Material.Wood)
+		piece(
+			"Cap",
+			Vector3.new(1.5, 0.25, 1.5),
+			CFrame.new(x, 6.55, z),
+			Color3.fromRGB(30, 30, 30),
+			Enum.Material.Metal
+		)
+		piece(
+			"Flame",
+			Vector3.new(0.35, 0.6, 0.35),
+			CFrame.new(x, 5.5, z),
+			Color3.fromRGB(255, 170, 70),
+			Enum.Material.Neon
+		)
+		local light = Instance.new("PointLight")
+		light.Color = Color3.fromRGB(255, 160, 80)
+		light.Range = 24
+		light.Brightness = 2.4
+		light.Shadows = true
+		light.Parent = lantern
+		-- Chama tremendo (servidor; é um só e dura pouco).
+		task.spawn(function()
+			while lantern.Parent do
+				light.Brightness = 1.9 + rng:NextNumber() * 0.9
+				task.wait(rng:NextNumber(0.06, 0.18))
+			end
+		end)
+		lantern.Parent = forest
+		-- Sussurro em laço enquanto o lampião existe (o helper `sound` apaga em 6 s).
+		local whisper = Instance.new("Sound")
+		whisper.SoundId = Audio.Whisper.id
+		whisper.Volume = Audio.Whisper.volume * 2.2
+		whisper.PlaybackSpeed = 0.85
+		whisper.Looped = true
+		whisper.RollOffMode = Enum.RollOffMode.InverseTapered
+		whisper.RollOffMinDistance = 6
+		whisper.RollOffMaxDistance = 60
+		whisper.Parent = lantern
+		whisper:Play()
+		player:SetAttribute("VoiceCallAt", workspace:GetServerTimeNow())
+		return lantern
+	end
+	return nil
+end
+
+local function stepVoice(forest: Instance, map: ForestMaps.Map, bodies: { Body })
+	if map.biome ~= "lake" then
+		return
+	end
+	local now = os.clock()
+	local v = voices[forest]
+	if not v then
+		v = { nextAt = now + 35, lantern = nil, target = nil, expiresAt = 0 }
+		voices[forest] = v
+	end
+	local lantern = v.lantern
+	if lantern then
+		local player = v.target
+		local close = false
+		for _, b in bodies do
+			if
+				b.player == player
+				and (b.at * Vector3.new(1, 0, 1) - lantern.Position * Vector3.new(1, 0, 1)).Magnitude < 7
+			then
+				close = true
+				-- Emboscada: a luz apaga e ele está logo atrás.
+				local back = (b.at - lantern.Position) * Vector3.new(1, 0, 1)
+				back = if back.Magnitude > 0.1 then back.Unit else Vector3.zAxis
+				local behind = Vector3.new(b.at.X, 0, b.at.Z) + back * 13
+				if not CreatureService.isActive() then
+					CreatureService.activate(behind)
+				else
+					CreatureService.setFrozen(false)
+					CreatureService.scriptPlace(behind, -back)
+				end
+				CreatureService.makeNoise(b.at, 70)
+				CreatureService.followScent(b.at)
+				sound(lantern, Audio.Roar, 1.3, 0.9)
+				shake(forest, b.at)
+			end
+		end
+		if close or now >= v.expiresAt or not lantern.Parent then
+			lantern:Destroy()
+			v.lantern, v.target = nil, nil
+			v.nextAt = now + rng:NextNumber(40, 70)
+		end
+		return
+	end
+	if now < v.nextAt or #bodies == 0 then
+		return
+	end
+	-- Escolhe alguém em terra firme (na ilha e na água a voz não alcança).
+	local candidates = {}
+	for _, b in bodies do
+		local l = map.lake
+		local onIsland = l ~= nil and (b.at.X - l.island.x) ^ 2 + (b.at.Z - l.island.z) ^ 2 < (l.island.r + 6) ^ 2
+		if not onIsland and not ForestMaps.nearLake(map, b.at.X, b.at.Z, 0) then
+			table.insert(candidates, b)
+		end
+	end
+	if #candidates == 0 then
+		v.nextAt = now + 10
+		return
+	end
+	local chosen = candidates[rng:NextInteger(1, #candidates)]
+	local spawned = spawnLantern(forest, map, chosen.player, chosen.at)
+	if spawned then
+		v.lantern, v.target, v.expiresAt = spawned, chosen.player, now + 25
+	else
+		v.nextAt = now + 10
+	end
+end
+
 local function step()
 	local campaign = game:GetService("ReplicatedStorage"):FindFirstChild("CampaignState")
 	if not campaign or campaign:GetAttribute("Phase") == "Intermission" then
@@ -296,6 +527,8 @@ local function step()
 		end
 	end
 	stepBridge(forest, map)
+	stepRaft(forest, map)
+	stepVoice(forest, map, bodies)
 end
 
 function ForestHazardService.Start()

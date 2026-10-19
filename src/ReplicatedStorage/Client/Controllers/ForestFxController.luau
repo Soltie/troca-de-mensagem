@@ -1,13 +1,16 @@
 --!strict
 --[[
 	Efeitos de tela da floresta v2 no cliente. O servidor (ForestHazardService) marca no Forest um ponto de impacto
-	(ShakeAt) e incrementa ShakeSerial: a ponte cedendo, o Tung Tung batendo na água. Quem está perto sente o tranco
-	(mais forte quanto mais perto, até 90 studs), respeitando a opção de tremor.
+	(ShakeAt) e incrementa ShakeSerial: a ponte cedendo, o Tung Tung batendo na água ou no cais. Quem está perto sente
+	o tranco (mais forte quanto mais perto, até 90 studs), respeitando a opção de tremor.
+	A Voz (cap. 7): quando o servidor marca VoiceCallAt no jogador, a legenda mostra o chamado pelo nome dele.
 ]]
 
+local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
 local CameraController = require("./CameraController")
+local GameUiController = require("./GameUiController")
 local SettingsController = require("./SettingsController")
 
 local ForestFxController = {
@@ -49,6 +52,11 @@ function ForestFxController.Start()
 		if forest then
 			impact(forest)
 		end
+	end)
+	local player = Players.LocalPlayer
+	player:GetAttributeChangedSignal("VoiceCallAt"):Connect(function()
+		local name = string.upper(player.DisplayName)
+		GameUiController.caption(string.format('Uma voz chama da mata: "%s... aqui..."', name), 5)
 	end)
 end
 

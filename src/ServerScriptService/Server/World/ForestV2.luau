@@ -103,6 +103,52 @@ local function terrain(map: ForestMaps.Map, rng: Random)
 			Enum.Material.Ground
 		)
 	end
+	-- Lago: bacia em elipse (fatias de 8 studs), fundo de areia, água até 2 studs abaixo da margem, praia em volta da
+	-- ilha, ilha de grama e banco de areia seco rente à água (a 4 studs de voxel, água rasa já faz nadar) até o norte.
+	local l = map.lake
+	if l then
+		for x = -l.rx, l.rx, 8 do
+			local half = l.rz * math.sqrt(math.max(0, 1 - (x / l.rx) ^ 2))
+			if half < 4 then
+				continue
+			end
+			local slice = Vector3.new(8, 12, half * 2)
+			Terrain:FillBlock(CFrame.new(l.cx + x, -6, l.cz), slice, Enum.Material.Air)
+			Terrain:FillBlock(CFrame.new(l.cx + x, -14, l.cz), Vector3.new(8, 4, half * 2), Enum.Material.Sand)
+			Terrain:FillBlock(CFrame.new(l.cx + x, -6, l.cz), Vector3.new(8, 8, half * 2), Enum.Material.Water)
+			-- Barranco de lama na borda (fica natural em vez de degrau de grama).
+			-- Bolas de tamanho e recuo variados: margem irregular, sem cara de piscina.
+			for _, side in { -1, 1 } do
+				local radius = rng:NextNumber(3, 6)
+				local inset = rng:NextNumber(-1.5, 2)
+				Terrain:FillBall(Vector3.new(l.cx + x, -2.5, l.cz + side * (half - inset)), radius, Enum.Material.Mud)
+				if rng:NextNumber() < 0.45 then
+					Terrain:FillBall(
+						Vector3.new(l.cx + x + rng:NextNumber(-4, 4), -1.5, l.cz + side * (half + rng:NextNumber(1, 4))),
+						rng:NextNumber(2.5, 4.5),
+						Enum.Material.Ground
+					)
+				end
+			end
+		end
+		local i = l.island
+		Terrain:FillCylinder(CFrame.new(i.x, -4, i.z), 8, i.r + 4, Enum.Material.Sand)
+		Terrain:FillCylinder(CFrame.new(i.x, -6, i.z), 12, i.r, Enum.Material.Grass)
+		for n = 2, #l.sandbar do
+			local a, b = l.sandbar[n - 1], l.sandbar[n]
+			local from, to = Vector3.new(a.x, -4, a.z), Vector3.new(b.x, -4, b.z)
+			Terrain:FillBlock(
+				CFrame.lookAt((from + to) / 2, to),
+				Vector3.new(10, 8, (to - from).Magnitude + 10),
+				Enum.Material.Sand
+			)
+		end
+		-- Rampas suaves nas pontas do banco (sem degrau para subir na margem norte nem para descer da ilha).
+		local first, last = l.sandbar[1], l.sandbar[#l.sandbar]
+		for _, p in { first, last } do
+			Terrain:FillBall(Vector3.new(p.x, -3, p.z), 7, Enum.Material.Ground)
+		end
+	end
 	-- Ravina: buraco de leste a oeste, paredes de rocha e rio lá embaixo.
 	local r = map.ravine
 	if r then
@@ -188,7 +234,11 @@ local function grass(root: Folder, map: ForestMaps.Map, rng: Random)
 		local x, z = rng:NextNumber(-130, 130), rng:NextNumber(548, 912)
 		local d = ForestMaps.trailDistance(map, x, z)
 		-- Mais denso na beira da trilha; nunca no meio dela nem na ravina.
-		if d < ForestMaps.TrailWidth / 2 + 0.5 or ForestMaps.inRavine(map, x, z) then
+		if
+			d < ForestMaps.TrailWidth / 2 + 0.5
+			or ForestMaps.inRavine(map, x, z)
+			or ForestMaps.nearLake(map, x, z, 2)
+		then
 			continue
 		end
 		local r = map.ravine
@@ -231,7 +281,7 @@ local function guide(root: Folder, map: ForestMaps.Map)
 		local r = map.ravine
 		while nextLamp <= walked + length do
 			local p = from + dir * (nextLamp - walked) + side * (ForestMaps.TrailWidth / 2 + 1.5)
-			if not (r and p.Z > r.z0 - 3 and p.Z < r.z1 + 3) then
+			if not (r and p.Z > r.z0 - 3 and p.Z < r.z1 + 3) and not ForestMaps.nearLake(map, p.X, p.Z, 3) then
 				local lamp = Build.block(root, "TrailLantern", p, Vector3.new(0.7, 4, 0.7), 0, WOOD)
 				Build.light(lamp, "ForestGuide", Color3.fromRGB(192, 155, 100), 14, 0.35, true)
 				Build.block(
@@ -248,7 +298,7 @@ local function guide(root: Folder, map: ForestMaps.Map)
 		end
 		while nextMark <= walked + length do
 			local p = from + dir * (nextMark - walked) - side * (ForestMaps.TrailWidth / 2 + 1)
-			if not (r and p.Z > r.z0 - 3 and p.Z < r.z1 + 3) then
+			if not (r and p.Z > r.z0 - 3 and p.Z < r.z1 + 3) and not ForestMaps.nearLake(map, p.X, p.Z, 3) then
 				-- Estaca com a ponta pintada de amarelo (o guarda marcou a trilha).
 				Build.block(
 					root,
@@ -615,6 +665,133 @@ local function crows(root: Folder, map: ForestMaps.Map, rng: Random)
 	end
 end
 
+-- Cais de tábuas sobre a água, de `from` até `to` (no chão), com estacas.
+local function dock(parent: Instance, name: string, from: Vector3, to: Vector3)
+	local model = Build.model(parent, name)
+	local dir = (to - from) * Vector3.new(1, 0, 1)
+	local length = dir.Magnitude
+	local frame = CFrame.lookAt(Vector3.new(from.X, 0, from.Z), Vector3.new(to.X, 0, to.Z))
+	for d = 0, length, 1.5 do
+		part(model, "DockPlank", Vector3.new(6, 0.4, 1.3), frame * CFrame.new(0, 0, -d), Color3.fromRGB(88, 70, 50))
+	end
+	for d = 0, length, 6 do
+		for _, x in { -2.8, 2.8 } do
+			part(
+				model,
+				"DockPile",
+				Vector3.new(0.6, 6, 0.6),
+				frame * CFrame.new(x, -2.8, -d),
+				Color3.fromRGB(60, 46, 34)
+			)
+		end
+	end
+	return model
+end
+
+-- Lago (cap. 7): cais sul e da ilha, jangada (física: AlignPosition, levada pela ForestHazardService) e o posto de
+-- rádio na ilha.
+local function lakeProps(root: Folder, map: ForestMaps.Map)
+	local l = map.lake
+	if not l then
+		return
+	end
+	local folder = Build.folder(root, "Lake")
+	local south = Vector3.new(l.southDock.x, 0, l.southDock.z)
+	local southEnd = south + Vector3.new(0, 0, 22)
+	dock(folder, "SouthDock", south, southEnd)
+	local isle = Vector3.new(l.islandDock.x, 0, l.islandDock.z)
+	local toIsland = Vector3.new(l.island.x, 0, l.island.z)
+	local isleEnd = isle - (toIsland - isle).Unit * 10
+	dock(folder, "IslandDock", isle, isleEnd)
+	-- Jangada: troncos amarrados, flutua parada na ponta do cais sul até o evento forest_raft.
+	local raft = Build.model(folder, "Raft")
+	local deck = Instance.new("Part")
+	deck.Name = "Deck"
+	deck.Size = Vector3.new(9, 0.8, 9)
+	deck.Material = Enum.Material.Wood
+	deck.Color = Color3.fromRGB(96, 74, 50)
+	deck.CFrame = CFrame.new(southEnd + Vector3.new(0, -1.3, 5.5))
+	deck.CustomPhysicalProperties = PhysicalProperties.new(0.6, 1, 0, 1, 1)
+	deck.Parent = raft
+	for x = -3.6, 3.6, 1.8 do
+		local log = Build.cylinder(
+			raft,
+			"Log",
+			deck.Position + Vector3.new(x, 0.25, 0),
+			Vector3.zAxis,
+			9.4,
+			1.1,
+			Color3.fromRGB(84, 62, 42),
+			{ material = Enum.Material.Wood, collide = false, query = false }
+		)
+		log.Anchored = false
+		local weld = Instance.new("WeldConstraint")
+		weld.Part0, weld.Part1 = deck, log
+		weld.Parent = log
+		log.Massless = true
+	end
+	local attach = Instance.new("Attachment")
+	attach.Parent = deck
+	local align = Instance.new("AlignPosition")
+	align.Mode = Enum.PositionAlignmentMode.OneAttachment
+	align.Attachment0 = attach
+	align.Position = deck.Position
+	align.MaxForce = 4e5
+	align.MaxVelocity = 7
+	align.Responsiveness = 12
+	align.Parent = deck
+	local turn = Instance.new("AlignOrientation")
+	turn.Mode = Enum.OrientationAlignmentMode.OneAttachment
+	turn.Attachment0 = attach
+	turn.CFrame = CFrame.new()
+	turn.MaxTorque = 4e5
+	turn.Responsiveness = 15
+	turn.Parent = deck
+	raft:SetAttribute("Home", deck.Position)
+	raft:SetAttribute("Away", isleEnd + Vector3.new(0, -1.3, 0) + (isleEnd - isle).Unit * 5.5)
+	-- Corda-guia esticada entre os dois cais (a jangada segue por ela).
+	Build.cylinder(
+		folder,
+		"FerryRope",
+		(southEnd + isleEnd) / 2 + Vector3.new(0, 1.6, 0),
+		(isleEnd - southEnd).Unit,
+		(isleEnd - southEnd).Magnitude + 10,
+		0.2,
+		Color3.fromRGB(122, 104, 74),
+		{ material = Enum.Material.Fabric, collide = false, query = false }
+	)
+	-- Posto de rádio da ilha: abrigo de tábuas com antena e luz vermelha piscando.
+	local station = Build.model(folder, "RadioStation")
+	local c = Vector3.new(l.island.x + 6, 0, l.island.z + 2)
+	for _, dx in { -7, 7 } do
+		for _, dz in { -5, 5 } do
+			Build.block(station, "Post", c + Vector3.new(dx, 0, dz), Vector3.new(0.8, 10, 0.8), 0, WOOD)
+		end
+	end
+	Build.block(station, "Roof", c + Vector3.new(0, 10, 0), Vector3.new(16, 0.6, 12), 0, Color3.fromRGB(58, 52, 46), {
+		material = Enum.Material.CorrodedMetal,
+	})
+	Build.block(
+		station,
+		"Antenna",
+		c + Vector3.new(8, 0, 6),
+		Vector3.new(0.5, 26, 0.5),
+		0,
+		Color3.fromRGB(90, 92, 90),
+		{ material = Enum.Material.Metal }
+	)
+	local beacon = Build.block(
+		station,
+		"AntennaLight",
+		c + Vector3.new(8, 26, 6),
+		Vector3.new(0.8, 0.8, 0.8),
+		0,
+		Color3.fromRGB(255, 60, 40),
+		{ material = Enum.Material.Neon, collide = false, query = false }
+	)
+	Build.light(beacon, "ForestGuide", Color3.fromRGB(255, 70, 50), 30, 1.2, true, true)
+end
+
 -- Monta o mapa do capítulo dentro de `root` (pasta Forest).
 function V2.build(root: Folder, map: ForestMaps.Map, seed: number)
 	local rng = Random.new(seed + map.chapter * 104729)
@@ -627,6 +804,7 @@ function V2.build(root: Folder, map: ForestMaps.Map, seed: number)
 	guide(root, map)
 	bridge(root, map)
 	camp(root, map)
+	lakeProps(root, map)
 	if map.biome == "mist" then
 		leaves(root, map, rng)
 		crows(root, map, rng)
