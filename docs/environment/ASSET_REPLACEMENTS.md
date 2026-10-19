@@ -1,5 +1,7 @@
 # Substituições e acabamentos por lote
 
+Etapa 3 Codex — colisões simples adicionadas à mobília decorativa, sem trocar modelos: [FURNITURE_COLLISION_REVIEW.md](FURNITURE_COLLISION_REVIEW.md).
+
 Atualização Codex — escala e composição aplicadas no tungtung: [FURNITURE_SCALE_REVIEW.md](FURNITURE_SCALE_REVIEW.md). Sem novos assets nesta etapa; colisões e substituição dos modelos aguardam avaliação humana.
 
 Cada lote lista o que mudou, onde está o código e o que ficou intocado.

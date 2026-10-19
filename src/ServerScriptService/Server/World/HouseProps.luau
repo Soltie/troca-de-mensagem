@@ -2,7 +2,8 @@
 --[[
 	Móveis e luminárias com modelos 3D (ReplicatedStorage.Assets.MansionProps, Poly Haven CC0,
 	otimizados no Blender; fontes em docs/environment/ASSET_SOURCES.md).
-	Só visual: MeshParts ancoradas, sem colisão, sem raycast, sem toque. As luzes ficam em peças
+	Malhas visuais ancoradas, sem colisão, sem raycast, sem toque; móveis sólidos usam uma caixa simples.
+	As luzes ficam em peças
 	invisíveis com Build.light, para o WorldFxController controlar sombra e visibilidade.
 	Sem a biblioteca (place de Script Sync sem o .rbxm), nada é criado e o jogo segue igual.
 ]]
@@ -23,6 +24,33 @@ local FURNITURE = 0.85
 -- Peças que cobrem colisões antigas (cama, mesa baixa, guarda-roupa do esconderijo) e tapetes mantêm o tamanho
 -- de antes (fator 1,25), senão a parede invisível antiga aparece para fora do modelo.
 local KEEP = 1.25 / FURNITURE
+
+-- Só mobília decorativa. Camas, mesa baixa e esconderijos conservam os volumes funcionais antigos.
+local SOLID: { [string]: boolean } = {
+	Sofa = true,
+	Armchair = true,
+	GothicChair = true,
+	RockingChair = true,
+	RoundTable = true,
+	Bookshelf = true,
+	Cabinet = true,
+	PaintedCabinet = true,
+	Console = true,
+	KitchenCounter = true,
+	WoodStove = true,
+	Icebox = true,
+	Bathtub = true,
+	PedestalSink = true,
+	Fireplace = true,
+	GrandfatherClock = true,
+	Boiler = true,
+	Crate = true,
+	Barrel = true,
+	TreasureChest = true,
+	SeaChest = true,
+	DayBed = true,
+	Nightstand = true,
+}
 
 -- floor: centro da base; back: meio da aresta de trás da base (móvel encostado na parede);
 -- wall: centro da face de trás; ceiling: centro do topo.
@@ -70,6 +98,22 @@ function Props.place(
 		if part:IsA("BasePart") then
 			part.Anchored, part.CanCollide, part.CanQuery, part.CanTouch = true, false, false, false
 		end
+	end
+	if SOLID[name] then
+		local frame, bounds = model:GetBoundingBox()
+		-- Recuo de 0,1 stud nas laterais: a caixa não ultrapassa o acabamento visível.
+		local collider = Build.part(
+			model,
+			"FurnitureCollider",
+			V3(math.max(0.2, bounds.X - 0.2), bounds.Y, math.max(0.2, bounds.Z - 0.2)),
+			frame,
+			rgb(0, 0, 0),
+			{ transparency = 1, collide = true, query = true }
+		)
+		-- CanQuery=false não exclui peças sólidas das consultas do engine. A caixa acompanha o móvel real;
+		-- os testes verificam que não intercepta os pontos de missão, entradas e saídas dos esconderijos.
+		collider.CanTouch, collider.CastShadow = false, false
+		collider:SetAttribute("VisualFurnitureCollider", true)
 	end
 	model.Parent = parent
 	return model

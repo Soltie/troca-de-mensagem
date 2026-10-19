@@ -1,0 +1,16 @@
+{
+  "placeId": 82955516040017,
+  "localTests": 302,
+  "studioTests": 351,
+  "changedScripts": [
+    "ServerScriptService.Server.World.HouseProps",
+    "ServerScriptService.Tests.Specs.HousePropCollision"
+  ],
+  "runtime": {
+    "warnings": [],
+    "invalid": 0,
+    "collidingMeshes": 0,
+    "colliders": 137
+  },
+  "published": false
+}
