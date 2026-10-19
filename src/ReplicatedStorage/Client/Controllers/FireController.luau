@@ -394,6 +394,13 @@ local function debris(visual: Visual)
 	trail.Enabled = true
 	plank.Parent = container
 	debrisCount += 1
+	-- Baque de madeira quando o pedaço bate no chão.
+	task.delay(0.75, function()
+		local camera = workspace.CurrentCamera
+		if plank.Parent and camera and (camera.CFrame.Position - plank.Position).Magnitude < 40 then
+			AudioController.playAtPosition("StepWood", plank.Position, 1.2, rng:NextNumber(0.6, 0.9))
+		end
+	end)
 	task.delay(2.5, function()
 		if plank.Parent then
 			plank.Anchored = true
@@ -459,6 +466,7 @@ end
 local crumbled: { [BasePart]: { transparency: number, collide: boolean } } = {}
 local crumbleCount = 0
 local crumblePool: { BasePart }? = nil
+local mainQueued, basementQueued, wasBelow = false, false, false
 local nextCrumbleAt = 0
 local nextRumbleAt = 0
 local CRUMBLE_FROM = { Architecture = true, Finish = true, Furnishings = true, Dressing = true, PrimitiveFinish = true }
@@ -474,32 +482,145 @@ local function solid(part: BasePart): boolean
 	return part:GetAttribute(Tags.Attr.InteractId) ~= nil
 end
 
--- A casa desmorona: forro, vigas, molduras e lustres acima de um foco aceso despencam e ficam queimando no chão.
-local function crumble(visual: Visual): boolean
-	local root = world()
+-- Uma peça da casa despenca (só neste cliente): a original some (sem colisão) e uma cópia chamuscada cai, bate no
+-- chão com som e fica queimando. `floorY` fixa onde ela para; `flat` deita a peça (portas); `quiet` só faz o baque.
+type FallOptions = { floorY: number?, delay: number?, flat: boolean?, quiet: boolean?, burn: boolean? }
+local function fallPiece(piece: BasePart, options: FallOptions)
 	local container = folder
-	if not root or not container then
-		return false
+	if not container or crumbled[piece] then
+		return
 	end
-	local node = visual.node
-	-- Peças altas da casa (lista montada uma vez por incêndio: a maioria não responde a consultas de física).
-	if not crumblePool then
-		local pool: { BasePart } = {}
+	crumbled[piece] = { transparency = piece.Transparency, collide = piece.CanCollide }
+	local copy = piece:Clone()
+	for _, child in copy:GetChildren() do
+		if child:IsA("Light") or child:IsA("Sound") or child:IsA("ProximityPrompt") or child:IsA("SurfaceGui") then
+			child:Destroy()
+		end
+	end
+	copy.Anchored, copy.CanCollide, copy.CanQuery, copy.CanTouch = true, false, false, false
+	copy.Color = copy.Color:Lerp(CHAR, 0.55)
+	copy.Parent = container
+	piece.Transparency, piece.CanCollide = 1, false
+	crumbleCount += 1
+
+	local from = piece.CFrame
+	local floorY = options.floorY
+	if not floorY then
+		local rays = RaycastParams.new()
+		rays.FilterType = Enum.RaycastFilterType.Exclude
+		rays.FilterDescendantsInstances = { container, piece, player.Character :: Instance }
+		local hit = workspace:Raycast(from.Position, Vector3.new(0, -24, 0), rays)
+		floorY = if hit then hit.Position.Y else from.Position.Y - 10
+	end
+	local low = math.min(piece.Size.X, piece.Size.Y, piece.Size.Z)
+	local to: CFrame
+	if options.flat then
+		-- Porta tomba de cara no chão, para a frente ou para trás.
+		local side = if rng:NextNumber() < 0.5 then -1 else 1
+		to = CFrame.new(from.Position.X, (floorY :: number) + low / 2 + 0.05, from.Position.Z)
+			* from.Rotation
+			* CFrame.new(0, 0, side * piece.Size.Y / 2)
+			* CFrame.Angles(side * math.rad(88), 0, rng:NextNumber(-0.1, 0.1))
+	else
+		to = CFrame.new(
+			from.Position.X + rng:NextNumber(-1, 1),
+			(floorY :: number) + low / 2 + 0.05,
+			from.Position.Z + rng:NextNumber(-1, 1)
+		) * from.Rotation * CFrame.Angles(
+			rng:NextNumber(-0.5, 0.5),
+			rng:NextNumber(-0.4, 0.4),
+			rng:NextNumber(-0.5, 0.5)
+		)
+	end
+	local height = math.max(from.Position.Y - to.Position.Y, 1)
+	local duration = if options.flat then 0.7 else math.clamp(math.sqrt(height / 40), 0.35, 0.8)
+	local dust = emitter(copy, SMOKE)
+	dust.Color = ColorSequence.new(Color3.fromRGB(90, 80, 72))
+	dust.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(1, 4) })
+	dust.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.5), NumberSequenceKeypoint.new(1, 1) })
+	dust.Lifetime = NumberRange.new(1, 2)
+	dust.Speed = NumberRange.new(1, 3)
+	dust.Rate = 0
+	dust.Enabled = true
+	task.spawn(function()
+		task.wait(options.delay or 0)
+		if not copy.Parent then
+			return
+		end
+		if not options.quiet then
+			AudioController.playAtPosition("BeamCrack", from.Position, 1.1, rng:NextNumber(0.8, 1.05))
+		end
+		dust.Rate = 25
+		task.wait(0.3)
+		local t0 = os.clock()
+		while copy.Parent do
+			local a = math.clamp((os.clock() - t0) / duration, 0, 1)
+			copy.CFrame = from:Lerp(to, a * a)
+			if a >= 1 then
+				break
+			end
+			RunService.RenderStepped:Wait()
+		end
+		if not copy.Parent then
+			return
+		end
+		dust.Rate = 0
+		AudioController.playAtPosition(
+			if options.flat then "DoorBang" else "Fall_box",
+			to.Position,
+			if options.quiet then 0.7 else 1.3,
+			rng:NextNumber(0.6, 0.85)
+		)
+		local camera = workspace.CurrentCamera
+		if camera then
+			local distance = (camera.CFrame.Position - to.Position).Magnitude
+			if distance < 30 then
+				CameraController.addTrauma((if options.quiet then 0.25 else 0.6) * (1 - distance / 30) + 0.05)
+			end
+		end
+		if options.burn ~= false then
+			local fire = Instance.new("Fire")
+			fire.Color = Color3.fromRGB(255, 118, 36)
+			fire.SecondaryColor = Color3.fromRGB(255, 210, 100)
+			fire.Heat = 8
+			fire.Size = math.clamp(math.max(copy.Size.X, copy.Size.Z) * 0.5, 2, 8)
+			fire.Parent = copy
+		end
+	end)
+end
+
+-- Peças da casa por pasta (lista montada uma vez por incêndio: a maioria não responde a consultas de física).
+local function pool(): { BasePart }
+	if crumblePool then
+		return crumblePool
+	end
+	local list: { BasePart } = {}
+	local root = world()
+	if root then
 		for name in CRUMBLE_FROM do
 			local source = root:FindFirstChild(name :: string)
 			if source then
 				for _, part in source:GetDescendants() do
 					if part:IsA("BasePart") then
-						table.insert(pool, part)
+						table.insert(list, part)
 					end
 				end
 			end
 		end
-		crumblePool = pool
 	end
+	crumblePool = list
+	return list
+end
+
+-- A casa desmorona: forro, vigas, molduras e lustres acima de um foco aceso despencam e ficam queimando no chão.
+local function crumble(visual: Visual): boolean
+	if not folder or crumbleCount >= 260 then
+		return false
+	end
+	local node = visual.node
 	local center = Vector3.new(node.x, node.y + 12, node.z)
 	local candidates: { BasePart } = {}
-	for _, part in crumblePool :: { BasePart } do
+	for _, part in pool() do
 		local size = part.Size
 		if
 			part.Parent
@@ -517,76 +638,84 @@ local function crumble(visual: Visual): boolean
 	if #candidates == 0 then
 		return false
 	end
-	local piece = candidates[rng:NextInteger(1, #candidates)]
-	crumbled[piece] = { transparency = piece.Transparency, collide = piece.CanCollide }
-	local copy = piece:Clone()
-	for _, child in copy:GetChildren() do
-		if child:IsA("Light") or child:IsA("Sound") or child:IsA("ProximityPrompt") then
-			child:Destroy()
+	-- Uma peça e às vezes mais uma ou duas em seguida.
+	for index = 1, math.min(#candidates, rng:NextInteger(1, 3)) do
+		local piece = table.remove(candidates, rng:NextInteger(1, #candidates)) :: BasePart
+		fallPiece(piece, { delay = (index - 1) * rng:NextNumber(0.3, 0.8), quiet = index > 1 })
+	end
+	return true
+end
+
+-- Escada inteira desabando: degraus, corrimão e balaústres caem de cima para baixo com estrondo.
+local stairsDown: { [string]: boolean } = {}
+local function collapseStairs(name: string, x: number, y0: number, y1: number)
+	if stairsDown[name] or not folder then
+		return
+	end
+	stairsDown[name] = true
+	local pieces: { BasePart } = {}
+	for _, part in pool() do
+		local p = part.Position
+		if
+			part.Parent
+			and not crumbled[part]
+			and part.Transparency < 0.9
+			and part.Name ~= "StairDeck"
+			and math.abs(p.X - x) < 7.5
+			and p.Z > 19
+			and p.Z < 57
+			and p.Y > y0 - 0.5
+			and p.Y < y1 + 1.5
+		then
+			table.insert(pieces, part)
 		end
 	end
-	copy.Anchored, copy.CanCollide, copy.CanQuery, copy.CanTouch = true, false, false, false
-	copy.Color = copy.Color:Lerp(CHAR, 0.6)
-	copy.Parent = container
-	piece.Transparency, piece.CanCollide = 1, false
-	crumbleCount += 1
-
-	local rays = RaycastParams.new()
-	rays.FilterType = Enum.RaycastFilterType.Exclude
-	rays.FilterDescendantsInstances = { container, piece, player.Character :: Instance }
-	local from = piece.CFrame
-	local hit = workspace:Raycast(from.Position, Vector3.new(0, -20, 0), rays)
-	local floorY = if hit then hit.Position.Y else node.y
-	local low = math.min(piece.Size.X, piece.Size.Y, piece.Size.Z)
-	local to = CFrame.new(
-		from.Position.X + rng:NextNumber(-1, 1),
-		floorY + low / 2 + 0.05,
-		from.Position.Z + rng:NextNumber(-1, 1)
-	) * from.Rotation * CFrame.Angles(rng:NextNumber(-0.5, 0.5), rng:NextNumber(-0.4, 0.4), rng:NextNumber(-0.5, 0.5))
-	local height = math.max(from.Position.Y - to.Position.Y, 1)
-	local duration = math.clamp(math.sqrt(height / 40), 0.35, 0.8)
-	AudioController.playAtPosition("BeamCrack", from.Position, 1.1, rng:NextNumber(0.8, 1))
-	-- Poeira e brasas soltando do teto antes de cair.
-	local dust = emitter(copy, SMOKE)
-	dust.Color = ColorSequence.new(Color3.fromRGB(90, 80, 72))
-	dust.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(1, 4) })
-	dust.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.5), NumberSequenceKeypoint.new(1, 1) })
-	dust.Lifetime = NumberRange.new(1, 2)
-	dust.Speed = NumberRange.new(1, 3)
-	dust.Rate = 25
-	dust.Enabled = true
-	task.spawn(function()
-		task.wait(0.35)
-		local t0 = os.clock()
-		while copy.Parent do
-			local a = math.clamp((os.clock() - t0) / duration, 0, 1)
-			copy.CFrame = from:Lerp(to, a * a)
-			if a >= 1 then
-				break
-			end
-			RunService.RenderStepped:Wait()
-		end
-		if not copy.Parent then
-			return
-		end
-		dust.Rate = 0
-		AudioController.playAtPosition("Fall_box", to.Position, 1.3, rng:NextNumber(0.6, 0.8))
-		local camera = workspace.CurrentCamera
-		if camera then
-			local distance = (camera.CFrame.Position - to.Position).Magnitude
-			if distance < 30 then
-				CameraController.addTrauma(0.6 * (1 - distance / 30) + 0.1)
-			end
-		end
-		-- Destroço queimando no chão.
-		local fire = Instance.new("Fire")
-		fire.Color = Color3.fromRGB(255, 118, 36)
-		fire.SecondaryColor = Color3.fromRGB(255, 210, 100)
-		fire.Heat = 8
-		fire.Size = math.clamp(math.max(copy.Size.X, copy.Size.Z) * 0.5, 2, 8)
-		fire.Parent = copy
+	table.sort(pieces, function(a, b)
+		return a.Position.Y > b.Position.Y
 	end)
-	return true
+	local center = Vector3.new(x, (y0 + y1) / 2, 38)
+	AudioController.playAtPosition("BeamCrack", center, 1.6, 0.7)
+	AudioController.playAtPosition("WoodSplinter", center, 1.4, 0.8)
+	AudioController.play("AmbThunder", 1.5, 0.5)
+	CameraController.addTrauma(0.5)
+	for index, piece in pieces do
+		fallPiece(piece, {
+			floorY = y0,
+			delay = 0.15 + index * 0.035 + rng:NextNumber(0, 0.25),
+			quiet = index % 6 ~= 1,
+			burn = index % 3 == 1,
+		})
+	end
+	task.delay(0.9, function()
+		AudioController.playAtPosition("Fall_box", center, 1.6, 0.55)
+		AudioController.playAtPosition("BeamCrack", center, 1.3, 0.6)
+		CameraController.addTrauma(0.55)
+	end)
+end
+
+-- Portas dos cômodos perto do fogo despencam do batente (o vão fica livre, nunca prende ninguém).
+local function collapseDoors(visual: Visual)
+	local root = world()
+	local doors = root and root:FindFirstChild("Doors")
+	if not doors then
+		return
+	end
+	local node = visual.node
+	local center = Vector3.new(node.x, node.y + 5, node.z)
+	for _, door in doors:GetChildren() do
+		if not door:IsA("BasePart") or (door.Position - center).Magnitude > 12 or crumbled[door] then
+			continue
+		end
+		crumbled[door] = { transparency = door.Transparency, collide = door.CanCollide }
+		door.CanCollide = false
+		local delay = rng:NextNumber(0.5, 2.5)
+		for _, leaf in door:GetChildren() do
+			if leaf:IsA("BasePart") then
+				fallPiece(leaf, { floorY = node.y, delay = delay, flat = true })
+				delay += rng:NextNumber(0.2, 0.6)
+			end
+		end
+	end
 end
 
 local function restoreCrumble()
@@ -596,6 +725,8 @@ local function restoreCrumble()
 		end
 	end
 	table.clear(crumbled)
+	table.clear(stairsDown)
+	mainQueued, basementQueued, wasBelow = false, false, false
 	crumbleCount = 0
 	crumblePool = nil
 end
@@ -789,6 +920,11 @@ local function update(dt: number)
 			if node.kind == "gas" then
 				gasFlare(visual)
 			end
+			-- Tudo desmorona atrás do fogo: o que está em cima do foco e as portas perto caem pouco depois.
+			if node.kind ~= "facade" and (visual.anchor.Position - eye).Magnitude < 90 then
+				task.delay(rng:NextNumber(2.5, 7), crumble, visual)
+				task.delay(rng:NextNumber(1.5, 4), collapseDoors, visual)
+			end
 		end
 		local distance = (visual.anchor.Position - eye).Magnitude
 		if node.kind ~= "facade" then
@@ -895,6 +1031,26 @@ local function update(dt: number)
 	local character = player.Character
 	local body = character and character:FindFirstChild("HumanoidRootPart")
 	local status = player:GetAttribute("CampaignStatus")
+	-- Escadas: a principal (e a do sótão) desabam quando você chega no hall ou o hall pega fogo perto de você;
+	-- a do porão cai atrás de você depois que você saiu dela (o caminho de volta some).
+	if body and body:IsA("BasePart") and t >= FireSpread.HeadStart then
+		local p = body.Position
+		if p.Y < -8 then
+			wasBelow = true
+		end
+		local inHall = p.Y > -2 and p.Y < 12 and p.Z > 12 and p.Z < 63
+		local hallBurning = t >= FireSpread.frontTime(170) - FireSpread.HallLead
+			and (eye - Vector3.new(16, 8, 38)).Magnitude < 70
+		if not mainQueued and (inHall or hallBurning) then
+			mainQueued = true
+			task.delay(1.2, collapseStairs, "MainStairs", 16, 0, 16)
+			task.delay(4, collapseStairs, "AtticStairs", 32, 16, 32)
+		end
+		if not basementQueued and wasBelow and p.Y > -1 and (math.abs(p.X + 16) > 8 or p.Z > 57) then
+			basementQueued = true
+			task.delay(1.5, collapseStairs, "BasementStairs", -16, -16, 0)
+		end
+	end
 	if character and body and body:IsA("BasePart") and status == "Active" and body.Position.Z < 62 then
 		if t >= nextCollapseAt then
 			nextCollapseAt = t + rng:NextNumber(8, 13)
