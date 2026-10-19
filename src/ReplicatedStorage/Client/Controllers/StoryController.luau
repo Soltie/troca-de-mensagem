@@ -45,8 +45,8 @@ function Controller.Start()
 	-- Objetivo unificado no CampaignUi; aqui ficam somente gravações e cenas.
 	-- Mesmo estilo da dica do armário (NoirHud): só o texto no rodapé, sem faixa escura.
 	revelation.AnchorPoint = Vector2.new(0.5, 1)
-	revelation.Position = UDim2.new(0.5, 0, 1, -76)
-	revelation.Size = UDim2.new(0.7, 0, 0, 52)
+	revelation.Position = UDim2.new(0.5, 0, 1, -160)
+	revelation.Size = UDim2.new(0.62, 0, 0, 56)
 	revelation.BackgroundTransparency = 1
 	revelation.FontFace = Noir.SansLight
 	revelation.TextSize = 21

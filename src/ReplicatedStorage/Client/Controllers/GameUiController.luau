@@ -87,7 +87,7 @@ local BOTTOM_FONT = Font.new("rbxasset://fonts/families/Montserrat.json", Enum.F
 local function bottomText(target: TextLabel, y: number)
 	target.AnchorPoint = Vector2.new(0.5, 1)
 	target.Position = UDim2.new(0.5, 0, 1, y)
-	target.Size = UDim2.new(0.9, 0, 0, 56)
+	target.Size = UDim2.new(0.62, 0, 0, 56)
 	target.BackgroundTransparency = 1
 	target.BorderSizePixel = 0
 	target.FontFace = BOTTOM_FONT
@@ -192,7 +192,7 @@ local function build(): Refs
 		Parent = gui,
 	})
 	-- Só o texto branco no rodapé (sem caixa nem moldura), no estilo do NoirHud.
-	bottomText(prompt, -118)
+	bottomText(prompt, -100)
 
 	-- Objetivo (canto superior esquerdo)
 	local objectivePanel = frame({
@@ -256,7 +256,7 @@ local function build(): Refs
 	local caption = label({
 		Name = "Caption",
 		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, -150),
+		Position = UDim2.new(0.5, 0, 1, -210),
 		Size = UDim2.new(0.86, 0, 0, 48),
 		Text = "",
 		TextSize = Theme.SizeBody,
@@ -767,10 +767,10 @@ local function showCaption(text: string, duration: number?)
 	task.spawn(function()
 		ui.caption.Visible = true
 		ui.caption.Text = text
-		ui.caption.Position = UDim2.new(0.5, 0, 1, -150)
+		ui.caption.Position = UDim2.new(0.5, 0, 1, -210)
 		if SettingsController.motionEnabled() then
 			ui.caption.Position += UDim2.fromOffset(0, 8)
-			TweenService:Create(ui.caption, TweenInfo.new(0.16), { Position = UDim2.new(0.5, 0, 1, -150) }):Play()
+			TweenService:Create(ui.caption, TweenInfo.new(0.16), { Position = UDim2.new(0.5, 0, 1, -210) }):Play()
 		end
 		ui.caption.TextTransparency = 0.5
 		task.wait(STEP)
@@ -877,7 +877,7 @@ function GameUiController.Init()
 			ui.prompt.TextSize = 18
 		end
 	end)
-	bottomText(ui.caption, -150)
+	bottomText(ui.caption, -210)
 	local function visibility()
 		(shared :: ScreenGui).Enabled = player:GetAttribute("CinematicActive") ~= true
 			and player:GetAttribute("ComfortMenuOpen") ~= true

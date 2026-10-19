@@ -387,7 +387,8 @@ function Noir.build(parent: Instance, touch: boolean): Ui
 	-- Objetivo atual, sutil, no canto superior esquerdo.
 	local corner = Create("Frame", {
 		Name = "Objective",
-		Position = UDim2.fromOffset(28, if touch then 64 else 24),
+		-- Abaixo do botão do Roblox (canto superior esquerdo do jogo publicado).
+		Position = UDim2.fromOffset(28, if touch then 70 else 64),
 		Size = UDim2.fromOffset(420, 52),
 		BackgroundTransparency = 1,
 		Parent = gui,
@@ -593,8 +594,8 @@ function Noir.build(parent: Instance, touch: boolean): Ui
 	-- Dica curta no rodapé (ex.: dentro do armário).
 	local hint = text(gui, "Hint", 21, Noir.Paper, {
 		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, if touch then -170 else -34),
-		Size = UDim2.fromOffset(if touch then 360 else 980, 48),
+		Position = UDim2.new(0.5, 0, 1, if touch then -170 else -100),
+		Size = UDim2.new(if touch then 0.9 else 0.62, 0, 0, 56),
 		FontFace = Noir.SansLight,
 		TextXAlignment = Enum.TextXAlignment.Center,
 		TextYAlignment = Enum.TextYAlignment.Bottom,
