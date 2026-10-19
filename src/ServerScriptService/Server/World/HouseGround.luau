@@ -223,6 +223,9 @@ end
 	e otimiza os tufos (somem sozinhos em qualidade gráfica baixa). Caminhos e pisos viram terreno do material certo.
 ]]
 local TOP = 0.1
+-- Chão de terreno do gramado sem a grama decorativa automática do Roblox (só existe no material Grass, lâminas
+-- largas e chapadas que o humano achou feias). O mato fica por conta do GrassField.
+local SOD = Enum.Material.LeafyGrass
 local DEPTH = 4
 
 local function fill(t: Terrain, x0: number, x1: number, z0: number, z1: number, material: Enum.Material)
@@ -231,7 +234,7 @@ end
 
 local function terrainColors(t: Terrain)
 	t:SetMaterialColor(Enum.Material.Grass, rgb(84, 110, 62))
-	t:SetMaterialColor(Enum.Material.LeafyGrass, rgb(70, 96, 54))
+	t:SetMaterialColor(Enum.Material.LeafyGrass, rgb(46, 58, 36))
 	t:SetMaterialColor(Enum.Material.Ground, rgb(96, 78, 58))
 	t:SetMaterialColor(Enum.Material.Sand, rgb(150, 132, 104))
 	t:SetMaterialColor(Enum.Material.Cobblestone, rgb(112, 108, 100))
@@ -243,11 +246,11 @@ local function lawnTerrain()
 	terrainColors(t)
 	local far = 200
 	-- Tudo fora da casa (com 1 stud de folga das paredes, para o terreno nunca vazar para o porão).
-	fill(t, -far, far, 65.5, far, Enum.Material.Grass)
-	fill(t, -far, far, -far, -86.5, Enum.Material.Grass)
-	fill(t, -far, -45.5, -86.5, 65.5, Enum.Material.Grass)
-	fill(t, 46.5, far, -86.5, 65.5, Enum.Material.Grass)
-	fill(t, -45.5, -25.5, 13.5, 65.5, Enum.Material.Grass)
+	fill(t, -far, far, 65.5, far, SOD)
+	fill(t, -far, far, -far, -86.5, SOD)
+	fill(t, -far, -45.5, -86.5, 65.5, SOD)
+	fill(t, 46.5, far, -86.5, 65.5, SOD)
+	fill(t, -45.5, -25.5, 13.5, 65.5, SOD)
 	-- Manchas de grama mais escura e folhosa quebram a repetição do gramado.
 	local rng = Random.new(SEED + 7)
 	for _ = 1, 26 do
@@ -279,13 +282,13 @@ local function forestTerrain(trails: { BasePart })
 	-- A área jogável e uma folga cobertas pela névoa; além disso o chão de peças continua.
 	if not forestPainted then
 		forestPainted = true
-		t:FillBlock(CFrame.new(0, TOP - DEPTH / 2, 720), V3(420, DEPTH, 440), Enum.Material.Grass)
+		t:FillBlock(CFrame.new(0, TOP - DEPTH / 2, 720), V3(420, DEPTH, 440), SOD)
 	else
 		t:ReplaceMaterial(
 			Region3.new(V3(-210, TOP - DEPTH, 500), V3(210, TOP, 940)):ExpandToGrid(4),
 			4,
 			Enum.Material.Sand,
-			Enum.Material.Grass
+			SOD
 		)
 	end
 	for _, trail in trails do

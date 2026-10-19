@@ -228,7 +228,64 @@ local function fieldOfView(dt: number, motion: CharacterController.Motion): numb
 	return math.clamp(fov, 40, 95)
 end
 
-local function updateHidden(camera: Camera)
+--[[
+	Guarda-roupa de duas portas: escondido, a câmera fica atrás das portas fechadas (só o escuro e o vão entre as
+	folhas). Espiando (Espaço), a câmera chega perto do vão e as folhas abrem um pouco só no cliente. Esconderijos
+	sem guarda-roupa (cama, baú) mantêm o olhar antigo.
+]]
+type PeekLeaf = { part: BasePart, rest: CFrame, hinge: Vector3, sign: number }
+local peekTarget = 0
+local peekAmount = 0
+local peekLeaves: { PeekLeaf }? = nil
+local PEEK_BACK_CLOSED = 1.5
+local PEEK_BACK_OPEN = 0.9
+local PEEK_ANGLE = math.rad(13)
+
+local function findWardrobe(eye: CFrame): { PeekLeaf }?
+	local best: Model? = nil
+	local bestDistance = 3
+	for _, model in workspace:GetDescendants() do
+		if model:IsA("Model") and model.Name == "WardrobeDouble" then
+			local distance = (model:GetPivot().Position - eye.Position) * Vector3.new(1, 0, 1)
+			if distance.Magnitude < bestDistance then
+				best, bestDistance = model, distance.Magnitude
+			end
+		end
+	end
+	if not best then
+		return nil
+	end
+	local center = best:GetPivot().Position
+	local out = eye.LookVector
+	local leaves: { PeekLeaf } = {}
+	for _, name in { "LeafA", "LeafB" } do
+		local part = best:FindFirstChild(name)
+		if part and part:IsA("BasePart") then
+			-- Dobradiça na borda da folha mais longe do centro do guarda-roupa.
+			local half = part.CFrame.RightVector * part.Size.X / 2
+			local a, b = part.Position + half, part.Position - half
+			local hinge = if (a - center).Magnitude > (b - center).Magnitude then a else b
+			-- Sentido do giro que leva a folha para fora (para onde o olhar aponta).
+			local probe = CFrame.new(hinge) * CFrame.Angles(0, 0.2, 0) * CFrame.new(part.Position - hinge)
+			local sign = if (probe.Position - part.Position):Dot(out) > 0 then 1 else -1
+			table.insert(leaves, { part = part, rest = part.CFrame, hinge = hinge, sign = sign })
+		end
+	end
+	return if #leaves > 0 then leaves else nil
+end
+
+local function poseLeaves(amount: number)
+	local leaves = peekLeaves
+	if not leaves then
+		return
+	end
+	for _, leaf in leaves do
+		local turn = CFrame.Angles(0, leaf.sign * PEEK_ANGLE * amount, 0)
+		leaf.part.CFrame = CFrame.new(leaf.hinge) * turn * (CFrame.new(-leaf.hinge) * leaf.rest)
+	end
+end
+
+local function updateHidden(camera: Camera, dt: number)
 	local origin = hiddenOrigin
 	if not origin then
 		return
@@ -236,8 +293,13 @@ local function updateHidden(camera: Camera)
 	local delta = UserInputService:GetMouseDelta()
 	hiddenYaw = math.clamp(hiddenYaw - delta.X * 0.004, math.rad(-32), math.rad(32))
 	hiddenPitch = math.clamp(hiddenPitch - delta.Y * 0.004, math.rad(-18), math.rad(14))
+	-- Mola curta: abre em ~0,25 s e fecha em ~0,2 s, sem depender do FPS.
+	dt = math.min(dt, 1 / 15)
+	peekAmount += (peekTarget - peekAmount) * (1 - math.exp(-14 * dt))
+	poseLeaves(peekAmount)
+	local back = if peekLeaves then PEEK_BACK_CLOSED + (PEEK_BACK_OPEN - PEEK_BACK_CLOSED) * peekAmount else 0
 	camera.CameraType = Enum.CameraType.Scriptable
-	camera.CFrame = origin * CFrame.Angles(0, hiddenYaw, 0) * CFrame.Angles(hiddenPitch, 0, 0)
+	camera.CFrame = origin * CFrame.new(0, 0, back) * CFrame.Angles(0, hiddenYaw, 0) * CFrame.Angles(hiddenPitch, 0, 0)
 end
 
 local function updateCapture(camera: Camera, now: number, dt: number)
@@ -304,7 +366,7 @@ local function apply(dt: number)
 		end
 		return
 	elseif mode == "hidden" then
-		updateHidden(camera)
+		updateHidden(camera, dt)
 		camera.FieldOfView = fieldOfView(dt, motion)
 		return
 	elseif mode == "capture" then
@@ -391,6 +453,11 @@ function CameraController.land(intensity: number)
 	CameraController.addTrauma(0.25 * intensity)
 end
 
+-- Espiar pela fresta (InteractionController): abre as folhas um pouco e aproxima o olhar do vão.
+function CameraController.setPeek(value: boolean)
+	peekTarget = if value then 1 else 0
+end
+
 -- Entra/sai do modo esconderijo. `eye` = posição e direção do olhar pela fresta.
 function CameraController.setHidden(eye: CFrame?)
 	local camera = workspace.CurrentCamera
@@ -399,8 +466,14 @@ function CameraController.setHidden(eye: CFrame?)
 		hiddenOrigin = eye
 		hiddenYaw = 0
 		hiddenPitch = 0
+		peekTarget, peekAmount = 0, 0
+		peekLeaves = findWardrobe(eye)
 		mode = "hidden"
 	elseif mode == "hidden" then
+		-- Devolve as folhas ao lugar (o servidor também gira na saída).
+		poseLeaves(0)
+		peekLeaves = nil
+		peekTarget, peekAmount = 0, 0
 		hiddenOrigin = nil
 		mode = "normal"
 		if camera then

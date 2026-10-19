@@ -30,6 +30,8 @@ local DEFINITIONS: { [string]: RemoteKind } = {
 	SetStance = "RemoteEvent",
 	-- Escondido: prender/soltar a respiração.
 	SetHoldBreath = "RemoteEvent",
+	-- Escondido: espiar pela fresta (segurar Espaço). Segurou demais = cai do armário (decide o servidor).
+	SetPeek = "RemoteEvent",
 	-- Cliente pede nova rodada nas telas finais: "full" (do zero) ou "checkpoint".
 	RequestRestart = "RemoteFunction",
 	-- Loja/progressão: (ação, argumento?). O servidor valida preço, posse, política e moeda.

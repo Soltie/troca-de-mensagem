@@ -48,6 +48,8 @@ type PlayerState = {
 	lastPosition: Vector3?,
 	lastValid: CFrame?,
 	gasps: number,
+	-- Escondido e espiando pela fresta desde (os.clock); nil = não está espiando.
+	peekSince: number?,
 }
 
 local P = Config.Player
@@ -56,6 +58,9 @@ local log = Logger.new("PlayerStateService")
 
 local states: { [Player]: PlayerState } = {}
 local noiseHandler: ((position: Vector3, radius: number) -> ())? = nil
+-- Expulsão do armário por falta de ar: quem liga (RoundService/campanha) libera o armário e abre a porta.
+local expelHandler: ((player: Player, lockerId: string) -> ())? = nil
+local leaveHide: (player: Player) -> () = function() end
 
 local function newState(): PlayerState
 	return {
@@ -74,6 +79,7 @@ local function newState(): PlayerState
 		lastPosition = nil,
 		lastValid = nil,
 		gasps = 0,
+		peekSince = nil,
 	}
 end
 
@@ -174,6 +180,16 @@ local function setFlashlight(player: Player, on: boolean)
 	publishLight(player, state)
 end
 
+-- Espiar pela fresta (só escondido). O relógio da queda fica no servidor (tick).
+local function setPeek(player: Player, peek: boolean)
+	local state = stateOf(player)
+	if peek and state.hidden and not state.peekSince then
+		state.peekSince = os.clock()
+	elseif not peek then
+		state.peekSince = nil
+	end
+	player:SetAttribute("Peeking", state.peekSince ~= nil)
+end
 local function setHoldBreath(player: Player, hold: boolean)
 	local state = stateOf(player)
 	local _, _, humanoid = parts(player)
@@ -259,6 +275,19 @@ local function tick()
 				humanoid.Health = 0
 			end
 		end
+		-- Espiando pela fresta tempo demais: escorrega, a porta abre e ele cai para fora fazendo barulho.
+		local hiddenIn = state.hidden
+		if active and hiddenIn and state.peekSince and now - state.peekSince >= Config.Hide.PeekMax then
+			state.peekSince = nil
+			if expelHandler then
+				expelHandler(player, hiddenIn)
+			end
+			leaveHide(player)
+			player:SetAttribute("HideFellAt", os.clock())
+			if root and noiseHandler then
+				noiseHandler(root.Position, Config.Hide.FallNoise)
+			end
+		end
 		player:SetAttribute("Oxygen", math.floor(state.oxygen.value))
 		player:SetAttribute("HoldBreath", state.oxygen.holding)
 		local creature = CreatureService and CreatureService.state()
@@ -310,6 +339,10 @@ function PlayerStateService.Start()
 		setStance(player, stance)
 	end)
 
+	ServerNet.onEvent("SetPeek", {
+		args = { Guard.boolean() },
+		rateLimit = { capacity = 8, refillPerSecond = 4 },
+	}, setPeek)
 	ServerNet.onEvent("SetHoldBreath", {
 		args = { Guard.boolean() },
 		rateLimit = { capacity = 8, refillPerSecond = 4 },
@@ -330,6 +363,10 @@ function PlayerStateService.Start()
 	end)
 end
 
+-- Ligação da expulsão do armário (ver tick): libera o armário e balança a porta.
+function PlayerStateService.setExpelHandler(handler: (player: Player, lockerId: string) -> ())
+	expelHandler = handler
+end
 -- Barulho do jogador (arquejo). O RoundService liga isto ao CreatureService.
 function PlayerStateService.setNoiseHandler(handler: (position: Vector3, radius: number) -> ())
 	noiseHandler = handler
@@ -427,6 +464,8 @@ function PlayerStateService.exitHide(player: Player): boolean
 	end
 	local exit = state.hideExit
 	state.hidden = nil
+	state.peekSince = nil
+	player:SetAttribute("Peeking", false)
 	state.hideExit = nil
 	state.lastExitAt = os.clock()
 	Oxygen.request(state.oxygen, false, os.clock())
@@ -441,6 +480,9 @@ function PlayerStateService.exitHide(player: Player): boolean
 	player:SetAttribute("HoldBreath", false)
 	PlayerStateService.markTeleported(player)
 	return true
+end
+leaveHide = function(player: Player)
+	PlayerStateService.exitHide(player)
 end
 
 function PlayerStateService.battery(player: Player): number

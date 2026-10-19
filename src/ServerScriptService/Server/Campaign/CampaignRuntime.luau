@@ -1061,6 +1061,16 @@ function Runtime.Start()
 
 	if playerAdapter then
 		playerAdapter.setNoiseHandler(CreatureService.makeNoise)
+		-- Sem ar no armário: libera o armário e a porta abre (o corpo cai para fora).
+		if playerAdapter.setExpelHandler then
+			playerAdapter.setExpelHandler(function(_player: Player, lockerId: string)
+				local locker = WorldService.locker(lockerId)
+				if locker then
+					locker.occupant = nil
+				end
+				WorldService.swingLocker(lockerId)
+			end)
+		end
 	end
 	ServerNet.onInvoke(
 		"UseHouseItem",

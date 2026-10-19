@@ -109,7 +109,7 @@ local House = {
 					"hide",
 					nil,
 					nil,
-					"E: sair. Espaço escondido ou Z/LB: segurar a respiração. Solte antes de zerar o oxigênio."
+					"E: sair. Z/LB: segurar a respiração. Solte antes de zerar o oxigênio. Espaço: espiar pela fresta (sem exagerar)."
 				),
 				objective(
 					"Library",

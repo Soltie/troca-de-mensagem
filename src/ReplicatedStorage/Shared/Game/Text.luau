@@ -49,7 +49,7 @@ local Text = {
 	},
 	-- Tecla da ação alternativa das portas.
 	AltKey = "[Q]",
-	HiddenHint = "[E] SAIR   ·   [ESPAÇO/Z/LB] PRENDER A RESPIRAÇÃO",
+	HiddenHint = "[E] SAIR   ·   [ESPAÇO] ESPIAR   ·   [Z/LB] PRENDER A RESPIRAÇÃO",
 	HoldingBreath = "PRENDENDO A RESPIRAÇÃO...",
 
 	-- Mensagens que o servidor devolve no Result (chave -> texto).
@@ -175,7 +175,7 @@ local Text = {
 		"C / CTRL - AGACHAR (ALTERNA / SEGURA)",
 		"F - LANTERNA (BATERIA NOS LEDS)",
 		"E - INTERAGIR   ·   Q - ENTREABRIR PORTA",
-		"ESPAÇO - PRENDER A RESPIRAÇÃO (ESCONDIDO)",
+		"Z - PRENDER A RESPIRAÇÃO · ESPAÇO - ESPIAR (ESCONDIDO)",
 		"TAB - INVENTÁRIO E OBJETIVO",
 		"O - OPÇÕES DE CONFORTO",
 		"H - FECHAR AJUDA",

@@ -214,6 +214,22 @@ function InteractionController.requestBreath(value: boolean)
 		holdBreath(value)
 	end
 end
+-- Espiar pela fresta (só escondido). A câmera abre as portas um pouco; o servidor conta o tempo da queda.
+local peekRequested = false
+function InteractionController.requestPeek(value: boolean)
+	local want = value and hiddenId() ~= nil and allowed()
+	if want == peekRequested then
+		return
+	end
+	peekRequested = want
+	CameraController.setPeek(want)
+	task.spawn(function()
+		local ok, remote = pcall(Remotes.clientEvent, "SetPeek", 5)
+		if ok then
+			remote:FireServer(want)
+		end
+	end)
+end
 function InteractionController.useSupply(item: string)
 	if allowed() then
 		task.spawn(function()
@@ -282,20 +298,17 @@ function InteractionController.Start()
 	end)
 	UserInputService.InputEnded:Connect(function(input)
 		if input.KeyCode == Enum.KeyCode.Space then
-			holdBreath(false)
+			InteractionController.requestPeek(false)
 		end
 	end)
 	UserInputService.WindowFocusReleased:Connect(function()
 		holdBreath(false)
 	end)
 
-	local function breathAction(_: string, state: Enum.UserInputState, input: InputObject)
+	local function breathAction(_: string, state: Enum.UserInputState, _input: InputObject)
 		if state == Enum.UserInputState.End or state == Enum.UserInputState.Cancel then
 			holdBreath(false)
 			return Enum.ContextActionResult.Sink
-		end
-		if input.KeyCode == Enum.KeyCode.Space and not hiddenId() then
-			return Enum.ContextActionResult.Pass
 		end
 		if state == Enum.UserInputState.Begin and allowed() and not UserInputService:GetFocusedTextBox() then
 			holdBreath(true)
@@ -307,9 +320,23 @@ function InteractionController.Start()
 		breathAction,
 		false,
 		(Enum.KeyCode :: any)[Config.House.BreathKey],
-		Enum.KeyCode.ButtonL1,
-		Enum.KeyCode.Space
+		Enum.KeyCode.ButtonL1
 	)
+	-- Espaço escondido = espiar pela fresta (fora do armário continua sendo o pulo).
+	local function peekAction(_: string, state: Enum.UserInputState, input: InputObject)
+		if state == Enum.UserInputState.End or state == Enum.UserInputState.Cancel then
+			InteractionController.requestPeek(false)
+			return Enum.ContextActionResult.Pass
+		end
+		if input.KeyCode == Enum.KeyCode.Space and not hiddenId() then
+			return Enum.ContextActionResult.Pass
+		end
+		if state == Enum.UserInputState.Begin and not UserInputService:GetFocusedTextBox() then
+			InteractionController.requestPeek(true)
+		end
+		return Enum.ContextActionResult.Sink
+	end
+	ContextActionService:BindAction("HousePeek", peekAction, false, Enum.KeyCode.Space, Enum.KeyCode.ButtonR1)
 	ContextActionService:BindAction("HouseInteract", function(_, state)
 		if state == Enum.UserInputState.Begin then
 			InteractionController.activate()
@@ -324,6 +351,7 @@ function InteractionController.Start()
 	end, false)
 	local function cancelBreath()
 		holdBreath(false)
+		InteractionController.requestPeek(false)
 	end
 	GuiService.MenuOpened:Connect(cancelBreath)
 	for _, attr in { "CampaignStatus", "CinematicActive", "FieldGuideOpen", "ComfortMenuOpen", "Hidden" } do

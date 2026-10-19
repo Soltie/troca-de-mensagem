@@ -51,7 +51,7 @@ function Guide.instruction(activity: Activity, now: number, activePlayers: numbe
 	elseif activity.kind == "hide" then
 		return "Entre no armário ou abrigo com E. Cabe só uma pessoa em cada esconderijo."
 	elseif activity.kind == "breath" then
-		return "No esconderijo, segure Espaço ou Z por 2 segundos. Solte antes de zerar o ar. E sai."
+		return "No esconderijo, segure Z por 2 segundos. Solte antes de zerar o ar. E sai."
 	elseif activity.kind == "puzzle" then
 		return `Aperte E nos símbolos na ordem da pista: {activity.progress}/{activity.required or 4}. Errou? Os acertos ficam salvos.`
 	elseif activity.kind == "activate" then

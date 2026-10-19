@@ -550,6 +550,13 @@ function RoundService.Init()
 		endRound(player, "Lost")
 	end)
 	PlayerStateService.setNoiseHandler(noise)
+	PlayerStateService.setExpelHandler(function(_player: Player, lockerId: string)
+		local locker = WorldService.locker(lockerId)
+		if locker then
+			locker.occupant = nil
+		end
+		WorldService.swingLocker(lockerId)
+	end)
 end
 
 function RoundService.Start()

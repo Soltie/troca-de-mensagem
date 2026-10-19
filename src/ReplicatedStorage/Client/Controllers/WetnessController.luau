@@ -27,7 +27,7 @@ type Body = {
 	character: Model,
 }
 local bodies: { [Player]: Body } = {}
-type Print = { part: BasePart, born: number, alpha: number }
+type Print = { part: BasePart, heel: BasePart, born: number, alpha: number }
 local prints: { Print } = {}
 local nextPrint = 1
 local folder: Folder? = nil
@@ -68,19 +68,28 @@ local function footprint(at: Vector3, facing: Vector3, alpha: number)
 	end
 	local slot = prints[nextPrint]
 	if not slot then
-		local part = Instance.new("Part")
-		part.Name = "WetFootprint"
-		part.Anchored, part.CanCollide, part.CanQuery, part.CanTouch = true, false, false, false
-		part.CastShadow = false
-		part.Material = Enum.Material.SmoothPlastic
-		part.Color = Color3.fromRGB(10, 6, 5)
-		part.Reflectance = 0.04
-		part.Size = Vector3.new(0.42, 0.02, 0.95)
-		local shape = Instance.new("SpecialMesh")
-		shape.MeshType = Enum.MeshType.Sphere
-		shape.Parent = part
-		part.Parent = parent
-		slot = { part = part, born = 0, alpha = 0 }
+		-- Sola de sapato: frente larga e calcanhar separados, como marca molhada escurecendo o piso.
+		local function piece(name: string, size: Vector3): BasePart
+			local part = Instance.new("Part")
+			part.Name = name
+			part.Anchored, part.CanCollide, part.CanQuery, part.CanTouch = true, false, false, false
+			part.CastShadow = false
+			part.Material = Enum.Material.SmoothPlastic
+			part.Color = Color3.fromRGB(10, 6, 5)
+			part.Reflectance = 0.03
+			part.Size = size
+			local shape = Instance.new("SpecialMesh")
+			shape.MeshType = Enum.MeshType.Sphere
+			shape.Parent = part
+			part.Parent = parent
+			return part
+		end
+		slot = {
+			part = piece("WetFootprint", Vector3.new(0.34, 0.02, 0.56)),
+			heel = piece("WetFootprintHeel", Vector3.new(0.26, 0.02, 0.28)),
+			born = 0,
+			alpha = 0,
+		}
 		prints[nextPrint] = slot
 	end
 	nextPrint = nextPrint % MAX_PRINTS + 1
@@ -88,9 +97,12 @@ local function footprint(at: Vector3, facing: Vector3, alpha: number)
 	local hit = workspace:Raycast(at + Vector3.new(0, 2, 0), Vector3.new(0, -4, 0), groundParams)
 	local floor = if hit then hit.Position else at
 	-- 0,085 acima do piso: passadeiras e tapetes (sem raycast) ficam até 0,07 acima dele.
-	slot.part.CFrame = CFrame.lookAt(floor, floor + facing) * CFrame.new(0, 0.085, 0)
+	local base = CFrame.lookAt(floor, floor + facing) * CFrame.new(0, 0.085, 0)
+	slot.part.CFrame = base * CFrame.new(0, 0, -0.2)
+	slot.heel.CFrame = base * CFrame.new(0, 0, 0.33)
 	slot.born, slot.alpha = os.clock(), alpha
-	slot.part.Transparency = 1 - 0.6 * alpha
+	slot.part.Transparency = 1 - 0.5 * alpha
+	slot.heel.Transparency = slot.part.Transparency
 end
 
 local function roofed(position: Vector3, params: RaycastParams): boolean
@@ -189,9 +201,11 @@ function controller.Start()
 		for _, slot in prints do
 			local age = now - slot.born
 			if age < PRINT_LIFE then
-				slot.part.Transparency = 1 - 0.6 * slot.alpha * (1 - age / PRINT_LIFE)
+				slot.part.Transparency = 1 - 0.5 * slot.alpha * (1 - age / PRINT_LIFE)
+				slot.heel.Transparency = slot.part.Transparency
 			elseif slot.part.Transparency < 1 then
 				slot.part.Transparency = 1
+				slot.heel.Transparency = 1
 			end
 		end
 	end)
