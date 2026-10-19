@@ -104,3 +104,6 @@ troca (0,475 s) ficou toda atrás da tela. Dicas rotativas das mecânicas novas.
 Encaixe (20/10/2026): sanidade só conta depois de pegar a lanterna e nunca durante a revista do armário; aviso de
 ameaça (tremor e "TUM") fica quieto durante a revista; o desabamento que pega alguém para ali e joga a pessoa para
 o lado livre (antes ficava presa atrás do entulho, junto do fogo, sem resgate).
+Polimento (20/10/2026): os 8 capítulos abrem sem erro e com a tela de loading saindo sozinha; na revista do
+armário a linha "[ESPAÇO] ver pela fresta / [E] sair" some (o Espaço vira a batida); dica da tela de loading com
+o rótulo "DICA".

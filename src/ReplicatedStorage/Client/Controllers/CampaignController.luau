@@ -612,8 +612,11 @@ function Controller.Start()
 		end
 		noir.work.Visible = forcing ~= nil and not panelOpen
 		noir.workFill.Size = UDim2.fromScale(forcing or 0, 1)
-		noir.hint.Text = (if UserInputService.TouchEnabled then Text.HiddenHintTouch else Text.HiddenHint)
-			.. (if player:GetAttribute("HoldBreath") == true then "\n" .. Text.HoldingBreath else "")
+		-- Revista do armário: o Espaço vira a batida do minijogo; a dica de espiar/sair sai de cena.
+		noir.hint.Text = if player:GetAttribute("BreathTestAt") ~= nil
+			then ""
+			else (if UserInputService.TouchEnabled then Text.HiddenHintTouch else Text.HiddenHint)
+				.. (if player:GetAttribute("HoldBreath") == true then "\n" .. Text.HoldingBreath else "")
 		noir.staminaFill.Size = UDim2.fromScale(breath, 1)
 		noir.air.Visible = status == "Active" and oxygen < 99.5 and not bagShown
 		noir.airFill.Size = UDim2.fromScale(oxygen / 100, 1)

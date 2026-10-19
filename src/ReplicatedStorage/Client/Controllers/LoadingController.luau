@@ -115,7 +115,7 @@ local function show()
 		stableFrames = 0
 		local label = tip
 		if label then
-			label.Text = TIPS[rng:NextInteger(1, #TIPS)]
+			label.Text = "DICA  ·  " .. TIPS[rng:NextInteger(1, #TIPS)]
 		end
 	end
 	showing = true
