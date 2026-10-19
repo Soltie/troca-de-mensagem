@@ -437,17 +437,197 @@ local function buildEdges()
 	edgeGui = gui
 end
 
+-- Gasolina pegando fogo: estouro com clarão e tranco na câmera para quem está perto.
+local function gasFlare(visual: Visual)
+	local position = visual.anchor.Position
+	AudioController.playAtPosition("GasWhoosh", position, 1.2, rng:NextNumber(0.9, 1.05))
+	local light = visual.light
+	light.Enabled = true
+	light.Brightness = 9
+	local camera = workspace.CurrentCamera
+	if camera then
+		local distance = (camera.CFrame.Position - position).Magnitude
+		if distance < 35 then
+			local k = 1 - distance / 35
+			CameraController.punch(0.5 * k)
+			CameraController.addTrauma(0.45 * k)
+		end
+	end
+end
+
+-- Pedaços da casa que já despencaram (só neste cliente): a original some e uma cópia cai em chamas.
+local crumbled: { [BasePart]: { transparency: number, collide: boolean } } = {}
+local crumbleCount = 0
+local crumblePool: { BasePart }? = nil
+local nextCrumbleAt = 0
+local nextRumbleAt = 0
+local CRUMBLE_FROM = { Architecture = true, Finish = true, Furnishings = true, Dressing = true, PrimitiveFinish = true }
+local SOLID = { "floor", "stair", "step", "deck", "door", "gate", "barrier", "ground", "foundation" }
+
+local function solid(part: BasePart): boolean
+	local name = string.lower(part.Name)
+	for _, word in SOLID do
+		if string.find(name, word, 1, true) then
+			return true
+		end
+	end
+	return part:GetAttribute(Tags.Attr.InteractId) ~= nil
+end
+
+-- A casa desmorona: forro, vigas, molduras e lustres acima de um foco aceso despencam e ficam queimando no chão.
+local function crumble(visual: Visual): boolean
+	local root = world()
+	local container = folder
+	if not root or not container then
+		return false
+	end
+	local node = visual.node
+	-- Peças altas da casa (lista montada uma vez por incêndio: a maioria não responde a consultas de física).
+	if not crumblePool then
+		local pool: { BasePart } = {}
+		for name in CRUMBLE_FROM do
+			local source = root:FindFirstChild(name :: string)
+			if source then
+				for _, part in source:GetDescendants() do
+					if part:IsA("BasePart") then
+						table.insert(pool, part)
+					end
+				end
+			end
+		end
+		crumblePool = pool
+	end
+	local center = Vector3.new(node.x, node.y + 12, node.z)
+	local candidates: { BasePart } = {}
+	for _, part in crumblePool :: { BasePart } do
+		local size = part.Size
+		if
+			part.Parent
+			and (part.Position - center).Magnitude < 11
+			and not crumbled[part]
+			and part.Transparency < 0.5
+			and part.Position.Y > node.y + 6
+			and part.Position.Y < node.y + 17
+			and math.max(size.X, size.Y, size.Z) <= 22
+			and not solid(part)
+		then
+			table.insert(candidates, part)
+		end
+	end
+	if #candidates == 0 then
+		return false
+	end
+	local piece = candidates[rng:NextInteger(1, #candidates)]
+	crumbled[piece] = { transparency = piece.Transparency, collide = piece.CanCollide }
+	local copy = piece:Clone()
+	for _, child in copy:GetChildren() do
+		if child:IsA("Light") or child:IsA("Sound") or child:IsA("ProximityPrompt") then
+			child:Destroy()
+		end
+	end
+	copy.Anchored, copy.CanCollide, copy.CanQuery, copy.CanTouch = true, false, false, false
+	copy.Color = copy.Color:Lerp(CHAR, 0.6)
+	copy.Parent = container
+	piece.Transparency, piece.CanCollide = 1, false
+	crumbleCount += 1
+
+	local rays = RaycastParams.new()
+	rays.FilterType = Enum.RaycastFilterType.Exclude
+	rays.FilterDescendantsInstances = { container, piece, player.Character :: Instance }
+	local from = piece.CFrame
+	local hit = workspace:Raycast(from.Position, Vector3.new(0, -20, 0), rays)
+	local floorY = if hit then hit.Position.Y else node.y
+	local low = math.min(piece.Size.X, piece.Size.Y, piece.Size.Z)
+	local to = CFrame.new(
+		from.Position.X + rng:NextNumber(-1, 1),
+		floorY + low / 2 + 0.05,
+		from.Position.Z + rng:NextNumber(-1, 1)
+	) * from.Rotation * CFrame.Angles(rng:NextNumber(-0.5, 0.5), rng:NextNumber(-0.4, 0.4), rng:NextNumber(-0.5, 0.5))
+	local height = math.max(from.Position.Y - to.Position.Y, 1)
+	local duration = math.clamp(math.sqrt(height / 40), 0.35, 0.8)
+	AudioController.playAtPosition("BeamCrack", from.Position, 1.1, rng:NextNumber(0.8, 1))
+	-- Poeira e brasas soltando do teto antes de cair.
+	local dust = emitter(copy, SMOKE)
+	dust.Color = ColorSequence.new(Color3.fromRGB(90, 80, 72))
+	dust.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(1, 4) })
+	dust.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.5), NumberSequenceKeypoint.new(1, 1) })
+	dust.Lifetime = NumberRange.new(1, 2)
+	dust.Speed = NumberRange.new(1, 3)
+	dust.Rate = 25
+	dust.Enabled = true
+	task.spawn(function()
+		task.wait(0.35)
+		local t0 = os.clock()
+		while copy.Parent do
+			local a = math.clamp((os.clock() - t0) / duration, 0, 1)
+			copy.CFrame = from:Lerp(to, a * a)
+			if a >= 1 then
+				break
+			end
+			RunService.RenderStepped:Wait()
+		end
+		if not copy.Parent then
+			return
+		end
+		dust.Rate = 0
+		AudioController.playAtPosition("Fall_box", to.Position, 1.3, rng:NextNumber(0.6, 0.8))
+		local camera = workspace.CurrentCamera
+		if camera then
+			local distance = (camera.CFrame.Position - to.Position).Magnitude
+			if distance < 30 then
+				CameraController.addTrauma(0.6 * (1 - distance / 30) + 0.1)
+			end
+		end
+		-- Destroço queimando no chão.
+		local fire = Instance.new("Fire")
+		fire.Color = Color3.fromRGB(255, 118, 36)
+		fire.SecondaryColor = Color3.fromRGB(255, 210, 100)
+		fire.Heat = 8
+		fire.Size = math.clamp(math.max(copy.Size.X, copy.Size.Z) * 0.5, 2, 8)
+		fire.Parent = copy
+	end)
+	return true
+end
+
+local function restoreCrumble()
+	for part, saved in crumbled do
+		if part.Parent then
+			part.Transparency, part.CanCollide = saved.transparency, saved.collide
+		end
+	end
+	table.clear(crumbled)
+	crumbleCount = 0
+	crumblePool = nil
+end
+
+-- Gasolina sendo espalhada (a poça da tarefa aparece): som de líquido e respingos.
+local function watchPuddle(part: Instance)
+	if not part:IsA("BasePart") or part.Name ~= "GasPuddle" then
+		return
+	end
+	part:GetPropertyChangedSignal("Transparency"):Connect(function()
+		-- Três manchas por poça: o som toca uma vez só por pilha.
+		local pile = part.Parent
+		if part.Transparency < 0.5 and pile and pile:GetAttribute("PourHeard") ~= true then
+			pile:SetAttribute("PourHeard", true)
+			AudioController.playAtPosition("GasPour", part.Position + Vector3.new(0, 1, 0), 1)
+		end
+	end)
+end
+
 local function stop()
+	-- Estalos ficam pendurados nos focos: tirar antes de apagar a pasta (senão somem junto e travam a troca).
+	for _, sound in crackles do
+		sound:Stop()
+		sound.Parent = SoundService
+	end
 	if folder then
 		folder:Destroy()
 		folder = nil
 	end
 	table.clear(visuals)
-	for _, sound in crackles do
-		sound:Stop()
-		sound.Parent = SoundService
-	end
 	restoreChar()
+	restoreCrumble()
 	activeSeed, startAt, ignited, debrisCount = 0, 0, false, 0
 	if roar then
 		roar:Stop()
@@ -467,12 +647,16 @@ local function begin(seed: number, at: number)
 	container.Name = "Blaze"
 	container.Parent = workspace
 	folder = container
-	for _, node in FireSpread.build(seed) do
+	for _, node in
+		FireSpread.build(seed, FireSpread.decodeFuel(world() and (world() :: Instance):GetAttribute("BlazeFuel")))
+	do
 		table.insert(visuals, buildVisual(container, node))
 	end
 	nextCollapseAt = FireSpread.HeadStart + 5
 	nextSplinterAt = FireSpread.HeadStart + 2
 	nextDebrisAt = FireSpread.HeadStart + 3
+	nextCrumbleAt = FireSpread.HeadStart + 5
+	nextRumbleAt = FireSpread.HeadStart + 2
 end
 
 local function refresh()
@@ -602,6 +786,9 @@ local function update(dt: number)
 		if not visual.lit then
 			visual.lit = true
 			char(visual)
+			if node.kind == "gas" then
+				gasFlare(visual)
+			end
 		end
 		local distance = (visual.anchor.Position - eye).Magnitude
 		if node.kind ~= "facade" then
@@ -688,6 +875,22 @@ local function update(dt: number)
 		debris(nearLit[rng:NextInteger(1, #nearLit)])
 	end
 
+	-- A casa desmorona aos poucos em volta de quem foge e geme inteira de tempos em tempos.
+	if #nearLit > 0 and t >= nextCrumbleAt and crumbleCount < 30 then
+		nextCrumbleAt = t + rng:NextNumber(3.5, 7)
+		for _ = 1, 3 do
+			if crumble(nearLit[rng:NextInteger(1, #nearLit)]) then
+				break
+			end
+		end
+	end
+	if t >= nextRumbleAt and t >= FireSpread.HeadStart then
+		nextRumbleAt = t + rng:NextNumber(7, 12)
+		AudioController.play("AmbThunder", 1.4, rng:NextNumber(0.5, 0.65))
+		AudioController.play("CreakWood", 1.2, rng:NextNumber(0.5, 0.7))
+		CameraController.addTrauma(0.22)
+	end
+
 	-- Vigas caindo atrás de quem ainda está dentro de casa.
 	local character = player.Character
 	local body = character and character:FindFirstChild("HumanoidRootPart")
@@ -735,6 +938,10 @@ end
 
 function FireController.Start()
 	buildEdges()
+	for _, part in workspace:GetDescendants() do
+		watchPuddle(part)
+	end
+	workspace.DescendantAdded:Connect(watchPuddle)
 	RunService.Heartbeat:Connect(update)
 end
 

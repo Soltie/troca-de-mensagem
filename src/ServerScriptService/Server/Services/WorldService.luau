@@ -1052,10 +1052,12 @@ end
 
 -- Incêndio da fuga final (Shared/Game/FireSpread): o FireService queima quem fica no fogo e o FireController desenha
 -- chamas, fumaça e luz. Os dois montam os focos com a mesma semente a partir destes atributos.
-function WorldService.setHouseFire(on: boolean)
+function WorldService.setHouseFire(on: boolean, fuel: string?)
 	local root = getWorld().root
-	root:SetAttribute("BlazeSeed", if on then math.random(1, 2 ^ 30) else nil)
+	-- Poças antes da semente: o cliente remonta os focos quando a semente muda e já encontra a gasolina.
+	root:SetAttribute("BlazeFuel", if on then fuel else nil)
 	root:SetAttribute("BlazeStart", if on then workspace:GetServerTimeNow() else nil)
+	root:SetAttribute("BlazeSeed", if on then math.random(1, 2 ^ 30) else nil)
 end
 
 return WorldService

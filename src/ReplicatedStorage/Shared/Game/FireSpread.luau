@@ -15,7 +15,7 @@ local HouseCatalog = require("./HouseCatalog")
 
 local FireSpread = {}
 
-export type Kind = "front" | "side" | "room" | "hall" | "facade"
+export type Kind = "front" | "side" | "room" | "hall" | "facade" | "gas"
 export type Node = {
 	x: number,
 	y: number,
@@ -33,6 +33,9 @@ FireSpread.HallLead = 6
 FireSpread.RoomSpeed = 6
 FireSpread.Step = 6
 FireSpread.GrowSeconds = 1.5
+-- Gasolina: o primeiro foco (o que o isqueiro acendeu) estoura em GasStart s; os outros a cada GasStep s.
+FireSpread.GasStart = 2.5
+FireSpread.GasStep = 1.6
 -- Calor por segundo dentro do fogo (1 = derruba) e quanto esfria por segundo fora dele.
 FireSpread.HeatRate = 0.65
 FireSpread.CoolRate = 0.5
@@ -108,7 +111,7 @@ local function generator(seed: number): (number, number) -> number
 	end
 end
 
-function FireSpread.build(seed: number): { Node }
+function FireSpread.build(seed: number, fuel: { { number } }?): { Node }
 	local rng = generator(seed)
 	local nodes: { Node } = {}
 	local origin = FireSpread.Route[1]
@@ -141,6 +144,28 @@ function FireSpread.build(seed: number): { Node }
 			side = -side
 		end
 		walked += length
+	end
+
+	-- Gasolina espalhada pelos jogadores: estoura logo depois de acender, em sequência pelo rastro (do mais perto do
+	-- isqueiro para o mais longe). A casa já está em chamas à frente de quem foge.
+	if fuel then
+		local order = table.clone(fuel)
+		table.sort(order, function(a, b)
+			local da = (a[1] - origin[1]) ^ 2 + (a[2] - origin[2]) ^ 2 + (a[3] - origin[3]) ^ 2
+			local db = (b[1] - origin[1]) ^ 2 + (b[2] - origin[2]) ^ 2 + (b[3] - origin[3]) ^ 2
+			return da < db
+		end)
+		for index, spot in order do
+			table.insert(nodes, {
+				x = spot[1],
+				y = spot[2],
+				z = spot[3],
+				at = FireSpread.GasStart + (index - 1) * FireSpread.GasStep,
+				radius = 3,
+				size = 11,
+				kind = "gas",
+			})
+		end
 	end
 
 	-- Hall: arde quando a frente vai chegando (dá tempo de passar, mas assusta).
@@ -190,6 +215,29 @@ function FireSpread.build(seed: number): { Node }
 		})
 	end
 	return nodes
+end
+
+-- Poças de gasolina viajam como texto num atributo do mundo ("x,y,z;x,y,z").
+function FireSpread.encodeFuel(spots: { { number } }): string
+	local parts = {}
+	for _, spot in spots do
+		table.insert(parts, string.format("%.1f,%.1f,%.1f", spot[1], spot[2], spot[3]))
+	end
+	return table.concat(parts, ";")
+end
+
+function FireSpread.decodeFuel(text: any): { { number } }?
+	if type(text) ~= "string" or text == "" then
+		return nil
+	end
+	local spots = {}
+	for entry in string.gmatch(text, "[^;]+") do
+		local x, y, z = string.match(entry, "^(-?[%d%.]+),(-?[%d%.]+),(-?[%d%.]+)$")
+		if x and y and z then
+			table.insert(spots, { tonumber(x) :: number, tonumber(y) :: number, tonumber(z) :: number })
+		end
+	end
+	return if #spots > 0 then spots else nil
 end
 
 -- 0..1: quanto o foco já cresceu no instante t.

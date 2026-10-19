@@ -51,6 +51,25 @@ local spec: TestKit.Spec = {
 			t.expect(FireSpread.exposure(nodes, early, 0, 0, 58)).toBe(0)
 		end)
 
+		t.it("spilled gasoline flares in a chain from the lighter, before the front", function()
+			local fuel = { { -26, 0, -68 }, { 26, -16, -64 }, { -26, 0, -4 } }
+			local decoded = FireSpread.decodeFuel(FireSpread.encodeFuel(fuel))
+			assert(decoded, "fuel decodes")
+			t.expect(#decoded).toBe(3)
+			local gas = {}
+			for _, node in FireSpread.build(42, decoded) do
+				if node.kind == "gas" then
+					table.insert(gas, node)
+				end
+			end
+			t.expect(#gas).toBe(3)
+			-- O mais perto do mecanismo (onde o isqueiro acende) estoura primeiro.
+			t.expect(gas[1].z).toBe(-64)
+			t.expect(gas[1].at < gas[2].at and gas[2].at < gas[3].at).toBe(true)
+			t.expect(gas[3].at < FireSpread.HeadStart + 6).toBe(true)
+			t.expect(FireSpread.decodeFuel("")).toBe(nil)
+		end)
+
 		t.it("the facade burns but never hurts", function()
 			for _, node in nodes do
 				if node.kind == "facade" then

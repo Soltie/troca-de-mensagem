@@ -319,6 +319,33 @@ local function buildItem(kind: string): Model
 			rgb(255, 90, 70),
 			Enum.Material.Neon
 		)
+	elseif kind == "gasoline" then
+		piece(m, Vector3.new(1.3, 1.6, 0.8), CFrame.Angles(0, math.rad(25), 0), rgb(150, 30, 24), METAL)
+		piece(
+			m,
+			Vector3.new(0.8, 0.16, 0.3),
+			CFrame.Angles(0, math.rad(25), 0) * CFrame.new(-0.15, 0.95, 0),
+			rgb(130, 26, 20),
+			METAL
+		)
+		piece(
+			m,
+			Vector3.new(0.6, 0.2, 0.2),
+			CFrame.Angles(0, math.rad(25), 0) * CFrame.new(0.55, 0.95, 0) * CFrame.Angles(0, 0, math.rad(40)),
+			rgb(60, 58, 56),
+			METAL,
+			CYL
+		)
+	elseif kind == "lighter" then
+		piece(m, Vector3.new(0.5, 0.75, 0.25), tilt, rgb(150, 148, 140), METAL)
+		piece(
+			m,
+			Vector3.new(0.5, 0.3, 0.25),
+			tilt * CFrame.new(-0.25, 0.5, 0) * CFrame.Angles(0, 0, math.rad(40)),
+			rgb(140, 138, 130),
+			METAL
+		)
+		piece(m, Vector3.new(0.12, 0.3, 0.12), tilt * CFrame.new(0.08, 0.55, 0), rgb(255, 170, 60), Enum.Material.Neon)
 	elseif kind == "battery" then
 		piece(m, Vector3.new(1.4, 0.6, 0.6), tilt, rgb(40, 52, 40), METAL, CYL)
 		piece(m, Vector3.new(0.3, 0.62, 0.62), tilt * CFrame.new(-0.55, 0, 0), rgb(170, 160, 140), METAL, CYL)
@@ -375,7 +402,7 @@ local function viewport(parent: Instance, kind: string): Frame
 	return holder
 end
 
-local ITEMS = { "flashlight", "keys", "fuses", "artifact", "battery", "oxygen", "decoy" }
+local ITEMS = { "flashlight", "keys", "fuses", "artifact", "gasoline", "lighter", "battery", "oxygen", "decoy" }
 
 function Noir.build(parent: Instance, touch: boolean): Ui
 	local gui = Create("ScreenGui", {

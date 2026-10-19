@@ -82,6 +82,8 @@ por isso o trecho dela é 0,47–0,82 s.
 | AmbFireRoar | 2787093357 | forest fire | Festivereinhard2 (Creator Store, grátis) | rugido do incêndio final |
 | BeamCrack | 9120819447 | Wood Crack Deep Clunky Scrapes Crackling 4 (SFX) | ProSoundEffects | viga em chamas caindo |
 | WoodSplinter | 9126240449 | Wood Crack Thick Splintering Bursts Creaking 2 (SFX) | ProSoundEffects | madeira estalando no fogo |
+| GasWhoosh | 135097195613949 | Fire_ignition | ImBobTheOff (Creator Store, grátis) | gasolina pegando fogo |
+| GasPour | 9120620371 | Wave Spraying Hiss 4 (SFX), trecho 0,6–3,2 s | ProSoundEffects | gasolina derramada |
 
 Também do cliente Roblox: `StepFallback` (`rbxasset://sounds/action_footsteps_plastic.mp3`, trecho 0–0,26 s)
 e `Land` (`action_jump_land.mp3`). Os passos padrão do personagem são silenciados pelo `BodyAudioController`.

@@ -139,8 +139,68 @@ local function mirrorTarget(parent: Instance, indicator: BasePart)
 	end)
 end
 
+-- Pilha de madeira velha e panos onde se joga a gasolina (capítulo 5). A poça (`GasPuddle`) só aparece depois de
+-- espalhar (HouseActivities.refresh); o alvo invisível fica no meio da pilha.
+local function fuelPile(parent: Instance, p: Vector3, big: boolean)
+	local wood = Color3.fromRGB(74, 52, 36)
+	local crate = part(parent, "FuelCrate", p + V3(-0.7, 0, 0.2), V3(1.8, 1.3, 1.5), wood)
+	crate.Material = Enum.Material.WoodPlanks
+	crate.CFrame *= CFrame.Angles(0, math.rad(12), 0)
+	local small = part(parent, "FuelCrate", p + V3(0.9, 0, -0.1), V3(1.3, 1, 1.2), wood:Lerp(Color3.new(0, 0, 0), 0.2))
+	small.Material = Enum.Material.WoodPlanks
+	small.CFrame *= CFrame.Angles(0, math.rad(-20), 0)
+	for index, offset in { V3(-0.3, 1.3, 0.1), V3(0.5, 1, -0.4), V3(0.1, 0.05, 0.9) } do
+		local plank = part(parent, "FuelPlank", p + offset, V3(2.6, 0.18, 0.4), wood:Lerp(Color3.new(1, 1, 1), 0.05))
+		plank.Material = Enum.Material.Wood
+		plank.CFrame *= CFrame.Angles(math.rad(index * 7), math.rad(index * 47), math.rad(index * 9 - 10))
+	end
+	local rag = part(parent, "FuelRag", p + V3(0.2, 1.2, 0.35), V3(1.4, 0.12, 1.1), Color3.fromRGB(122, 104, 82))
+	rag.Material = Enum.Material.Fabric
+	rag.CFrame *= CFrame.Angles(math.rad(8), math.rad(30), math.rad(-6))
+	-- Poça escura e oleosa, irregular (três manchas sobrepostas).
+	for index, spot in { { 0, 0.4, 1 }, { 1.3, -0.5, 0.65 }, { -1.4, 1.2, 0.55 } } do
+		local size = (if big then 6 else 4.6) * spot[3]
+		local puddle = cylinder(
+			parent,
+			"GasPuddle",
+			p + V3(spot[1], 0.22 + index * 0.005, spot[2]),
+			Vector3.yAxis,
+			0.04,
+			size,
+			Color3.fromRGB(30, 24, 17),
+			Enum.Material.SmoothPlastic
+		)
+		puddle.Reflectance = 0.12
+		puddle.Transparency = 1
+		puddle.CastShadow = false
+	end
+end
+
 function Props.build(parent: Instance, p: Vector3, item: string?, kind: string)
 	local center = p + V3(0, 1.8, 0)
+	if item == "gas_pour" or item == "gas_ignite" then
+		fuelPile(parent, p, item == "gas_ignite")
+		return
+	elseif item == "gasoline" then
+		-- Galão vermelho de metal com alça e bico.
+		local red = Color3.fromRGB(150, 30, 24)
+		local can = part(parent, "GasCan", p + V3(0, 1.7, 0), V3(1.5, 1.9, 0.9), red)
+		can.Material = Enum.Material.Metal
+		part(parent, "GasCanRib", p + V3(0, 2.35, 0), V3(1.56, 0.08, 0.96), red:Lerp(Color3.new(0, 0, 0), 0.3)).Material =
+			Enum.Material.Metal
+		part(parent, "GasCanHandle", p + V3(-0.2, 3.6, 0), V3(0.9, 0.18, 0.3), red).Material = Enum.Material.Metal
+		cylinder(parent, "GasCanSpout", p + V3(0.62, 3.75, 0), V3(1, 1.2, 0), 0.7, 0.24, Color3.fromRGB(60, 58, 56))
+		return
+	elseif item == "lighter" then
+		-- Isqueiro de metal com a tampa aberta.
+		local steel = Color3.fromRGB(150, 148, 140)
+		part(parent, "LighterBody", p + V3(0, 1.7, 0), V3(0.5, 0.75, 0.25), steel).Material = Enum.Material.Metal
+		local lid = part(parent, "LighterLid", p + V3(-0.3, 2.45, 0), V3(0.5, 0.3, 0.25), steel)
+		lid.Material = Enum.Material.Metal
+		lid.CFrame *= CFrame.Angles(0, 0, math.rad(40))
+		part(parent, "LighterWheel", p + V3(0.08, 2.45, 0), V3(0.16, 0.16, 0.16), Color3.fromRGB(60, 58, 56))
+		return
+	end
 	finishControls(parent, kind)
 	if kind == "activate" then
 		-- Fechadura de ferro com três buracos de chave; a lâmpada no topo mostra o estado.

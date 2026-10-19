@@ -8,6 +8,7 @@ local CollectionService = game:GetService("CollectionService")
 local PhysicsService = game:GetService("PhysicsService")
 local StarterPlayer = game:GetService("StarterPlayer")
 local Config = require("@game/ReplicatedStorage/Shared/Config")
+local FireSpread = require("@game/ReplicatedStorage/Shared/Game/FireSpread")
 local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
 local Catalog = require("@game/ReplicatedStorage/Shared/Game/CampaignCatalog")
 local Modes = require("@game/ReplicatedStorage/Shared/Game/GameModes")
@@ -584,7 +585,16 @@ local function afterActivity(previous: Session.Phase)
 		elseif session.phase == "Extracting" then
 			escapeEndsAt = workspace:GetServerTimeNow() + Config.House.EscapeSeconds
 			WorldService.setHouseDestruction(session.stage == 5)
-			WorldService.setHouseFire(session.stage == 5)
+			-- Capítulo 5: a gasolina que o time espalhou vira os primeiros focos (FireSpread).
+			local fuel: { { number } } = {}
+			if session.plan then
+				for _, spec in session.plan.activities do
+					if spec.item == "gas_pour" or spec.item == "gas_ignite" then
+						table.insert(fuel, { spec.x, spec.y or 0, spec.z })
+					end
+				end
+			end
+			WorldService.setHouseFire(session.stage == 5, FireSpread.encodeFuel(fuel))
 			CreatureService.makeNoise(
 				if session.stage >= 6 then Vector3.new(0, 0, 850) else Vector3.new(26, -16, -68),
 				500
@@ -1330,6 +1340,28 @@ function Runtime.debugForest(chapter: number): boolean
 	end
 	session.stage, session.phase = chapter - 1, "Intermission"
 	session.inventory.flashlight = 1
+	endingShown = false
+	stage()
+	return true
+end
+
+-- Depuração (Studio): começa direto num capítulo da casa (1–5), com o que os anteriores dariam.
+function Runtime.debugChapter(chapter: number): boolean
+	assert(RunService:IsStudio(), "Studio-only chapter preview")
+	assert(chapter >= 1 and chapter <= 5 and chapter % 1 == 0, "Invalid house chapter")
+	if building or #Players:GetPlayers() == 0 then
+		return false
+	end
+	selectedMode, modeVotes = "Story", {}
+	session = Session.new(Story.MapSeed, C, "Story", true)
+	for _, player in Players:GetPlayers() do
+		Session.join(session, player.UserId)
+	end
+	session.stage, session.phase = chapter - 1, "Intermission"
+	session.inventory.flashlight = 1
+	if chapter >= 5 then
+		session.inventory.artifact = 1
+	end
 	endingShown = false
 	stage()
 	return true

@@ -32,6 +32,8 @@ local BAG_TEXT: { [string]: { string } } = {
 	battery = { "Pilha", "Recarrega a lanterna. Você tem %d." },
 	oxygen = { "Ar extra", "Recupera o fôlego preso. Você tem %d." },
 	decoy = { "Isca", "Faz barulho longe de você. Você tem %d." },
+	gasoline = { "Galão de gasolina", "Espalhe nas pilhas de madeira dos cômodos." },
+	lighter = { "Isqueiro", "Acende o rastro de gasolina no porão." },
 	empty = { "", "" },
 }
 
@@ -651,6 +653,8 @@ function Controller.Start()
 				battery = stock.battery or 0,
 				oxygen = stock.oxygen or 0,
 				decoy = stock.decoy or 0,
+				gasoline = if (inventory.gas_ignite or 0) > 0 then 0 else inventory.gasoline or 0,
+				lighter = if (inventory.gas_ignite or 0) > 0 then 0 else inventory.lighter or 0,
 				empty = 0,
 			}
 			-- Só aparece o que o jogador tem; o escolhido mostra nome, valor e (lanterna) a barra da bateria.

@@ -11,7 +11,7 @@
 		bridge:Invoke("placeCreature", Vector3.new(0, 0, -22))
 		bridge:Invoke("freezeCreature", true)
 
-	Comandos: state | awaken | freezeCreature(bool) | placeCreature(Vector3) | teleport(Vector3) | restart
+	Comandos: state | chapter(1..5) | awaken | freezeCreature(bool) | placeCreature(Vector3) | teleport(Vector3) | restart
 	          checkpoint | grant("fuses"|"insert"|"breakers"|"key") | setBattery(0..1) | fall(id) | holdOff(s)
 	          storeGrant(fichas, creditos) | endRound("Won"|"Lost") | tape | seasonXp(xp) | analytics
 ]]
@@ -47,6 +47,9 @@ local function encode(value: any): any
 end
 
 local commands: { [string]: (...any) -> any } = {
+	chapter = function(chapter: number)
+		return (RoundService :: any).debugChapter(chapter)
+	end,
 	forestChapter = function(chapter: number)
 		return (RoundService :: any).debugForest(chapter)
 	end,

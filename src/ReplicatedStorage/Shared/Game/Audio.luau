@@ -92,6 +92,8 @@ local Audio: { [string]: Clip } = {
 	AmbFireRoar = { id = "rbxassetid://2787093357", volume = 0.5 }, -- forest fire (Festivereinhard2, laço de 44 s)
 	BeamCrack = { id = "rbxassetid://9120819447", volume = 1 }, -- PSE Wood Crack Deep Clunky Scrapes Crackling 4
 	WoodSplinter = { id = "rbxassetid://9126240449", volume = 0.9 }, -- PSE Wood Crack Thick Splintering Bursts Creaking 2
+	GasWhoosh = { id = "rbxassetid://135097195613949", volume = 1 }, -- Fire_ignition (ImBobTheOff, 7,9 s)
+	GasPour = { id = "rbxassetid://9120620371", volume = 0.55, speed = 1.5, region = { 0.6, 3.2 } }, -- PSE Wave Spraying Hiss 4 (gasolina caindo)
 }
 
 return table.freeze(Audio)

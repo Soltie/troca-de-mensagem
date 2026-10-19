@@ -183,18 +183,37 @@ local House = {
 		{
 			title = "05 · A ÚLTIMA NOITE",
 			subtitle = "Devolva o coração. Corra.",
+			-- Queimar a casa: galão e isqueiro, gasolina espalhada pela casa toda com o Tung Tung atrás, e o
+			-- rastro aceso no porão (FireSpread: a gasolina estoura em sequência e o fogo corre atrás de vocês).
 			objectives = {
-				objective("Ritual", "Colocar o artefato no altar", "activate", nil, nil),
-				objective("Ritual", "Ativar o primeiro símbolo", "activate", nil, nil),
-				objective("Ritual", "Ativar o segundo símbolo", "activate", nil, nil),
-				objective("Ritual", "Ativar o terceiro símbolo", "activate", nil, nil),
 				objective(
-					"Mechanism",
-					"Acionar o mecanismo e fugir",
+					"Ritual",
+					"Devolver o coração ao altar",
 					"activate",
 					nil,
+					nil,
+					"O coração não aceita voltar. Só o fogo acaba com esta casa."
+				),
+				objective(
+					"Machine",
+					"Pegar o galão de gasolina",
+					"collect",
+					"gasoline",
+					nil,
+					"O galão está pesado e cheio. Espalhe pela casa sem fazer barulho."
+				),
+				objective("Library", "Espalhar gasolina na biblioteca", "activate", "gas_pour", nil),
+				objective("Dining", "Espalhar gasolina na sala de jantar", "activate", "gas_pour", nil),
+				objective("Living", "Espalhar gasolina na sala de estar", "activate", "gas_pour", nil),
+				objective("Kitchen", "Pegar o isqueiro", "collect", "lighter", nil, "Um isqueiro velho. Ainda acende."),
+				objective("Hall", "Espalhar gasolina no corredor", "activate", "gas_pour", nil),
+				objective(
+					"Mechanism",
+					"Acender o rastro de gasolina e fugir",
+					"activate",
+					"gas_ignite",
 					"destruction",
-					"A casa está ruindo. 150 segundos: volte pelo hall e atravesse o portão da floresta."
+					"O fogo corre pelo rastro. Saia pelo hall e atravesse o portão antes que a casa desabe!"
 				),
 			},
 		},
