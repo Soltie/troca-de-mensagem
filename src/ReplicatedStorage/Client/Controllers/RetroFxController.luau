@@ -37,11 +37,18 @@ local function buildScanlines(container: Frame, height: number)
 	end
 end
 
-local function edge(parent: Instance, anchor: Vector2, position: UDim2, size: UDim2, rotation: number)
+local function edge(
+	parent: Instance,
+	anchor: Vector2,
+	position: UDim2,
+	size: UDim2,
+	rotation: number,
+	transparency: number?
+)
 	local f = Instance.new("Frame")
 	f.BorderSizePixel = 0
 	f.BackgroundColor3 = Color3.new(0, 0, 0)
-	f.BackgroundTransparency = 0.36
+	f.BackgroundTransparency = transparency or 0.36
 	f.AnchorPoint = anchor
 	f.Position = position
 	f.Size = size
@@ -98,18 +105,40 @@ local function buildOverlay(): ScreenGui
 	return gui
 end
 
+-- Vinheta suave sempre ligada (item 13 do ambiente): bordas e cantos escurecem de leve, o centro fica limpo para
+-- objetivos e lanterna. Fica abaixo do HUD e do filtro retrô; com o retrô ligado, a vinheta dele substitui esta.
+local cinema: ScreenGui? = nil
+local function buildCinema(): ScreenGui
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "CinemaVignette"
+	gui.IgnoreGuiInset = true
+	gui.ResetOnSpawn = false
+	gui.DisplayOrder = 40
+	gui.Enabled = not SettingsController.get("retro")
+	edge(gui, Vector2.new(0, 0), UDim2.fromScale(0, 0), UDim2.fromScale(0.24, 1), 0, 0.5)
+	edge(gui, Vector2.new(1, 0), UDim2.fromScale(1, 0), UDim2.fromScale(0.24, 1), 180, 0.5)
+	edge(gui, Vector2.new(0, 0), UDim2.fromScale(0, 0), UDim2.fromScale(1, 0.2), 90, 0.55)
+	edge(gui, Vector2.new(0, 1), UDim2.fromScale(0, 1), UDim2.fromScale(1, 0.2), 270, 0.55)
+	gui.Parent = player:WaitForChild("PlayerGui")
+	return gui
+end
+
 local RetroFxController = {
 	Name = "RetroFxController",
 }
 
 function RetroFxController.Init()
 	overlay = buildOverlay()
+	cinema = buildCinema()
 end
 
 function RetroFxController.Start()
 	SettingsController.onChanged(function(key, value)
 		if key == "retro" and overlay then
 			overlay.Enabled = value
+		end
+		if key == "retro" and cinema then
+			cinema.Enabled = not value
 		end
 	end)
 
