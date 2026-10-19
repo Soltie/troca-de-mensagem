@@ -27,6 +27,7 @@ local HINTS: { [string]: string } = {
 	lightning = "O raio cai onde o chão brilha. Saia do campo aberto assim que vir o brilho.",
 	fire = "O fogo corre atrás de você. Não pare dentro das chamas: corra pelo meio do caminho.",
 	search = "Quando ele parar na porta do armário, aperte no ritmo: bem na hora em que o anel encosta no círculo.",
+	collapse = "O teto desaba atrás de você: corra sem parar e pule as vigas caídas.",
 	gust = "Quando as luzes do corredor piscarem e o vento crescer, entre num armário ou num cômodo do lado.",
 }
 

@@ -55,6 +55,11 @@ local commands: { [string]: (...any) -> any } = {
 		local player = Players:GetPlayers()[1]
 		return player ~= nil and GustService.trigger(player)
 	end,
+	-- Acende o incêndio da fuga direto (capítulo 5 já carregado), sem gasolina espalhada.
+	blaze = function()
+		WorldService.setHouseFire(true)
+		return "ok"
+	end,
 	forestChapter = function(chapter: number)
 		return (RoundService :: any).debugForest(chapter)
 	end,

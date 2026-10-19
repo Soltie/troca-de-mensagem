@@ -93,6 +93,12 @@ local function step(dt: number)
 	end
 end
 
+-- Queimadura pontual (viga em chamas da fuga, EscapeRunService): esquenta sem derrubar sozinha; o fogo que vem
+-- atrás é que termina o serviço.
+function FireService.scorch(player: Player, amount: number)
+	setHeat(player, math.min(0.95, (heat[player] or 0) + amount))
+end
+
 -- Destroços do incêndio (FireController, no cliente) caem com física: batem no chão, nunca nos jogadores
 -- (um pedaço no caminho travava quem fugia).
 function FireService.Init()

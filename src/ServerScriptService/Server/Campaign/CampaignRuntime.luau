@@ -26,6 +26,7 @@ local LightningService = require("../Services/LightningService")
 local FireService = require("../Services/FireService")
 local GustService = require("../Services/GustService")
 local LockerSearchService = require("../Services/LockerSearchService")
+local EscapeRunService = require("../Services/EscapeRunService")
 local CollectibleService = require("../Services/CollectibleService")
 -- Vantagens pagas (Claude): Segunda Chance, tempo de resgate e Continuação.
 local PerkService = require("../Services/PerkService")
@@ -1155,6 +1156,10 @@ function Runtime.Init()
 	-- Sopro do corredor: quem fica na faixa fora de um armário leva pancada (mesmo caminho da captura).
 	GustService.onHit(function(player)
 		capture(player, "gust")
+	end)
+	-- Corredor do porão desabando na fuga: quem fica para trás do desabamento leva pancada.
+	EscapeRunService.onCaught(function(player)
+		capture(player, "collapse")
 	end)
 	restartCampaign()
 end

@@ -69,7 +69,7 @@ Decisão do humano (19/10/2026): fazer todas, do mais fácil ao mais difícil, m
 - H (som vira perigo): não fazer.
 - K (mini-jogos físicos): anotado para depois.
 Ordem combinada: B, E, A, I, G, J, C, M, D, L.
-Feitas e testadas: B, E, A, I, G, J, C. G (2 de cada ~10 armários por capítulo; olhos vermelhos numa fresta escura até 14 studs,
+Feitas e testadas: B, E, A, I, G, J, C, M. G (2 de cada ~10 armários por capítulo; olhos vermelhos numa fresta escura até 14 studs,
 respiração; entrar sem olhar = porta abre, queda no chão, barulho 70 que chama o Tung; fotos em
 docs/evidence/environment/locker).
 J (capítulos 2-4, ~1 a cada 3-4 min depois de 60 s): luzes do corredor piscam e o vento cresce por 3 s, depois uma
@@ -79,3 +79,8 @@ C: quando o Tung Tung alcança alguém no armário (viu entrar ou ouviu), ele pa
 5 batidas, um anel fecha sobre o círculo e o jogador aperta Z/Espaço/clique/toque na hora. 3 erros = pancada
 (causa "search"); passou = ele desiste e vai patrulhar longe ("Ele não te ouviu..."). Sair do armário no meio
 = falha. Foto em docs/evidence/environment/search.
+M (fuga do capítulo 5, EscapeRun/EscapeRunService/EscapeRunController): medido pela distância de quem vai na frente
+no caminho de fuga. Portas dos cômodos ao lado batem depois que o grupo passa; duas vigas em chamas despencam à
+frente no corredor do porão, com o chão pegando fogo dos dois lados (pular passa limpo; andar esquenta 0,6);
+o corredor desaba atrás do grupo a 15 studs/s (andar perde, correr ganha), deixa entulho sólido e derruba quem
+fica para trás (causa "collapse", com dica). Depuração: DebugBridge "blaze". Fotos em docs/evidence/environment/escape.
