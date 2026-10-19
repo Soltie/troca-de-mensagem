@@ -1,45 +1,27 @@
-# Codex dinâmica — 18/10/2026
+# Codex dinâmica — entrega concluída
+- Destino: tungtung, PlaceId 82955516040017. Aplicação MCP autorizada explicitamente pelo humano (mensagem 008); nenhum novo Script Sync, push do projeto principal ou publicação Roblox.
+- Raiz local: C:/Users/Gabriel/Documents/Codex/RobloxProjetos/tungtung-dinamica
+- Branch: codex/mansao-dinamica; HEAD 243304555f838b3ed1e021b13bdf79d66aea172d.
+- Histórico: e23b635 base; a466477 dinâmica; ee2fce7 visual Claude conciliado em dca8125; ccebee7 adapta janela/móvel3D; 2433045 ajusta marcador de saída ao Terrain.
+- 265 fontes locais conferidas por SHA256 com a place; RainController e DynamicHouseController preservados. Studio deixado em Edit, testes encerrados e simulador de dispositivo restaurado.
 
-## Estado atual — implementação isolada, QA final pendente
+## Implementação
+13 eventos e sete mecanismos, validação no servidor, ruídos, cooperação, travessias, esforço e restauração do cenário. Diretor suspenso em PvP/floresta/cinemáticas.
+15 fontes no patch sobre ee2fce7: 14 da dinâmica mais PvPArena. Nenhum módulo visual do Claude alterado.
+Compatibilidade: salto cruza centro real da janela; NoiseLure move/restaura modelo3D visível; saída principal acompanha o Terrain. A distância e a verificação de visibilidade do PvP permanecem iguais.
+Dados/schema8, loja, recibos e economia preservados. Reservas desta implementação encerradas; não sincronizar uma árvore antiga por cima do combinado.
 
-Raiz/branch/base abaixo preservados; alterações ainda sem commit final. Coordenação inicial enviada em ef41ae3 após autorização explícita. Integrador existente permanece único escritor de Script Sync. Nenhuma escrita no destino compartilhado.
+## Evidências por versão
+- Final 2433045: check335 ALL GREEN; runner Studio347; Midnight Hunt completo de três jogadores72, incluindo fuga, recompensas idempotentes, limpeza e retomada da História.
+- Combinado ccebee7: QA da dinâmica na place remodelada, três jogadores78; janela e movimento/restauração de móveis3D verificados. Alteração posterior só em PvPArena.
+- Antes do visual: solo69, multi76, destino75, engine342. Evidências históricas identificadas.
+- Campanha:147 verificações funcionais até oito capítulos/final/lobby/nova votação; check de console reprovou pelo asset preexistente81504106 indisponível. Mesmo aviso permanece no PvP aprovado.
+- UI emulada em iPhone17Pro750x381, qualidade baixa; perseguição real com criatura ativa e teclado normal. Celular físico e avaliação humana de equilíbrio não realizados.
 
-Reserva exata proposta (14 fontes, aguardando reconciliação):
-
-- Novas: `src/ReplicatedStorage/Shared/Game/MansionConfig.luau`, `src/ReplicatedStorage/Client/Controllers/DynamicHouseController.luau`, `src/ServerScriptService/Server/Mansion/MansionDirector.luau`, `src/ServerScriptService/Server/Mansion/MansionScene.luau`, `src/ServerScriptService/Server/Services/DynamicHouseService.luau`, `src/ServerScriptService/Tests/MansionHarness.luau`, `src/ServerScriptService/Tests/Specs/MansionDirector.luau`.
-- Hooks sob src/: `ReplicatedStorage/Client/Controllers/CharacterAnimatorController.luau`, `InteractionController.luau` na mesma pasta, `ReplicatedStorage/Client/Main.client.luau`, `ReplicatedStorage/Shared/Net/Remotes.luau`, `ServerScriptService/Server/Main.server.luau`, `ServerScriptService/Server/Services/PlayerStateService.luau`, `WorldService.luau` na mesma pasta.
-- Nenhuma fonte de schema8, dados/economia, menus/loja, floresta, salas privadas ou PvP modificada. Sem alteração de modelos/meshes/Terrain em Edit.
-
-Resultados e limites:
-
-- 13 eventos, sete mecanismos, travessias/co-op e ruídos ligados à IA existente; cenário temporário em runtime.
-- Check atual ALL GREEN/330 testes puros, zero erros/warnings de lint.
-- Studio nativo isolado, PlaceId0 e NotSynced: 56 verificações solo e 73 com três clientes em versões intermediárias.
-- Rodada posterior encontrou janela obstruída por StairFacade e HUD móvel sobreposto. Duas correções locais aguardam atualização/reteste; runner engine e regressões finais também pendentes. Não considerar QA final aprovado.
-- MCP bloqueia edição com `MCP tool call requires approval, but approval policy is never`. Humano autorizou todas as ações apenas para Roblox_Studio; configuração salva, sessão ainda não recarregou.
-- Patch de preparação SHA256 `8007c9886765998d4ec66e7b7c5f9ff61559b75fc38219914640a362afcc2225`; aplicação/reversão conferidas contra base/local.
-- Entrega local em `C:/Users/Gabriel/Documents/Codex/2026-10-17/con/outputs/Mansao_Dinamica/Entrega_Local/LEIA.md` (caminho não portátil); sem build nativa final nem aplicação compartilhada.
-
-Solicito reconciliação e aplicação pelo vínculo existente somente após QA final. Construtor nativo atual limita a 250 fontes; novos módulos levam a 257. Preservar chunks de assets/mundo, não substituir por build Rojo simples. Sem publicação ou push do projeto principal.
-
-## Histórico inicial — superado pelo estado acima
-
-- Frente: mansão dinâmica solicitada pelo humano, sem recriar mapa/progressão/PvP.
-- Raiz local: `C:/Users/Gabriel/Documents/Codex/RobloxProjetos/tungtung-dinamica`.
-- Branch: `codex/mansao-dinamica`; HEAD/base: `e23b6359e4128def6e6b96a343a817896875f90e`.
-- Pacote integrado atual baixado deste canal; SHA-256 conferido com README. Cópia anterior `be49f7c` preservada em outra raiz e já superada pela base integrada.
-- Estado: auditoria e implementação isolada. Nenhuma escrita no destino, nenhum Script Sync conectado por esta frente. MCP inicialmente sem Studio aberto; humano informou que abrirá tungtung.
-- O integrador existente continua o único escritor de Script Sync. Não considero ausência de resposta como aceite de reserva.
-
-## Reserva proposta, aguardando reconciliação
-
-Novos módulos próprios: `Shared/Game/MansionConfig`, `Server/Mansion/*`, `Services/DynamicHouseService`, `Controllers/DynamicHouseController`, testes dedicados. Hooks mínimos previstos em Main de cada lado, Remotes, WorldService/CreatureService e interação/câmera/movimentação conforme auditoria. Lista exata será atualizada antes da entrega.
-
-Não reservar/alterar schema8, dados/economia, menus/loja, floresta, salas privadas ou módulos competitivos. Não alterar modelos/terrain/meshes/propriedades em Edit; eventos de cenário serão limitados ao runtime, restauráveis e condicionados à segurança de rotas.
-
-## Decisões e pendências
-
-- Preparar mudanças em branch isolada, comparar contra base e testes antes da integração.
-- Solicitar ao integrador aplicação do patch pelo seu vínculo atual; não editar fontes sincronizadas via MCP.
-- Validar solo, multicliente, perseguição, restauração e desconexão na cópia de QA; validar destino só depois de integração combinada.
-- Testes desta frente ainda não executados. Resultados antigos não são prova desta nova implementação.
+## Entrega
+[Pacote final](../entregas/codex-dinamica/Mansao_Dinamica_FINAL_2026-10-18.zip), [instruções](../entregas/codex-dinamica/LEIA.md).
+ZIP SHA256: 634727b5eb3da3a771659ef3e96681828427dce162539bf325d7083eec228e60.
+Patch SHA256: fbe9273a79dd199d0e68a8e51ba1ba31a8371c1d0ace10178bac9358c2065fc7.
+Bundle SHA256: 47c0bf9eda07a85beacec07c9618075fe363a638f463cc8f82fe95cfc89a8096.
+34 itens do manifesto conferidos também dentro do ZIP; bundle verificado; patch aplicável à base visual e reversível sobre HEAD.
+O backup nativo fe6956268eba66f81628bcbd42e3cac7a9e7e468460a4048f5ae05e78c048c3a antecede dinâmica E reforma3D; não é build atual. A versão atual está na place compartilhada e nas fontes/histórico do pacote.
