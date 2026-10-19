@@ -6,7 +6,7 @@ O humano autorizou explicitamente o trabalho paralelo: Claude conclui o item 4, 
 
 Reservados ao Codex: `Server/World/HouseTaskProps.luau`, eventual helper visual `HouseCollectibleFinish.luau`, a chamada estritamente visual em `Services/CoinService.luau`, spec `Tests/Specs/HouseTaskProps.luau` e este relatório. NÃO editar esses arquivos em paralelo. Claude conserva HouseProps, HousePrimitiveFinish, a spec do item 4 e sua integração. Se houver conflito, comunicar antes de editar. Não alterar campanha, triggers, prompts, tags, atributos funcionais, valores/recompensas, HUD, controles, IA ou multiplayer.
 
-Estado: EM IMPLEMENTAÇÃO. Ainda não aplicado ou validado no Studio. Checks e commit serão registrados abaixo ao concluir. Publicação e push do projeto principal continuam proibidos; commits locais autorizados. O usuário pediu repasse final ao Claude.
+Estado: IMPLEMENTADO E TESTADO NA CÓPIA CANDIDATA. Aplicação no destino pendente do integrador Claude. Publicação e push do projeto principal continuam proibidos; commits locais autorizados. O usuário pediu repasse final ao Claude.
 
 ## Objetivo
 
@@ -20,7 +20,7 @@ O humano autorizou o Codex a testar e avaliar tanto o seu item quanto o do Claud
 
 - HouseTaskProps: fusíveis em porcelana cilíndrica com nervuras, tampas e contatos; chave de latão com argola vazada; lanterna cilíndrica com lente/aro/empunhadura; relógio com aro e marcas de horas; livro aberto com capa e escrita; retrato com silhuetas e moldura de madeira; máscara oval com olhos/boca. Sem texturas novas ou emissões de luz.
 - Os blocos-alvo de reparo/puzzle ficam visualmente ocultos, com os MESMOS nome, posição, tamanho, query, atributos e tags. Botões decorativos circulares reproduzem a cor de estado do alvo; o script de campanha continua sendo a autoridade. A argola antiga cheia (KeyRing) também fica visualmente oculta, sem apagar sua instância.
-- HouseCollectibleFinish: seis peças pequenas soldadas por moeda para aro, face rebaixada e cunho; sem colisão, query, toque, sombra ou massa. Sem loop novo. Gemas não são alteradas. Coleta, posição-base, valores, XP, tags e lógica permanecem no CoinService original. Confirmar no cliente o acompanhamento da animação e o custo total; celular físico NÃO TESTADO.
+- HouseCollectibleFinish: sete peças pequenas soldadas por moeda para corpo, aro, face rebaixada e cunho; sem colisão, query, toque, sombra ou massa. Sem loop novo. A moeda VISÍVEL tem 0.9 stud de diâmetro; o corpo original de 2 studs fica invisível, com tamanho e referência preservados. Gemas não são alteradas. Coleta, posição-base, valores, XP, tags e lógica permanecem no CoinService original. Celular físico NÃO TESTADO.
 - CoinService: EXATAMENTE duas linhas novas (require do helper e chamada após atributo Gem). Não substituir a versão inteira do serviço do destino se divergir da base: aplicar somente essas duas inserções sobre o Source atual, preservando alterações concorrentes.
 - Spec HouseTaskProps: orçamento físico/de geometria; alvos e visibilidade após resolver objetivos nos oito capítulos; moedas preservam atributos e acompanham deslocamento/rotação. A spec é robloxOnly e precisa ser rodada no Studio.
 - Geometria autoral construída por código: nenhum download, upload, crédito Hyper3D ou asset externo novo. Fontes anteriores da biblioteca continuam documentadas em ASSET_SOURCES.md.
@@ -29,7 +29,7 @@ Bases para comparação seletiva (UTF-8 sem BOM, finais LF): `.cache/item5-basel
 
 Pendência para o integrador: carregar helper ANTES de CoinService e instalar HouseTaskProps + spec no candidato, comparar Source esperado, rodar o runner e revisar visualmente chave/fusível/lanterna, controles e moeda. Não declarar aprovado só pelo check local. Enquanto houver edição concorrente do item 4, o check global pode apontar erros daquele arquivo; não editar sua reserva para corrigir sem combinar.
 
-Último check do Codex: **ALL GREEN, 302 testes puros, 10 specs de engine puladas**, zero erros de lint/tipos/formatação, já com os QUATRO casos finais da spec e o apoio de tecido sob a chave. A nova spec cobre orçamento de geometria; alvos/solve nos oito capítulos; raycast nos controles decorados e cor de estado; relevo das moedas acompanha o corpo sem alterar atributos. O teste de raycast usa fixture isolada em x=5200 e destrói ao finalizar. Fontes do item 5 congeladas para integração; avisar antes de editar. Ainda NÃO TESTADO no Studio.
+Último check do Codex: **ALL GREEN, 302 testes puros, 10 specs de engine puladas**, zero erros de lint/tipos/formatação, com os QUATRO casos finais da spec e o apoio de tecido sob a chave. A nova spec cobre orçamento de geometria; alvos/solve nos oito capítulos; raycast nos controles decorados e cor de estado; relevo das moedas acompanha o corpo sem alterar atributos. O teste de raycast usa fixture isolada em x=5200 e destrói ao finalizar. Fontes do item 5 congeladas para integração; avisar antes de editar. Resultados do Studio abaixo.
 
 Revisão visual obrigatória antes de aceitar: verificar que a tampa do fusível, a lente e a argola não flutuam ou se enterram no tampo; botão conserva feedback de estado; decoração não chama atenção excessiva no escuro aprovado. Todas as peças são autorais por código, sem origem/licença externa nova. Os objetos de floresta previamente existentes continuam preservados, exceto os controles de puzzle que recebem o mesmo acabamento e precisam de teste integrado nos capítulos 6–8.
 
@@ -43,9 +43,27 @@ Necessita correção de compatibilidade coordenada com o responsável pela dinâ
 
 Claude concluiu/aplicou item 4, commit 98a2f5e e 354 testes Studio. Está aguardando autorização do humano no app Claude para push de documentação de coordenação (não aprovar esse diálogo automaticamente). Codex assume SOMENTE a cópia candidata 868e546e-565b-4ab0-ae7e-792cffece6a5 para teste do item 5, conforme autorização humana de testar ambos. Não escreve no destino nem edita arquivos reservados ao Claude. Antes de iniciar outro teste, verificar esta seção e estado do Studio para não parar o Play do colega. Este uso será encerrado e registrado aqui após o QA.
 
+**QA DO CODEX ENCERRADO: candidato devolvido a Edit. Sem reserva ativa de Play/mouse.** A cópia candidata contém os quatro Sources finais do item 5 (inclusive proteção PvP preservada); as fixtures, câmeras e luz de trabalho existiram somente durante Play e foram descartadas ao parar. O destino não recebeu item 5 pelo Codex.
+
 ### Divergência encontrada e preservada antes de instalar
 
 CoinService no candidato inclui uma proteção já existente no destino: `tick()` retorna imediatamente quando `ReplicatedStorage.PvPActive == true`. Essa proteção NÃO estava na árvore local c33e487. A primeira tentativa de aplicação foi abortada pelo comparador de Source antes de modificar qualquer coisa. A proteção foi preservada na versão candidata e reconciliada no arquivo local, além das duas inserções visuais; isso não introduz regra nova no destino. Não aplicar o CoinService da base antiga sobre o atual. Baseline extra para inspeção: `.cache/item5-baseline/CoinService-candidate.luau`.
+
+## Resultados comprovados do QA integrado (Codex)
+
+- Runner completo no candidato, com item 4 do Claude + item 5: **358 passaram, 0 falharam, 0 specs puladas**.
+- A inspeção visual mostrou a moeda antiga ainda exagerada. Reduzi somente o desenho de 2 para 0.9 stud, mantendo corpo/regras. Depois desse último ajuste: **4/4 testes focados HouseTaskProps passaram**, novo check completo ALL GREEN. A suíte completa 358 é anterior a esse último ajuste exclusivamente visual; não afirmar que foi repetida depois.
+- História iniciada pelo cliente, com DebugBridge usado SOMENTE para aproximar o personagem e congelar criatura na preparação. A coleta propriamente dita usou o remote NORMAL `Interact:InvokeServer(id, "use")`: lanterna task_2_1 e chave task_3_1 retornaram `solved/accepted=true`. `HasFlashlight=true`; todas as peças da chave ficaram ocultas após coletar, sem apagar alvos.
+- Coleta real de uma moeda em modo mock: corpo removido, contagem diminuiu exatamente 1, CoinPickupSerial aumentou 1, Fichas aumentaram 2 e XP aumentou 1, iguais aos atributos originais Value=2/Xp=1. Não foi teste de persistência de produção.
+- Auditoria na partida: 59 moedas comuns, 413 peças decorativas (7 por moeda), zero peças inválidas; proteção PvP presente. Gemas continuam originais. Ainda necessário medir custo em celular físico e validar partida PvP multi-cliente; não prometer desempenho só pela contagem.
+- Comparação visual de fusível original e novo, no mesmo tampo e iluminação de trabalho, em fixture temporária no cenário. Chave, moeda e lanterna também revisadas na campanha. Capturas salvas: `docs/evidence/environment/item5/fuse-before-after.jpg` e `key-coin-final.jpg`. Algumas interfaces foram reexibidas pelos controllers na captura; não houve edição de UI.
+- Sem erros do jogo no console desta rodada. Há warnings do Roblox/CorePackages UIBlox FoundationProvider, separados dos scripts do jogo.
+- O destino permanece com item 4 aplicado pelo Claude. Integrar item 5 seletivamente (comparar Source atual; CoinService deve preservar PvPActive), confirmar fontes finais no destino e rodar QA de destino antes de marcar entregue no tungtung.
+- A regressão NoiseLure continua PENDENTE e documentada acima. Não foi corrigida silenciosamente durante a revisão dos objetos.
+
+## Pedido posterior sobre História
+
+O humano perguntou como tornar a História menos simples. É uma consulta de design: propostas devem ser apresentadas separadamente, sem tratar a autorização da reforma visual como autorização automática para alterar objetivos, progressão, IA ou economia. O Codex testou trechos/sistemas e uma coleta na campanha; não afirmar que jogou a campanha completa como jogador.
 
 ## Integração pelo Claude (19/10/2026)
 

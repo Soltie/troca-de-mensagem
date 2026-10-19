@@ -1,0 +1,17 @@
+{
+  "environment": "candidate Studio only; mock player data",
+  "fullSuite": { "passed": 358, "failed": 0, "skipped": 0, "beforeFinalCoinVisualResize": true },
+  "focusedSuiteAfterFinalCoinVisualResize": { "passed": 4, "failed": 0, "skipped": 0 },
+  "localCheck": { "status": "ALL GREEN", "purePassed": 302, "engineSpecsSkipped": 10 },
+  "normalInteractions": {
+    "task_2_1_flashlight": { "accepted": true, "message": "solved", "hasFlashlight": true },
+    "task_3_1_key": { "accepted": true, "message": "solved", "visiblePartsAfterSolve": 0 }
+  },
+  "normalCoinPickup": {
+    "targetRemoved": true, "countDelta": 1, "serialDelta": 1,
+    "currencyDelta": 2, "xpDelta": 1, "expectedValue": 2, "expectedXp": 1
+  },
+  "runtime": { "commonCoins": 59, "decorativeParts": 413, "invalidPhysicsOrQueryParts": 0, "pvpGuardRetained": true },
+  "limitations": ["not applied to destination by Codex", "NoiseLure regression pending", "physical mobile not tested", "production persistence not tested", "PvP multi-client not tested"],
+  "cleanup": "candidate stopped; temporary fixtures camera and work light discarded"
+}
