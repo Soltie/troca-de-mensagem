@@ -49,6 +49,7 @@ local controllers: { any } = {
 	require("./Controllers/BreathTestController"),
 	require("./Controllers/EscapeRunController"),
 	require("./Controllers/JumpscareController"),
+	require("./Controllers/ForestFxController"),
 	require("./Controllers/GameUiController"),
 	require("./Controllers/InteractionController"),
 	require("./Controllers/HudController"),

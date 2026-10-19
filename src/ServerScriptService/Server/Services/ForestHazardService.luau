@@ -167,6 +167,9 @@ local function collapse(forest: Instance, map: ForestMaps.Map)
 	anchor.Position = center
 	anchor.Parent = model
 	sound(anchor, Audio.BeamCrack, 1.6, 0.8)
+	-- Tranco na tela de quem está perto (ForestFxController).
+	forest:SetAttribute("ShakeAt", center)
+	forest:SetAttribute("ShakeSerial", ((forest:GetAttribute("ShakeSerial") :: number?) or 0) + 1)
 	sound(anchor, Audio.WoodSplinter, 1.4, 0.9)
 	-- Cabeceiras fechadas: a ponte não existe mais.
 	for _, z in { r.z0 - 2, r.z1 + 2 } do
@@ -193,6 +196,8 @@ local function collapse(forest: Instance, map: ForestMaps.Map)
 		splash.Position = Vector3.new(feet.X, -r.depth + 3, feet.Z)
 		splash.Parent = model
 		sound(splash, Audio.BigSplash, 2, 0.8)
+		forest:SetAttribute("ShakeAt", splash.Position)
+		forest:SetAttribute("ShakeSerial", ((forest:GetAttribute("ShakeSerial") :: number?) or 0) + 1)
 		local spray = Instance.new("ParticleEmitter")
 		spray.Texture = "rbxasset://textures/particles/smoke_main.dds"
 		spray.Color = ColorSequence.new(Color3.fromRGB(200, 220, 230))
