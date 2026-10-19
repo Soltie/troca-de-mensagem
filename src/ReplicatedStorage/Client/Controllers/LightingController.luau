@@ -159,8 +159,16 @@ function controller.Start()
 			filter.Enabled = Settings.shadersEnabled()
 		end
 		Lighting.ExposureCompensation = Profile.exposure(indoor, power) + forest * Profile.Forest.exposure
-		fog =
-			Profile.approach(fog, Profile.fogEnd(baseFog * (1 + (Profile.Forest.fogScale - 1) * forest), danger), delta)
+		-- Banco de névoa que vem e vai só ao ar livre (fora da casa e fora da mata, que tem névoa própria).
+		local outside = (1 - indoor) * (1 - forest)
+		local bank = Profile.fogScale(os.clock(), outside)
+		-- Névoa densa um pouco mais clara: lê como névoa recortando a casa, não como escuro.
+		Lighting.FogColor = Lighting.FogColor:Lerp(rgb(Profile.FogBank.color), Profile.fogBank(os.clock()) * outside)
+		fog = Profile.approach(
+			fog,
+			Profile.fogEnd(baseFog * (1 + (Profile.Forest.fogScale - 1) * forest) * bank, danger),
+			delta
+		)
 		Lighting.FogEnd = fog
 		local cinema = budget.depth and player:GetAttribute("CinematicActive") == true and Settings.motionEnabled()
 		if depth then

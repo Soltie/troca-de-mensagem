@@ -45,3 +45,16 @@ aparecem de leve no escuro).
 | D — verde doentio | verde pálido, saturação −0,28, contraste +0,16 | `filtro-D-verde.jpg` |
 
 Todas as fotos usam a lanterna da proposta, para comparar só a cor.
+
+## Aplicado em 19/10/2026 (escolhas do humano)
+
+- Lanterna nova (brilho 4,6, alcance 62, 50°, luz da mão 0,25/8) e filtro de cor B (frio) em `LightingProfile`.
+- Chuva mais transparente e gotinhas na tela ao ar livre (`RainController`, `RainLens`, até 10 gotas, só Média/Alta).
+- Trovão com tremor leve de câmera (respeita a opção de tremor).
+- Atmosfera de fora: lua e ambiente mais fracos, refletores da fachada e lanternas bem mais fracos, poucas janelas
+  acesas, luz quente saindo da porta, banco de névoa que vem e vai só ao ar livre (`Profile.fogBank`).
+- Sala/cômodos: guarda-roupa do esconderijo no canto da fachada, de frente para a porta; estante da sala removida;
+  móveis que ocupavam esse canto foram para oz 7,5.
+- Cercas em volta da casa removidas (o muro de tijolo e o portão continuam fechando o terreno); portão da floresta em
+  ferro forjado.
+- Item 12 (movimentação) continua só proposto.

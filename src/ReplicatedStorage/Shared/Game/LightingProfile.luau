@@ -8,13 +8,13 @@ export type Grade = { tint: RGB, contrast: number, saturation: number, brightnes
 -- Lua fria e pontos quentes: preserva as cores dos brinquedos sem iluminar todos os cantos.
 Profile.World = {
 	clock = 0.3,
-	brightness = 1.05,
-	ambient = { 19, 22, 32 },
-	ambientPower = { 27, 28, 36 },
+	brightness = 0.6, -- lua fraca: o exterior é lido pelas luzes da casa e pela lanterna
+	ambient = { 12, 14, 21 },
+	ambientPower = { 18, 19, 25 },
 	-- Sob o telhado a casa é escura (a lanterna é a fonte principal); com energia, só um pouco menos.
 	ambientIndoor = { 9, 8, 9 },
 	ambientIndoorPower = { 22, 19, 17 },
-	outdoor = { 65, 74, 100 },
+	outdoor = { 36, 42, 58 },
 	fog = { 30, 36, 51 },
 	fogPower = { 35, 40, 53 },
 	fogStart = 24,
@@ -25,7 +25,11 @@ Profile.World = {
 	specular = 0.22,
 }
 Profile.Bloom = { intensity = 0.1, size = 10, threshold = 1.9 }
-Profile.Flashlight = { brightness = 2.7, spill = 0.11, angle = 40 }
+-- Lanterna mais forte (aprovada pelo humano em 19/10/2026): o feixe revela o cômodo; fora dele continua escuro.
+Profile.Flashlight = { brightness = 4.6, spill = 0.25, spillRange = 8, angle = 50, range = 62 }
+-- Filtro de cor "frio" (opção B, escolhida pelo humano): azulado, menos saturado e mais contraste, por cima do tom
+-- de cada ambiente.
+Profile.Look = { tint = { 196, 218, 255 }, saturation = -0.25, contrast = 0.14, brightness = 0.02 }
 Profile.Forest = {
 	ambient = { 21, 28, 36 },
 	outdoor = { 49, 63, 81 },
@@ -42,12 +46,14 @@ function Profile.grade(indoor: number, power: number): Grade
 	local inside = math.clamp(indoor, 0, 1)
 	local on = math.clamp(power, 0, 1)
 	-- Cor local continua reconhecível; energia aquece só o interior.
+	local base = { 240 + inside * on * 12, 246 + inside * on * 2, 255 - inside * on * 18 }
+	local look = Profile.Look
 	return {
-		tint = { 240 + inside * on * 12, 246 + inside * on * 2, 255 - inside * on * 18 },
+		tint = { base[1] * look.tint[1] / 255, base[2] * look.tint[2] / 255, base[3] * look.tint[3] / 255 },
 		-- Dentro de casa: mais contraste e cor mais lavada (pretos fundos, luz quente só onde bate).
-		contrast = 0.08 + inside * 0.04,
-		saturation = -0.04 - inside * 0.06,
-		brightness = 0.005,
+		contrast = 0.08 + inside * 0.04 + look.contrast,
+		saturation = -0.04 - inside * 0.06 + look.saturation,
+		brightness = 0.005 + look.brightness,
 	}
 end
 
@@ -83,6 +89,19 @@ function Profile.fixture(name: string, brightness: number, range: number): (numb
 		return brightness, math.min(range, 14)
 	end
 	return brightness, range
+end
+
+-- Névoa que vem e vai ao ar livre (0 = limpo, 1 = banco mais denso), sem ritmo perceptível: duas ondas lentas.
+Profile.FogBank = { depth = 0.58, period = 150, cross = 67, color = { 58, 64, 76 } }
+function Profile.fogBank(now: number): number
+	local a = math.sin(now * 2 * math.pi / Profile.FogBank.period)
+	local b = math.sin(now * 2 * math.pi / Profile.FogBank.cross + 1.3)
+	return math.clamp(0.5 + 0.35 * a + 0.25 * b, 0, 1)
+end
+
+-- Fator do alcance da névoa: só ao ar livre (`outside` 0..1) o banco aproxima a névoa.
+function Profile.fogScale(now: number, outside: number): number
+	return 1 - Profile.FogBank.depth * Profile.fogBank(now) * math.clamp(outside, 0, 1)
 end
 
 function Profile.fogEnd(base: number, danger: number): number

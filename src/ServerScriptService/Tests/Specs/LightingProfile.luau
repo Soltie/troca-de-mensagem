@@ -21,7 +21,9 @@ return {
 					for _, channel in grade.tint do
 						t.expect(channel >= 0 and channel <= 255).toBe(true)
 					end
-					t.expect(grade.contrast >= 0 and grade.contrast <= 0.12).toBe(true)
+					-- Contraste do ambiente (até 0,12) mais o do filtro escolhido; nunca estoura.
+					t.expect(grade.contrast >= 0 and grade.contrast <= 0.12 + P.Look.contrast).toBe(true)
+					t.expect(grade.contrast <= 0.3).toBe(true)
 					t.expect(P.exposure(i / 10, j / 10) >= 0.08).toBe(true)
 				end
 			end
@@ -48,6 +50,18 @@ return {
 			t.expect(P.fogEnd(40, 1)).toBe(40)
 			t.expect(P.fogEnd(142, -3)).toBe(142)
 			t.expect(P.fogEnd(142, 3)).toBe(64)
+		end)
+		t.it("outdoor fog bank comes and goes but never touches the house interior", function()
+			local low, high = 1, 0
+			for second = 0, 600 do
+				local bank = P.fogBank(second)
+				t.expect(bank >= 0 and bank <= 1).toBe(true)
+				low, high = math.min(low, bank), math.max(high, bank)
+				t.expect(P.fogScale(second, 0)).toBe(1)
+				t.expect(P.fogScale(second, 1) >= 1 - P.FogBank.depth).toBe(true)
+			end
+			-- Há momentos limpos e momentos de névoa.
+			t.expect(low < 0.2 and high > 0.8).toBe(true)
 		end)
 		t.it("adaptation does not depend on frame rate or overshoot", function()
 			local fast, slow = 0, 0

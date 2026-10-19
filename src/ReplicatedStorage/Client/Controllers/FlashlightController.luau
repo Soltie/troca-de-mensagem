@@ -382,14 +382,14 @@ function FlashlightController.Init()
 	local light = Instance.new("SpotLight")
 	light.Face = Enum.NormalId.Front
 	light.Angle = LightingProfile.Flashlight.angle
-	light.Range = 48
+	light.Range = LightingProfile.Flashlight.range
 	light.Brightness = BASE_BRIGHTNESS
 	light.Color = WARM
 	light.Shadows = true
 	light.Parent = part
 
 	local glow = Instance.new("PointLight")
-	glow.Range = 5
+	glow.Range = LightingProfile.Flashlight.spillRange
 	glow.Brightness = LightingProfile.Flashlight.spill
 	glow.Color = WARM
 	glow.Shadows = false
@@ -445,6 +445,9 @@ function FlashlightController.Start()
 	end)
 	player:GetAttributeChangedSignal("CampaignStatus"):Connect(applyVisible)
 	UserInputService.InputBegan:Connect(function(input: InputObject, processed: boolean)
+		if player:GetAttribute("PvPRole") == "Hunter" then
+			return
+		end
 		if processed then
 			return
 		end
@@ -571,7 +574,7 @@ function FlashlightController.Start()
 		local brightness = BASE_BRIGHTNESS * BatteryModel.brightness(charge()) * flickerFactor
 		if spot then
 			spot.Brightness = brightness
-			spot.Range = 48 * (0.6 + 0.4 * BatteryModel.brightness(charge()))
+			spot.Range = LightingProfile.Flashlight.range * (0.6 + 0.4 * BatteryModel.brightness(charge()))
 		end
 		if spill then
 			spill.Brightness = LightingProfile.Flashlight.spill * flickerFactor

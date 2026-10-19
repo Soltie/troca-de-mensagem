@@ -106,7 +106,8 @@ local function uplight(parent: Instance, at: Vector3, target: Vector3)
 	local part = deco(parent, "FacadeUplight", V3(0.8, 0.3, 0.8), CFrame.lookAt(at, target), IRON, Enum.Material.Metal)
 	local light = Instance.new("SpotLight")
 	light.Face = Enum.NormalId.Front
-	light.Color, light.Range, light.Brightness, light.Angle, light.Shadows = rgb(170, 186, 220), 46, 0.75, 70, false
+	-- Fraco: a fachada some no escuro; só a porta e algumas janelas chamam o jogador.
+	light.Color, light.Range, light.Brightness, light.Angle, light.Shadows = rgb(150, 166, 200), 32, 0.2, 60, false
 	light.Parent = part
 end
 
@@ -371,7 +372,7 @@ local function facadeWindow(folder: Instance, center: Vector3, normal: Vector3, 
 		"FacadeWindowGlow",
 		V3(w - 1.1, h - 1, 0.05),
 		CFrame.lookAt(back, back + normal),
-		if lit then rgb(190, 120, 60) else rgb(14, 16, 22),
+		if lit then rgb(122, 74, 38) else rgb(14, 16, 22),
 		if lit then Enum.Material.Neon else Enum.Material.SmoothPlastic
 	)
 	glow.CastShadow = false
@@ -427,7 +428,8 @@ local function windows(folder: Instance)
 	-- Algumas janelas escuras quebram a repetição (casa grande, nem todos os cômodos acesos).
 	local function lit(): boolean
 		count += 1
-		return (count * 7) % 10 < 6
+		-- Poucas acesas (atmosfera de casa abandonada): só uma em cada quatro, mais ou menos.
+		return (count * 7) % 10 < 3
 	end
 	local ROWS = { 7.5, 23.5, 40.2 }
 	-- Frente: colunas simétricas em torno do frontão (x = 10,5); térreo livre na porta e na varanda.
@@ -493,8 +495,22 @@ local function entrance(shellFolder: Instance, yard: Instance)
 				Enum.Material.Neon
 			)
 		end
-		lamp(shellFolder, wall + V3(0, 0.2, 1.6), 22, 1.2)
+		lamp(shellFolder, wall + V3(0, 0.2, 1.6), 14, 0.55)
 	end
+	-- Luz quente e fraca saindo pela porta aberta até a varanda: o ponto que chama o jogador para dentro.
+	local spillAt = V3(0, 9, 61.5)
+	local spill = deco(shellFolder, "DoorSpill", V3(0.4, 0.4, 0.4), CFrame.lookAt(spillAt, V3(0, 0, 75)), WARM)
+	spill.Transparency = 1
+	local beam = Instance.new("SpotLight")
+	beam.Face = Enum.NormalId.Front
+	beam.Color, beam.Range, beam.Brightness, beam.Angle, beam.Shadows = rgb(255, 168, 102), 26, 1.1, 70, true
+	beam.Parent = spill
+	-- Brilho fraco dentro do hall: o vão da porta parece aceso por dentro.
+	local hall = deco(shellFolder, "DoorGlow", V3(0.4, 0.4, 0.4), CFrame.new(0, 6.5, 57), WARM)
+	hall.Transparency = 1
+	local glow = Instance.new("PointLight")
+	glow.Color, glow.Range, glow.Brightness, glow.Shadows = rgb(255, 160, 96), 14, 0.7, false
+	glow.Parent = hall
 	-- Piso da varanda, degrau e capacho.
 	finish(deco(yard, "PorchDeck", V3(34, 0.12, 13.5), CFrame.new(0, 0.06, 71.25), DECK.color, DECK.material), DECK)
 	deco(yard, "PorchStep", V3(34.4, 0.3, 0.7), CFrame.new(0, 0.15, 78.2), STONE, Enum.Material.Slate)
@@ -573,44 +589,6 @@ local function chimney(folder: Instance, part: BasePart)
 	end
 end
 
-local function ironFence(folder: Instance, part: BasePart)
-	local size = part.Size
-	local along = if size.X > size.Z then part.CFrame.RightVector else part.CFrame.LookVector
-	local length = math.max(size.X, size.Z)
-	local base = part.Position - UP * size.Y / 2
-	local start = base - along * length / 2
-	local bars = math.floor(length / 1.6)
-	for i = 0, bars do
-		local at = start + along * (i * length / bars)
-		local post = i % 9 == 0
-		local width = if post then 0.55 else 0.2
-		deco(folder, "IronFenceBar", V3(width, 4.4, width), CFrame.new(at + UP * 2.2), IRON, Enum.Material.Metal)
-		local tip = deco(
-			folder,
-			"IronFenceTip",
-			V3(0.32, 0.32, 0.2),
-			CFrame.lookAt(at + UP * 4.5, at + UP * 4.5 + along:Cross(UP)) * CFrame.Angles(0, 0, math.rad(45)),
-			IRON,
-			Enum.Material.Metal
-		)
-		if post then
-			tip.Size = V3(0.6, 0.6, 0.6);
-			(tip :: Part).Shape = Enum.PartType.Ball
-		end
-	end
-	for _, y in { 0.7, 3.7 } do
-		local mid = base + UP * y
-		deco(
-			folder,
-			"IronFenceRail",
-			V3(0.18, 0.18, length),
-			CFrame.lookAt(mid, mid + along),
-			IRON,
-			Enum.Material.Metal
-		)
-	end
-end
-
 local function porchRoof(folder: Instance, part: BasePart)
 	local p, size = part.Position, part.Size
 	local top, bottom = p.Y + size.Y / 2, p.Y - size.Y / 2
@@ -654,7 +632,7 @@ local function porchRoof(folder: Instance, part: BasePart)
 	if not Props.place(folder, "Lantern", hang - UP * 1.2, Vector3.zAxis, 1.9, "ceiling") then
 		deco(folder, "PorchLanternGlass", V3(0.9, 1.4, 0.9), CFrame.new(hang - UP * 2), WARM, Enum.Material.Neon)
 	end
-	lamp(folder, hang - UP * 2.3, 26, 1.2)
+	lamp(folder, hang - UP * 2.3, 16, 0.6)
 end
 
 local function pillar(folder: Instance, part: BasePart)
@@ -771,12 +749,10 @@ local function dressEstate(root: Instance)
 			part.Material, part.Color = Enum.Material.Grass, rgb(40, 56, 40)
 		elseif name == "GardenWalk" or name == "FrontWalk" or name == "RearCourt" then
 			part.Material, part.Color = Enum.Material.Cobblestone, rgb(96, 92, 86)
-		elseif name == "EstateFence" or name == "RearFence" then
-			part.Material, part.Color = Enum.Material.WoodPlanks, rgb(58, 44, 38)
-		elseif name == "FrontFence" then
-			-- A colisão continua na peça original; só a aparência vira grade de ferro.
-			part.Transparency = 1
-			ironFence(ground, part)
+		elseif name == "EstateFence" or name == "RearFence" or name == "FrontFence" then
+			-- Cercas removidas a pedido do humano (achou a grade feia). Ficam dentro do muro de tijolo (Boundary),
+			-- que continua fechando o terreno junto com o portão da floresta.
+			part.Transparency, part.CanCollide, part.CanQuery = 1, false, false
 		elseif name == "PorchCanopy" then
 			finish(part, TRIM)
 			porchRoof(roof, part)
@@ -876,7 +852,7 @@ local function lampPost(folder: Instance, at: Vector3)
 	if not Props.place(model, "Lantern", at + UP * 9.35, Vector3.zAxis, 2.3, "floor") then
 		deco(model, "Lamp", V3(1, 1.4, 1), CFrame.new(at + UP * 10.1), WARM, Enum.Material.Neon)
 	end
-	lamp(model, at + UP * 10.6, 28, 1.2)
+	lamp(model, at + UP * 10.6, 22, 0.55)
 end
 
 local function pumpkin(folder: Instance, at: Vector3, size: number, face: Vector3?)

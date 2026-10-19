@@ -252,7 +252,13 @@ function Builder.build(parent: Instance): (MapBuilder.World, FeatureBuilder.Buil
 		-- Armário com corpo opaco; a câmera olha por uma fresta, sem expor o personagem.
 		local id = `hide_{room.id}`
 		local cabinet = Build.model(featureRoot, id)
-		local p = center + Vector3.new(if room.x < 0 then -11 else 11, 0, 7)
+		-- Guarda-roupa encostado na fachada, no canto da frente (o humano pediu: não no meio do cômodo).
+		-- Camas e o baú do túnel (Bedroom, Child, Tunnel) ficam onde estavam.
+		local bedLike = room.id == "Bedroom" or room.id == "Child" or room.id == "Tunnel"
+		local p = center
+			+ if bedLike
+				then Vector3.new(if room.x < 0 then -11 else 11, 0, 7)
+				else Vector3.new(if room.x < 0 then -15.4 else 15.4, 0, 12.6)
 		for _, dx in { -2, 2 } do
 			block(cabinet, "Side", p.X + dx, p.Y, p.Z, 0.5, 8, 3, wood)
 		end

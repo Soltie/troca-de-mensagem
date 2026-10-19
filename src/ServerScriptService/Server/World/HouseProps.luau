@@ -250,7 +250,7 @@ end
 	Planta de cada cômodo (sistema local: `ox` da porta −18 à fachada +18, `oz` = eixo Z do mundo).
 	Zonas que ficam livres:
 	- porta (ox < −10, |oz| < 6) e tarefas no centro (|ox| < 8, oz −6..9);
-	- esconderijo e a frente dele (ox 8..14, oz 4..12);
+	- guarda-roupa do esconderijo no canto da fachada (ox 13,5..17,5; oz 10..15) e a frente dele (ox 8..13,5; oz 9..15);
 	- meio das divisórias que a campanha pode abrir (|ox| < 13 junto de oz ±16; só onde a parede é divisória).
 	Os móveis vão para a parede da fachada (faixa ox 14..17.5), para os trechos da parede da porta,
 	para a parede da frente (fileira 1, abaixo da janela do hall) e para a parede do fundo (fileira 3).
@@ -335,7 +335,7 @@ ROOMS.Living = function(folder, root, room)
 	Props.place(folder, "Armchair", at(10.5, -11.5, 0), V3(-1, 0, 0.6), 1.05, "floor")
 	lampOn(folder, room, "facade", -14.3)
 	against(folder, room, "Cabinet", "door", -11, 1)
-	against(folder, room, "Bookshelf", "facade", 12.6, 1)
+	-- A estante da fachada (12,6) saiu: o guarda-roupa do esconderijo ocupa esse canto.
 	local console = against(folder, room, "Console", "front", 0, 0.95)
 	if console then
 		local box = console:GetBoundingBox()
@@ -428,8 +428,7 @@ ROOMS.Library = function(folder, root, room)
 	for _, oz in { -12.5, -6.2, 0.1 } do
 		against(folder, room, "Bookshelf", "facade", oz, 1)
 	end
-	local at = roomFrame(room)
-	Props.place(folder, "Armchair", at(14.5, 13, 0), V3(-1, 0, -0.5), 1.05, "floor")
+	-- A poltrona do canto (14,5; 13) saiu: o guarda-roupa do esconderijo ocupa esse canto.
 	lampOn(folder, room, "facade", 6)
 	against(folder, room, "Cabinet", "door", -11, 1)
 	local console = against(folder, room, "Console", "door", 11, 1)
@@ -509,7 +508,7 @@ ROOMS.Office = function(folder, root, room)
 	end
 	against(folder, room, "Bookshelf", "door", -11, 1)
 	against(folder, room, "Bookshelf", "door", 11, 1)
-	lampOn(folder, room, "facade", 13.5)
+	lampOn(folder, room, "facade", 7.5)
 end
 
 local STORAGE = { Crate = true, Trunk = true, Barrel = true, Chains = true }
@@ -528,7 +527,7 @@ local function storage(folder: Instance, root: Instance, room: RoomRef, basement
 	against(folder, room, if basement then "Barrel" else "Suitcase", "door", -11, 1)
 	against(folder, room, "Crate", "door", 11, 1)
 	Props.place(folder, if basement then "Barrel" else "Suitcase", at(-15.5, 13.5, 0), V3(1, 0, 0.5), 1, "floor")
-	local lantern = at(15.6, 13.5, 0)
+	local lantern = at(15.6, 7.5, 0)
 	Props.place(folder, "WoodenLantern", lantern, V3(-1, 0, 0), 1.3, "floor")
 	glow(folder, "Candle", lantern + V3(0, 1.5, 0), 18, 0.55, true)
 	if basement then
@@ -581,7 +580,7 @@ local function machinery(folder: Instance, root: Instance, room: RoomRef)
 		Props.place(folder, "PipeLamp", V3(box.Position.X, top(crate), box.Position.Z), box.LookVector, 1.4, "floor")
 		glow(folder, "LampShade", V3(box.Position.X, top(crate) + 1.6, box.Position.Z), 18, 0.6, true)
 	end
-	Props.place(folder, "Barrel", at(15.5, 13.5, 0), V3(-1, 0, 0), 1, "floor")
+	Props.place(folder, "Barrel", at(15.5, 7.5, 0), V3(-1, 0, 0), 1, "floor")
 end
 
 ROOMS.Machine = machinery
@@ -602,7 +601,8 @@ ROOMS.Ritual = function(folder, root, room)
 		)
 	end
 	local at = roomFrame(room)
-	for _, oz in { -13.5, 13.5 } do
+	-- O canto da frente (oz 13,5) é do guarda-roupa do esconderijo: o segundo candelabro fica em oz 7,5.
+	for _, oz in { -13.5, 7.5 } do
 		Props.place(folder, "Candelabra", at(15.8, oz, 0), V3(-1, 0, 0), 1.1, "floor")
 		glow(folder, "Candle", at(15.8, oz, 4), 16, 0.6, true)
 	end

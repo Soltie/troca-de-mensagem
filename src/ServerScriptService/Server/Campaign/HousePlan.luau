@@ -35,7 +35,8 @@ function Plan.create(seed: number, chapter: number, players: number, mode: strin
 			dx, dz = 0, -(use - 1) * 14
 		end
 		if objective.kind == "hide" or objective.kind == "breath" then
-			dx, dz = if room.x < 0 then -11 else 11, 11
+			-- Frente do guarda-roupa (HouseBuilder: encostado na fachada, de frente para a porta do cômodo).
+			dx, dz = if room.x < 0 then -11.4 else 11.4, 12.6
 			offset = 0
 		end
 		local spot = Levels.relocate(level, index)

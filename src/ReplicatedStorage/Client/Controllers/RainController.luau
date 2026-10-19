@@ -8,11 +8,13 @@
 	A quantidade de gotas segue a qualidade visual escolhida; em Baixa ainda chove, com menos gotas.
 ]]
 local Lighting = game:GetService("Lighting")
+local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local SoundService = game:GetService("SoundService")
 local Weather = require("@game/ReplicatedStorage/Shared/Game/Weather")
 local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
 local AudioController = require("./AudioController")
+local CameraController = require("./CameraController")
 local Settings = require("./SettingsController")
 
 local STREAK = "rbxassetid://90203797622509"
@@ -44,6 +46,83 @@ local nextStrike = 0
 local strikeAt = -100
 local rng = Random.new()
 
+--[[
+	Gotinhas na tela ao ar livre (pedido do humano): no máximo DROPLETS molduras redondas e quase transparentes que
+	aparecem, escorrem um pouco e somem. Só em qualidade Média/Alta, abaixo do HUD e da vinheta; custo desprezível.
+]]
+local DROPLETS = 10
+type Droplet = { frame: Frame, born: number, life: number, from: UDim2, fall: number, alive: boolean }
+local droplets: { Droplet } = {}
+local dropClock = 0
+
+local function buildLens(parent: Instance)
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "RainLens"
+	gui.IgnoreGuiInset = true
+	gui.ResetOnSpawn = false
+	gui.DisplayOrder = 39
+	for _ = 1, DROPLETS do
+		local frame = Instance.new("Frame")
+		frame.BorderSizePixel = 0
+		frame.BackgroundColor3 = Color3.fromRGB(205, 214, 228)
+		frame.BackgroundTransparency = 1
+		frame.AnchorPoint = Vector2.new(0.5, 0.5)
+		frame.Visible = false
+		local corner = Instance.new("UICorner")
+		corner.CornerRadius = UDim.new(0.5, 0)
+		corner.Parent = frame
+		local rim = Instance.new("UIStroke")
+		rim.Color = Color3.fromRGB(235, 240, 248)
+		rim.Thickness = 1
+		rim.Transparency = 1
+		rim.Parent = frame
+		-- Brilho em cima, sombra embaixo: lê como gota na lente, não como bolinha chapada.
+		local shade = Instance.new("UIGradient")
+		shade.Rotation = 90
+		shade.Transparency = NumberSequence.new(0.2, 0.85)
+		shade.Parent = frame
+		frame.Parent = gui
+		table.insert(droplets, { frame = frame, born = 0, life = 0, from = UDim2.new(), fall = 0, alive = false })
+	end
+	gui.Parent = parent
+end
+
+local function updateLens(now: number, dt: number, wet: boolean, budget: number)
+	dropClock += dt
+	-- ~2,5 gotas novas por segundo na chuva aberta (qualidade Alta).
+	if wet and budget > 0.2 and dropClock > 0.4 / budget then
+		dropClock = 0
+		for _, drop in droplets do
+			if not drop.alive then
+				local size = rng:NextInteger(5, 13)
+				drop.alive, drop.born, drop.life = true, now, rng:NextNumber(1.4, 3.2)
+				drop.from = UDim2.fromScale(rng:NextNumber(0.06, 0.94), rng:NextNumber(0.05, 0.8))
+				drop.fall = rng:NextNumber(0.01, 0.06)
+				drop.frame.Size = UDim2.fromOffset(size, math.floor(size * rng:NextNumber(1.05, 1.35)))
+				drop.frame.Visible = true
+				break
+			end
+		end
+	end
+	for _, drop in droplets do
+		if drop.alive then
+			local t = (now - drop.born) / drop.life
+			if t >= 1 then
+				drop.alive, drop.frame.Visible = false, false
+			else
+				-- Entra rápido, escorre devagar, some no fim.
+				local alpha = math.min(1, t * 6) * (1 - math.max(0, t - 0.7) / 0.3)
+				drop.frame.Position = drop.from + UDim2.fromScale(0, drop.fall * t * t)
+				drop.frame.BackgroundTransparency = 1 - 0.2 * alpha
+				local rim = drop.frame:FindFirstChildOfClass("UIStroke")
+				if rim then
+					rim.Transparency = 1 - 0.32 * alpha
+				end
+			end
+		end
+	end
+end
+
 local function holder(name: string, size: Vector3): BasePart
 	local part = Instance.new("Part")
 	part.Name = name
@@ -72,6 +151,11 @@ local function strike(now: number)
 	nextStrike = now + Weather.strikeInterval(rng:NextNumber())
 	task.delay(Weather.thunderDelay(rng:NextNumber()), function()
 		local thunder = AudioController.play("AmbThunder", 0.55 + outdoor * 0.45)
+		-- Tremor leve quando o trovão chega (mais forte ao ar livre); o CameraController respeita o conforto.
+		CameraController.addTrauma(0.28 + 0.17 * outdoor)
+		task.delay(0.35, function()
+			CameraController.addTrauma(0.12 + 0.08 * outdoor)
+		end)
 		-- O arquivo tem vários estrondos: cada trovão começa num trecho diferente e some em 9 s.
 		thunder.TimePosition = rng:NextNumber(0, 90)
 		task.delay(9, function()
@@ -118,7 +202,7 @@ function controller.Init()
 		-- não como riscos brancos longos no escuro (pedido do humano, referência The Mimic).
 		emitter.Size = NumberSequence.new(0.48, 0.12)
 		emitter.Squash = NumberSequence.new(1.6) -- positivo = gota alta e fina
-		emitter.Transparency = NumberSequence.new(0.58, 0.1)
+		emitter.Transparency = NumberSequence.new(0.74, 0.38)
 		emitter.Color = ColorSequence.new(Color3.fromRGB(186, 196, 212))
 		emitter.LightInfluence = 0.7
 		emitter.LightEmission = 0.18
@@ -160,6 +244,7 @@ function controller.Start()
 	rain:Play()
 	sound, muffle = rain, eq
 	local base = rain.Volume
+	buildLens(Players.LocalPlayer:WaitForChild("PlayerGui"))
 	nextStrike = os.clock() + Weather.strikeInterval(rng:NextNumber())
 	local probeClock = 1
 	RunService.RenderStepped:Connect(function(dt)
@@ -193,6 +278,8 @@ function controller.Start()
 		if splashes then
 			splashes.Rate = Weather.rate(Weather.SplashRate, budget, open, gust)
 		end
+		-- Olhando para o chão a lente não molha; sob telhado as gotas que já estão só terminam de escorrer.
+		updateLens(now, dt, outdoor > 0.8 and look.Y > -0.55, budget)
 		if sound then
 			sound.Volume = base * Weather.volume(outdoor) * (0.85 + 0.15 * gust)
 		end

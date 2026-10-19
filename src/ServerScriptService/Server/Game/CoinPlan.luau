@@ -3,7 +3,7 @@
 	Onde as moedas aparecem em cada capítulo (regra pura, testada no Lune).
 
 	Dentro dos cômodos usamos pontos "seguros" no sistema local do cômodo (`out` = rumo à fachada):
-	longe dos móveis encostados na fachada (out >= 9), da mesa do fundo e do esconderijo (11, 11).
+	longe dos móveis encostados na fachada (out >= 9), da mesa do fundo e do guarda-roupa (out 13,6–17,4; z 10–15).
 	No corredor, uma fileira por andar; no quintal, pontos ao lado da trilha. Cada capítulo tem
 	uma gema (vale mais) num cômodo sorteado.
 ]]

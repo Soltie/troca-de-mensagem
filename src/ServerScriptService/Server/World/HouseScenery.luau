@@ -401,20 +401,56 @@ local function forestGate(root: Instance)
 	end
 	panel.Transparency = 1
 	local base = panel.CFrame
-	local iron = rgb(46, 40, 58)
-	for step = -8, 8, 1.6 do
-		decor(model, "GateBar", Vector3.new(0.35, 10, 0.35), base * CFrame.new(step, 0, 0), iron, Enum.Material.Metal)
+	-- Ferro forjado (o humano achou a grade de barras quadradas e pontas douradas feia): barras redondas finas e
+	-- juntas, ponta de lança escura, travessas redondas e um friso de rosetas entre as duas de cima.
+	local iron = rgb(30, 28, 32)
+	local function round(name: string, size: Vector3, frame: CFrame): BasePart
+		local part = decor(model, name, size, frame, iron, Enum.Material.Metal)
+		local shaped = part :: Part
+		shaped.Shape = Enum.PartType.Cylinder
+		return part
+	end
+	for step = -8.4, 8.41, 0.84 do
+		local tall = math.abs(math.round(step / 0.84)) % 2 == 0
+		local height = if tall then 10.4 else 9.6
+		-- Cilindro do Roblox cresce em X: gira para ficar em pé.
+		round(
+			"GateBar",
+			Vector3.new(height, 0.2, 0.2),
+			base * CFrame.new(step, (height - 10) / 2, 0) * CFrame.Angles(0, 0, math.pi / 2)
+		)
+		local tip = base * CFrame.new(step, height - 5 + 0.22, 0)
 		decor(
 			model,
 			"GateSpike",
-			Vector3.new(0.5, 0.8, 0.5),
-			base * CFrame.new(step, 5.3, 0),
-			rgb(255, 200, 70),
+			Vector3.new(0.26, 0.26, 0.26),
+			tip * CFrame.Angles(math.rad(45), 0, math.rad(45)),
+			iron,
 			Enum.Material.Metal
 		)
+		local knob = decor(
+			model,
+			"GateKnob",
+			Vector3.new(0.3, 0.3, 0.3),
+			tip * CFrame.new(0, -0.32, 0),
+			iron,
+			Enum.Material.Metal
+		) :: Part
+		knob.Shape = Enum.PartType.Ball
 	end
-	for _, y in { -3.5, 3.5 } do
-		decor(model, "GateRail", Vector3.new(18, 0.5, 0.5), base * CFrame.new(0, y, 0), iron, Enum.Material.Metal)
+	for _, y in { -4.2, 2.6, 3.9 } do
+		round("GateRail", Vector3.new(18, 0.24, 0.24), base * CFrame.new(0, y, 0))
+	end
+	for step = -7.98, 7.99, 0.84 do
+		local ring = decor(
+			model,
+			"GateRosette",
+			Vector3.new(0.08, 0.55, 0.55),
+			base * CFrame.new(step, 3.25, 0) * CFrame.Angles(0, math.pi / 2, 0),
+			iron,
+			Enum.Material.Metal
+		) :: Part
+		ring.Shape = Enum.PartType.Cylinder
 	end
 	local folder = Build.folder(root, "GatePillars")
 	for _, x in { -12.5, 12.5 } do
