@@ -87,6 +87,11 @@ local Audio: { [string]: Clip } = {
 	Fall_pipes = { id = "rbxassetid://9116886745", volume = 0.9 }, -- PSE Metal Tank Impact 3
 	Fall_extinguisher = { id = "rbxassetid://9116501934", volume = 0.9 }, -- PSE Metal 50 Gallon Drum
 	Fall_box = { id = "rbxassetid://9126090979", volume = 0.9 }, -- PSE Table Falls Impact On Concrete 9
+	-- Incêndio da fuga final (FireController)
+	FireCrackle = { id = "rbxassetid://236387093", volume = 0.9 }, -- Fireplace Crackle (Jontizm, laço de 15 s)
+	AmbFireRoar = { id = "rbxassetid://2787093357", volume = 0.5 }, -- forest fire (Festivereinhard2, laço de 44 s)
+	BeamCrack = { id = "rbxassetid://9120819447", volume = 1 }, -- PSE Wood Crack Deep Clunky Scrapes Crackling 4
+	WoodSplinter = { id = "rbxassetid://9126240449", volume = 0.9 }, -- PSE Wood Crack Thick Splintering Bursts Creaking 2
 }
 
 return table.freeze(Audio)

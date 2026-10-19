@@ -78,6 +78,10 @@ por isso o trecho dela é 0,47–0,82 s.
 | Fall_cans / Fall_bottles | 9120188626 / 9120188618 | Toolbox Impact Wood Metal Hits Fall Crash 11 / 10 (SFX) | ProSoundEffects | objetos que caem |
 | Fall_pipes | 9116886745 | Metal Tank Impact 3 (SFX) | ProSoundEffects | canos caindo |
 | Fall_box | 9126090979 | Table Falls Impact On Concrete Various Versions 9 (SFX) | ProSoundEffects | caixa caindo |
+| FireCrackle | 236387093 | Fireplace Crackle | Jontizm (Creator Store, grátis) | focos do incêndio final |
+| AmbFireRoar | 2787093357 | forest fire | Festivereinhard2 (Creator Store, grátis) | rugido do incêndio final |
+| BeamCrack | 9120819447 | Wood Crack Deep Clunky Scrapes Crackling 4 (SFX) | ProSoundEffects | viga em chamas caindo |
+| WoodSplinter | 9126240449 | Wood Crack Thick Splintering Bursts Creaking 2 (SFX) | ProSoundEffects | madeira estalando no fogo |
 
 Também do cliente Roblox: `StepFallback` (`rbxasset://sounds/action_footsteps_plastic.mp3`, trecho 0–0,26 s)
 e `Land` (`action_jump_land.mp3`). Os passos padrão do personagem são silenciados pelo `BodyAudioController`.

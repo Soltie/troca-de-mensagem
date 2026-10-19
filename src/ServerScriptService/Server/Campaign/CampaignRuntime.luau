@@ -22,6 +22,7 @@ local ServerNet = require("../Net/ServerNet")
 local WorldService = require("../Services/WorldService")
 local CreatureService = require("../Services/CreatureService")
 local LightningService = require("../Services/LightningService")
+local FireService = require("../Services/FireService")
 local CollectibleService = require("../Services/CollectibleService")
 -- Vantagens pagas (Claude): Segunda Chance, tempo de resgate e Continuação.
 local PerkService = require("../Services/PerkService")
@@ -483,8 +484,8 @@ local function capture(player: Player, cause: string?)
 	end
 	local captureVersion = version
 	-- Primeira pancada do Tung Tung no capítulo: cai e rasteja por CrawlSeconds e levanta sozinho (colegas podem
-	-- resgatar antes). A segunda pancada no mesmo capítulo é captura de verdade. Raio não dá essa chance.
-	local wound = cause ~= "lightning" and wounded[player.UserId] ~= captureVersion
+	-- resgatar antes). A segunda pancada no mesmo capítulo é captura de verdade. Raio e fogo não dão essa chance.
+	local wound = cause ~= "lightning" and cause ~= "fire" and wounded[player.UserId] ~= captureVersion
 	local rising = false
 	if wound then
 		wounded[player.UserId] = captureVersion
@@ -538,6 +539,7 @@ local function capture(player: Player, cause: string?)
 	task.delay(C.CaptureRecovery, function()
 		if
 			cause ~= "lightning"
+			and cause ~= "fire"
 			and thisVersion == version
 			and (session.phase == "Playing" or session.phase == "Extracting")
 		then
@@ -582,6 +584,7 @@ local function afterActivity(previous: Session.Phase)
 		elseif session.phase == "Extracting" then
 			escapeEndsAt = workspace:GetServerTimeNow() + Config.House.EscapeSeconds
 			WorldService.setHouseDestruction(session.stage == 5)
+			WorldService.setHouseFire(session.stage == 5)
 			CreatureService.makeNoise(
 				if session.stage >= 6 then Vector3.new(0, 0, 850) else Vector3.new(26, -16, -68),
 				500
@@ -1068,6 +1071,10 @@ function Runtime.Init()
 	-- Raio ao ar livre derruba pelo mesmo caminho da captura (resgate, segunda chance).
 	LightningService.onStrike(function(player)
 		capture(player, "lightning")
+	end)
+	-- Incêndio da fuga final: ficar no fogo derruba pelo mesmo caminho (resgate, segunda chance).
+	FireService.onBurn(function(player)
+		capture(player, "fire")
 	end)
 	restartCampaign()
 end

@@ -893,6 +893,7 @@ function WorldService.setHouseStage(chapter: number, seed: number?, mode: string
 	getWorld().root:SetAttribute("ForestActive", chapter >= 6)
 	if chapter >= 6 then
 		WorldService.setHouseDestruction(false)
+		WorldService.setHouseFire(false)
 		ForestBuilder.build(getWorld().root, chapter, seed or 1, getFeatures())
 		getWorld().spawnCFrame = CFrame.lookAt(Vector3.new(0, 3, 580), Vector3.new(0, 3, 640))
 		return
@@ -924,6 +925,7 @@ function WorldService.setHouseStage(chapter: number, seed: number?, mode: string
 	end
 	getWorld().spawnCFrame = CFrame.lookAt(Vector3.new(0, 3, if chapter == 1 then 77 else 2), Vector3.new(0, 3, -20))
 	WorldService.setHouseDestruction(false)
+	WorldService.setHouseFire(false)
 	local level = HouseLevels.create(seed or 1, chapter, mode or "Story")
 	HouseLevelBuilder.build(getWorld().root, level)
 	outdoorPatrol = {}
@@ -1045,26 +1047,15 @@ function WorldService.setHouseDestruction(on: boolean)
 	if not on then
 		return
 	end
-	local folder = Build.folder(w.root, "Destruction")
-	-- Fogo/entulho sao cenicos nas alas; a espinha de fuga nao e bloqueada.
-	for _, x in { -40, 40 } do
-		for _, z in { -72, -40, -8 } do
-			local ember = Build.block(
-				folder,
-				"BurningDebris",
-				Vector3.new(x, 0, z),
-				Vector3.new(3, 1, 3),
-				20,
-				Color3.fromRGB(85, 30, 20),
-				{ collide = false, query = false }
-			)
-			local fire = Instance.new("Fire")
-			fire.Size = 7
-			fire.Heat = 4
-			fire.Parent = ember
-			Build.light(ember, "Emergency", Color3.fromRGB(235, 65, 25), 30, 1.5, true)
-		end
-	end
+	Build.folder(w.root, "Destruction")
+end
+
+-- Incêndio da fuga final (Shared/Game/FireSpread): o FireService queima quem fica no fogo e o FireController desenha
+-- chamas, fumaça e luz. Os dois montam os focos com a mesma semente a partir destes atributos.
+function WorldService.setHouseFire(on: boolean)
+	local root = getWorld().root
+	root:SetAttribute("BlazeSeed", if on then math.random(1, 2 ^ 30) else nil)
+	root:SetAttribute("BlazeStart", if on then workspace:GetServerTimeNow() else nil)
 end
 
 return WorldService
