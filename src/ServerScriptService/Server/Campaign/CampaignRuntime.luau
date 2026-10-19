@@ -21,6 +21,7 @@ local Logger = require("@game/ReplicatedStorage/Shared/Logger")
 local ServerNet = require("../Net/ServerNet")
 local WorldService = require("../Services/WorldService")
 local CreatureService = require("../Services/CreatureService")
+local LightningService = require("../Services/LightningService")
 local CollectibleService = require("../Services/CollectibleService")
 -- Vantagens pagas (Claude): Segunda Chance, tempo de resgate e Continuação.
 local PerkService = require("../Services/PerkService")
@@ -454,7 +455,7 @@ local function selfRevive(player: Player, expectedVersion: number)
 	publish()
 end
 
-local function capture(player: Player)
+local function capture(player: Player, cause: string?)
 	if playerAdapter then
 		local id = playerAdapter.hiddenId(player)
 		local locker = id and WorldService.locker(id)
@@ -498,7 +499,11 @@ local function capture(player: Player)
 	-- O cérebro legado termina em Capture; recolocar o Vigia permite continuar caçando a equipe.
 	local thisVersion = version
 	task.delay(C.CaptureRecovery, function()
-		if thisVersion == version and (session.phase == "Playing" or session.phase == "Extracting") then
+		if
+			cause ~= "lightning"
+			and thisVersion == version
+			and (session.phase == "Playing" or session.phase == "Extracting")
+		then
 			CreatureService.reset()
 			CreatureService.activate(nil)
 			CreatureService.setFuses(math.min(2, session.stage - 1))
@@ -1023,6 +1028,10 @@ function Runtime.Init()
 	end
 	PhysicsService:CollisionGroupSetCollidable("CampaignPlayers", "CampaignPlayers", false)
 	CreatureService.onCapture(capture)
+	-- Raio ao ar livre derruba pelo mesmo caminho da captura (resgate, segunda chance).
+	LightningService.onStrike(function(player)
+		capture(player, "lightning")
+	end)
 	restartCampaign()
 end
 

@@ -11,6 +11,7 @@ local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local SoundService = game:GetService("SoundService")
+local TweenService = game:GetService("TweenService")
 local Weather = require("@game/ReplicatedStorage/Shared/Game/Weather")
 local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
 local AudioController = require("./AudioController")
@@ -147,7 +148,7 @@ local function probe(position: Vector3)
 end
 
 -- Raio visível no céu, à frente do olhar e longe: zigue-zague de neon com um galho, ~0,25 s. Só com flashes.
-local function bolt()
+local function bolt(target: Vector3?)
 	local camera = workspace.CurrentCamera
 	local parent = workspace:FindFirstChild("ClientWeather")
 	if not camera or not parent or not Settings.get("flashes") then
@@ -173,18 +174,49 @@ local function bolt()
 		table.insert(parts, part)
 	end
 	local at = top
+	if target then
+		-- Raio que cai num ponto marcado (LightningService): começa acima dele e termina exatamente no chão.
+		top = target + Vector3.new(rng:NextNumber(-12, 12), 90, rng:NextNumber(-12, 12))
+		at = top
+	end
 	for index = 1, 9 do
-		local nextAt = at + Vector3.new(rng:NextNumber(-7, 7), -10, rng:NextNumber(-7, 7))
-		segment(at, nextAt, 0.9)
+		local nextAt = if target
+			then (if index == 9
+				then target
+				else top:Lerp(target, index / 9) + Vector3.new(rng:NextNumber(-4, 4), 0, rng:NextNumber(-4, 4)))
+			else at + Vector3.new(rng:NextNumber(-7, 7), -10, rng:NextNumber(-7, 7))
+		segment(at, nextAt, if target then 0.4 else 0.9)
 		if index == 3 or index == 6 then
 			local branch = at
 			for _ = 1, 3 do
 				local twig = branch + side * rng:NextNumber(-8, 8) + Vector3.new(0, -6, 0)
-				segment(branch, twig, 0.45)
+				segment(branch, twig, if target then 0.18 else 0.45)
 				branch = twig
 			end
 		end
 		at = nextAt
+	end
+	if target then
+		-- Clarão no ponto do impacto: ilumina o chão e o que está em volta por um instante.
+		local impact = Instance.new("Part")
+		impact.Name = "LightningImpact"
+		impact.Anchored, impact.CanCollide, impact.CanQuery, impact.CanTouch = true, false, false, false
+		impact.Transparency = 1
+		impact.Size = Vector3.new(0.2, 0.2, 0.2)
+		impact.Position = target + Vector3.new(0, 2, 0)
+		impact.Parent = parent
+		local light = Instance.new("PointLight")
+		light.Color = Color3.fromRGB(214, 226, 255)
+		light.Range = 45
+		light.Brightness = 9
+		light.Shadows = true
+		light.Parent = impact
+		TweenService:Create(light, TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			Brightness = 0,
+		}):Play()
+		task.delay(0.5, function()
+			impact:Destroy()
+		end)
 	end
 	task.delay(0.08, function()
 		for _, part in parts do
@@ -203,14 +235,17 @@ local function bolt()
 	end)
 end
 
-local function strike(now: number)
+local function strike(now: number, target: Vector3?)
 	strikeAt = now
-	bolt()
+	bolt(target)
 	nextStrike = now + Weather.strikeInterval(rng:NextNumber())
-	task.delay(Weather.thunderDelay(rng:NextNumber()), function()
-		local thunder = AudioController.play("AmbThunder", 0.55 + outdoor * 0.45)
+	-- Raio no chão perto (marca do LightningService): estrondo na hora e tremor forte de perto.
+	local camera = workspace.CurrentCamera
+	local near = if target and camera then math.clamp(1 - (target - camera.CFrame.Position).Magnitude / 60, 0, 1) else 0
+	task.delay(if target then 0.05 else Weather.thunderDelay(rng:NextNumber()), function()
+		local thunder = AudioController.play("AmbThunder", 0.55 + outdoor * 0.45 + near * 0.6)
 		-- Tremor leve quando o trovão chega (mais forte ao ar livre); o CameraController respeita o conforto.
-		CameraController.addTrauma(0.28 + 0.17 * outdoor)
+		CameraController.addTrauma(0.28 + 0.17 * outdoor + near * 0.4)
 		task.delay(0.35, function()
 			CameraController.addTrauma(0.12 + 0.08 * outdoor)
 		end)
@@ -304,6 +339,43 @@ function controller.Start()
 	local base = rain.Volume
 	buildLens(Players.LocalPlayer:WaitForChild("PlayerGui"))
 	nextStrike = os.clock() + Weather.strikeInterval(rng:NextNumber())
+	-- Raios marcados pelo servidor (LightningService): a marca pulsa no chão e o raio cai nela ao fim do aviso.
+	local function watchMark(mark: Instance)
+		if not mark:IsA("BasePart") then
+			return
+		end
+		local glow = mark:FindFirstChild("WarnGlow")
+		local pulse = if glow and glow:IsA("PointLight")
+			then TweenService:Create(
+				glow,
+				TweenInfo.new(0.14, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+				{ Brightness = 5 }
+			)
+			else nil
+		if pulse then
+			pulse:Play()
+		end
+		mark:GetAttributeChangedSignal("Struck"):Once(function()
+			if pulse then
+				pulse:Cancel()
+			end
+			for _, child in mark:GetChildren() do
+				if child:IsA("ParticleEmitter") or child:IsA("Light") then
+					(child :: any).Enabled = false
+				end
+			end
+			strike(os.clock(), mark.Position)
+		end)
+	end
+	task.spawn(function()
+		local marks = workspace:WaitForChild("LightningMarks", math.huge)
+		if marks then
+			for _, mark in marks:GetChildren() do
+				watchMark(mark)
+			end
+			marks.ChildAdded:Connect(watchMark)
+		end
+	end)
 	local probeClock = 1
 	RunService.RenderStepped:Connect(function(dt)
 		local camera = workspace.CurrentCamera
