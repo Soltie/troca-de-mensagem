@@ -547,6 +547,11 @@ function Controller.Start()
 				else nil
 		end
 		Flashlight.setGuide(guideTarget)
+		-- Luz guia (GuidingLightController) lê o mesmo alvo.
+		if player:GetAttribute("GuideTarget") ~= guideTarget then
+			player:SetAttribute("GuideTarget", guideTarget)
+			player:SetAttribute("GuideTaskId", if activity then activity.id else nil)
+		end
 		-- HUD de terror (NoirHud): a antiga só guarda o guia (H) e os avisos curtos.
 		ui.order.Visible = false
 		ui.tray.Visible = false

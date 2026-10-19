@@ -40,6 +40,7 @@ local controllers: { any } = {
 	require("./Controllers/CreatureVisualController"),
 	require("./Controllers/ThreatWarningController"),
 	require("./Controllers/ScareController"),
+	require("./Controllers/GuidingLightController"),
 	require("./Controllers/GameUiController"),
 	require("./Controllers/InteractionController"),
 	require("./Controllers/HudController"),

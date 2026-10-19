@@ -503,6 +503,9 @@ local function capture(player: Player, cause: string?)
 	if not Session.capture(session, player.UserId, now, delay) then
 		return
 	end
+	-- Causa da queda para a dica ao morrer (GuidingLightController).
+	player:SetAttribute("LastCaptureCause", cause or "tung")
+	player:SetAttribute("LastCaptureAt", now)
 	if wound then
 		feedback(player, "crawl_start")
 	end
