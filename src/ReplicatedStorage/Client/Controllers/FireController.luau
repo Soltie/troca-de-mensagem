@@ -532,6 +532,11 @@ local function fallPiece(piece: BasePart, options: FallOptions)
 			rng:NextNumber(-0.5, 0.5)
 		)
 	end
+	-- Apoia no chão pela altura da peça já girada (inclinada não afunda nem flutua).
+	local half = piece.Size / 2
+	local r = to.Rotation
+	local hy = math.abs(r.RightVector.Y) * half.X + math.abs(r.UpVector.Y) * half.Y + math.abs(r.LookVector.Y) * half.Z
+	to = CFrame.new(to.Position.X, (floorY :: number) + hy + 0.03, to.Position.Z) * r
 	local height = math.max(from.Position.Y - to.Position.Y, 1)
 	local duration = if options.flat then 0.7 else math.clamp(math.sqrt(height / 40), 0.35, 0.8)
 	local dust = emitter(copy, SMOKE)
@@ -628,7 +633,7 @@ local function crumble(visual: Visual): boolean
 			and not crumbled[part]
 			and part.Transparency < 0.5
 			and part.Position.Y > node.y + 6
-			and part.Position.Y < node.y + 17
+			and part.Position.Y < node.y + 15.4
 			and math.max(size.X, size.Y, size.Z) <= 22
 			and not solid(part)
 		then
@@ -641,7 +646,7 @@ local function crumble(visual: Visual): boolean
 	-- Uma peça e às vezes mais uma ou duas em seguida.
 	for index = 1, math.min(#candidates, rng:NextInteger(1, 3)) do
 		local piece = table.remove(candidates, rng:NextInteger(1, #candidates)) :: BasePart
-		fallPiece(piece, { delay = (index - 1) * rng:NextNumber(0.3, 0.8), quiet = index > 1 })
+		fallPiece(piece, { floorY = node.y, delay = (index - 1) * rng:NextNumber(0.3, 0.8), quiet = index > 1 })
 	end
 	return true
 end
