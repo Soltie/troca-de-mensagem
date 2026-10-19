@@ -33,3 +33,33 @@ Achados de design (não são bugs):
 7. Modos de dificuldade (Criança / Normal / Pesadelo): velocidade do Tung Tung, fogo, quantidade de itens.
 8. Recompensas de rejogar: conquistas (sem ser pego, speedrun), fitas VHS e finais diferentes.
 9. Teste em celular (fogo, chuva e desmoronamento são pesados) e revisão de botões na tela.
+
+## Ideias trazidas de outros jogos de terror (pesquisa de 19/10/2026)
+Fontes: DOORS, Pressure, The Mimic, Piggy e Granny (Roblox/mobile); Alien: Isolation, Amnesia, Outlast, FNAF,
+Dead by Daylight, Resident Evil 2 e Lethal Company (PC/console). Ordenadas por "mais impacto com menos trabalho".
+A. Luz guia (DOORS): parado 20 s sem progresso, uma luz azulada fraca acende no próximo objetivo; ao morrer, uma
+   dica curta do que deu errado. Substitui a ideia 6 (dica automática).
+B. Batimento do coração (Dead by Daylight): dentro do raio do Tung Tung, batida que acelera e fica mais alta; na
+   perseguição vira música de caçada. Hoje o aviso já tem luz/tremor/TUM; o coração dá leitura à distância.
+C. Ele revista esconderijos (Outlast/Granny): se VIU você entrar, abre o armário ou revista 1–2 móveis do cômodo
+   antes de ir embora. Dá um mini-jogo de "segurar o ar no ritmo" (DOORS/Figure): errar 3 vezes = pancada.
+D. Diretor de tensão (Alien: Isolation): camada acima da IA que mede tensão (tempo desde o último susto, distância,
+   vida) e manda o Tung Tung "ir ver o jogador" ou "dar uma folga". Evita longos vazios e evita acosso sem fim.
+E. Passos que informam (Mr. X): o passo dele muda com o andar (acima/abaixo mais abafado) e com o material; o
+   jogador aprende a ler onde ele está só pelo som. Já começado (passos mais altos); falta o abafamento por andar.
+F. Monstro que te obriga a NÃO olhar (Pressure/Eyefestation, Lethal/Bracken): um segundo "espírito" da casa
+   (quadro, boneca) que só anda quando você não olha, e punir quem fica encarando. Variedade sem mexer no Tung Tung.
+G. Esconderijos com surpresa (Pressure/Void Mass): 1 em 10 armários tem "algo" dentro — espiar pela fresta antes de
+   entrar mostra olhos; entrar sem olhar = pancada. Recompensa quem usa a fresta (já existe o Espaço).
+H. Som vira perigo (Granny/Lethal): derrubar vaso, pisar em caco, correr em assoalho velho, chat de voz por
+   proximidade (Roblox tem) — tudo chama o Tung Tung. Dá sentido ao "andar devagar".
+I. Recurso que acaba (Amnesia/Outlast/FNAF): lanterna já tem pilha; ideia extra: ficar MUITO tempo no escuro faz a
+   visão tremer/sussurros (sanidade), e luz de vela acesa recupera. Faz o jogador procurar luz, não só fugir.
+J. Entidade que pune ficar parado (DOORS/Rush e Ambush): de vez em quando um "sopro" varre o corredor inteiro;
+   as luzes avisam 3 s antes; quem não entrar num armário ou numa porta leva pancada. Cadência tipo DOORS.
+K. Mini-jogos físicos (Piggy/Pressure): cadeado de combinação, gerador que precisa girar, fusível que precisa
+   encaixar no ritmo — em vez de só apertar E. Dá "mão na massa" para criança.
+L. Modos para rejogar (Piggy): "Infecção" (quem é pego vira ajudante do Tung Tung, batendo nas portas) e "Traidor"
+   (um jogador sabe onde ele está). Para o PvP já existente do Codex.
+M. Começo lento e pico no fim (DOORS/Seek): corrida roteirizada no capítulo 5 com portas fechando atrás e obstáculos
+   para pular; já temos o fogo — faltam obstáculos de pulo e um "corredor que desaba" na hora certa.
