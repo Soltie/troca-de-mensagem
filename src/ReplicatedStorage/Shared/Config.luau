@@ -230,7 +230,7 @@ local Config = {
 		NoticeTime = 2.6,
 		ExitCooldown = 0.8,
 		-- Espiar pela fresta (Espaço): segurando mais que isto (s), escorrega e cai para fora do armário.
-		PeekMax = 4,
+		PeekMax = 2,
 		-- Barulho da queda (raio em studs) que o Tung Tung ouve.
 		FallNoise = 32,
 	},

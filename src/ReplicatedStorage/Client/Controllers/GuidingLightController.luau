@@ -26,6 +26,7 @@ local HINTS: { [string]: string } = {
 	tung = "Ele te ouviu. Quando as luzes piscarem e o coração acelerar, entre num armário ou saia do caminho dele.",
 	lightning = "O raio cai onde o chão brilha. Saia do campo aberto assim que vir o brilho.",
 	fire = "O fogo corre atrás de você. Não pare dentro das chamas: corra pelo meio do caminho.",
+	search = "Quando ele parar na porta do armário, aperte no ritmo: bem na hora em que o anel encosta no círculo.",
 	gust = "Quando as luzes do corredor piscarem e o vento crescer, entre num armário ou num cômodo do lado.",
 }
 
@@ -101,13 +102,20 @@ local function update(dt: number)
 	end
 	local character = player.Character
 	local body = character and character:FindFirstChild("HumanoidRootPart")
+	-- Dentro do armário o contorno some (atravessaria a porta e entregaria o escuro).
+	local hidden = player:GetAttribute("Hidden")
 	local active = phase == "Playing"
+		and not (type(hidden) == "string" and hidden ~= "")
 		and player:GetAttribute("CinematicActive") ~= true
 		and player:GetAttribute("CampaignStatus") == "Active"
 		and target ~= nil
 		and taskId ~= nil
 		and body ~= nil
 		and body:IsA("BasePart")
+	if type(hidden) == "string" and hidden ~= "" then
+		-- Ao sair do armário a contagem recomeça do zero.
+		lastNearAt = now
+	end
 	if active and body and body:IsA("BasePart") and target then
 		if (body.Position - target).Magnitude < NEAR then
 			lastNearAt = now
