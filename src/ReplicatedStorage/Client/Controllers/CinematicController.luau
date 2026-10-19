@@ -37,6 +37,7 @@ local Animator = require("./CharacterAnimatorController")
 local TungTungRig = require("../Creature/TungTungRig")
 local ArmadilhoRig = require("../Creature/ArmadilhoRig")
 local AudioController = require("./AudioController")
+local Rain = require("./RainController")
 local Create = require("../UI/Create")
 local Theme = require("../UI/Theme")
 
@@ -76,8 +77,11 @@ local epilogueLight: BasePart? = nil
 local epilogueShot = 0
 local teaser: Frame? = nil
 local teaserCountdown: TextLabel? = nil
--- Junto à porta e virado para as câmeras do quintal (o modelo olha para -Z).
-local PORCH = CFrame.lookAt(Vector3.new(3, -0.5, 65.6), Vector3.new(8, -0.5, 74))
+-- Sob a porta, de frente para o quintal (o modelo olha para -Z): silhueta com recorte de luz fria.
+local PORCH = CFrame.lookAt(Vector3.new(0.2, -0.5, 66), Vector3.new(1.2, -0.5, 90))
+local porchLights: { Instance } = {}
+local porchFlash = false
+local porchDimmed: { Light } = {}
 
 local function dropCameo()
 	if armadilho then
@@ -89,6 +93,17 @@ local function dropCameo()
 		epilogueLight = nil
 	end
 	epilogueShot = 0
+	for _, light in porchLights do
+		light:Destroy()
+	end
+	table.clear(porchLights)
+	for _, light in porchDimmed do
+		if light.Parent then
+			light.Enabled = true
+		end
+	end
+	table.clear(porchDimmed)
+	porchFlash = false
 	if cameo then
 		cameo.model:Destroy()
 		cameo = nil
@@ -119,10 +134,55 @@ local function updateCameo(current: Shots.Sequence, index: number, dt: number)
 		end
 		cameoClock += dt
 		TungTungRig.place(rig, PORCH)
-		if cameoClock < 0.6 then
+		if #porchLights == 0 then
+			-- Recorte frio por trás/acima (contorno) e um fio de luz quente de frente: lê como vulto, não boneco.
+			local function lamp(name: string, cframe: CFrame, light: Light): Part
+				local holder = Instance.new("Part")
+				holder.Name, holder.Anchored, holder.Transparency = name, true, 1
+				holder.CanCollide, holder.CanQuery, holder.CanTouch = false, false, false
+				holder.CFrame = cframe
+				light.Parent = holder
+				holder.Parent = workspace
+				table.insert(porchLights, holder)
+				return holder
+			end
+			-- Só neste plano (e só no cliente): as lâmpadas da varanda apagam e a luz dos olhos sai, senão o corpo
+			-- fica laranja e chapado. Voltam ao normal no dropCameo.
+			rig.eyeLight.Enabled = false
+			for _, light in workspace:GetDescendants() do
+				if light:IsA("Light") and light.Enabled and not light:IsDescendantOf(rig.model) then
+					local holder = light.Parent
+					local position = if holder and holder:IsA("BasePart")
+						then holder.Position
+						elseif holder and holder:IsA("Attachment") then holder.WorldPosition
+						else nil
+					if position and (position - PORCH.Position - Vector3.new(0, 6, 4)).Magnitude < 26 then
+						light.Enabled = false
+						table.insert(porchDimmed, light)
+					end
+				end
+			end
+			-- Contraluz frio no corredor (silhueta) e luz lateral quente e dura no rosto.
+			local back = Instance.new("SpotLight")
+			back.Color, back.Brightness, back.Range, back.Angle, back.Shadows =
+				Color3.fromRGB(150, 175, 230), 12, 20, 60, true
+			lamp("CameoBack", CFrame.lookAt(Vector3.new(0, 9, 55), Vector3.new(0.2, 5, 67)), back)
+			local hall = Instance.new("PointLight")
+			hall.Color, hall.Brightness, hall.Range, hall.Shadows = Color3.fromRGB(120, 140, 190), 1.2, 16, false
+			lamp("CameoHall", CFrame.new(0, 7, 54), hall)
+			local key = Instance.new("SpotLight")
+			key.Color, key.Brightness, key.Range, key.Angle, key.Shadows = Color3.fromRGB(255, 150, 85), 8, 12, 30, true
+			lamp("CameoKey", CFrame.lookAt(Vector3.new(6.5, 8, 67.5), Vector3.new(0.2, 7.4, 66.2)), key)
+		end
+		-- Relâmpago no meio do plano revela o rosto; no fim, o bastão bate.
+		if not porchFlash and cameoClock > 1.4 then
+			porchFlash = true
+			Rain.strikeNow()
+		end
+		if cameoClock < 2.6 then
 			TungTungRig.play(rig, "idle", 0)
-		elseif TungTungRig.playing(rig) == "idle" and cameoClock < 1 then
-			TungTungRig.play(rig, "slash", 0.15, 0.9)
+		elseif TungTungRig.playing(rig) == "idle" then
+			TungTungRig.play(rig, "slash", 0.2, 0.75)
 		end
 		TungTungRig.step(rig, dt)
 	elseif current.name == "Attract" and options.loop then
@@ -465,7 +525,11 @@ local function updateSequence(current: Shots.Sequence, dt: number)
 		ownsTitle = false
 	end
 	if not options.loop then
-		local line = Shots.caption(options.captions or current.captions, elapsed, total)
+		-- Com cartela no primeiro plano, as legendas só começam depois dela (as duas dividem a faixa de baixo).
+		local titleTime = if current.title then current.shots[1].duration else 0
+		local line = if elapsed < titleTime
+			then nil
+			else Shots.caption(options.captions or current.captions, elapsed - titleTime, total - titleTime)
 		if line ~= lastCaption then
 			lastCaption = line
 			Transition.caption(line)

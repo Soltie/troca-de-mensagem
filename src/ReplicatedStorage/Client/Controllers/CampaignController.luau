@@ -298,7 +298,9 @@ function Controller.Start()
 		local phase = tostring(state:GetAttribute("Phase"))
 		local stage = (state:GetAttribute("Stage") or 0) :: number
 		if phase ~= lastPhase then
-			if phase == "Intermission" then
+			-- Só comemora o fim de um capítulo de verdade (não ao reiniciar depois de uma captura).
+			local fromPlay = lastPhase == "Playing" or lastPhase == "Extracting"
+			if phase == "Intermission" and fromPlay and stage >= 1 then
 				celebrate(false, `CAPÍTULO {stage} CONCLUÍDO!`, `{chapterCoins} moedas neste capítulo`)
 			elseif phase == "Won" then
 				celebrate(true, "VOCÊS ESCAPARAM!", `{chapterCoins} moedas no último capítulo`)

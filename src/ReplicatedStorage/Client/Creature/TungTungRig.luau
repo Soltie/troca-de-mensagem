@@ -41,6 +41,7 @@ export type TungRig = {
 local TungTungRig = {}
 
 local VISUAL_SCALE = 1.15
+local SKIN_TINT = Color3.fromRGB(122, 86, 58)
 
 -- Clipes decodificados uma vez por cliente: quadro -> lista de CFrames por osso.
 local cache: { [string]: { frames: { { CFrame } }, decoded: ClipCodec.Decoded } } = {}
@@ -95,6 +96,14 @@ function TungTungRig.build(parent: Instance?): TungRig?
 	-- Nome antigo mantido: medo, tensão e câmera de captura procuram "VigiaVisual" no workspace.
 	model.Name = "VigiaVisual"
 	local body = model:FindFirstChild("Body") :: BasePart
+	-- Madeira marrom e fosca, não boneco dourado. O próprio Assets/TungTung já vem sem o mapa de metal e com a cor
+	-- de madeira; aqui só garante a cor (o Roblox não deixa script de jogo trocar mapas da textura).
+	local skin: any = body:FindFirstChildWhichIsA("SurfaceAppearance")
+	if skin then
+		pcall(function()
+			skin.Color = SKIN_TINT
+		end)
+	end
 	body.Anchored = true
 	body.CanCollide = false
 	body.CanQuery = false
@@ -112,8 +121,9 @@ function TungTungRig.build(parent: Instance?): TungRig?
 	-- Olhos acesos: o Tung Tung aparece no escuro antes de chegar perto (justo para quem joga).
 	local light = Instance.new("PointLight")
 	light.Color = Color3.fromRGB(255, 196, 120)
-	light.Range = 9
-	light.Brightness = 1.2
+	-- Alcance curto: acende o rosto, não o corpo todo (senão ele vira um boneco laranja chapado).
+	light.Range = 4
+	light.Brightness = 0.9
 	light.Shadows = false
 	light.Parent = emitter
 	-- Peça invisível que segue o osso da cabeça (alvo da câmera de captura e dos raycasts de visão).
