@@ -9,7 +9,9 @@
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
 
+local Audio = require("@game/ReplicatedStorage/Shared/Game/Audio")
 local House = require("@game/ReplicatedStorage/Shared/Game/HouseCatalog")
 local Build = require("./Build")
 local PrimitiveFinish = require("./HousePrimitiveFinish")
@@ -25,6 +27,8 @@ local FURNITURE = 0.85
 -- Peças que cobrem colisões antigas (cama, mesa baixa, guarda-roupa do esconderijo) e tapetes mantêm o tamanho
 -- de antes (fator 1,25), senão a parede invisível antiga aparece para fora do modelo.
 local KEEP = 1.25 / FURNITURE
+-- O sofá (Sofa 03) é baixo: na escala real o assento ficava abaixo do joelho do boneco. 35% maior (aprovado 19/10).
+local SOFA = 1.35
 
 -- Só mobília decorativa. Camas, mesa baixa e esconderijos conservam os volumes funcionais antigos.
 -- Mesma lista que o evento NoiseLure procura em Props (DynamicHouseService).
@@ -178,7 +182,7 @@ local function hall(folder: Instance)
 	Props.place(folder, "FrameOval", V3(-15, 7.4, 63.5), front, 2.1, "wall")
 	-- Canto leste, atrás da escada: relógio parado às 03:12, sofá, criado-mudo, poltrona e quadros.
 	Props.place(folder, "GrandfatherClock", V3(43.6, 0, 30), west, 1, "floor")
-	Props.place(folder, "Sofa", V3(44.4, 0, 44.5), west, 1, "back")
+	Props.place(folder, "Sofa", V3(44.4, 0, 44.5), west, SOFA, "back")
 	local stand = Props.place(folder, "Nightstand", V3(44.4, 0, 52.5), west, 1, "back")
 	Props.place(folder, "Lantern", V3(42.8, top(stand), 52.5), west, 1.3, "floor")
 	glow(folder, "HallLampShade", V3(42.8, top(stand) + 1, 52.5), 20, 0.6, true)
@@ -326,7 +330,7 @@ ROOMS.Living = function(folder, root, room)
 			Props.place(folder, "Candelabra", mantel + V3(0, 0, dz), box.LookVector, 0.55, "floor")
 		end
 	end
-	against(folder, room, "Sofa", "facade", -1.5, 1.05)
+	against(folder, room, "Sofa", "facade", -1.5, 1.05 * SOFA)
 	Props.place(folder, "Armchair", at(-8.6, 10.5, 0), V3(-1, 0, -0.15), 1.05, "floor")
 	Props.place(folder, "Armchair", at(10.5, -11.5, 0), V3(-1, 0, 0.6), 1.05, "floor")
 	lampOn(folder, room, "facade", -14.3)
@@ -610,10 +614,97 @@ end
 -- Em todos os cômodos: tapete persa no centro, mesa baixa no lugar da mesa antiga, janela na fachada
 -- e guarda-roupa por cima do armário-esconderijo (a porta interativa continua a mesma, invisível).
 --[[
-	O modelo do guarda-roupa é uma peça só. Para a porta abrir junto com o esconderijo, uma folha de porta
-	fica soldada à HideDoor (que o WorldService.swingLocker gira) e, atrás dela, um fundo escuro aparece
-	quando ela abre. A folha fica atrás da câmera de quem está escondido (olho 0,1 stud à frente da porta).
+	Guarda-roupa do esconderijo: modelo de duas portas (Hyper3D, escolhido pelo usuário em 19/10). O pivô é o centro
+	da frente, no chão, com a frente em +Z; fica no plano da frente da HideDoor (a fresta da câmera continua livre).
+	As folhas LeafA (dobradiça em -HingeX) e LeafB (+HingeX) abrem para fora, cada uma para um lado, no mesmo
+	ângulo da HideDoor que o WorldService.swingLocker gira. O interior oco é parte do corpo.
+	Sem o modelo na biblioteca, cai no guarda-roupa antigo de uma folha abaixo.
 ]]
+local function wardrobeModel(folder: Instance, door: BasePart): boolean
+	local source = library()
+	local template = source and source:FindFirstChild("WardrobeDouble")
+	if not template or not template:IsA("Model") or not template:GetAttribute("PivotIsFrontFloor") then
+		return false
+	end
+	local hingeX = template:GetAttribute("HingeX")
+	-- Dobradiça na quina externa da FRENTE da folha (atrás do pivô): girando ali a folha não se desloca.
+	local hingeZ = template:GetAttribute("HingeZ")
+	local leafA = template:FindFirstChild("LeafA")
+	local leafB = template:FindFirstChild("LeafB")
+	if
+		type(hingeX) ~= "number"
+		or type(hingeZ) ~= "number"
+		or not leafA
+		or not leafB
+		or not leafA:IsA("BasePart")
+		or not leafB:IsA("BasePart")
+	then
+		return false
+	end
+	local model = template:Clone()
+	local closed = door.CFrame
+	local pivot = closed * CFrame.new(0, -door.Size.Y / 2, door.Size.Z / 2)
+	model:PivotTo(pivot)
+	for _, part in model:GetDescendants() do
+		if part:IsA("BasePart") then
+			part.Anchored, part.CanCollide, part.CanQuery, part.CanTouch = true, false, false, false
+		end
+	end
+	model.Parent = folder
+	local leaves: { { part: BasePart, hinge: CFrame, rest: CFrame, sign: number } } = {}
+	local function hang(name: string, side: number)
+		local part = model:FindFirstChild(name) :: BasePart
+		local hinge = pivot * CFrame.new(side * hingeX, 0, hingeZ)
+		table.insert(leaves, { part = part, hinge = hinge, rest = hinge:Inverse() * part.CFrame, sign = side })
+	end
+	hang("LeafA", -1)
+	hang("LeafB", 1)
+	-- O swingLocker gira a HideDoor em passos (12 por segundo); as folhas seguem o ângulo dela com uma interpolação
+	-- curta, sempre em arco em torno da dobradiça.
+	local angle = Instance.new("NumberValue")
+	angle.Name = "LeafAngle"
+	angle.Parent = model
+	angle.Changed:Connect(function(value: number)
+		for _, leaf in leaves do
+			leaf.part.CFrame = leaf.hinge * CFrame.Angles(0, leaf.sign * value, 0) * leaf.rest
+		end
+	end)
+	-- Som próprio: trinco abrindo e rangido ao abrir; batida de madeira e trinco ao fechar. Os arquivos são longos
+	-- (vários golpes): cada som toca só um trecho (medido pela PlaybackLoudness no Studio).
+	local body = model:FindFirstChild("Body") or model
+	local function cut(name: string, id: string, volume: number, speed: number, from: number, to: number): Sound
+		local sound = Build.sound(body, name, id, volume, speed)
+		sound.PlaybackRegionsEnabled, sound.PlaybackRegion = true, NumberRange.new(from, to)
+		return sound
+	end
+	local unlatch = cut("WardrobeUnlatch", Audio.DoorLatch.id, 0.5, 1.2, 1.45, 2.1)
+	local creak = cut("WardrobeOpen", Audio.CreakWood.id, 1, 0.9, 2.8, 3.9)
+	local shut = cut("WardrobeShut", Audio.StepWood.id, 0.9, 0.8, 0, 0.3)
+	local latch = cut("WardrobeLatch", Audio.DoorLatch.id, 0.55, 1.2, 2.85, 3.45)
+	local follow = TweenInfo.new(1 / 12, Enum.EasingStyle.Linear)
+	local target = 0
+	local swing = door:GetPropertyChangedSignal("CFrame"):Connect(function()
+		local _, yaw = (closed.Rotation:Inverse() * door.CFrame.Rotation):ToEulerAnglesYXZ()
+		local nextTarget = math.abs(yaw)
+		if target < 0.01 and nextTarget >= 0.01 then
+			unlatch:Play()
+			creak:Play()
+		elseif target >= 0.01 and nextTarget < 0.01 then
+			shut:Play()
+			latch:Play()
+		end
+		target = nextTarget
+		TweenService:Create(angle, follow, { Value = nextTarget }):Play()
+	end)
+	model.Destroying:Once(function()
+		swing:Disconnect()
+	end)
+	door.Destroying:Once(function()
+		model:Destroy()
+	end)
+	return true
+end
+
 local function wardrobeDoor(folder: Instance, door: BasePart)
 	local frontZ = door.Size.Z / 2
 	local function piece(name: string, size: Vector3, offset: Vector3, color: Color3, material: Enum.Material): BasePart
@@ -677,10 +768,21 @@ local function common(folder: Instance, root: Instance, room: RoomRef)
 	end
 	Props.place(folder, "LowTable", V3(room.x, room.y, room.z - 11), Vector3.zAxis, 0.8 * KEEP, "floor")
 	window(folder, room)
+	-- Cômodos da frente da ala oeste: a janela real da parede z = 12 (HouseBuilder, x = −28,75) ganha moldura
+	-- e cortinas, como as janelas da fachada.
+	if room.x < 0 and room.y >= 0 and math.abs(room.z + 4) < 1 then
+		Props.place(folder, "WindowSet", V3(-28.75, room.y + 8.4, 11.5), -Vector3.zAxis, 1.25, "wall")
+	end
 	local features = root:FindFirstChild("Features")
 	local cabinet = features and features:FindFirstChild(`hide_{room.id}`)
 	local door = cabinet and cabinet:FindFirstChild("HideDoor")
-	if cabinet and door and door:IsA("BasePart") and door.Transparency < 0.5 and has("Wardrobe") then
+	if cabinet and door and door:IsA("BasePart") and door.Transparency < 0.5 and wardrobeModel(folder, door) then
+		for _, part in cabinet:GetChildren() do
+			if part:IsA("BasePart") then
+				part.Transparency = 1
+			end
+		end
+	elseif cabinet and door and door:IsA("BasePart") and door.Transparency < 0.5 and has("Wardrobe") then
 		-- A fresta da câmera fica 0,1 stud à frente da porta: a frente do guarda-roupa fica no mesmo plano.
 		local front = door.Position + V3(0, -door.Size.Y / 2, door.Size.Z / 2)
 		local model = Props.place(folder, "Wardrobe", front, Vector3.zAxis, 0.85 * KEEP, "floor")

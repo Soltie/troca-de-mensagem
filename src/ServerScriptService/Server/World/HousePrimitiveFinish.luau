@@ -108,6 +108,20 @@ local function decorate(root: Instance, folder: Instance, body: BasePart)
 		if model then
 			body.Transparency, body.CastShadow = 1, false
 		end
+	elseif
+		body.Name == "Cabinet"
+		and body.Parent
+		and body.Parent.Name == "Television"
+		and furnishings
+		and body:IsDescendantOf(furnishings)
+		and body.Transparency < 0.5
+	then
+		-- Móvel da TV em bloco: aparador 3D no mesmo volume (a TV e a tela ficam como estão).
+		model = render(folder, body, "Console", body.Size, CFrame.identity)
+		if model then
+			local cabinet = body :: BasePart
+			cabinet.Transparency, cabinet.CastShadow = 1, false
+		end
 	elseif body.Name == "PowerLamp" and furnishings and body.Parent == furnishings and body.Transparency < 0.5 then
 		-- Lâmpada elétrica do cômodo (bloco solto abaixo do teto): lustre pequeno preso ao teto. A peça continua
 		-- sendo a luz "Lamp" que o WorldService liga com a energia; só deixa de aparecer.

@@ -147,12 +147,18 @@ function Builder.build(parent: Instance): (MapBuilder.World, FeatureBuilder.Buil
 			local x = side * 26
 			block(structure, "FacadeSill", x, y, 12, 36, 5, 1, plaster)
 			block(structure, "FacadeTop", x, y + 11, 12, 36, 4, 1, plaster)
-			for _, offset in { -12.5, 12.5 } do
-				block(structure, "WindowSide", x + offset, y + 5, 12, 11, 6, 1, plaster)
-			end
-			local window = block(structure, "WindowGlass", x, y + 5, 12, 14, 6, 0.3, Color3.fromRGB(62, 82, 83))
+			-- Oeste: de x = −24,5 em diante a parede dá para o bloco da escadaria (reboco a poucos studs do vidro,
+			-- um painel claro visto de dentro). A janela ali fica do tamanho da moldura externa (x = −28,75,
+			-- 8,5 de largura) e o resto vira parede.
+			local glassX = if side < 0 then -28.75 else x
+			local glassW = if side < 0 then 8.5 else 14
+			local left, right = glassX - glassW / 2, glassX + glassW / 2
+			block(structure, "WindowSide", (x - 18 + left) / 2, y + 5, 12, left - (x - 18), 6, 1, plaster)
+			block(structure, "WindowSide", (right + x + 18) / 2, y + 5, 12, x + 18 - right, 6, 1, plaster)
+			local window =
+				block(structure, "WindowGlass", glassX, y + 5, 12, glassW, 6, 0.3, Color3.fromRGB(62, 82, 83))
 			window.Material, window.Transparency = Enum.Material.Glass, 0.55
-			block(props, "WindowMullion", x, y + 5, 12.2, 0.3, 6, 0.4, wood)
+			block(props, "WindowMullion", glassX, y + 5, 12.2, 0.3, 6, 0.4, wood)
 		end
 	end
 	sign(root, "TUNG TUNG SAHUR / THE CURSED HOUSE", Vector3.new(8, 35, 65))
@@ -272,6 +278,23 @@ function Builder.build(parent: Instance): (MapBuilder.World, FeatureBuilder.Buil
 			sound = sound(door, "Creak"),
 			occupant = nil,
 		}
+		if room.id ~= "Bedroom" and room.id ~= "Child" and room.id ~= "Tunnel" then
+			-- Guarda-roupa de frente para a porta do cômodo, não de lado: gira o armário inteiro (com fresta,
+			-- entrada e saída) 90° em torno do próprio centro.
+			local outward = if room.x < 0 then -1 else 1
+			local turn = CFrame.new(p) * CFrame.Angles(0, -outward * math.pi / 2, 0) * CFrame.new(-p)
+			for _, part in cabinet:GetChildren() do
+				if part:IsA("BasePart") then
+					part.CFrame = turn * part.CFrame
+				end
+			end
+			local locker = lockers[id]
+			locker.doorClosed = door.CFrame
+			locker.inside = turn * locker.inside
+			locker.eye = turn * locker.eye
+			locker.exit = turn * locker.exit
+			locker.front = turn * locker.front
+		end
 		if room.id == "Bedroom" or room.id == "Child" or room.id == "Tunnel" then
 			for _, child in cabinet:GetChildren() do
 				if child ~= door then

@@ -86,7 +86,9 @@ foi excluído do modelo e não é usado no jogo.
 | Candelabra, BrassCandle | brass_candleholders | Tina | CC0 |
 | WoodenLantern | wooden_lantern_01 | James Ray Cock | CC0 |
 | Fireplace, Bathtub, PedestalSink, WoodStove, Icebox, Boiler | **gerados no Hyper3D Rodin** (chave de teste do add-on MCP for Blender) | — | conforme termos do Hyper3D |
-| Wardrobe, LowTable, KitchenCounter, WindowSet, PersianRug | **modelados/gerados por Claude no Blender** (estampa do tapete gerada por script) | — | próprios |
+| Wardrobe, LowTable, KitchenCounter, WindowSet | **modelados/gerados por Claude no Blender** (estampa do tapete gerada por script) | — | próprios |
+| PersianRug (19/10, escolha do usuário) | malha própria no Blender; tecido [Dirty Carpet](https://polyhaven.com/a/dirty_carpet) (Rohit Seervi) com borda, medalhão e franja gerados por script; `.cache/env-assets/lot8/rug_dirty.glb` | CC0 | Poly Haven + próprio |
+| WardrobeDouble (esconderijo, 19/10) | **gerado pelo usuário no Hyper3D Rodin**; portas separadas, prateleira do meio removida e escala ajustada ao esconderijo por Claude no Blender; `.cache/env-assets/lot8/wardrobe_h3d.glb` | — | conforme termos do Hyper3D |
 
 O `.rbxm` agora é salvo pelo MCP (`SerializationService` + `tools/environment/serve.luau`, POST local), sem depender do menu do Studio.
 ### Lote 5 (fachada e jardim)

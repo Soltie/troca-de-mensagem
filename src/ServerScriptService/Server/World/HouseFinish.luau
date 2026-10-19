@@ -11,6 +11,7 @@
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
 
 local Layout = require("@game/ReplicatedStorage/Shared/Game/HouseLayout")
 local Build = require("./Build")
@@ -82,9 +83,65 @@ local function wallRun(parent: Instance, from: Vector3, to: Vector3, normal: Vec
 	end
 end
 
+--[[
+	Porta dupla (Assets/MansionProps/DoorLeaf, modelo Hyper3D escolhido pelo usuário em 19/10): o vão de 9 studs
+	recebe duas folhas de 4,5. A folha A fica do lado da dobradiça do painel e é soldada a ele; a folha B gira
+	espelhada na outra ombreira, no mesmo ângulo do painel, e as duas abrem para o mesmo lado. Cada folha mostra a
+	maçaneta numa face, junto ao encontro das duas. O painel fica invisível, mas continua sendo a colisão, o prompt,
+	o som e o PathfindingModifier. Sem a folha na biblioteca, cai na porta de uma folha abaixo.
+]]
+local function doubleDoor(panel: BasePart): boolean
+	local assets = ReplicatedStorage:FindFirstChild("Assets")
+	local library = assets and assets:FindFirstChild("MansionProps")
+	local template = library and library:FindFirstChild("DoorLeaf")
+	local source = template and template:FindFirstChild("Leaf")
+	if not template or not source or not source:IsA("MeshPart") or not template:GetAttribute("HandleAtMinusX") then
+		return false
+	end
+	local half = panel.Size.Z / 2
+	-- O painel gira em torno da ombreira −Z (ponto fixo); fechado, não tem rotação (HouseBuilder).
+	local hingeA = panel.CFrame * Vector3.new(0, 0, -half)
+	local closed = CFrame.new(hingeA + Vector3.new(0, 0, half))
+	local thickness = panel.Size.X + 0.06
+	local function leaf(name: string, offset: CFrame): MeshPart
+		local part = source:Clone()
+		part.Name = name
+		part.Size = Vector3.new(half, panel.Size.Y, thickness)
+		part.CFrame = offset
+		part.Anchored, part.CanCollide, part.CanQuery, part.CanTouch = true, false, false, false
+		part.Parent = panel
+		return part
+	end
+	-- Maçaneta no −X da malha: em A ela vai para o centro do vão (+Z), em B também (−Z da folha B).
+	local a = leaf("DoorLeafA", panel.CFrame * CFrame.new(0, 0, -half / 2) * CFrame.Angles(0, math.pi / 2, 0))
+	a.Anchored, a.Massless = false, true
+	local weld = Instance.new("WeldConstraint")
+	weld.Part0, weld.Part1, weld.Parent = panel, a, a
+	local hingeB = CFrame.new(closed * Vector3.new(0, 0, half))
+	local restB = hingeB:Inverse() * (closed * CFrame.new(0, 0, half / 2) * CFrame.Angles(0, -math.pi / 2, 0))
+	local _, yaw0 = panel.CFrame:ToEulerAnglesYXZ()
+	local b = leaf("DoorLeafB", hingeB * CFrame.Angles(0, -yaw0, 0) * restB)
+	-- O WorldService gira o painel em passos; a folha B segue o ângulo com uma interpolação curta.
+	local angle = Instance.new("NumberValue")
+	angle.Name, angle.Value, angle.Parent = "DoorLeafAngle", yaw0, b
+	angle.Changed:Connect(function(value: number)
+		b.CFrame = hingeB * CFrame.Angles(0, -value, 0) * restB
+	end)
+	local follow = TweenInfo.new(1 / 15, Enum.EasingStyle.Linear)
+	panel:GetPropertyChangedSignal("CFrame"):Connect(function()
+		local _, yaw = panel.CFrame:ToEulerAnglesYXZ()
+		TweenService:Create(angle, follow, { Value = yaw }):Play()
+	end)
+	panel.Transparency = 1
+	return true
+end
+
 -- Porta vitoriana 3D (Assets/MansionProps/MansionDoor) envolvendo o painel; soldada, acompanha a animação.
 -- O painel continua sendo a peça de colisão, prompt, som e PathfindingModifier.
 local function doorModel(panel: BasePart): boolean
+	if doubleDoor(panel) then
+		return true
+	end
 	local assets = ReplicatedStorage:FindFirstChild("Assets")
 	local library = assets and assets:FindFirstChild("MansionProps")
 	local template = library and library:FindFirstChild("MansionDoor")

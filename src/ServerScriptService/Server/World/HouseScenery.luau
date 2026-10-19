@@ -40,7 +40,7 @@ local WALL_DARK = rgb(112, 111, 105)
 local ROOF = rgb(55, 58, 69)
 local TRIM = rgb(183, 161, 119)
 local FLOOR = rgb(92, 67, 49)
-local WINDOW = rgb(206, 166, 112)
+local WINDOW = rgb(58, 66, 70)
 
 local WALL_NAMES = {
 	Facade = true,
@@ -135,10 +135,12 @@ local function restyle(root: Instance)
 			part.Color = ROOF
 			part.Material = Enum.Material.Slate
 		elseif part.Name == "WindowGlass" then
-			-- Janelas acesas por dentro: a casa "chama" o jogador de longe.
+			-- Vidro escuro e quase transparente: o bege a 0,3 parecia um painel liso e claro visto de dentro.
+			-- O brilho de "janela acesa" vista de fora fica com as janelas da fachada (HouseExterior).
 			part.Color = WINDOW
 			part.Material = Enum.Material.Glass
-			part.Transparency = 0.3
+			part.Transparency = 0.82
+			part.Reflectance = 0.04
 		elseif GROUND_NAMES[part.Name] then
 			part.Color = GRASS
 			part.Material = Enum.Material.Grass
