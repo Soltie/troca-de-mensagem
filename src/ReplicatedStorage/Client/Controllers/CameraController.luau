@@ -141,6 +141,8 @@ end
 -- Queda do armário (fresta segurada demais): o olhar desaba de lado até o chão, fica caído e levanta devagar.
 local FALL_DOWN, FALL_HOLD, FALL_UP = 0.35, 0.9, 0.9
 local fallStart = -math.huge
+local crawlAlpha = 0
+local crawlClock = 0
 local function fallAmount(now: number): number
 	local t = now - fallStart
 	if t < 0 or t > FALL_DOWN + FALL_HOLD + FALL_UP then
@@ -206,6 +208,12 @@ local function positionOffset(dt: number, motion: CharacterController.Motion, ro
 	local fall = fallAmount(os.clock())
 	if fall > 0 then
 		offset += Vector3.new(0.6 * fall, -3.7 * fall, 0)
+	end
+	-- Derrubado pelo Tung Tung: olhar rente ao chão enquanto rasteja, balançando a cada puxada de braço.
+	crawlAlpha = approach(crawlAlpha, if player:GetAttribute("Crawling") == true then 1 else 0, 5, dt)
+	if crawlAlpha > 0.001 then
+		crawlClock += dt * (0.6 + motion.speed * 1.6)
+		offset += Vector3.new(math.sin(crawlClock) * 0.12, -3.9 + math.abs(math.cos(crawlClock)) * 0.12, 0) * crawlAlpha
 	end
 	return offset
 end
@@ -632,6 +640,14 @@ function CameraController.fall()
 end
 
 function CameraController.Start()
+	-- Pancada do Tung Tung derruba: baque no chão e tremor; daí em diante rasteja (crawlAlpha).
+	player:GetAttributeChangedSignal("Crawling"):Connect(function()
+		if player:GetAttribute("Crawling") == true then
+			CameraController.addTrauma(0.6)
+			AudioController.play("Land", 1, 0.75)
+			AudioController.play("Fall_box", 0.6, 0.8)
+		end
+	end)
 	player:GetAttributeChangedSignal("HideFellAt"):Connect(function()
 		local at = player:GetAttribute("HideFellAt")
 		if type(at) == "number" and math.abs(workspace:GetServerTimeNow() - at) < 2 then

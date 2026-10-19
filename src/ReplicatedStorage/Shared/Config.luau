@@ -23,6 +23,10 @@ local Config = {
 		EndingSeconds = 34,
 		ActionCooldown = 0.5,
 		ReviveSeconds = 4,
+		-- Derrubado: rasteja nesta velocidade (studs/s) até ser resgatado.
+		CrawlSpeed = 3,
+		-- Primeira pancada no capítulo: tempo rastejando até levantar sozinho.
+		CrawlSeconds = 8,
 		MedicReviveSeconds = 2.5,
 		ReviveGrace = 6,
 		SpawnGrace = 8,

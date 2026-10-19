@@ -65,6 +65,8 @@ local playerAdapter: any = nil
 local channels: { [number]: { target: number, endsAt: number } } = {}
 local nextActionAt: { [number]: number } = {}
 local rescueParts: { [number]: BasePart } = {}
+-- Quem já levou a primeira pancada neste capítulo (versão da etapa): a próxima é captura de verdade.
+local wounded: { [number]: number } = {}
 local modeVotes: Modes.Votes = {}
 local selectedMode: Modes.Id? = nil
 local sceneSerial = 0
@@ -114,10 +116,20 @@ local function feedback(player: Player, message: string)
 end
 
 local function freeze(player: Player, value: boolean)
-	local _, root = parts(player)
+	local _, root, humanoid = parts(player)
+	-- Derrubado pelo Tung Tung no meio do capítulo: não fica travado, rasteja devagar até alguém resgatar.
+	local member = session.members[player.UserId]
+	local crawling = value
+		and member ~= nil
+		and member.status == "Downed"
+		and (session.phase == "Playing" or session.phase == "Extracting")
 	if root then
-		root.Anchored = value
+		root.Anchored = value and not crawling
 	end
+	if humanoid and crawling then
+		humanoid.WalkSpeed, humanoid.JumpHeight = C.CrawlSpeed, 0
+	end
+	player:SetAttribute("Crawling", crawling)
 end
 
 local function publish()
@@ -431,7 +443,7 @@ local function hasSight(player: Player, focus: BasePart, range: number): boolean
 end
 
 -- Consumível Segunda Chance (PerkService): levanta sem ajudante, com a mesma carência do resgate.
-local function selfRevive(player: Player, expectedVersion: number)
+local function selfRevive(player: Player, expectedVersion: number, message: string?)
 	if expectedVersion ~= version or not player.Parent then
 		return
 	end
@@ -451,7 +463,7 @@ local function selfRevive(player: Player, expectedVersion: number)
 			channels[helperId] = nil
 		end
 	end
-	feedback(player, "second_chance")
+	feedback(player, message or "second_chance")
 	publish()
 end
 
@@ -469,13 +481,28 @@ local function capture(player: Player, cause: string?)
 	if not member or member.status ~= "Active" or (session.phase ~= "Playing" and session.phase ~= "Extracting") then
 		return
 	end
-	-- Segunda Chance no kit (PerkService): gasta agora e agenda o levantar; a derrota espera a janela.
 	local captureVersion = version
-	local rising = PerkService.secondChance(player, function()
-		selfRevive(player, captureVersion)
-	end)
-	if not Session.capture(session, player.UserId, now, if rising then Perks.SECOND_CHANCE_DELAY + 2 else nil) then
+	-- Primeira pancada do Tung Tung no capítulo: cai e rasteja por CrawlSeconds e levanta sozinho (colegas podem
+	-- resgatar antes). A segunda pancada no mesmo capítulo é captura de verdade. Raio não dá essa chance.
+	local wound = cause ~= "lightning" and wounded[player.UserId] ~= captureVersion
+	local rising = false
+	if wound then
+		wounded[player.UserId] = captureVersion
+		task.delay(C.CrawlSeconds, function()
+			selfRevive(player, captureVersion, "crawl_up")
+		end)
+	else
+		-- Segunda Chance no kit (PerkService): gasta agora e agenda o levantar; a derrota espera a janela.
+		rising = PerkService.secondChance(player, function()
+			selfRevive(player, captureVersion)
+		end)
+	end
+	local delay = if wound then C.CrawlSeconds + 2 elseif rising then Perks.SECOND_CHANCE_DELAY + 2 else nil
+	if not Session.capture(session, player.UserId, now, delay) then
 		return
+	end
+	if wound then
+		feedback(player, "crawl_start")
 	end
 	freeze(player, true)
 	local _, root = parts(player)
@@ -494,6 +521,16 @@ local function capture(player: Player, cause: string?)
 		beacon:SetAttribute(Tags.Attr.InteractEnabled, true)
 		CollectionService:AddTag(beacon, Tags.Interactable)
 		rescueParts[player.UserId] = beacon
+		-- Rastejando: o ponto de resgate acompanha o corpo.
+		task.spawn(function()
+			while beacon.Parent and rescueParts[player.UserId] == beacon do
+				local _, current = parts(player)
+				if current then
+					beacon.Position = current.Position + Vector3.new(0, 1.2, 0)
+				end
+				task.wait(0.15)
+			end
+		end)
 	end
 	publish()
 	-- O cérebro legado termina em Capture; recolocar o Vigia permite continuar caçando a equipe.

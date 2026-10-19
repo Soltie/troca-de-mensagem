@@ -31,6 +31,8 @@ type Rig = {
 	feedbackAt: number,
 	-- Correção medida no pé real (cada avatar tem proporções próprias).
 	liftFix: number,
+	-- Fase do ciclo de rastejar.
+	crawl: number,
 }
 local rigs: { [Player]: Rig } = {}
 local player = Players.LocalPlayer
@@ -139,6 +141,7 @@ local function getRig(other: Player): Rig?
 		feedbackSerial = other:GetAttribute("CampaignFeedbackSerial"),
 		feedbackAt = -math.huge,
 		liftFix = 0,
+		crawl = 0,
 	}
 	for _, inst in model:GetDescendants() do
 		if inst:IsA("Motor6D") or (inst:IsA("AnimationConstraint") and inst.Attachment0 and inst.Attachment1) then
@@ -215,7 +218,28 @@ local function animate(other: Player, dt: number)
 		end
 	end
 	local rootBase = rig.motors.Root and rig.bases[rig.motors.Root]
-	if down then
+	if down and other:GetAttribute("Crawling") == true then
+		-- Rastejando de bruços: corpo deitado rente ao chão, braços puxando à frente e pernas empurrando, em ciclo
+		-- com a velocidade (parado, só respira).
+		local speed = Vector3.new(root.AssemblyLinearVelocity.X, 0, root.AssemblyLinearVelocity.Z).Magnitude
+		rig.crawl += dt * (0.6 + speed * 1.6)
+		local swing = math.sin(rig.crawl) * math.clamp(speed / 2.5, 0.15, 1)
+		local floorY = root.Position.Y - root.Size.Y / 2 - h.HipHeight
+		local pivotY = root.Position.Y + (if rootBase then rootBase.Position.Y else 0)
+		local drop = math.max(0, pivotY - floorY - 0.7)
+		joint(rig, "Root", CFrame.new(0, -drop, 0.4) * CFrame.Angles(math.rad(-82), 0, math.rad(swing * 4)))
+		joint(rig, "RootJoint", CFrame.Angles(math.rad(-82), 0, 0))
+		joint(rig, "Neck", CFrame.Angles(math.rad(48), 0, 0))
+		joint(rig, "Waist", CFrame.Angles(math.rad(6), math.rad(swing * 6), 0))
+		joint(rig, "RightShoulder", CFrame.Angles(math.rad(150 + 28 * swing), 0, math.rad(-8)))
+		joint(rig, "LeftShoulder", CFrame.Angles(math.rad(150 - 28 * swing), 0, math.rad(8)))
+		joint(rig, "RightElbow", CFrame.Angles(math.rad(-25 - 20 * math.max(0, -swing)), 0, 0))
+		joint(rig, "LeftElbow", CFrame.Angles(math.rad(-25 - 20 * math.max(0, swing)), 0, 0))
+		joint(rig, "RightHip", CFrame.Angles(math.rad(18 * swing), 0, 0))
+		joint(rig, "LeftHip", CFrame.Angles(math.rad(-18 * swing), 0, 0))
+		joint(rig, "RightKnee", CFrame.Angles(math.rad(-20 - 25 * math.max(0, swing)), 0, 0))
+		joint(rig, "LeftKnee", CFrame.Angles(math.rad(-20 - 25 * math.max(0, -swing)), 0, 0))
+	elseif down then
 		-- Caído de lado: o corpo gira no quadril e desce até o ombro tocar o chão.
 		local floorY = root.Position.Y - root.Size.Y / 2 - h.HipHeight
 		local pivotY = root.Position.Y + (if rootBase then rootBase.Position.Y else 0)
