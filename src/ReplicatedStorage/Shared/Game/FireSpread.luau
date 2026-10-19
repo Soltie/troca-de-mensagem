@@ -26,8 +26,8 @@ export type Node = {
 	kind: Kind,
 }
 
-FireSpread.HeadStart = 8
-FireSpread.FrontSpeed = 9
+FireSpread.HeadStart = 7
+FireSpread.FrontSpeed = 10.5
 FireSpread.SideLead = 4
 FireSpread.HallLead = 6
 FireSpread.RoomSpeed = 6

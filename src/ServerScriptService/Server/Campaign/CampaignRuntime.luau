@@ -600,6 +600,11 @@ local function afterActivity(previous: Session.Phase)
 				500
 			)
 			CreatureService.setFrozen(false)
+			if session.stage == 5 then
+				-- O estouro da gasolina assusta o Tung Tung: ele recua das chamas por uns segundos e dá a largada
+				-- para quem acendeu (antes ele era chamado para o mecanismo e derrubava na hora quem estava ali).
+				CreatureService.holdOff(FireSpread.HeadStart + 2)
+			end
 			WorldService.setPower(false)
 			WorldService.openGate()
 		end
@@ -664,7 +669,8 @@ local function interact(player: Player, id: string, _action: string?): { accepte
 			CreatureService.makeNoise(focus.Position, 45)
 		end
 		if ok then
-			CreatureService.makeNoise(focus.Position, 22)
+			-- Gasolina espalhada faz barulho (galão batendo, líquido): o Tung Tung vem ver.
+			CreatureService.makeNoise(focus.Position, if spec.item == "gas_pour" then 60 else 22)
 		end
 		if ok and message == "solved" then
 			WorldService.houseEvent(spec.event)

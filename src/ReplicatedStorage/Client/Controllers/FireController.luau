@@ -380,6 +380,10 @@ local function debris(visual: Visual)
 	plank.Material = Enum.Material.WoodPlanks
 	plank.Color = Color3.fromRGB(40, 27, 20)
 	plank.CanQuery, plank.CanTouch = false, false
+	-- Grupo registrado no servidor (FireService): bate no chão, atravessa os jogadores.
+	pcall(function()
+		plank.CollisionGroup = "FireDebris"
+	end)
 	plank.CFrame = CFrame.new(base.X, top, base.Z)
 		* CFrame.Angles(rng:NextNumber(0, 6.28), rng:NextNumber(0, 6.28), rng:NextNumber(0, 6.28))
 	plank.AssemblyAngularVelocity = Vector3.new(rng:NextNumber(-6, 6), rng:NextNumber(-6, 6), rng:NextNumber(-6, 6))

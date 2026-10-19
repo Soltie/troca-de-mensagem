@@ -30,7 +30,7 @@ local spec: TestKit.Spec = {
 			end
 			t.expect(first).toBe(FireSpread.HeadStart)
 			-- Correndo dá para sair antes da frente chegar na porta, mas parar muito não.
-			t.expect(last > 25 and last < 45).toBe(true)
+			t.expect(last > 20 and last < 45).toBe(true)
 		end)
 
 		t.it("standing in the fire builds heat fast; leaving cools down", function()

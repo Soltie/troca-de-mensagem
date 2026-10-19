@@ -7,6 +7,7 @@
 ]]
 
 local Players = game:GetService("Players")
+local PhysicsService = game:GetService("PhysicsService")
 local RunService = game:GetService("RunService")
 
 local FireSpread = require("@game/ReplicatedStorage/Shared/Game/FireSpread")
@@ -90,6 +91,18 @@ local function step(dt: number)
 			CreatureService.followScent(target)
 		end
 	end
+end
+
+-- Destroços do incêndio (FireController, no cliente) caem com física: batem no chão, nunca nos jogadores
+-- (um pedaço no caminho travava quem fugia).
+function FireService.Init()
+	for _, group in { "CampaignPlayers", "FireDebris" } do
+		if not PhysicsService:IsCollisionGroupRegistered(group) then
+			PhysicsService:RegisterCollisionGroup(group)
+		end
+	end
+	PhysicsService:CollisionGroupSetCollidable("FireDebris", "CampaignPlayers", false)
+	PhysicsService:CollisionGroupSetCollidable("FireDebris", "FireDebris", false)
 end
 
 function FireService.Start()
