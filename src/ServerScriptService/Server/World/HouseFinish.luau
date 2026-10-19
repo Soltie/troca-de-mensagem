@@ -387,6 +387,12 @@ local function stairBarriers(root: Instance, folder: Instance)
 			local top = part.Position.Y + part.Size.Y / 2
 			local hit = workspace:Raycast(V3(part.Position.X, top, z), V3(0, -(part.Size.Y + 2), 0), rays)
 			local floor = if hit then hit.Position.Y else part.Position.Y - part.Size.Y / 2
+			-- Só onde a escada encosta nesse chão: na ponta de cima o raio passa pelo vão e cai no térreo, e a
+			-- barricada ficava solta no hall, na frente da porta, sem escada nenhuma.
+			local step = workspace:Raycast(V3(part.Position.X, top, z - side * 2), V3(0, -(part.Size.Y + 2), 0), rays)
+			if not step or step.Position.Y - floor > 3 then
+				continue
+			end
 			for _, item in barricade(folder, V3(part.Position.X, floor, z), V3(0, 0, side), part.Size.X - 0.6) do
 				table.insert(items, item)
 			end
