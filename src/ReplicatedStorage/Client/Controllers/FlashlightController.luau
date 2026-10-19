@@ -57,6 +57,13 @@ local hintCallbacks: { (string) -> () } = {}
 -- Cor do feixe e da lente acesa (skin equipada; ver CosmeticController).
 local beamColor = WARM
 local rng = Random.new()
+-- Lanterna que escapou da mão na pancada (rastejando): cai, quica e fica acesa no chão até levantar.
+type Drop = { start: CFrame, rest: CFrame, at: number, spin: number, landed: boolean }
+local dropped: Drop? = nil
+local lastHand: CFrame? = nil
+local HAND_PARTS = { Hand = true, Thumb = true, Sleeve = true }
+local DROP_FALL = 0.42
+local DROP_BOUNCE = 0.34
 
 local function charge(): number
 	local value = player:GetAttribute("Battery")
@@ -235,7 +242,7 @@ local function applyVisible()
 		and phase ~= "Won"
 		and not isHidden()
 		and player:GetAttribute("CinematicActive") ~= true
-		and (status == nil or status == "Active")
+		and (dropped ~= nil or status == nil or status == "Active")
 	if spot then
 		spot.Enabled = on
 	end
@@ -253,6 +260,104 @@ local function applyVisible()
 		vm.lens.Material = if on then Enum.Material.Neon else Enum.Material.SmoothPlastic
 		vm.lens.Color = if on then beamColor else Color3.fromRGB(90, 88, 80)
 	end
+end
+
+local function showHand(value: boolean)
+	local vm = viewmodel
+	if not vm then
+		return
+	end
+	for _, part in vm.parts do
+		if HAND_PARTS[part.Name] then
+			part.Transparency = if value then 0 else 1
+		end
+	end
+end
+
+-- Ponto de descanso no chão, um pouco à frente; deitada de lado, o feixe varrendo rente ao piso.
+local function restPose(from: CFrame): CFrame?
+	local camera = workspace.CurrentCamera
+	if not camera then
+		return nil
+	end
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	local ignore: { Instance } = { camera }
+	if player.Character then
+		table.insert(ignore, player.Character :: Instance)
+	end
+	params.FilterDescendantsInstances = ignore
+	local origin = camera.CFrame.Position
+	local floor = workspace:Raycast(origin, Vector3.new(0, -12, 0), params)
+	if not floor then
+		return nil
+	end
+	local look = Vector3.new(from.LookVector.X, 0, from.LookVector.Z)
+	look = if look.Magnitude > 0.01 then look.Unit else Vector3.new(0, 0, -1)
+	local ahead = look * 1.5 + Vector3.new(look.Z, 0, -look.X) * 0.35
+	local base = floor.Position + Vector3.new(0, 0.3, 0)
+	local wall = workspace:Raycast(base, ahead, params)
+	local place = if wall then wall.Position - ahead.Unit * 0.4 else base + ahead
+	local yaw = math.atan2(-look.X, -look.Z) + rng:NextNumber(-1.1, 1.1)
+	return CFrame.new(place.X, floor.Position.Y + 0.14, place.Z)
+		* CFrame.Angles(0, yaw, 0)
+		* CFrame.Angles(math.rad(-3), 0, math.rad(90))
+end
+
+local function dropFlashlight()
+	if dropped or player:GetAttribute("HasFlashlight") ~= true then
+		return
+	end
+	local camera = workspace.CurrentCamera
+	local start = lastHand or (camera and camera.CFrame * CFrame.new(0.42, -0.42, -0.95))
+	local rest = start and restPose(start)
+	if not start or not rest then
+		return
+	end
+	dropped = {
+		start = start,
+		rest = rest,
+		at = os.clock(),
+		spin = math.rad(rng:NextNumber(220, 340)) * (if rng:NextNumber() < 0.5 then -1 else 1),
+		landed = false,
+	}
+	-- Pisca enquanto rola no ar; ao bater no chão engasga mais (ver dropPose).
+	forcedFlickerUntil = os.clock() + DROP_FALL
+	showHand(false)
+	applyVisible()
+end
+
+local function pickUpFlashlight()
+	if not dropped then
+		return
+	end
+	dropped = nil
+	smoothed = nil
+	raisedAt = os.clock()
+	showHand(true)
+	applyVisible()
+end
+
+-- Pose da lanterna caindo: queda com gravidade girando no ar, depois um quique curto que balança e para.
+local function dropPose(drop: Drop, now: number): CFrame
+	local t = now - drop.at
+	if t < DROP_FALL then
+		local a = t / DROP_FALL
+		local position = drop.start.Position:Lerp(drop.rest.Position, a)
+		local y = drop.start.Y + (drop.rest.Y - drop.start.Y) * a * a + 0.5 * a * (1 - a)
+		local rotation = drop.start.Rotation:Lerp(drop.rest.Rotation, a) * CFrame.Angles(drop.spin * (1 - a), 0, 0)
+		return CFrame.new(position.X, y, position.Z) * rotation
+	end
+	if not drop.landed then
+		drop.landed = true
+		forcedFlickerUntil = now + 1.1
+		AudioController.play("Fall_cans", 0.32, 1.35)
+		AudioController.play("Flashlight", 0.5, 0.8)
+	end
+	local b = math.clamp((t - DROP_FALL) / DROP_BOUNCE, 0, 1)
+	local hop = math.sin(b * math.pi) * 0.16 * (1 - b)
+	local wobble = math.sin(b * math.pi * 3) * math.rad(14) * (1 - b)
+	return drop.rest * CFrame.new(hop, 0, 0) * CFrame.Angles(0, 0, wobble)
 end
 
 local function partNamed(name: string): BasePart?
@@ -556,7 +661,16 @@ function FlashlightController.Start()
 		end
 		applyVisible()
 	end)
+	-- Pancada do Tung Tung: a lanterna escapa da mão e cai; volta para a mão quando você levanta.
+	player:GetAttributeChangedSignal("Crawling"):Connect(function()
+		if player:GetAttribute("Crawling") == true then
+			dropFlashlight()
+		else
+			pickUpFlashlight()
+		end
+	end)
 	player.CharacterAdded:Connect(function()
+		pickUpFlashlight()
 		raisedAt = os.clock()
 		wanted = true
 		restoreAfterHide = false
@@ -626,12 +740,22 @@ function FlashlightController.Start()
 			and (player:GetAttribute("CampaignStatus") == nil or player:GetAttribute("CampaignStatus") == "Active")
 			and phase ~= "Won"
 			and (phase == "Playing" or phase == "Intro" or phase == "Lost")
-		vm.model.Parent = if visible then camera else nil
-		aimGuide(hand, dt)
-		placeViewmodel(hand)
-		-- A fonte da luz fica na cabeça (a câmera nunca entra na parede), apontando para onde a mão aponta. Na ponta
-		-- da lanterna ela atravessava paredes ao encostar e a luz piscava/vazava em cômodos apertados.
-		part.CFrame = CFrame.new(camera.CFrame.Position + camera.CFrame.UpVector * -0.25) * hand.Rotation
+		local drop = dropped
+		if drop then
+			-- Caída no chão: a luz sai da lente, rente ao piso, e fica onde caiu enquanto você rasteja.
+			local pose = dropPose(drop, now)
+			vm.model.Parent = if player:GetAttribute("HasFlashlight") == true then camera else nil
+			placeViewmodel(pose)
+			part.CFrame = pose * CFrame.new(0, 0, -0.64)
+		else
+			lastHand = hand
+			vm.model.Parent = if visible then camera else nil
+			aimGuide(hand, dt)
+			placeViewmodel(hand)
+			-- A fonte da luz fica na cabeça (a câmera nunca entra na parede), apontando para onde a mão aponta. Na
+			-- ponta da lanterna ela atravessava paredes ao encostar e a luz piscava/vazava em cômodos apertados.
+			part.CFrame = CFrame.new(camera.CFrame.Position + camera.CFrame.UpVector * -0.25) * hand.Rotation
+		end
 		local volume = part:FindFirstChild("DustVolume")
 		if volume and volume:IsA("BasePart") then
 			volume.CFrame = part.CFrame * CFrame.new(0, 0, -5.5)

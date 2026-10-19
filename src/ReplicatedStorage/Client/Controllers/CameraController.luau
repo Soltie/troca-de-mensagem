@@ -53,6 +53,8 @@ local trauma = 0
 local fear = 0
 local fearSmooth = 0
 local punch = 0
+-- Pancada do Tung Tung: solavanco forte e curto (bem maior que o trauma), além do tremor que fica depois.
+local hitAt = -10
 local sprintAlpha = 0
 local crouchAlpha = 0
 local landOffset = 0
@@ -238,6 +240,15 @@ local function rotationOffset(dt: number, motion: CharacterController.Motion, no
 	if fall > 0 then
 		roll += math.rad(76) * fall
 		pitch -= math.rad(14) * fall
+	end
+
+	-- Solavanco da pancada: a cabeça chicoteia para o lado e treme forte, morrendo em ~1 s.
+	local sinceHit = now - hitAt
+	if shakeOn and sinceHit < 1.2 then
+		local jolt = math.exp(-sinceHit * 4.2)
+		local t = now * 26
+		pitch += math.rad(8) * jolt * math.noise(noiseSeed + 120, t) - math.rad(6) * jolt
+		roll += math.rad(12) * jolt * math.noise(noiseSeed + 160, t) + math.rad(16) * jolt
 	end
 
 	-- Tremor por trauma (quadrático) + leve tremor de pânico.
@@ -509,6 +520,14 @@ function CameraController.shake(amount: number, _duration: number?)
 	CameraController.addTrauma(math.clamp(amount * 4, 0, 1))
 end
 
+-- Pancada forte (Tung Tung derrubou): solavanco + tremor no máximo + FOV + mergulho.
+function CameraController.hit()
+	hitAt = os.clock()
+	CameraController.addTrauma(1)
+	CameraController.punch(1.3)
+	CameraController.land(1)
+end
+
 -- Pancada de FOV (ex.: o Vigia te viu). 1 = PunchFov graus.
 function CameraController.punch(amount: number?)
 	punch = math.max(punch, amount or 1)
@@ -643,7 +662,7 @@ function CameraController.Start()
 	-- Pancada do Tung Tung derruba: baque no chão e tremor; daí em diante rasteja (crawlAlpha).
 	player:GetAttributeChangedSignal("Crawling"):Connect(function()
 		if player:GetAttribute("Crawling") == true then
-			CameraController.addTrauma(0.6)
+			CameraController.hit()
 			AudioController.play("Land", 1, 0.75)
 			AudioController.play("Fall_box", 0.6, 0.8)
 		end
