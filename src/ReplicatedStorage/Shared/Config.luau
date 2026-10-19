@@ -97,6 +97,8 @@ local Config = {
 		SprintSpeed = 21,
 		CrouchSpeed = 5.5,
 		JumpHeight = 2.4,
+		-- Escala do corpo do jogador (R15 ~5,4 -> ~6,5 studs), proporcional às portas e ao Tung Tung.
+		BodyScale = 1.2,
 		FieldOfView = 72,
 		-- Aceleração/frenagem (studs/s por segundo) do WalkSpeed: o corpo tem peso.
 		Acceleration = 26,

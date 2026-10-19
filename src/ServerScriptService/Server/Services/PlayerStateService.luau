@@ -383,6 +383,12 @@ function PlayerStateService.resetForSpawn(player: Player, battery: number?)
 	states[player] = state
 	local character, root, humanoid = parts(player)
 	if character and humanoid then
+		-- Corpo na escala da casa (portas de 11, pé-direito de 16): sem isso o personagem parece uma criança.
+		-- Escala antes de guardar a altura de pé, para o agachar partir da altura nova.
+		local scale = P.BodyScale
+		if math.abs(character:GetScale() - scale) > 0.001 and character:GetAttribute("StandHipHeight") == nil then
+			character:ScaleTo(scale)
+		end
 		standHipHeight(character, humanoid)
 	end
 	applyStance(player, state, "Stand")

@@ -40,6 +40,8 @@ export type TungRig = {
 
 local TungTungRig = {}
 
+local VISUAL_SCALE = 1.15
+
 -- Clipes decodificados uma vez por cliente: quadro -> lista de CFrames por osso.
 local cache: { [string]: { frames: { { CFrame } }, decoded: ClipCodec.Decoded } } = {}
 
@@ -87,6 +89,9 @@ function TungTungRig.build(parent: Instance?): TungRig?
 	end
 	local template = (ReplicatedStorage :: any).Assets.TungTung :: Model
 	local model = template:Clone()
+	-- Um pouco mais alto que o jogador maior (Config.Player.BodyScale): só o visual; a raiz do servidor,
+	-- o agente de pathfinding e a captura não mudam.
+	model:ScaleTo(model:GetScale() * VISUAL_SCALE)
 	-- Nome antigo mantido: medo, tensão e câmera de captura procuram "VigiaVisual" no workspace.
 	model.Name = "VigiaVisual"
 	local body = model:FindFirstChild("Body") :: BasePart
