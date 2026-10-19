@@ -48,4 +48,24 @@ function Weather.flash(t: number): number
 	return 0.75 * (1 - (t - 0.18) / 0.42)
 end
 
+-- Molhado (0..1): encharca em ~20 s na chuva e seca em ~60 s sob telhado. `outdoor` 0..1.
+Weather.SoakTime = 20
+Weather.DryTime = 60
+function Weather.wetness(current: number, outdoor: number, dt: number): number
+	local o = math.clamp(outdoor, 0, 1)
+	local step = math.max(0, dt)
+	local value = current + o * step / Weather.SoakTime - (1 - o) * step / Weather.DryTime
+	return math.clamp(value, 0, 1)
+end
+
+-- Pegadas: só com o corpo molhado o bastante; quanto mais molhado, mais marcadas.
+Weather.FootprintMin = 0.12
+Weather.FootprintStride = 2.4
+function Weather.footprintAlpha(wet: number): number
+	if wet < Weather.FootprintMin then
+		return 0
+	end
+	return math.clamp((wet - Weather.FootprintMin) / (1 - Weather.FootprintMin), 0, 1)
+end
+
 return table.freeze(Weather)

@@ -29,4 +29,26 @@ function Layout.decks(y: number): { Rect }
 		{ x0 = hole.x1, x1 = b.x1, z0 = hole.z0, z1 = hole.z1 },
 	}
 end
+--[[
+	Janelas reais das fachadas laterais (pedido do humano: janelas translúcidas). Cada cômodo acima do porão, menos os
+	que têm móveis altos na fachada, ganha um vão na parede (Facade e casca externa) alinhado com a janela de fora
+	(z = cômodo − 10; linhas da fachada em z −14/−46/−78). O vão fica entre `y0` e `y1` acima do piso.
+]]
+Layout.NoWindow = { Kitchen = true, Bath = true, Library = true, AtticBook = true, Machine = true }
+Layout.Window = { oz = -10, halfWidth = 2, y0 = 4.6, y1 = 10.4 }
+export type FacadeWindow = { id: string, side: number, y: number, z: number }
+-- `rooms`: HouseCatalog.Rooms (id, x, y, z); tabela genérica para não acoplar este contrato ao catálogo.
+function Layout.facadeWindows(rooms: { any }): { FacadeWindow }
+	local out = {}
+	for _, room in rooms do
+		if room.y >= 0 and room.x ~= 0 and not Layout.NoWindow[room.id] and math.abs(room.x) > 20 then
+			table.insert(
+				out,
+				{ id = room.id, side = if room.x < 0 then -1 else 1, y = room.y, z = room.z + Layout.Window.oz }
+			)
+		end
+	end
+	return out
+end
+
 return table.freeze(Layout)

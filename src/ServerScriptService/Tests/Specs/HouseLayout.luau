@@ -7,6 +7,17 @@ local TestKit = require("../TestKit")
 return {
 	name = "HouseLayout",
 	run = function(t: TestKit.Context)
+		t.it("real facade windows skip the basement and rooms with tall furniture on the facade", function()
+			local House = require("@game/ReplicatedStorage/Shared/Game/HouseCatalog")
+			local windows = Layout.facadeWindows(House.Rooms)
+			t.expect(#windows).toBe(9)
+			for _, hole in windows do
+				t.expect(hole.y >= 0).toBe(true)
+				t.expect(Layout.NoWindow[hole.id] == nil).toBe(true)
+				-- Alinhada com uma das linhas de janelas externas (z −14/−46/−78) e dentro da parede de 98.
+				t.expect(hole.z == -14 or hole.z == -46 or hole.z == -78).toBe(true)
+			end
+		end)
 		t.it("every traversable landing point has one slab; stairs have no intersecting slab", function()
 			for _, y in Layout.Floors do
 				local hole = Layout.opening(y)

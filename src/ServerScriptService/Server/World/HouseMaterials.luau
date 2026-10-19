@@ -7,6 +7,7 @@
 ]]
 
 local House = require("@game/ReplicatedStorage/Shared/Game/HouseCatalog")
+local Layout = require("@game/ReplicatedStorage/Shared/Game/HouseLayout")
 local Build = require("./Build")
 
 local Materials = {}
@@ -164,12 +165,31 @@ local function skins(parent: Instance)
 		part.CanTouch = false
 		Materials.apply(part, if center.Y > 31 then ATTIC elseif utility(center) then PLASTER else WALLPAPER)
 	end
+	local W = Layout.Window
+	local windows = Layout.facadeWindows(House.Rooms)
 	for _, y in { 0, 16, 32 } do
 		local mid = y + 7.5
 		for _, side in { -1, 1 } do
-			-- Fachadas laterais dos cômodos (x = ±44), uma por fileira.
+			-- Fachadas laterais dos cômodos (x = ±44), uma por fileira; recortadas em volta das janelas reais.
 			for row = 1, 3 do
-				skin(V3(side * 43.47, mid, 28 - row * 32), V3(0.04, 15, 32))
+				local zc = 28 - row * 32
+				local hole: number? = nil
+				for _, window in windows do
+					if window.side == side and window.y == y and math.abs(window.z - zc) < 16 then
+						hole = window.z
+					end
+				end
+				if not hole then
+					skin(V3(side * 43.47, mid, zc), V3(0.04, 15, 32))
+				else
+					local x = side * 43.47
+					local z0, z1 = hole - W.halfWidth, hole + W.halfWidth
+					skin(V3(x, y + W.y0 / 2, zc), V3(0.04, W.y0, 32))
+					skin(V3(x, (y + W.y1 + y + 15) / 2, zc), V3(0.04, 15 - W.y1, 32))
+					local band, bandY = W.y1 - W.y0, y + (W.y0 + W.y1) / 2
+					skin(V3(x, bandY, (zc - 16 + z0) / 2), V3(0.04, band, z0 - (zc - 16)))
+					skin(V3(x, bandY, (z1 + zc + 16) / 2), V3(0.04, band, zc + 16 - z1))
+				end
 			end
 			-- Fundo da casa (z = -85), metade de cada lado.
 			skin(V3(side * 22, mid, -84.47), V3(43, 15, 0.04))

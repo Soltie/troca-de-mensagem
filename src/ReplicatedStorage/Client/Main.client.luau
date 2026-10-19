@@ -30,6 +30,8 @@ local controllers: { any } = {
 	require("./Controllers/RetroFxController"),
 	require("./Controllers/WorldFxController"),
 	require("./Controllers/RainController"),
+	require("./Controllers/WetnessController"),
+	require("./Controllers/WindowScareController"),
 	require("./Controllers/ArtController"),
 	require("./Controllers/TensionController"),
 	require("./Controllers/ScreenFxController"),

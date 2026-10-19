@@ -139,34 +139,58 @@ local GARDEN_AREAS = {
 	Só onde o centro e as quatro quinas estão livres. Cada tapete é um VisualDetail: some de longe no celular.
 ]]
 local FIELD_STEP = 7.5
-local function field(folder: Instance, rng: Random): boolean
+local CORNERS = { { -3.6, -3.6 }, { 3.6, -3.6 }, { -3.6, 3.6 }, { 3.6, 3.6 } }
+
+local function fieldTemplate(): Model?
 	local source = library()
 	local template = source and source:FindFirstChild("GrassField")
 	if not template or not template:IsA("Model") or not template:GetAttribute("PivotIsBase") then
+		return nil
+	end
+	return template
+end
+
+-- Um tapete onde o centro e as quatro quinas estão livres; tamanho e giro variam para não repetir.
+local function fieldPatch(
+	folder: Instance,
+	template: Model,
+	rng: Random,
+	at: Vector3,
+	blocked: (number, number) -> boolean
+): boolean
+	if blocked(at.X, at.Z) then
+		return false
+	end
+	for _, corner in CORNERS do
+		if blocked(at.X + corner[1], at.Z + corner[2]) then
+			return false
+		end
+	end
+	local patch = template:Clone()
+	patch:ScaleTo(patch:GetScale() * rng:NextNumber(0.85, 1.15))
+	local yaw = rng:NextInteger(0, 3) * math.pi / 2 + rng:NextNumber(-0.3, 0.3)
+	patch:PivotTo(CFrame.new(at) * CFrame.Angles(0, yaw, 0))
+	for _, part in patch:GetDescendants() do
+		if part:IsA("BasePart") then
+			part.Anchored, part.CanCollide, part.CanQuery, part.CanTouch = true, false, false, false
+			part.CastShadow = false
+			part:SetAttribute("VisualDetail", true)
+		end
+	end
+	patch.Parent = folder
+	return true
+end
+
+local function field(folder: Instance, rng: Random): boolean
+	local template = fieldTemplate()
+	if not template then
 		return false
 	end
 	for _, area in GARDEN_AREAS do
 		for x = area[1] + FIELD_STEP / 2, area[2], FIELD_STEP do
 			for z = area[3] + FIELD_STEP / 2, area[4], FIELD_STEP do
-				local px, pz = x + rng:NextNumber(-1.2, 1.2), z + rng:NextNumber(-1.2, 1.2)
-				local free = not gardenBlocked(px, pz)
-				for _, corner in { { -3.6, -3.6 }, { 3.6, -3.6 }, { -3.6, 3.6 }, { 3.6, 3.6 } } do
-					free = free and not gardenBlocked(px + corner[1], pz + corner[2])
-				end
-				if free then
-					local patch = template:Clone()
-					patch:ScaleTo(patch:GetScale() * rng:NextNumber(0.85, 1.15))
-					local yaw = rng:NextInteger(0, 3) * math.pi / 2 + rng:NextNumber(-0.3, 0.3)
-					patch:PivotTo(CFrame.new(px, 0.05, pz) * CFrame.Angles(0, yaw, 0))
-					for _, part in patch:GetDescendants() do
-						if part:IsA("BasePart") then
-							part.Anchored, part.CanCollide, part.CanQuery, part.CanTouch = true, false, false, false
-							part.CastShadow = false
-							part:SetAttribute("VisualDetail", true)
-						end
-					end
-					patch.Parent = folder
-				end
+				local at = V3(x + rng:NextNumber(-1.2, 1.2), 0.05, z + rng:NextNumber(-1.2, 1.2))
+				fieldPatch(folder, template, rng, at, gardenBlocked)
 			end
 		end
 	end
@@ -367,7 +391,20 @@ local function dressForest(forest: Instance)
 	local rng = Random.new(SEED + (tonumber(forest:GetAttribute("Chapter")) or 0))
 	local top = TOP
 	local z0, z1 = main.Position.Z - main.Size.Z / 2, main.Position.Z + main.Size.Z / 2
-	-- Touceiras altas só como destaque: a grama do Terrain cobre o chão; mais perto das bordas da trilha.
+	-- Mesmo mato do jardim (GrassField) ao longo das duas margens da trilha, mais denso perto dela.
+	local template = fieldTemplate()
+	if template then
+		for z = z0 + 4, z1 - 4, 7 do
+			for _, side in { -1, 1 } do
+				for ring = 0, 2 do
+					local x = main.Position.X + side * (main.Size.X / 2 + 4.5 + ring * 7.5 + rng:NextNumber(-1, 1))
+					fieldPatch(folder, template, rng, V3(x, top - 0.03, z + rng:NextNumber(-1.5, 1.5)), blocked)
+				end
+			end
+		end
+		return
+	end
+	-- Sem o GrassField: touceiras altas como destaque, mais perto das bordas da trilha.
 	patches(folder, rng, 44, function(r: Random): Vector3?
 		local side = if r:NextNumber() < 0.5 then -1 else 1
 		local x = main.Position.X + side * (main.Size.X / 2 + 2 + r:NextNumber() ^ 1.8 * 40)

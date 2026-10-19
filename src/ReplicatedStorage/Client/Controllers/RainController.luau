@@ -146,8 +146,66 @@ local function probe(position: Vector3)
 	groundY = if below then below.Position.Y else position.Y - 5
 end
 
+-- Raio visível no céu, à frente do olhar e longe: zigue-zague de neon com um galho, ~0,25 s. Só com flashes.
+local function bolt()
+	local camera = workspace.CurrentCamera
+	local parent = workspace:FindFirstChild("ClientWeather")
+	if not camera or not parent or not Settings.get("flashes") then
+		return
+	end
+	local look = camera.CFrame.LookVector
+	local flat = Vector3.new(look.X, 0, look.Z)
+	local ahead = if flat.Magnitude > 0.01 then flat.Unit else Vector3.zAxis
+	local side = ahead:Cross(Vector3.yAxis)
+	local top = camera.CFrame.Position + ahead * rng:NextNumber(110, 170) + side * rng:NextNumber(-60, 60)
+	top = Vector3.new(top.X, 95, top.Z)
+	local parts: { BasePart } = {}
+	local function segment(a: Vector3, b: Vector3, width: number)
+		local part = Instance.new("Part")
+		part.Name = "LightningBolt"
+		part.Anchored, part.CanCollide, part.CanQuery, part.CanTouch = true, false, false, false
+		part.CastShadow = false
+		part.Material = Enum.Material.Neon
+		part.Color = Color3.fromRGB(214, 226, 255)
+		part.Size = Vector3.new(width, width, (b - a).Magnitude)
+		part.CFrame = CFrame.lookAt((a + b) / 2, b)
+		part.Parent = parent
+		table.insert(parts, part)
+	end
+	local at = top
+	for index = 1, 9 do
+		local nextAt = at + Vector3.new(rng:NextNumber(-7, 7), -10, rng:NextNumber(-7, 7))
+		segment(at, nextAt, 0.9)
+		if index == 3 or index == 6 then
+			local branch = at
+			for _ = 1, 3 do
+				local twig = branch + side * rng:NextNumber(-8, 8) + Vector3.new(0, -6, 0)
+				segment(branch, twig, 0.45)
+				branch = twig
+			end
+		end
+		at = nextAt
+	end
+	task.delay(0.08, function()
+		for _, part in parts do
+			part.Transparency = 0.6
+		end
+	end)
+	task.delay(0.16, function()
+		for _, part in parts do
+			part.Transparency = 0
+		end
+	end)
+	task.delay(0.28, function()
+		for _, part in parts do
+			part:Destroy()
+		end
+	end)
+end
+
 local function strike(now: number)
 	strikeAt = now
+	bolt()
 	nextStrike = now + Weather.strikeInterval(rng:NextNumber())
 	task.delay(Weather.thunderDelay(rng:NextNumber()), function()
 		local thunder = AudioController.play("AmbThunder", 0.55 + outdoor * 0.45)

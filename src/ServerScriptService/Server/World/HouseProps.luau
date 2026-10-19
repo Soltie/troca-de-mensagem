@@ -13,6 +13,7 @@ local TweenService = game:GetService("TweenService")
 
 local Audio = require("@game/ReplicatedStorage/Shared/Game/Audio")
 local House = require("@game/ReplicatedStorage/Shared/Game/HouseCatalog")
+local Layout = require("@game/ReplicatedStorage/Shared/Game/HouseLayout")
 local Build = require("./Build")
 local PrimitiveFinish = require("./HousePrimitiveFinish")
 
@@ -290,16 +291,26 @@ local function lampOn(folder: Instance, room: RoomRef, wall: Wall, along: number
 	glow(folder, "LampShade", spot + UP, 18, 0.55, true)
 end
 
--- Janela com cortinas na fachada, no lugar do quadro liso de oz −6 (o de oz +6 vira moldura 3D).
--- Cômodos com móveis altos nessa parede (estantes, caldeiras, bancada) ficam sem janela.
-local NO_WINDOW = { Kitchen = true, Bath = true, Library = true, AtticBook = true, Machine = true }
+-- Janela com cortinas na fachada, no vão real da parede (HouseLayout.facadeWindows), alinhada com a janela de fora.
+-- Cômodos com móveis altos nessa parede (estantes, caldeiras, bancada) ficam sem janela (Layout.NoWindow).
 local function window(folder: Instance, room: RoomRef)
-	if room.y < 0 or NO_WINDOW[room.id] then
+	if room.y < 0 or Layout.NoWindow[room.id] then
 		return
 	end
 	local side = if room.x < 0 then -1 else 1
-	local oz = if room.id == "Living" then -11.5 else -9.5
-	Props.place(folder, "WindowSet", V3(room.x + side * 17.5, room.y + 7.2, room.z + oz), V3(-side, 0, 0), 1, "wall")
+	local model = Props.place(
+		folder,
+		"WindowSet",
+		V3(room.x + side * 17.5, room.y + 7.2, room.z + Layout.Window.oz),
+		V3(-side, 0, 0),
+		1,
+		"wall"
+	)
+	-- Vidro quase transparente: o jardim escuro (e o que passar lá fora) aparece pela janela.
+	local glass = model and model:FindFirstChild("Glass", true)
+	if glass and glass:IsA("BasePart") then
+		glass.Transparency = 0.8
+	end
 end
 
 local ROOMS: { [string]: (folder: Instance, root: Instance, room: RoomRef) -> () } = {}

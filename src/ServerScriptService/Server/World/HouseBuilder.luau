@@ -116,10 +116,45 @@ function Builder.build(parent: Instance): (MapBuilder.World, FeatureBuilder.Buil
 		block(structure, "SideGarden", x, -1, -14, 60, 1, 190, dark)
 	end
 	block(structure, "BackGarden", 0, -1, -102, 140, 1, 34, dark)
+	local windows = Layout.facadeWindows(House.Rooms)
 	for _, y in { -16, 0, 16, 32 } do
 		block(structure, "CorridorFloor", 0, y - 1, -36, 16, 1, 98, wood)
 		for _, side in { -1, 1 } do
-			block(structure, "Facade", side * 44, y, -36, 1, 16, 98, plaster)
+			-- Fachada lateral com vãos de janela reais (HouseLayout.facadeWindows): faixa de baixo, de cima e os
+			-- trechos entre os vãos. Cada vão tem uma vidraça invisível que segura a colisão e a visão como a parede.
+			local W = Layout.Window
+			local cuts: { number } = {}
+			for _, hole in windows do
+				if hole.side == side and hole.y == y then
+					table.insert(cuts, hole.z)
+				end
+			end
+			table.sort(cuts)
+			if #cuts == 0 then
+				block(structure, "Facade", side * 44, y, -36, 1, 16, 98, plaster)
+			else
+				block(structure, "Facade", side * 44, y, -36, 1, W.y0, 98, plaster)
+				block(structure, "Facade", side * 44, y + W.y1, -36, 1, 16 - W.y1, 98, plaster)
+				local z = -85
+				for _, at in cuts do
+					local z1 = at - W.halfWidth
+					block(structure, "Facade", side * 44, y + W.y0, (z + z1) / 2, 1, W.y1 - W.y0, z1 - z, plaster)
+					local pane = block(
+						structure,
+						"WindowPane",
+						side * 44,
+						y + W.y0,
+						at,
+						1,
+						W.y1 - W.y0,
+						2 * W.halfWidth,
+						plaster
+					)
+					pane.Transparency, pane.CastShadow = 1, false
+					z = at + W.halfWidth
+				end
+				block(structure, "Facade", side * 44, y + W.y0, (z + 13) / 2, 1, W.y1 - W.y0, 13 - z, plaster)
+			end
 			for row = 1, 3 do
 				local z = 28 - row * 32
 				block(structure, "RoomFloor", side * 26, y - 1, z, 36, 1, 32, wood)

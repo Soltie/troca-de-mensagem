@@ -10,6 +10,8 @@
 	Final em ruínas: casca e telhado somem junto com as paredes; o jardim fica.
 ]]
 
+local House = require("@game/ReplicatedStorage/Shared/Game/HouseCatalog")
+local Layout = require("@game/ReplicatedStorage/Shared/Game/HouseLayout")
 local Build = require("./Build")
 local Materials = require("./HouseMaterials")
 local Props = require("./HouseProps")
@@ -197,6 +199,23 @@ local FACES: { Face } = {
 	},
 }
 
+-- Janelas reais das laterais (HouseLayout): furo na casca externa no mesmo vão da parede interna, e marca para
+-- `windows` não tapar o vão com a placa de "cômodo aceso".
+local OPEN: { [string]: boolean } = {}
+do
+	local W = Layout.Window
+	for _, hole in Layout.facadeWindows(House.Rooms) do
+		OPEN[`{hole.side}|{hole.y}|{hole.z}`] = true
+		for _, face in FACES do
+			if face.from.X == face.to.X and math.sign(face.from.X) == hole.side and math.abs(face.from.X) > 40 then
+				local dir = math.sign(face.to.Y - face.from.Y)
+				local u = (hole.z - face.from.Y) * dir
+				table.insert(face.holes, { u - W.halfWidth, u + W.halfWidth, hole.y + W.y0, hole.y + W.y1 })
+			end
+		end
+	end
+end
+
 -- Retângulo menos furos (sem sobreposição entre furos): faixas verticais, cada uma recortada na altura.
 local function pieces(u0: number, u1: number, y0: number, y1: number, holes: { { number } }): { { number } }
 	local cuts = { u0, u1 }
@@ -213,7 +232,8 @@ local function pieces(u0: number, u1: number, y0: number, y1: number, holes: { {
 		end
 		local spans = {}
 		for _, hole in holes do
-			if hole[1] < b - 0.01 and hole[2] > a + 0.01 then
+			-- Só furos que cruzam esta faixa de altura (um furo de janela acima do rodapé não corta o rodapé).
+			if hole[1] < b - 0.01 and hole[2] > a + 0.01 and hole[3] < y1 and hole[4] > y0 then
 				table.insert(spans, { math.max(hole[3], y0), math.min(hole[4], y1) })
 			end
 		end
@@ -341,18 +361,65 @@ end
 
 --[[ Janelas ]]
 
-local function facadeWindow(folder: Instance, center: Vector3, normal: Vector3, lit: boolean, pediment: boolean)
+local function facadeWindow(
+	folder: Instance,
+	center: Vector3,
+	normal: Vector3,
+	lit: boolean,
+	pediment: boolean,
+	open: boolean?
+)
 	local right = UP:Cross(normal).Unit
 	local w, h = 6.1, 7.2
 	local out = center + normal * 0.06
-	local model = Props.place(folder, "WindowSet", out, normal, 0.8, "wall")
-	if model then
+	-- Vão real: o modelo WindowSet tem fundo fechado (tapava a vista). Moldura vazada de 4 réguas + vidro.
+	local model = if open then nil else Props.place(folder, "WindowSet", out, normal, 0.8, "wall")
+	if open then
+		local W = Layout.Window
+		local width, height = W.halfWidth * 2, W.y1 - W.y0
+		-- Centro no vão (a linha do sótão fica a 40,2, o vão a 39,5).
+		local at = Vector3.new(out.X, math.floor(center.Y / 16) * 16 + (W.y0 + W.y1) / 2, out.Z)
+		local face = CFrame.lookAt(at, at + normal)
+		for _, bar in
+			{
+				{ 0, height / 2 + 0.2, width + 0.8, 0.4 },
+				{ 0, -height / 2 - 0.2, width + 0.8, 0.4 },
+				{ -width / 2 - 0.2, 0, 0.4, height },
+				{ width / 2 + 0.2, 0, 0.4, height },
+				{ 0, 0, 0.12, height },
+				{ 0, height / 6, width, 0.12 },
+				{ 0, -height / 6, width, 0.12 },
+			}
+		do
+			finish(
+				deco(
+					folder,
+					"FacadeWindowTrim",
+					V3(bar[3], bar[4], 0.3),
+					face * CFrame.new(bar[1], bar[2], -0.1),
+					TRIM.color,
+					TRIM.material
+				),
+				TRIM
+			)
+		end
+		local pane = deco(
+			folder,
+			"FacadeWindowGlass",
+			V3(width, height, 0.04),
+			face * CFrame.new(0, 0, -0.18),
+			rgb(58, 66, 70),
+			Enum.Material.Glass
+		)
+		pane.Transparency, pane.CastShadow = 0.82, false
+	elseif model then
 		for _, part in model:GetDescendants() do
 			if part.Name == "Curtains" or part.Name == "Rod" then
 				part:Destroy()
 			elseif part.Name == "Glass" and part:IsA("BasePart") then
-				-- Vidro mais claro que o de dentro: a luz do cômodo aparece da rua.
-				part.Transparency = 0.7
+				-- Vidro mais claro que o de dentro: a luz do cômodo aparece da rua. Janela com vão real: quase
+				-- transparente, dá para ver o cômodo (e de dentro, o jardim).
+				part.Transparency = if open then 0.82 else 0.7
 			end
 		end
 	else
@@ -365,8 +432,11 @@ local function facadeWindow(folder: Instance, center: Vector3, normal: Vector3, 
 			Enum.Material.Wood
 		)
 	end
-	-- Interior: luz quente com cortinas, ou um quarto escuro.
+	-- Interior: luz quente com cortinas, ou um quarto escuro. Com vão real, o próprio cômodo aparece atrás do vidro.
 	local back = out + normal * 0.08
+	if open then
+		lit = false
+	end
 	local glow = deco(
 		folder,
 		"FacadeWindowGlow",
@@ -376,6 +446,9 @@ local function facadeWindow(folder: Instance, center: Vector3, normal: Vector3, 
 		if lit then Enum.Material.Neon else Enum.Material.SmoothPlastic
 	)
 	glow.CastShadow = false
+	if open then
+		glow.Transparency = 1
+	end
 	if lit then
 		for _, side in { -1, 1 } do
 			local at = back + normal * 0.04 + right * side * (w / 2 - 1.15)
@@ -447,8 +520,9 @@ local function windows(folder: Instance)
 			facadeWindow(folder, V3(-24.5, y, z), -Vector3.xAxis, lit(), true)
 		end
 		for _, z in { -14, -46, -78 } do
-			facadeWindow(folder, V3(44.5, y, z), Vector3.xAxis, lit(), true)
-			facadeWindow(folder, V3(-44.5, y, z), -Vector3.xAxis, lit(), true)
+			local floor = math.floor(y / 16) * 16
+			facadeWindow(folder, V3(44.5, y, z), Vector3.xAxis, lit(), true, OPEN[`1|{floor}|{z}`])
+			facadeWindow(folder, V3(-44.5, y, z), -Vector3.xAxis, lit(), true, OPEN[`-1|{floor}|{z}`])
 		end
 		for _, x in { -34, -18, 18, 34 } do
 			facadeWindow(folder, V3(x, y, -85.5), -Vector3.zAxis, lit(), true)
@@ -816,6 +890,10 @@ local function boundary(root: Instance, folder: Instance)
 		local piers = math.max(1, math.floor(length / 16))
 		for i = 0, piers do
 			local at = part.Position - along * length / 2 + along * (i * length / piers)
+			-- Sem coluna nas pontas do muro junto ao portão da floresta (pedido do humano).
+			if math.abs(at.X) < 14 and math.abs(at.Z - 98) < 2 then
+				continue
+			end
 			local bottom = at.Y - size.Y / 2
 			local pier = deco(
 				folder,

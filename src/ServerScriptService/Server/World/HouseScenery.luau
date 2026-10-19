@@ -391,8 +391,11 @@ local function exterior(parent: Instance)
 	fireflies(folder, Vector3.new(80, 4, 0), Vector3.new(30, 6, 160))
 end
 
--- Portão da floresta: grades de ferro dentro do mesmo Model (sobem junto quando o portão abre)
--- e pilares de pedra fixos. A placa original continua sendo a colisão, só que invisível.
+--[[
+	Portão da floresta: tapume de tábuas velhas pregadas (o humano achou a grade e os pilares feios). As tábuas ficam no
+	mesmo Model da placa original, que continua sendo a colisão invisível; quando a saída abre (o Model sobe), o tapume
+	some em vez de subir junto. Sem pilares: o muro de tijolo termina no vão.
+]]
 local function forestGate(root: Instance)
 	local model = root:FindFirstChild("ForestGate")
 	local panel = model and model:FindFirstChild("Gate")
@@ -400,98 +403,66 @@ local function forestGate(root: Instance)
 		return
 	end
 	panel.Transparency = 1
+	-- O farol da saída era um bloco amarelo brilhando ao lado do portão: fica só a luz.
+	local beacon = root:FindFirstChild("ExitBeacon")
+	if beacon and beacon:IsA("BasePart") then
+		beacon.Transparency = 1
+	end
 	local base = panel.CFrame
-	-- Ferro forjado (o humano achou a grade de barras quadradas e pontas douradas feia): barras redondas finas e
-	-- juntas, ponta de lança escura, travessas redondas e um friso de rosetas entre as duas de cima.
-	local iron = rgb(30, 28, 32)
-	local function round(name: string, size: Vector3, frame: CFrame): BasePart
-		local part = decor(model, name, size, frame, iron, Enum.Material.Metal)
-		local shaped = part :: Part
-		shaped.Shape = Enum.PartType.Cylinder
+	local closedY = base.Position.Y
+	local planks: { BasePart } = {}
+	local rng = Random.new(98)
+	local function plank(size: Vector3, frame: CFrame, shade: number)
+		local part = decor(
+			model,
+			"GatePlank",
+			size,
+			frame,
+			rgb(78, 60, 46):Lerp(rgb(40, 32, 26), shade),
+			Enum.Material.WoodPlanks
+		)
+		table.insert(planks, part)
 		return part
 	end
-	for step = -8.4, 8.41, 0.84 do
-		local tall = math.abs(math.round(step / 0.84)) % 2 == 0
-		local height = if tall then 10.4 else 9.6
-		-- Cilindro do Roblox cresce em X: gira para ficar em pé.
-		round(
-			"GateBar",
-			Vector3.new(height, 0.2, 0.2),
-			base * CFrame.new(step, (height - 10) / 2, 0) * CFrame.Angles(0, 0, math.pi / 2)
+	-- Tábuas horizontais com frestas desiguais, levemente tortas.
+	local y = -4.6
+	while y < 4.6 do
+		local height = rng:NextNumber(0.9, 1.3)
+		plank(
+			Vector3.new(18.6, height, 0.3),
+			base
+				* CFrame.new(rng:NextNumber(-0.3, 0.3), y + height / 2, rng:NextNumber(-0.04, 0.04))
+				* CFrame.Angles(0, 0, math.rad(rng:NextNumber(-2.5, 2.5))),
+			rng:NextNumber(0, 0.6)
 		)
-		local tip = base * CFrame.new(step, height - 5 + 0.22, 0)
-		decor(
-			model,
-			"GateSpike",
-			Vector3.new(0.26, 0.26, 0.26),
-			tip * CFrame.Angles(math.rad(45), 0, math.rad(45)),
-			iron,
-			Enum.Material.Metal
-		)
-		local knob = decor(
-			model,
-			"GateKnob",
-			Vector3.new(0.3, 0.3, 0.3),
-			tip * CFrame.new(0, -0.32, 0),
-			iron,
-			Enum.Material.Metal
-		) :: Part
-		knob.Shape = Enum.PartType.Ball
+		y += height + rng:NextNumber(0.12, 0.45)
 	end
-	for _, y in { -4.2, 2.6, 3.9 } do
-		round("GateRail", Vector3.new(18, 0.24, 0.24), base * CFrame.new(0, y, 0))
-	end
-	for step = -7.98, 7.99, 0.84 do
-		local ring = decor(
-			model,
-			"GateRosette",
-			Vector3.new(0.08, 0.55, 0.55),
-			base * CFrame.new(step, 3.25, 0) * CFrame.Angles(0, math.pi / 2, 0),
-			iron,
-			Enum.Material.Metal
-		) :: Part
-		ring.Shape = Enum.PartType.Cylinder
-	end
-	local folder = Build.folder(root, "GatePillars")
-	for _, x in { -12.5, 12.5 } do
-		local pillar =
-			Build.part(folder, "GatePillar", Vector3.new(3, 13, 3), base * CFrame.new(x, 1.5, 0), rgb(96, 62, 52), {
-				material = Enum.Material.Brick,
-			})
-		pillar.CanQuery = false
-		-- Capitel de pedra e lanterna de ferro no topo (a luz continua na esfera, agora invisível).
-		decor(
-			folder,
-			"GatePillarCap",
-			Vector3.new(3.8, 0.7, 3.8),
-			pillar.CFrame * CFrame.new(0, 6.85, 0),
-			rgb(118, 114, 106),
-			Enum.Material.Slate
+	-- Travessas em X na frente, com pregos.
+	for _, sign in { -1, 1 } do
+		local brace = plank(
+			Vector3.new(21, 0.9, 0.28),
+			base * CFrame.new(0, 0, 0.3) * CFrame.Angles(0, 0, sign * math.rad(27)),
+			0.8
 		)
-		local orb = decor(
-			folder,
-			"GateLamp",
-			Vector3.new(1.6, 1.6, 1.6),
-			pillar.CFrame * CFrame.new(0, 8.6, 0),
-			rgb(219, 182, 124),
-			Enum.Material.Neon
-		)
-		local orbShape = orb :: Part
-		orbShape.Shape = Enum.PartType.Ball
-		if
-			Props.place(
-				folder,
-				"Lantern",
-				(pillar.CFrame * CFrame.new(0, 7.2, 0)).Position,
-				base.LookVector,
-				2.2,
-				"floor"
+		for _, t in { -0.42, 0.42 } do
+			local nail = decor(
+				model,
+				"GateNail",
+				Vector3.new(0.16, 0.16, 0.1),
+				brace.CFrame * CFrame.new(t * 21, 0, 0.18),
+				rgb(52, 46, 42),
+				Enum.Material.Metal
 			)
-		then
-			orb.Transparency = 1
+			table.insert(planks, nail)
 		end
-		glow(orb, rgb(235, 193, 133), 18, 0.65)
 	end
+	-- Ao abrir, o Model sobe 12 studs (WorldService): o tapume some no lugar de flutuar.
+	panel:GetPropertyChangedSignal("CFrame"):Connect(function()
+		local open = panel.Position.Y > closedY + 1
+		for _, part in planks do
+			part.Transparency = if open then 1 else 0
+		end
+	end)
 end
 
 local NIGHT_COLORS = { rgb(148, 178, 207), rgb(193, 152, 154), rgb(153, 184, 161), rgb(221, 187, 137) }

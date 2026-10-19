@@ -10,6 +10,19 @@ return {
 			t.expect(W.rate(W.RainRate, 1, 1, 1) > W.rate(W.RainRate, 0.45, 1, 1)).toBe(true)
 			t.expect(W.rate(W.RainRate, 5, 3, 9)).toBe(math.floor(W.RainRate * 1.2 + 0.5))
 		end)
+		t.it("bodies soak in the rain, dry slowly indoors and only wet ones leave footprints", function()
+			local wet = 0
+			for _ = 1, 25 do
+				wet = W.wetness(wet, 1, 1)
+			end
+			t.expect(wet).toBe(1)
+			local half = W.wetness(1, 0, 30)
+			t.expect(half > 0.4 and half < 0.6).toBe(true)
+			t.expect(W.wetness(0, 0, 10)).toBe(0)
+			t.expect(W.footprintAlpha(0.05)).toBe(0)
+			t.expect(W.footprintAlpha(1)).toBe(1)
+			t.expect(W.footprintAlpha(0.6) > 0 and W.footprintAlpha(0.6) < 1).toBe(true)
+		end)
 		t.it("gusts stay in a gentle band", function()
 			for i = 0, 2000 do
 				local g = W.gust(i * 0.37)
