@@ -15,6 +15,7 @@ local RunService = game:GetService("RunService")
 local Config = require("@game/ReplicatedStorage/Shared/Config")
 local Logger = require("@game/ReplicatedStorage/Shared/Logger")
 local CoinPlan = require("../Game/CoinPlan")
+local CollectibleFinish = require("../World/HouseCollectibleFinish")
 local StoreService = require("./StoreService")
 
 local log = Logger.new("CoinService")
@@ -65,6 +66,7 @@ local function makeCoin(parent: Instance, spec: CoinPlan.Coin): BasePart
 	part:SetAttribute("Value", if spec.gem then C.GemValue else C.Value)
 	part:SetAttribute("Xp", if spec.gem then C.GemXp else C.Xp)
 	part:SetAttribute("Gem", spec.gem)
+	CollectibleFinish.coin(part)
 	CollectionService:AddTag(part, CoinService.Tag)
 	part.Parent = parent
 	return part
@@ -102,6 +104,9 @@ local function collect(player: Player, coin: BasePart)
 end
 
 local function tick()
+	if ReplicatedStorage:GetAttribute("PvPActive") == true then
+		return
+	end
 	if next(live) == nil then
 		return
 	end

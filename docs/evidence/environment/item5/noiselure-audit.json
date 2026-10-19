@@ -1,0 +1,12 @@
+{
+  "scope": "read-only candidate Server audit",
+  "studio_id": "868e546e-565b-4ab0-ae7e-792cffece6a5",
+  "destination_source_place_id": 82955516040017,
+  "event": "NoiseLure",
+  "legacyVisible": 0,
+  "candidates": 20,
+  "blockedByCollider": 20,
+  "eligibleWithoutPlayerChecks": 0,
+  "byType": { "Armchair": 5, "Nightstand": 7, "Console": 8 },
+  "status": "regression confirmed; compatibility fix and dedicated QA pending"
+}

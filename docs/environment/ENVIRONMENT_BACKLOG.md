@@ -4,7 +4,7 @@
 2. Escala/composição — aplicada no Studio, 66b9ca9.
 3. Colisões — aplicadas no Studio, c33e487; usuário autorizou passar ao próximo.
 4. Blocos visuais genéricos — FEITO pelo Claude e aplicado no tungtung (ITEM_04_PRIMITIVE_BLOCKS.md); aguardando o humano conferir junto com o 5.
-5. Objetos de missão — pendente.
+5. Objetos de missão — FEITO (Codex) + alvos cinza de pista/ativar corrigidos pelo Claude (ITEM_05_HANDOFF.md).
 6. Guarda-roupas de esconderijo — FEITO pelo Claude (ITEM_06_09_FURNITURE.md): modelo de 2 portas do usuário, de frente para a porta do cômodo, com som.
 7. Portas — FEITO pelo Claude (ITEM_06_09_FURNITURE.md): porta do usuário como porta dupla.
 8. Sofá — FEITO pelo Claude (ITEM_06_09_FURNITURE.md): Sofa 03, 35% maior; poltrona estofada; tapete novo.
