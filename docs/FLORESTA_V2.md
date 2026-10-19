@@ -38,3 +38,11 @@ Base visual comum: terreno de verdade (Terrain: grama, lama, rocha, água) com m
 3. Mapa do lago, A Voz e a jangada (cap. 7).
 4. Morro, torre, árvores caindo e final da van (cap. 8).
 5. Testes de rota por capítulo, bot jogando os 3 capítulos, fotos.
+
+## Feito (20/10/2026)
+- Cap. 6, mapa: terreno, trilha de terra, ravina com rio, pinheiros 3D, capim, acampamento, marcas do guarda.
+- Cap. 6, a mata escuta (ForestHazardService): 11 manchas de folhas secas (andar em pé estala e chama o Tung;
+  correndo faz mais barulho); 6 bandos de corvos em tocos que levantam voo grasnando quando alguém chega a 11 studs
+  (4,5 agachado). Não verificado em jogo: o agachado silencioso (o teste por script não conseguiu agachar).
+- Cap. 6, a ponte: o guincho ergue as tábuas; ao chegar do outro lado, o Tung surge na cabeceira sul, corre pela
+  ponte, ela desaba no meio e ele cai no rio (volta pelo norte 22 s depois). A ponte não volta.

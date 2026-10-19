@@ -38,6 +38,7 @@ local services: { any } = {
 	require("./Services/LockerSearchService"),
 	require("./Services/EscapeRunService"),
 	require("./Services/TensionDirector"),
+	require("./Services/ForestHazardService"),
 	require("./Services/DebugService"), -- só age no Studio
 }
 

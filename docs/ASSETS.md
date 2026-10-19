@@ -84,6 +84,10 @@ por isso o trecho dela é 0,47–0,82 s.
 | WoodSplinter | 9126240449 | Wood Crack Thick Splintering Bursts Creaking 2 (SFX) | ProSoundEffects | madeira estalando no fogo |
 | GasWhoosh | 135097195613949 | Fire_ignition | ImBobTheOff (Creator Store, grátis) | gasolina pegando fogo |
 | GasPour | 9120620371 | Wave Spraying Hiss 4 (SFX), trecho 0,6–3,2 s | ProSoundEffects | gasolina derramada |
+| CrowCaw | 9114009761 | Crow Caw Distant Circling Traffic 1 (SFX), trechos | ProSoundEffects | corvos da mata (cap. 6) |
+| BirdsTakeoff | 9125738421 | Pigeon Surges Sudden Bursts Of Birds Flying (SFX) | ProSoundEffects | revoada dos corvos |
+| LeavesCrunch | 9118586709 | Rock Debris 3 (SFX), grama/folhas secas | ProSoundEffects | folhas secas estalando |
+| BigSplash | 9119476512 | Splash Deep Thunking Impact 2 (SFX) | ProSoundEffects | Tung Tung caindo no rio |
 
 Também do cliente Roblox: `StepFallback` (`rbxasset://sounds/action_footsteps_plastic.mp3`, trecho 0–0,26 s)
 e `Land` (`action_jump_land.mp3`). Os passos padrão do personagem são silenciados pelo `BodyAudioController`.

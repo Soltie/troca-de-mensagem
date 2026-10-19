@@ -447,6 +447,174 @@ local function camp(root: Folder, map: ForestMaps.Map)
 	)
 end
 
+-- Ponto da trilha a `distance` studs do começo, com a direção dela.
+local function trailAt(map: ForestMaps.Map, distance: number): (Vector3, Vector3)
+	local walked = 0
+	for i = 2, #map.trail do
+		local a, b = map.trail[i - 1], map.trail[i]
+		local from, to = Vector3.new(a.x, 0, a.z), Vector3.new(b.x, 0, b.z)
+		local length = (to - from).Magnitude
+		if distance <= walked + length or i == #map.trail then
+			local dir = (to - from).Unit
+			return from + dir * math.clamp(distance - walked, 0, length), dir
+		end
+		walked += length
+	end
+	local last = map.trail[#map.trail]
+	return Vector3.new(last.x, 0, last.z), Vector3.zAxis
+end
+
+local function trailLength(map: ForestMaps.Map): number
+	local total = 0
+	for i = 2, #map.trail do
+		local a, b = map.trail[i - 1], map.trail[i]
+		total += math.sqrt((b.x - a.x) ^ 2 + (b.z - a.z) ^ 2)
+	end
+	return total
+end
+
+-- Folhas secas (a mata escuta): manchas na trilha que estalam com passo normal (ForestHazardService).
+local function leaves(root: Folder, map: ForestMaps.Map, rng: Random)
+	local folder = Build.folder(root, "DryLeaves")
+	local colors = { Color3.fromRGB(122, 78, 38), Color3.fromRGB(150, 98, 44), Color3.fromRGB(96, 62, 34) }
+	local length = trailLength(map)
+	for distance = 40, length - 30, 24 do
+		local center, dir = trailAt(map, distance + rng:NextNumber(-5, 5))
+		local side = Vector3.new(dir.Z, 0, -dir.X) * rng:NextNumber(-3, 3)
+		local p = center + side
+		if ForestMaps.inRavine(map, p.X, p.Z) then
+			continue
+		end
+		local r = map.ravine
+		if r and p.Z > r.z0 - 6 and p.Z < r.z1 + 6 then
+			continue
+		end
+		local zone = part(
+			folder,
+			"LeafZone",
+			Vector3.new(9, 1, 9),
+			CFrame.new(p.X, 0.5, p.Z) * CFrame.Angles(0, math.atan2(dir.X, dir.Z), 0),
+			colors[1],
+			{ transparency = 1, collide = false, query = false }
+		)
+		zone:SetAttribute("LeafZone", true)
+		for _ = 1, 16 do
+			local leaf = part(
+				zone,
+				"Leaf",
+				Vector3.new(rng:NextNumber(0.5, 0.9), 0.05, rng:NextNumber(0.35, 0.6)),
+				zone.CFrame
+					* CFrame.new(rng:NextNumber(-4, 4), -0.45, rng:NextNumber(-4, 4))
+					* CFrame.Angles(
+						rng:NextNumber(-0.2, 0.2),
+						rng:NextNumber(0, math.pi * 2),
+						rng:NextNumber(-0.2, 0.2)
+					),
+				colors[rng:NextInteger(1, #colors)],
+				{ material = Enum.Material.Fabric, collide = false, query = false }
+			)
+			leaf.CastShadow = false
+			leaf:SetAttribute("VisualDetail", true)
+		end
+	end
+end
+
+-- Corvo de desenho (silhueta escura, bico amarelado): pousado perto da trilha, levanta voo quando alguém chega.
+local function crow(parent: Instance, at: CFrame): Model
+	local model = Build.model(parent, "Crow")
+	local black = Color3.fromRGB(18, 18, 22)
+	local opts = { material = Enum.Material.SmoothPlastic, collide = false, query = false }
+	local body = part(model, "Body", Vector3.new(1.05, 1.05, 1.05), at * CFrame.new(0, 0.55, 0), black, opts);
+	(body :: Part).Shape = Enum.PartType.Ball
+	local head = part(model, "Head", Vector3.new(0.6, 0.6, 0.6), at * CFrame.new(0, 1.05, -0.45), black, opts);
+	(head :: Part).Shape = Enum.PartType.Ball
+	part(
+		model,
+		"Beak",
+		Vector3.new(0.18, 0.14, 0.45),
+		at * CFrame.new(0, 1.0, -0.85),
+		Color3.fromRGB(150, 128, 70),
+		opts
+	)
+	for _, x in { -0.14, 0.14 } do
+		local eye = part(
+			model,
+			"Eye",
+			Vector3.new(0.12, 0.12, 0.12),
+			at * CFrame.new(x, 1.12, -0.7),
+			Color3.fromRGB(230, 220, 160),
+			{
+				material = Enum.Material.Neon,
+				collide = false,
+				query = false,
+			}
+		);
+		(eye :: Part).Shape = Enum.PartType.Ball
+	end
+	part(
+		model,
+		"Tail",
+		Vector3.new(0.5, 0.1, 0.8),
+		at * CFrame.new(0, 0.5, 0.85) * CFrame.Angles(math.rad(-20), 0, 0),
+		black,
+		opts
+	)
+	for _, x in { -1, 1 } do
+		local wing = part(
+			model,
+			if x < 0 then "WingL" else "WingR",
+			Vector3.new(0.9, 0.08, 0.9),
+			at * CFrame.new(x * 0.45, 0.75, 0.05) * CFrame.Angles(0, 0, math.rad(x * -35)),
+			black,
+			opts
+		)
+		wing:SetAttribute("Side", x)
+	end
+	for _, d in model:GetDescendants() do
+		if d:IsA("BasePart") then
+			d.CastShadow = false
+		end
+	end
+	return model
+end
+
+local function crows(root: Folder, map: ForestMaps.Map, rng: Random)
+	local folder = Build.folder(root, "Crows")
+	local length = trailLength(map)
+	for distance = 55, length - 40, 38 do
+		local center, dir = trailAt(map, distance)
+		local r = map.ravine
+		if r and center.Z > r.z0 - 10 and center.Z < r.z1 + 10 then
+			continue
+		end
+		local sideSign = if rng:NextNumber() < 0.5 then -1 else 1
+		local side = Vector3.new(dir.Z, 0, -dir.X) * sideSign
+		local base = center + side * rng:NextNumber(9, 12)
+		-- Toco ou pedra onde ele pousa (dois ou três corvos juntos).
+		local perch = Build.cylinder(
+			folder,
+			"CrowPerch",
+			Vector3.new(base.X, 2.25, base.Z),
+			Vector3.yAxis,
+			4.5,
+			2.2,
+			Color3.fromRGB(78, 60, 44),
+			{ material = Enum.Material.Wood }
+		)
+		perch:SetAttribute("CrowPerch", true)
+		local flock = Build.model(folder, "Flock")
+		flock:SetAttribute("Flock", true)
+		for _ = 1, rng:NextInteger(2, 3) do
+			local offset = Vector3.new(rng:NextNumber(-0.6, 0.6), 4.5, rng:NextNumber(-0.6, 0.6))
+			local look = (center - base) * Vector3.new(1, 0, 1)
+			crow(
+				flock,
+				CFrame.lookAt(base + offset, base + offset + look.Unit) * CFrame.Angles(0, rng:NextNumber(-0.6, 0.6), 0)
+			)
+		end
+	end
+end
+
 -- Monta o mapa do capítulo dentro de `root` (pasta Forest).
 function V2.build(root: Folder, map: ForestMaps.Map, seed: number)
 	local rng = Random.new(seed + map.chapter * 104729)
@@ -459,6 +627,10 @@ function V2.build(root: Folder, map: ForestMaps.Map, seed: number)
 	guide(root, map)
 	bridge(root, map)
 	camp(root, map)
+	if map.biome == "mist" then
+		leaves(root, map, rng)
+		crows(root, map, rng)
+	end
 	-- Limites físicos (os morros já escondem).
 	for _, x in { -145, 145 } do
 		part(root, "TreeLineBoundary", Vector3.new(2, 80, 400), CFrame.new(x, 30, 730), WOOD, { transparency = 1 })

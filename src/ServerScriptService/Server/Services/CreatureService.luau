@@ -680,6 +680,13 @@ function CreatureService.retreat(seconds: number)
 	feintDestination = nextPatrolNode()
 end
 
+-- Cena roteirizada (ex.: ponte da floresta): põe os pés em `position` olhando para `look`, sem rota.
+function CreatureService.scriptPlace(position: Vector3, look: Vector3)
+	placeAt(position, look)
+	stopMoving()
+	arrived = true
+end
+
 -- Segundos desde a última vez que viu o jogador (esconderijo: "viu entrar?").
 function CreatureService.sawEntry(player: Player): boolean
 	return os.clock() - (seenPlayers[player.UserId] or -math.huge) < Config.Hide.SawEntryWindow

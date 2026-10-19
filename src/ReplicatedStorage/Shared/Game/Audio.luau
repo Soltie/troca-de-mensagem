@@ -94,6 +94,11 @@ local Audio: { [string]: Clip } = {
 	WoodSplinter = { id = "rbxassetid://9126240449", volume = 0.9 }, -- PSE Wood Crack Thick Splintering Bursts Creaking 2
 	GasWhoosh = { id = "rbxassetid://135097195613949", volume = 1 }, -- Fire_ignition (ImBobTheOff, 7,9 s)
 	GasPour = { id = "rbxassetid://9120620371", volume = 0.55, speed = 1.5, region = { 0.6, 3.2 } }, -- PSE Wave Spraying Hiss 4 (gasolina caindo)
+	-- Floresta v2 (cap. 6): a mata escuta.
+	CrowCaw = { id = "rbxassetid://9114009761", volume = 0.9 }, -- PSE Crow Caw Distant Circling Traffic 1 (55 s; tocar trechos)
+	BirdsTakeoff = { id = "rbxassetid://9125738421", volume = 0.8 }, -- PSE Pigeon Surges Sudden Bursts Of Birds Flying
+	LeavesCrunch = { id = "rbxassetid://9118586709", volume = 0.9 }, -- PSE Rock Debris 3 (grass or dry leaves crunch)
+	BigSplash = { id = "rbxassetid://9119476512", volume = 1 }, -- PSE Splash Deep Thunking Impact 2
 }
 
 return table.freeze(Audio)
