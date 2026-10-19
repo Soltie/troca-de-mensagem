@@ -89,6 +89,7 @@ foi excluído do modelo e não é usado no jogo.
 | Wardrobe, LowTable, KitchenCounter, WindowSet | **modelados/gerados por Claude no Blender** (estampa do tapete gerada por script) | — | próprios |
 | PersianRug (19/10, escolha do usuário) | malha própria no Blender; tecido [Dirty Carpet](https://polyhaven.com/a/dirty_carpet) (Rohit Seervi) com borda, medalhão e franja gerados por script; `.cache/env-assets/lot8/rug_dirty.glb` | CC0 | Poly Haven + próprio |
 | WardrobeDouble (esconderijo, 19/10) | **gerado pelo usuário no Hyper3D Rodin**; portas separadas, prateleira do meio removida e escala ajustada ao esconderijo por Claude no Blender; `.cache/env-assets/lot8/wardrobe_h3d.glb` | — | conforme termos do Hyper3D |
+| GrassField (19/10) | **gerado por Claude no Blender por script**: 900 lâminas triangulares em 8×8 studs, textura de degradê oliva própria (`.cache/env-assets/lot8/grass_field.glb`) | — | próprio |
 
 O `.rbxm` agora é salvo pelo MCP (`SerializationService` + `tools/environment/serve.luau`, POST local), sem depender do menu do Studio.
 ### Lote 5 (fachada e jardim)

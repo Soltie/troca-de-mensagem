@@ -133,9 +133,52 @@ local GARDEN_AREAS = {
 	{ 12, 104, 100, 128 },
 }
 
+--[[
+	Campo de mato denso (referência do humano: The Mimic): tapetes de 8 × 8 studs com 900 lâminas finas
+	(GrassField, uma face por lâmina, degradê oliva da base à ponta) numa grade com desvio e giro aleatórios.
+	Só onde o centro e as quatro quinas estão livres. Cada tapete é um VisualDetail: some de longe no celular.
+]]
+local FIELD_STEP = 7.5
+local function field(folder: Instance, rng: Random): boolean
+	local source = library()
+	local template = source and source:FindFirstChild("GrassField")
+	if not template or not template:IsA("Model") or not template:GetAttribute("PivotIsBase") then
+		return false
+	end
+	for _, area in GARDEN_AREAS do
+		for x = area[1] + FIELD_STEP / 2, area[2], FIELD_STEP do
+			for z = area[3] + FIELD_STEP / 2, area[4], FIELD_STEP do
+				local px, pz = x + rng:NextNumber(-1.2, 1.2), z + rng:NextNumber(-1.2, 1.2)
+				local free = not gardenBlocked(px, pz)
+				for _, corner in { { -3.6, -3.6 }, { 3.6, -3.6 }, { -3.6, 3.6 }, { 3.6, 3.6 } } do
+					free = free and not gardenBlocked(px + corner[1], pz + corner[2])
+				end
+				if free then
+					local patch = template:Clone()
+					patch:ScaleTo(patch:GetScale() * rng:NextNumber(0.85, 1.15))
+					local yaw = rng:NextInteger(0, 3) * math.pi / 2 + rng:NextNumber(-0.3, 0.3)
+					patch:PivotTo(CFrame.new(px, 0.05, pz) * CFrame.Angles(0, yaw, 0))
+					for _, part in patch:GetDescendants() do
+						if part:IsA("BasePart") then
+							part.Anchored, part.CanCollide, part.CanQuery, part.CanTouch = true, false, false, false
+							part.CastShadow = false
+							part:SetAttribute("VisualDetail", true)
+						end
+					end
+					patch.Parent = folder
+				end
+			end
+		end
+	end
+	return true
+end
+
 local function garden(root: Instance)
 	local folder = Build.folder(root, "GardenGrass")
 	local rng = Random.new(SEED)
+	if field(folder, rng) then
+		return
+	end
 	local total = 0
 	for _, area in GARDEN_AREAS do
 		total += (area[2] - area[1]) * (area[4] - area[3])
