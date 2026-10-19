@@ -26,7 +26,18 @@ Profile.World = {
 }
 Profile.Bloom = { intensity = 0.1, size = 10, threshold = 1.9 }
 -- Lanterna mais forte (aprovada pelo humano em 19/10/2026): o feixe revela o cômodo; fora dele continua escuro.
-Profile.Flashlight = { brightness = 4.6, spill = 0.25, spillRange = 8, angle = 50, range = 62 }
+-- `halo`: cones extras em volta do feixe (abertura, fração do brilho, fração do alcance) para a luz cair aos poucos.
+Profile.Flashlight = {
+	brightness = 4.6,
+	spill = 0.45,
+	spillRange = 12,
+	angle = 50,
+	range = 62,
+	halo = {
+		{ angle = 72, share = 0.3, reach = 0.75 },
+		{ angle = 100, share = 0.12, reach = 0.55 },
+	},
+}
 -- Filtro de cor "frio" (opção B, escolhida pelo humano): azulado, menos saturado e mais contraste, por cima do tom
 -- de cada ambiente.
 Profile.Look = { tint = { 196, 218, 255 }, saturation = -0.25, contrast = 0.14, brightness = 0.02 }

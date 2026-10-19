@@ -64,7 +64,8 @@ function Architecture.build(structure: Instance, dressing: Instance)
 			elseif y == 0 then "TÉRREO / BIBLIOTECA"
 			elseif y == 16 then "QUARTOS / ESCRITÓRIO"
 			else "SÓTÃO / MEMÓRIAS"
-		plaque(dressing, V3(0, y + 8.5, 62.9), -Vector3.zAxis, names)
+		-- Na parede oeste do hall, à esquerda de quem entra (antes ficava solta no vão da porta de entrada).
+		plaque(dressing, V3(-23.38, y + 8.5, 52), Vector3.xAxis, names)
 		plaque(dressing, V3(0, y + 8.5, 13.1), Vector3.zAxis, "CORREDOR CENTRAL")
 		for _, z in { 16, 59 } do
 			local lamp = piece(dressing, "LandingSconce", V3(-22.8, y + 7, z), V3(0.5, 1.4, 0.8), trim)

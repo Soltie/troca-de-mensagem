@@ -127,7 +127,8 @@ function Builder.build(parent: Instance): (MapBuilder.World, FeatureBuilder.Buil
 				for _, offset in { -10.5, 10.5 } do
 					block(structure, "DoorWall", side * 8, y, z + offset, 1, 16, 11, plaster)
 				end
-				block(structure, "DoorLintel", side * 8, y + 11.5, z, 1, 4.5, 10, plaster)
+				-- 4,45 de altura: o topo fica 0,05 abaixo do piso de cima (com 4,5 o tijolo piscava no vão da porta acima).
+				block(structure, "DoorLintel", side * 8, y + 11.5, z, 1, 4.45, 10, plaster)
 				block(structure, "RoomPartition", side * 26, y, z - 16, 36, 16, 1, plaster)
 				-- Tetos dos quartos; o corredor/escadaria não recebe piso que corte as rampas.
 				block(structure, "RoomCeiling", side * 26, y + 15, z, 36, 0.5, 32, plaster)

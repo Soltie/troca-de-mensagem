@@ -45,6 +45,7 @@ local viewmodel: Viewmodel? = nil
 local emitter: BasePart? = nil
 local spot: SpotLight? = nil
 local spill: PointLight? = nil
+local halos: { { light: SpotLight, share: number, reach: number } } = {}
 local dust: ParticleEmitter? = nil
 local smoothed: CFrame? = nil
 local flickerClock = 0
@@ -201,6 +202,9 @@ local function applyVisible()
 	if spot then
 		spot.Enabled = on
 	end
+	for _, halo in halos do
+		halo.light.Enabled = on
+	end
 	if spill then
 		spill.Enabled = on
 	end
@@ -255,6 +259,9 @@ function FlashlightController.applySkin(body: Color3, head: Color3, beam: Color3
 	end
 	if spot then
 		spot.Color = beam
+	end
+	for _, halo in halos do
+		halo.light.Color = beam
 	end
 	if spill then
 		spill.Color = beam
@@ -387,6 +394,21 @@ function FlashlightController.Init()
 	light.Color = WARM
 	light.Shadows = true
 	light.Parent = part
+
+	-- Halo: cones mais abertos e mais fracos em volta do feixe. O SpotLight do Roblox tem borda dura; empilhar
+	-- cones faz a luz cair aos poucos para o escuro, sem clarear o cômodo inteiro. Sem sombra (custo).
+	for index, ring in LightingProfile.Flashlight.halo do
+		local cone = Instance.new("SpotLight")
+		cone.Name = `Halo{index}`
+		cone.Face = Enum.NormalId.Front
+		cone.Angle = ring.angle
+		cone.Range = LightingProfile.Flashlight.range * ring.reach
+		cone.Brightness = BASE_BRIGHTNESS * ring.share
+		cone.Color = WARM
+		cone.Shadows = false
+		cone.Parent = part
+		table.insert(halos, { light = cone, share = ring.share, reach = ring.reach })
+	end
 
 	local glow = Instance.new("PointLight")
 	glow.Range = LightingProfile.Flashlight.spillRange
@@ -575,6 +597,10 @@ function FlashlightController.Start()
 		if spot then
 			spot.Brightness = brightness
 			spot.Range = LightingProfile.Flashlight.range * (0.6 + 0.4 * BatteryModel.brightness(charge()))
+			for _, halo in halos do
+				halo.light.Brightness = brightness * halo.share
+				halo.light.Range = spot.Range * halo.reach
+			end
 		end
 		if spill then
 			spill.Brightness = LightingProfile.Flashlight.spill * flickerFactor

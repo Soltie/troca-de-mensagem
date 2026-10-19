@@ -334,7 +334,6 @@ ROOMS.Living = function(folder, root, room)
 	Props.place(folder, "Armchair", at(-8.6, 10.5, 0), V3(-1, 0, -0.15), 1.05, "floor")
 	Props.place(folder, "Armchair", at(10.5, -11.5, 0), V3(-1, 0, 0.6), 1.05, "floor")
 	lampOn(folder, room, "facade", -14.3)
-	against(folder, room, "Cabinet", "door", -11, 1)
 	-- A estante da fachada (12,6) saiu: o guarda-roupa do esconderijo ocupa esse canto.
 	local console = against(folder, room, "Console", "front", 0, 0.95)
 	if console then
@@ -389,7 +388,6 @@ ROOMS.Dining = function(folder, root, room)
 		Props.place(folder, "Candelabra", V3(center.X, top(dining), center.Z), V3(1, 0, 0), 0.75, "floor")
 	end
 	glow(folder, "Candle", center + V3(0, 6, 0), 26, 0.9, true)
-	against(folder, room, "Cabinet", "door", -11, 1.05)
 	against(folder, room, "Console", "door", 11, 1)
 end
 
@@ -414,7 +412,8 @@ local LIBRARY_PIECES = { Shelf = true, Book = true, ReadingChair = true, LampPol
 local function rearShelves(folder: Instance, root: Instance, room: RoomRef)
 	-- Estantes por cima das caixas de colisão do fundo (as caixas continuam lá).
 	conceal(root, room, SHELF_BLOCKS)
-	for _, ox in { -9.6, -3.2, 3.2, 9.6 } do
+	-- Uma estante embutida contínua (módulos encostados, sem vão), não quatro soltas lado a lado.
+	for _, ox in { -8.4, -4.2, 0, 4.2, 8.4 } do
 		against(folder, room, "Bookshelf", "rear", ox, 1)
 	end
 end
@@ -425,12 +424,16 @@ ROOMS.Library = function(folder, root, room)
 	end
 	rearShelves(folder, root, room)
 	conceal(root, room, LIBRARY_PIECES)
-	for _, oz in { -12.5, -6.2, 0.1 } do
+	-- Fachada: um par de módulos encostados e um canto de leitura (poltrona e candelabro), não mais estantes.
+	for _, oz in { -12.1, -7.9 } do
 		against(folder, room, "Bookshelf", "facade", oz, 1)
 	end
+	local reading = roomFrame(room)
+	Props.place(folder, "Armchair", reading(13.4, -1.5, 0), V3(-1, 0, 0.35), 1.05, "floor")
+	Props.place(folder, "Candelabra", reading(15.8, 1.6, 0), V3(-1, 0, 0), 1.1, "floor")
+	glow(folder, "Candle", reading(15.8, 1.6, 4), 14, 0.5, true)
 	-- A poltrona do canto (14,5; 13) saiu: o guarda-roupa do esconderijo ocupa esse canto.
 	lampOn(folder, room, "facade", 6)
-	against(folder, room, "Cabinet", "door", -11, 1)
 	local console = against(folder, room, "Console", "door", 11, 1)
 	if console then
 		local box = console:GetBoundingBox()
@@ -454,7 +457,6 @@ local function bedroom(folder: Instance, root: Instance, room: RoomRef, bed: str
 	local side = if room.x < 0 then -1 else 1
 	Props.place(folder, bed, V3(room.x + 9, room.y, room.z - 8), Vector3.zAxis, scale * KEEP, "floor")
 	lampOn(folder, room, "door", -14)
-	against(folder, room, "Cabinet", "facade", 13.2, 0.9)
 	local dresser = against(folder, room, "Console", "door", 11, 0.95)
 	Props.place(folder, "Mirror", V3(room.x - side * 17.5, room.y + 7.6, room.z + 11), V3(side, 0, 0), 1.5, "wall")
 	if dresser then
