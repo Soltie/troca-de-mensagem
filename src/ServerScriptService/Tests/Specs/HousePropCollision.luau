@@ -50,6 +50,44 @@ return {
 			assert(ok, tostring(failure))
 		end)
 
+		t.it(
+			"NoiseLure furniture stays eligible: solid box outside the model, stays put when the model slides",
+			function()
+				local fixture = Instance.new("Folder")
+				fixture.Name, fixture.Parent = "LureFurnitureFixture", workspace
+				local ok, failure = pcall(function()
+					for index, name in { "Console", "Nightstand", "Armchair" } do
+						local model =
+							Props.place(fixture, name, Vector3.new(3700 + index * 12, 0, 0), Vector3.zAxis, 1, "floor")
+						assert(model, `Missing {name} asset`)
+						-- Regra do evento: nenhuma peça sólida dentro do modelo.
+						for _, part in model:GetDescendants() do
+							if part:IsA("BasePart") then
+								t.expect(part.CanCollide).toBe(false)
+							end
+						end
+						local collider: BasePart? = nil
+						for _, part in (fixture:FindFirstChild("FurnitureColliders") :: Folder):GetChildren() do
+							local link = part:FindFirstChild("Furniture") :: ObjectValue?
+							if link and link.Value == model then
+								collider = part :: BasePart
+							end
+						end
+						assert(collider and collider.CanCollide and collider.Anchored, `{name} lost its collision`)
+						local before = collider.CFrame
+						local original = model:GetPivot()
+						model:PivotTo(original + Vector3.xAxis * 2)
+						t.expect(collider.CFrame).toBe(before)
+						model:PivotTo(original)
+						model:Destroy()
+						t.expect(collider.Parent).toBe(nil)
+					end
+				end)
+				fixture:Destroy()
+				assert(ok, tostring(failure))
+			end
+		)
+
 		t.it("furnished rooms keep objectives hiding exits and player/creature routes accessible", function()
 			local fixture = Instance.new("Folder")
 			fixture.Name, fixture.Parent = "FurnishedNavigationFixture", workspace

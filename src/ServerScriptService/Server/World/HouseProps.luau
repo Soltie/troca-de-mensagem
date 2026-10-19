@@ -27,6 +27,8 @@ local FURNITURE = 0.85
 local KEEP = 1.25 / FURNITURE
 
 -- Só mobília decorativa. Camas, mesa baixa e esconderijos conservam os volumes funcionais antigos.
+-- Mesma lista que o evento NoiseLure procura em Props (DynamicHouseService).
+local LURE_MOVABLE: { [string]: boolean } = { Console = true, Nightstand = true, Armchair = true, Desk = true }
 local SOLID: { [string]: boolean } = {
 	Sofa = true,
 	Armchair = true,
@@ -102,9 +104,16 @@ function Props.place(
 	end
 	if SOLID[name] then
 		local frame, bounds = model:GetBoundingBox()
+		-- Móveis que o evento NoiseLure (DynamicHouseService) pode arrastar só são escolhidos se o MODELO não tiver
+		-- peça sólida. A caixa deles fica numa pasta irmã, parada no lugar: o visual desliza e volta, ninguém é empurrado.
+		local holder: Instance = model
+		if LURE_MOVABLE[name] then
+			local existing = parent:FindFirstChild("FurnitureColliders")
+			holder = existing or Build.folder(parent, "FurnitureColliders")
+		end
 		-- Recuo de 0,1 stud nas laterais: a caixa não ultrapassa o acabamento visível.
 		local collider = Build.part(
-			model,
+			holder,
 			"FurnitureCollider",
 			V3(math.max(0.2, bounds.X - 0.2), bounds.Y, math.max(0.2, bounds.Z - 0.2)),
 			frame,
@@ -115,6 +124,13 @@ function Props.place(
 		-- os testes verificam que não intercepta os pontos de missão, entradas e saídas dos esconderijos.
 		collider.CanTouch, collider.CastShadow = false, false
 		collider:SetAttribute("VisualFurnitureCollider", true)
+		if holder ~= model then
+			local link = Instance.new("ObjectValue")
+			link.Name, link.Value, link.Parent = "Furniture", model, collider
+			model.Destroying:Once(function()
+				collider:Destroy()
+			end)
+		end
 	end
 	model.Parent = parent
 	return model
