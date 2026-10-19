@@ -998,6 +998,7 @@ function WorldService.houseEvent(event: string?)
 		local forest = getWorld().root:FindFirstChild("Forest")
 		if forest then
 			forest:SetAttribute("LastEvent", event)
+			ForestBuilder.event(forest, event)
 			if event == "forest_blackout" or event == "forest_broadcast" or event == "forest_winch" then
 				forest:SetAttribute("ForcedBlackoutUntil", workspace:GetServerTimeNow() + 7)
 			end

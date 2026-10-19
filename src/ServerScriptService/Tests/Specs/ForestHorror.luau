@@ -60,7 +60,7 @@ return {
 							t.expect(state.stage).toBe(chapter)
 							local plan = state.plan
 							assert(plan, "Missing plan")
-							t.expect(#plan.activities >= 8).toBe(true)
+							t.expect(#plan.activities >= 7).toBe(true)
 							t.expect((Session.act(state, 1, plan.activities[#plan.activities].id, 1, 0))).toBe(false)
 							for _, spec in plan.activities do
 								if spec.kind == "puzzle" then

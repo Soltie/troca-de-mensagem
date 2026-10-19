@@ -200,16 +200,28 @@ function Activities.build(parent: Instance, plan: Generator.Plan, distance: numb
 		if spec.kind == "hide" or spec.kind == "breath" or spec.kind == "explore" then
 			continue
 		end
-		local base = Build.block(
-			model,
-			-- Sem pedestal na gasolina: o PrimitiveFinish veste todo "AntiquePedestal" com uma mesinha.
-			if fuel then "FuelBase" else "AntiquePedestal",
-			p,
-			Vector3.new(4, 1.7, 2),
-			0,
-			Color3.fromRGB(53, 35, 29),
-			{ transparency = if fuel then 1 else 0, collide = not fuel, query = not fuel }
-		)
+		-- Na floresta o item fica num toco de árvore (pedestal de casa destoava na mata).
+		local base = if plan.stage >= 6
+			then Build.cylinder(
+				model,
+				"ForestStump",
+				p + Vector3.new(0, 0.85, 0),
+				Vector3.yAxis,
+				1.7,
+				3.6,
+				Color3.fromRGB(86, 64, 44),
+				{ material = Enum.Material.Wood }
+			)
+			else Build.block(
+				model,
+				-- Sem pedestal na gasolina: o PrimitiveFinish veste todo "AntiquePedestal" com uma mesinha.
+				if fuel then "FuelBase" else "AntiquePedestal",
+				p,
+				Vector3.new(4, 1.7, 2),
+				0,
+				Color3.fromRGB(53, 35, 29),
+				{ transparency = if fuel then 1 else 0, collide = not fuel, query = not fuel }
+			)
 		base.Material = Enum.Material.Wood
 		TaskProps.build(model, p, spec.item, spec.kind)
 		if spec.kind == "clue" then

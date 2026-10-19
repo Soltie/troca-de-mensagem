@@ -1,6 +1,7 @@
 --!strict
 -- Continuação da casa: pistas legíveis, mecanismos ruidosos e fuga real no servidor.
 local TableUtil = require("../Util/TableUtil")
+local ForestMaps = require("./ForestMaps")
 export type Room = { id: string, title: string, x: number, y: number, z: number }
 export type Objective = { room: string, title: string, kind: string, item: string?, event: string?, revelation: string }
 export type Chapter = { title: string, subtitle: string, objectives: { Objective } }
@@ -27,56 +28,51 @@ local Forest = {
 	Chapters = {
 		{
 			title = "06 · A MATA ESCUTA",
-			subtitle = "A casa ficou para trás. O caçador aprendeu seu caminho.",
+			subtitle = "A casa ficou para trás. A neblina escuta cada passo.",
 			objectives = {
 				{
-					room = "ForestTrail",
-					title = "Seguir as marcas do guarda",
+					room = "MistTrail",
+					title = "Seguir as marcas amarelas do guarda",
 					kind = "explore",
-					revelation = "Na árvore: SE A MATA PARAR, APAGUEM A LUZ. O abrigo mais próximo está marcado em amarelo.",
+					revelation = "Na árvore, em tinta amarela: A MATA ESCUTA. FOLHAS SECAS ESTALAM E OS CORVOS GRITAM. ANDEM ABAIXADOS.",
 				},
 				{
-					room = "ForestCamp",
+					room = "MistCamp",
 					title = "Recolher o mapa rasgado",
 					kind = "collect",
 					item = "forest_map",
-					revelation = "O guarda tentou levar seis pessoas até a estrada. Ninguém chegou. A ponte foi sabotada.",
+					revelation = "O guarda tentou levar seis pessoas até a estrada. Ninguém chegou. A ponte da ravina foi sabotada.",
 				},
 				{
-					room = "ForestTrail",
+					room = "MistTrail",
 					title = "Ler o aviso sobre o caçador",
 					kind = "clue",
 					item = "forest_warning",
 					revelation = "Ele não carrega luz nesta mata. Corridas, lanternas e mecanismos denunciam vocês. Árvores e abrigos quebram a visão.",
 				},
 				{
-					room = "ForestCamp",
-					title = "Buscar a manivela da travessia",
+					room = "MistCamp",
+					title = "Buscar a manivela do guincho",
 					kind = "collect",
 					item = "forest_crank",
 					revelation = "A manivela está suja de lama. Ao lado, duas pegadas diferentes: uma funda e outra arrastada.",
 				},
 				{
-					room = "ForestTrail",
-					title = "Restaurar o guincho da passagem",
+					room = "RavineEdge",
+					title = "Consertar o guincho e erguer a ponte",
 					kind = "repair",
 					event = "forest_winch",
-					revelation = "O cabo esticou. O metal ecoou entre as árvores. Ele ouviu; procurem cobertura.",
+					revelation = "As tábuas subiram rangendo e a ponte voltou ao lugar. O metal ecoou na ravina inteira. Ele ouviu.",
 				},
 				{
-					room = "ForestTrail",
-					title = "Esconder-se antes das três pancadas",
-					kind = "hide",
-					revelation = "O bastão parou ao lado do abrigo. Cada pessoa precisa de um esconderijo livre.",
+					room = "NorthBank",
+					title = "Atravessar a ponte",
+					kind = "explore",
+					event = "forest_bridge_fall",
+					revelation = "Ele veio atrás pela ponte. As tábuas não aguentaram: o caçador caiu no rio. Não há volta.",
 				},
 				{
-					room = "ForestTrail",
-					title = "Prender a respiração por dois segundos",
-					kind = "breath",
-					revelation = "Ele passou. Não gastem todo o ar. O posto de rádio fica depois do acampamento.",
-				},
-				{
-					room = "ForestRoad",
+					room = "MistRoad",
 					title = "Soltar o cabo e abrir a próxima trilha",
 					kind = "activate",
 					event = "forest_passage",
@@ -218,4 +214,13 @@ local Forest = {
 		},
 	} :: { Chapter },
 }
+-- Lugares dos mapas novos (floresta v2) entram junto com os antigos (ids diferentes).
+for _, room in ForestMaps.allRooms() do
+	table.insert(Forest.Rooms, room)
+end
+-- Abrigos do capítulo: o mapa novo, se existir; senão os antigos.
+function Forest.hidesFor(chapter: number): { { x: number, y: number, z: number } }
+	local map = ForestMaps.get(chapter)
+	return if map then map.hides else Forest.Hides
+end
 return TableUtil.deepFreeze(Forest)

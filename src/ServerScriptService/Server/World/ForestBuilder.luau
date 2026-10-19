@@ -8,6 +8,8 @@ local Build = require("./Build")
 local FeatureBuilder = require("./FeatureBuilder")
 local Layout = require("./ForestLayout")
 local Threat = require("@game/ReplicatedStorage/Shared/Game/ForestThreat")
+local ForestMaps = require("@game/ReplicatedStorage/Shared/Game/ForestMaps")
+local V2 = require("./ForestV2")
 local Builder = {}
 local wood = Color3.fromRGB(67, 54, 39)
 local leaf = Color3.fromRGB(28, 53, 39)
@@ -38,6 +40,50 @@ function Builder.clear(parent: Instance, features: FeatureBuilder.Built)
 	if old then
 		old:Destroy()
 	end
+	-- Terreno da floresta v2 (morros, trilha, ravina) sai junto.
+	V2.clearTerrain()
+end
+-- Abrigos do capítulo (os mesmos nos mapas antigo e novo): madeira, porta com prompt e esconderijo do servidor.
+local function shelters(root: Folder, list: { { x: number, y: number, z: number } }, features: FeatureBuilder.Built)
+	for index, spot in list do
+		local id = `hide_Forest_{index}`
+		local p = Vector3.new(spot.x, 0, spot.z)
+		local model = Build.model(root, id)
+		for _, dx in { -2.5, 2.5 } do
+			block(
+				model,
+				"Side",
+				p + Vector3.new(dx, 0, 0),
+				Vector3.new(0.5, 9, 5),
+				wood,
+				{ material = Enum.Material.Wood }
+			)
+		end
+		block(model, "Back", p + Vector3.new(0, 0, -2.5), Vector3.new(5, 9, 0.5), wood)
+		block(model, "Roof", p + Vector3.new(0, 9, 0), Vector3.new(6, 0.5, 6), wood)
+		local door = block(model, "HideDoor", p + Vector3.new(0, 0, 2.5), Vector3.new(5, 9, 0.3), wood)
+		door:SetAttribute(Tags.Attr.InteractId, id)
+		door:SetAttribute(Tags.Attr.InteractPrompt, "ESCONDER NO ABRIGO")
+		door:SetAttribute(Tags.Attr.InteractEnabled, true)
+		door:SetAttribute(Tags.Attr.InteractDistance, 8)
+		CollectionService:AddTag(door, Tags.Interactable)
+		local front = p + Vector3.new(0, 0, 6)
+		features.lockers[id] = {
+			id = id,
+			model = model,
+			door = door,
+			doorClosed = door.CFrame,
+			hinge = CFrame.new(p),
+			inside = CFrame.new(p + Vector3.new(0, 3, 0)),
+			eye = CFrame.lookAt(p + Vector3.new(0, 5.5, 2.7), p + Vector3.new(0, 5.5, 10)),
+			exit = CFrame.new(front + Vector3.new(0, 3, 0)),
+			front = front,
+			sound = Build.sound(door, "Creak", Audio.DoorBang.id, 0.35),
+			occupant = nil,
+		}
+		features.interactables[id] =
+			{ id = id, kind = "Hide", focus = door, model = model, maxDistance = 8, enabled = true }
+	end
 end
 function Builder.build(parent: Instance, chapter: number, seed: number, features: FeatureBuilder.Built): Folder
 	Builder.clear(parent, features)
@@ -45,6 +91,22 @@ function Builder.build(parent: Instance, chapter: number, seed: number, features
 	root:SetAttribute("Chapter", chapter)
 	root:SetAttribute("HorrorForest", true)
 	local rng = Random.new(seed + chapter * 104729)
+	-- Floresta v2: capítulo com mapa novo (docs/FLORESTA_V2.md).
+	local map = ForestMaps.get(chapter)
+	if map then
+		V2.build(root, map, seed)
+		shelters(root, map.hides, features)
+		Build.sign(
+			root,
+			"ChapterBoard",
+			Vector3.new(-18, 6, 604),
+			-Vector3.zAxis,
+			Vector2.new(14, 3),
+			Forest.Chapters[chapter - 5].title,
+			{ textColor = Color3.fromRGB(226, 193, 130), lit = true }
+		)
+		return root
+	end
 	block(
 		root,
 		"ForestGround",
@@ -245,45 +307,7 @@ function Builder.build(parent: Instance, chapter: number, seed: number, features
 		Forest.Chapters[chapter - 5].title,
 		{ textColor = Color3.fromRGB(226, 193, 130), lit = true }
 	)
-	for index, spot in Forest.Hides do
-		local id = `hide_Forest_{index}`
-		local p = Vector3.new(spot.x, 0, spot.z)
-		local model = Build.model(root, id)
-		for _, dx in { -2.5, 2.5 } do
-			block(
-				model,
-				"Side",
-				p + Vector3.new(dx, 0, 0),
-				Vector3.new(0.5, 9, 5),
-				wood,
-				{ material = Enum.Material.Wood }
-			)
-		end
-		block(model, "Back", p + Vector3.new(0, 0, -2.5), Vector3.new(5, 9, 0.5), wood)
-		block(model, "Roof", p + Vector3.new(0, 9, 0), Vector3.new(6, 0.5, 6), wood)
-		local door = block(model, "HideDoor", p + Vector3.new(0, 0, 2.5), Vector3.new(5, 9, 0.3), wood)
-		door:SetAttribute(Tags.Attr.InteractId, id)
-		door:SetAttribute(Tags.Attr.InteractPrompt, "ESCONDER NO ABRIGO")
-		door:SetAttribute(Tags.Attr.InteractEnabled, true)
-		door:SetAttribute(Tags.Attr.InteractDistance, 8)
-		CollectionService:AddTag(door, Tags.Interactable)
-		local front = p + Vector3.new(0, 0, 6)
-		features.lockers[id] = {
-			id = id,
-			model = model,
-			door = door,
-			doorClosed = door.CFrame,
-			hinge = CFrame.new(p),
-			inside = CFrame.new(p + Vector3.new(0, 3, 0)),
-			eye = CFrame.lookAt(p + Vector3.new(0, 5.5, 2.7), p + Vector3.new(0, 5.5, 10)),
-			exit = CFrame.new(front + Vector3.new(0, 3, 0)),
-			front = front,
-			sound = Build.sound(door, "Creak", Audio.DoorBang.id, 0.35),
-			occupant = nil,
-		}
-		features.interactables[id] =
-			{ id = id, kind = "Hide", focus = door, model = model, maxDistance = 8, enabled = true }
-	end
+	shelters(root, Forest.Hides, features)
 	if chapter == 6 then
 		for _, x in { -80, 80 } do
 			local log = block(
@@ -377,6 +401,12 @@ function Builder.build(parent: Instance, chapter: number, seed: number, features
 		)
 	end
 	return root
+end
+-- Eventos das tarefas que mexem no mapa novo (floresta v2).
+function Builder.event(forest: Instance, event: string)
+	if event == "forest_winch" then
+		V2.raiseBridge(forest)
+	end
 end
 function Builder.pressure(parent: Instance, now: number, chapter: number, playing: boolean)
 	local forest = parent:FindFirstChild("Forest")
