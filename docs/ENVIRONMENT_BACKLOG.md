@@ -63,3 +63,9 @@ L. Modos para rejogar (Piggy): "Infecção" (quem é pego vira ajudante do Tung 
    (um jogador sabe onde ele está). Para o PvP já existente do Codex.
 M. Começo lento e pico no fim (DOORS/Seek): corrida roteirizada no capítulo 5 com portas fechando atrás e obstáculos
    para pular; já temos o fogo — faltam obstáculos de pulo e um "corredor que desaba" na hora certa.
+
+Decisão do humano (19/10/2026): fazer todas, do mais fácil ao mais difícil, menos:
+- F (coisa que só anda quando não olham): o humano vai fazer o MODELO 3D; implementar quando ele entregar.
+- H (som vira perigo): não fazer.
+- K (mini-jogos físicos): anotado para depois.
+Ordem combinada: B, E, A, I, G, J, C, M, D, L.
