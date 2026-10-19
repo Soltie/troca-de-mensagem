@@ -94,9 +94,13 @@ local function update(dt: number)
 	end
 	local hidden = player:GetAttribute("Hidden")
 	local inside = type(hidden) == "string" and hidden ~= ""
+	-- Só conta depois de ter a lanterna (no começo do capítulo 1 o escuro não é culpa de ninguém) e nunca durante a
+	-- revista do armário (a imagem embaçando atrapalharia o ritmo).
 	local active = phase == "Playing"
 		and player:GetAttribute("CinematicActive") ~= true
 		and player:GetAttribute("CampaignStatus") == "Active"
+		and player:GetAttribute("HasFlashlight") == true
+		and player:GetAttribute("BreathTestAt") == nil
 	if active then
 		local camera = workspace.CurrentCamera
 		local level = if camera then lightLevel(camera.CFrame.Position) else 1

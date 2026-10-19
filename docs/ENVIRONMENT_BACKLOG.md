@@ -101,3 +101,6 @@ Loading (LoadingController + CampaignState.Loading): a troca de capítulo remont
 quadros; agora o servidor avisa antes (0,3 s para a tela entrar) e no fim, e o cliente só tira a tela quando os
 quadros estabilizam (10 seguidos abaixo de 1/24 s). Também cobre a entrada no jogo. Teste: a pior travada da
 troca (0,475 s) ficou toda atrás da tela. Dicas rotativas das mecânicas novas. Foto em docs/evidence/environment/loading.
+Encaixe (20/10/2026): sanidade só conta depois de pegar a lanterna e nunca durante a revista do armário; aviso de
+ameaça (tremor e "TUM") fica quieto durante a revista; o desabamento que pega alguém para ali e joga a pessoa para
+o lado livre (antes ficava presa atrás do entulho, junto do fogo, sem resgate).

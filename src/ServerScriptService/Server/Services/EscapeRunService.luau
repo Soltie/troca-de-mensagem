@@ -37,6 +37,7 @@ type Run = {
 	slammed: { [string]: boolean },
 	doors: { { id: string, s: number, off: number } },
 	collapseAt: number?,
+	collapseStop: number?,
 	rubbleUpTo: number,
 	caught: { [Player]: boolean },
 }
@@ -85,6 +86,7 @@ local function begin(seed: number)
 		slammed = {},
 		doors = doors,
 		collapseAt = nil,
+		collapseStop = nil,
 		rubbleUpTo = EscapeRun.Collapse.from,
 		caught = {},
 	}
@@ -230,7 +232,7 @@ local function step()
 	end
 	local collapseAt = current.collapseAt
 	if collapseAt then
-		local front = EscapeRun.collapseFront(now - collapseAt)
+		local front = math.min(EscapeRun.collapseFront(now - collapseAt), current.collapseStop or math.huge)
 		-- Entulho a cada 6 studs, um pouco atrás da frente (o teto cai antes, o monte fica).
 		while current.rubbleUpTo + 6 <= front - 2 do
 			current.rubbleUpTo += 6
@@ -239,6 +241,20 @@ local function step()
 		for _, runner in runners do
 			if not current.caught[runner.player] and EscapeRun.caught(front, runner.s, runner.off) then
 				current.caught[runner.player] = true
+				-- Pegou alguém: o desabamento para ali (o susto já aconteceu; ninguém fica preso do lado do fogo).
+				if not current.collapseStop then
+					current.collapseStop = front
+					current.folder:SetAttribute("CollapseStop", front)
+				end
+				-- O tranco joga a pessoa para a frente do desabamento: cai e rasteja do lado livre (preso atrás do
+				-- entulho, junto do fogo, não teria saída nem resgate).
+				local character = runner.player.Character
+				if character then
+					local x, y, z = EscapeRun.point(math.min(front + 5, EscapeRun.Collapse.to + 2))
+					local ax, _, az = EscapeRun.point(math.min(front + 6, EscapeRun.Collapse.to + 3))
+					local at = Vector3.new(x, y + 3.4, z)
+					character:PivotTo(CFrame.lookAt(at, Vector3.new(ax, at.Y, az)))
+				end
 				for _, callback in caughtCallbacks do
 					task.spawn(callback, runner.player)
 				end

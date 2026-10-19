@@ -198,6 +198,10 @@ local function update(dt: number)
 	local now = os.clock()
 	local hidden = player:GetAttribute("Hidden")
 	local inside = type(hidden) == "string" and hidden ~= ""
+	-- Revista do armário (BreathTestController): sem tremor nem "TUM" por cima do ritmo das batidas.
+	if player:GetAttribute("BreathTestAt") ~= nil then
+		return
+	end
 	-- Tela tremendo cada vez mais forte (escondido treme menos: o armário abafa).
 	if level > 0.15 then
 		CameraController.addTrauma(dt * level * (if inside then 0.3 else 0.85))

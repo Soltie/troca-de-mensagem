@@ -194,9 +194,12 @@ local function update(dt: number)
 		roar = AudioController.play("AmbFireRoar", 1.4, 0.7)
 	end
 	local now = workspace:GetServerTimeNow()
-	local front = EscapeRun.collapseFront(now - at)
+	-- O servidor para o desabamento quando ele pega alguém (CollapseStop).
+	local stop = folder:GetAttribute("CollapseStop")
+	local limit = if type(stop) == "number" then stop else EscapeRun.Collapse.to
+	local front = math.min(EscapeRun.collapseFront(now - at), limit)
 	-- Teto caindo na frente do desabamento: dois pedaços a cada 2 studs.
-	while droppedUpTo + 2 <= front and droppedUpTo < EscapeRun.Collapse.to do
+	while droppedUpTo + 2 <= front and droppedUpTo < limit do
 		droppedUpTo += 2
 		local x, _, z = EscapeRun.point(droppedUpTo)
 		for _ = 1, 2 do
@@ -208,7 +211,7 @@ local function update(dt: number)
 	end
 	local x, y, z = EscapeRun.point(front)
 	local position = Vector3.new(x, y + 6, z)
-	if front < EscapeRun.Collapse.to then
+	if front < limit then
 		if now >= nextCrackAt then
 			nextCrackAt = now + rng:NextNumber(0.3, 0.6)
 			soundAt(
