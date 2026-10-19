@@ -40,7 +40,9 @@ export type TungRig = {
 
 local TungTungRig = {}
 
-local VISUAL_SCALE = 1.15
+-- Altura (e tamanho geral) do visual em relação ao modelo; WIDTH_SCALE alarga só o corpo depois.
+local VISUAL_SCALE = 1.24
+local WIDTH_SCALE = 1.18
 local SKIN_TINT = Color3.fromRGB(170, 140, 106)
 
 -- Clipes decodificados uma vez por cliente: quadro -> lista de CFrames por osso.
@@ -96,6 +98,13 @@ function TungTungRig.build(parent: Instance?): TungRig?
 	-- Nome antigo mantido: medo, tensão e câmera de captura procuram "VigiaVisual" no workspace.
 	model.Name = "VigiaVisual"
 	local body = model:FindFirstChild("Body") :: BasePart
+	-- Mais encorpado (pedido do humano): alarga a malha e as raízes do esqueleto só no X/Z.
+	body.Size = Vector3.new(body.Size.X * WIDTH_SCALE, body.Size.Y, body.Size.Z * WIDTH_SCALE)
+	for _, bone in body:GetChildren() do
+		if bone:IsA("Bone") then
+			bone.Position = Vector3.new(bone.Position.X * WIDTH_SCALE, bone.Position.Y, bone.Position.Z * WIDTH_SCALE)
+		end
+	end
 	-- Madeira marrom e fosca, não boneco dourado. O próprio Assets/TungTung já vem sem o mapa de metal e com a cor
 	-- de madeira; aqui só garante a cor (o Roblox não deixa script de jogo trocar mapas da textura).
 	local skin: any = body:FindFirstChildWhichIsA("SurfaceAppearance")
