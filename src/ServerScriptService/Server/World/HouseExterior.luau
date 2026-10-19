@@ -312,14 +312,25 @@ local function shell(folder: Instance)
 	for _, c in corners do
 		local cx, cz, sx, sz, top = c[1], c[2], c[3], c[4], c[5]
 		local index = 0
+		-- Cada pedra são duas placas finas por FORA das duas faces da quina. Um bloco maciço atravessava a
+		-- parede de 1 stud e aparecia dentro dos cômodos como "bloco cinza".
+		local d = 0.18
 		for y = PLINTH + 0.45, top - 2.6, 2.1 do
 			local a = if index % 2 == 0 then 2.6 else 1.7
 			index += 1
 			deco(
 				folder,
 				"FacadeQuoin",
-				V3(a + 0.18, 1.85, a + 0.18),
-				CFrame.new(cx + sx * (0.18 - a) / 2, y + 0.925, cz + sz * (0.18 - a) / 2),
+				V3(d, 1.85, a + d),
+				CFrame.new(cx + sx * d / 2, y + 0.925, cz + sz * (d - a) / 2),
+				STONE,
+				Enum.Material.Slate
+			)
+			deco(
+				folder,
+				"FacadeQuoin",
+				V3(a + d, 1.85, d),
+				CFrame.new(cx + sx * (d - a) / 2, y + 0.925, cz + sz * d / 2),
 				STONE,
 				Enum.Material.Slate
 			)

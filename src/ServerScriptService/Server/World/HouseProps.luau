@@ -12,6 +12,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local House = require("@game/ReplicatedStorage/Shared/Game/HouseCatalog")
 local Build = require("./Build")
+local PrimitiveFinish = require("./HousePrimitiveFinish")
 
 local Props = {}
 
@@ -736,6 +737,7 @@ function Props.build(root: Instance)
 		end
 	end
 	nightLights(folder, root)
+	PrimitiveFinish.build(root)
 end
 
 return Props
