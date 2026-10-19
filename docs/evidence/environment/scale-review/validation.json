@@ -1,0 +1,11 @@
+{
+  "changed": [
+    "/ServerScriptService/Server/World/HouseProps"
+  ],
+  "liveApplied": true,
+  "published": false,
+  "pureTests": 302,
+  "scripts": 268,
+  "sourceMatchesDisk": true,
+  "studioTests": 349
+}

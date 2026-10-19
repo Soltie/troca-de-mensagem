@@ -1,5 +1,7 @@
 # Substituições e acabamentos por lote
 
+Atualização Codex — escala e composição aplicadas no tungtung: [FURNITURE_SCALE_REVIEW.md](FURNITURE_SCALE_REVIEW.md). Sem novos assets nesta etapa; colisões e substituição dos modelos aguardam avaliação humana.
+
 Cada lote lista o que mudou, onde está o código e o que ficou intocado.
 Toda peça nova é `CanCollide=false`, `CanQuery=false`, `CanTouch=false`; detalhes pequenos têm
 `VisualDetail=true` (somem além de `detailDistance` na qualidade Baixa/Média).

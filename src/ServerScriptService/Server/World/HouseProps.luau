@@ -51,8 +51,7 @@ function Props.place(
 		return nil
 	end
 	local model = template:Clone()
-	-- A casa é maior que o tamanho real (portas de 11 studs, cômodos de 36 x 32): móveis de chão
-	-- crescem 25% para ficarem proporcionais à arquitetura e ao personagem.
+	-- Escala da mobília em relação ao personagem; peças presas à parede/teto mantêm a escala própria.
 	local factor = (scale or 1) * (if anchor == "floor" or anchor == "back" or anchor == nil then FURNITURE else 1)
 	if factor ~= 1 then
 		model:ScaleTo(model:GetScale() * factor)
@@ -258,10 +257,11 @@ ROOMS.Living = function(folder, root, room)
 	local fireplace = against(folder, room, "Fireplace", "door", 10.3, 1.05)
 	glow(folder, "Fire", at(-16, 10.3, 1.2), 24, 1, true)
 	if fireplace then
-		local box = fireplace:GetBoundingBox()
+		local box, size = fireplace:GetBoundingBox()
 		local mantel = V3(box.Position.X, top(fireplace), box.Position.Z)
 		Props.place(folder, "MantelClock", mantel, box.LookVector, 1.1, "floor")
-		for _, dz in { -3, 3 } do
+		local spread = math.min(3, size.X * 0.33)
+		for _, dz in { -spread, spread } do
 			Props.place(folder, "Candelabra", mantel + V3(0, 0, dz), box.LookVector, 0.55, "floor")
 		end
 	end
@@ -291,7 +291,7 @@ ROOMS.Kitchen = function(folder, root, room)
 	-- Bancada contínua na fachada e fogão de ferro no fim; geladeira-baú e mesa junto da porta.
 	-- Fogão no canto e bancada até a beira do esconderijo (o guarda-roupa fica em oz 5..9).
 	for index = 0, 2 do
-		against(folder, room, "KitchenCounter", "facade", -5.8 + index * 4.5, 1)
+		against(folder, room, "KitchenCounter", "facade", -5.8 + index * 3.6 * FURNITURE, 1)
 	end
 	local stove = against(folder, room, "WoodStove", "facade", -11.8, 0.85)
 	if stove then
@@ -301,8 +301,8 @@ ROOMS.Kitchen = function(folder, root, room)
 	against(folder, room, "Icebox", "door", -11, 0.95)
 	local center = at(-11.5, 11.5, 0)
 	Props.place(folder, "RoundTable", center, V3(1, 0, 0), 0.95, "floor")
-	Props.place(folder, "GothicChair", center + V3(0, 0, -4.2), V3(0, 0, 1), 0.6, "floor")
-	Props.place(folder, "GothicChair", center + V3(0, 0, 4), V3(0, 0, -1), 0.6, "floor")
+	Props.place(folder, "GothicChair", center + V3(0, 0, -3.1), V3(0, 0, 1), 0.6, "floor")
+	Props.place(folder, "GothicChair", center + V3(0, 0, 3.1), V3(0, 0, -1), 0.6, "floor")
 	for _, ox in { -6, 0, 6 } do
 		against(folder, room, "PaintedCabinet", "front", ox, 0.9)
 	end
@@ -312,9 +312,9 @@ ROOMS.Dining = function(folder, root, room)
 	local at = roomFrame(room)
 	conceal(root, room, { DiningTable = true, Chair = true, ChairBack = true, Candle = true, Flame = true })
 	-- Mesa com quatro cadeiras na metade da fachada, longe das passagens e do esconderijo.
-	local center = at(13.5, -6, 0)
+	local center = at(12, -6, 0)
 	local dining = Props.place(folder, "RoundTable", center, V3(1, 0, 0), 1, "floor")
-	for _, offset in { V3(0, 0, -5), V3(0, 0, 5), V3(5.2, 0, 0), V3(-5.2, 0, 0) } do
+	for _, offset in { V3(0, 0, -3.3), V3(0, 0, 3.3), V3(3.3, 0, 0), V3(-3.3, 0, 0) } do
 		local spot = center + offset
 		if math.abs(spot.X - room.x) < 17 then
 			Props.place(folder, "GothicChair", spot, -offset, 0.6, "floor")
@@ -428,7 +428,7 @@ ROOMS.Office = function(folder, root, room)
 	conceal(root, room, { Desk = true, Paper = true, OfficeChair = true, Shelf = true, Book = true })
 	local at = roomFrame(room)
 	local desk = against(folder, room, "Console", "facade", -2, 1.05)
-	Props.place(folder, "GothicChair", at(12.2, -2, 0), V3(1, 0, 0), 0.6, "floor")
+	Props.place(folder, "GothicChair", at(14.2, -2, 0), V3(1, 0, 0), 0.6, "floor")
 	if desk then
 		local box = desk:GetBoundingBox()
 		Props.place(
@@ -455,8 +455,11 @@ local function storage(folder: Instance, root: Instance, room: RoomRef, basement
 	local at = roomFrame(room)
 	against(folder, room, "TreasureChest", "facade", -12.5, 1)
 	against(folder, room, if basement then "Barrel" else "SeaChest", "facade", -7.5, 1)
-	against(folder, room, "Crate", "facade", -1.5, 1)
-	Props.place(folder, "Crate", at(16, -1.5, 1.9), V3(-1, 0, 0.2), 1, "floor")
+	local lowerCrate = against(folder, room, "Crate", "facade", -1.5, 1)
+	if lowerCrate then
+		local box = lowerCrate:GetBoundingBox()
+		Props.place(folder, "Crate", V3(box.Position.X, top(lowerCrate), box.Position.Z), box.LookVector, 0.9, "floor")
+	end
 	against(folder, room, if basement then "Barrel" else "Suitcase", "door", -11, 1)
 	against(folder, room, "Crate", "door", 11, 1)
 	Props.place(folder, if basement then "Barrel" else "Suitcase", at(-15.5, 13.5, 0), V3(1, 0, 0.5), 1, "floor")
@@ -667,58 +670,6 @@ local function nightLights(folder: Instance, root: Instance)
 	end
 end
 
---[[
-	Colisão dos móveis grandes: uma caixa invisível um pouco menor que a base de cada modelo. Não recebe raycast
-	(câmera, lanterna e visão da criatura continuam iguais) nem toque. Cama, mesa baixa e guarda-roupa não entram:
-	por baixo deles já existe a colisão antiga do jogo.
-]]
-local SOLID = {
-	Sofa = true,
-	Armchair = true,
-	RoundTable = true,
-	Bookshelf = true,
-	Cabinet = true,
-	PaintedCabinet = true,
-	Console = true,
-	KitchenCounter = true,
-	WoodStove = true,
-	Icebox = true,
-	Bathtub = true,
-	Fireplace = true,
-	GrandfatherClock = true,
-	Boiler = true,
-	Crate = true,
-	Barrel = true,
-	TreasureChest = true,
-	SeaChest = true,
-	DayBed = true,
-	Nightstand = true,
-}
-
-local function colliders(folder: Instance)
-	for _, model in folder:GetChildren() do
-		if not model:IsA("Model") or not SOLID[model.Name] then
-			continue
-		end
-		local box, size = model:GetBoundingBox()
-		if size.X * size.Z < 1 then
-			continue
-		end
-		local height = math.min(size.Y, 6)
-		local bottom = box.Position.Y - size.Y / 2
-		local part = Build.part(
-			folder,
-			"PropCollider",
-			Vector3.new(size.X * 0.85, height, size.Z * 0.85),
-			CFrame.new(box.Position.X, bottom + height / 2, box.Position.Z) * box.Rotation,
-			rgb(0, 0, 0),
-			{ transparency = 1, collide = true, query = false }
-		)
-		part.CanTouch = false
-		part.CastShadow = false
-	end
-end
-
 function Props.build(root: Instance)
 	local old = root:FindFirstChild("Props")
 	if old then
@@ -741,7 +692,6 @@ function Props.build(root: Instance)
 		end
 	end
 	nightLights(folder, root)
-	colliders(folder)
 end
 
 return Props

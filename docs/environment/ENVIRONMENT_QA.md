@@ -1,5 +1,7 @@
 # QA do ambiente
 
+Atualização Codex — escala dos móveis: check local 302/302, runner do destino 349/349; somente HouseProps alterado. Capturas de inspeção, limitações e medidas em [FURNITURE_SCALE_REVIEW.md](FURNITURE_SCALE_REVIEW.md). Luz temporária das capturas não integra a iluminação aprovada.
+
 Método: build Rojo nova por lote (`build/TungTung_ENV_*.rbxlx`), Play no Studio, voto "Story" pelo remote
 real, capítulo 1, criatura congelada pelo `DebugBridge`, câmera de QA no cliente (HUD escondido, overlays de
 cor mantidos), suíte `Tests.Run` no servidor e leitura do `LogService` (servidor e cliente).
