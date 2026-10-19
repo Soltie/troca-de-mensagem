@@ -11,6 +11,7 @@ local Catalog = require("@game/ReplicatedStorage/Shared/Game/CampaignCatalog")
 local HouseCatalog = require("@game/ReplicatedStorage/Shared/Game/HouseCatalog")
 local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
 local Text = require("@game/ReplicatedStorage/Shared/Game/Text")
+local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
 local Guide = require("@game/ReplicatedStorage/Shared/Game/PlayerGuide")
 local Remotes = require("@game/ReplicatedStorage/Shared/Net/Remotes")
 local Hud = require("../UI/FieldHud")
@@ -576,6 +577,28 @@ function Controller.Start()
 		local hiddenIn = player:GetAttribute("Hidden")
 		local inHide = type(hiddenIn) == "string" and hiddenIn ~= ""
 		noir.hint.Visible = inHide and not panelOpen
+		-- Porta emperrada sendo forçada perto de mim: barra fina com o progresso (MansionProgress da folha).
+		local forcing: number? = nil
+		local doors = workspace:FindFirstChild(Tags.WorldFolder)
+		doors = doors and doors:FindFirstChild("Doors")
+		local me = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+		if doors and me and me:IsA("BasePart") then
+			for _, panel in doors:GetChildren() do
+				local progress = panel:GetAttribute("MansionProgress")
+				if
+					panel:IsA("BasePart")
+					and type(progress) == "number"
+					and progress > 0
+					and progress < 1
+					and (panel.Position - me.Position).Magnitude < 10
+				then
+					forcing = progress
+					break
+				end
+			end
+		end
+		noir.work.Visible = forcing ~= nil and not panelOpen
+		noir.workFill.Size = UDim2.fromScale(forcing or 0, 1)
 		noir.hint.Text = (if UserInputService.TouchEnabled then Text.HiddenHintTouch else Text.HiddenHint)
 			.. (if player:GetAttribute("HoldBreath") == true then "\n" .. Text.HoldingBreath else "")
 		noir.staminaFill.Size = UDim2.fromScale(breath, 1)

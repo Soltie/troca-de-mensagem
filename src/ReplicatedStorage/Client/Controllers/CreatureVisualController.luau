@@ -321,6 +321,33 @@ function CreatureVisualController.Start()
 		then
 			return
 		end
+		-- Forçando porta emperrada (cada E): pancada na madeira, leve empurrão de FOV e um tremorzinho para quem força;
+		-- ao arrombar: estrondo mais alto e tremor maior.
+		local function nearCamera(): number
+			local camera = workspace.CurrentCamera
+			local distance = if camera then (camera.CFrame.Position - inst.Position).Magnitude else math.huge
+			return math.clamp(1 - distance / 40, 0, 1)
+		end
+		inst:GetAttributeChangedSignal("MansionPushSerial"):Connect(function()
+			local near = nearCamera()
+			if near <= 0 then
+				return
+			end
+			AudioController.playAt("DoorBang", inst, 0.5 + 0.3 * near, 0.9 + math.random() * 0.2)
+			if near > 0.75 then
+				CameraController.punch(0.22)
+				CameraController.addTrauma(0.08)
+			end
+		end)
+		inst:GetAttributeChangedSignal("MansionBurstSerial"):Connect(function()
+			local near = nearCamera()
+			if near <= 0 then
+				return
+			end
+			AudioController.playAt("Fall_box", inst, 1 + near * 0.5, 0.7)
+			AudioController.playAt("DoorBang", inst, 1.2, 0.7)
+			CameraController.addTrauma(0.2 + 0.35 * near)
+		end)
 		-- Porta batendo sozinha: estrondo de madeira e trinco (som no lugar da porta) e tremor leve para quem está perto.
 		inst:GetAttributeChangedSignal("SlamSerial"):Connect(function()
 			task.delay(0.18, function()

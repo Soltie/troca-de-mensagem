@@ -57,6 +57,8 @@ export type Ui = {
 	useButton: TextButton,
 	modal: TextButton,
 	hint: TextLabel,
+	work: Frame,
+	workFill: Frame,
 }
 
 -- Letras espaçadas (o Roblox não tem espaçamento de letra): "MOCHILA" -> "M O C H I L A" com espaço fino.
@@ -591,6 +593,40 @@ function Noir.build(parent: Instance, touch: boolean): Ui
 	for _, side in { 0, 1 } do
 		rule(useButton, UDim2.new(side, if side == 0 then -10 else -24, 0.5, 0), UDim2.fromOffset(34, 1), 0.6)
 	end
+	-- Barra fina de "forçando a porta" (cada E enche um pedaço).
+	local work = Create("Frame", {
+		Name = "Work",
+		AnchorPoint = Vector2.new(0.5, 1),
+		Position = UDim2.new(0.5, 0, 1, -214),
+		Size = UDim2.fromOffset(240, 24),
+		BackgroundTransparency = 1,
+		Visible = false,
+		Parent = gui,
+	}) :: Frame
+	text(work, "Label", 10, Noir.Paper, {
+		Size = UDim2.new(1, 0, 0, 14),
+		Text = Noir.spaced("FORÇANDO A PORTA") .. "   ·   [ E ]",
+		FontFace = Noir.SansMedium,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextWrapped = false,
+	})
+	local workTrack = Create("Frame", {
+		Name = "Track",
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.fromScale(0, 1),
+		Size = UDim2.new(1, 0, 0, 2),
+		BackgroundColor3 = Noir.Paper,
+		BackgroundTransparency = 0.8,
+		BorderSizePixel = 0,
+		Parent = work,
+	})
+	local workFill = Create("Frame", {
+		Name = "Fill",
+		Size = UDim2.fromScale(0, 1),
+		BackgroundColor3 = Noir.Paper,
+		BorderSizePixel = 0,
+		Parent = workTrack,
+	}) :: Frame
 	-- Dica curta no rodapé (ex.: dentro do armário).
 	local hint = text(gui, "Hint", 21, Noir.Paper, {
 		AnchorPoint = Vector2.new(0.5, 1),
@@ -639,6 +675,8 @@ function Noir.build(parent: Instance, touch: boolean): Ui
 		useButton = useButton,
 		modal = modal,
 		hint = hint,
+		work = work,
+		workFill = workFill,
 	}
 end
 
