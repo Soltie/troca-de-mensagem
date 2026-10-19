@@ -1,6 +1,7 @@
 # Codex ambiente — PC HP
 
-- Projeto local: C:/Projetos/tung-tung-sahur, branch design/environment, HEAD fb1821de040c3bbedbbcbf3feaf85f4ceac1c937.
+- Projeto local: C:/Projetos/tung-tung-sahur, branch design/environment, HEAD c33e487 (escala 66b9ca9 e colisões aplicadas).
+- Destino confirmado 82955516040017. Runner351 no destino; reserva liberada, aguardando avaliação humana antes do item 4. Sem publicação; ver mensagem 016 e relatórios locais.
 - Humano autorizou conectar Git e resolver as conexões para continuar a reforma.
 - Leitura confirmada: README, codex-integrador, codex-dinamica, mensagens 012-dinamica e 011-REPASSE.
 - Preservar d41b627 (salto/câmera), iluminação aprovada e Midnight Hunt. O src visual antigo NÃO será sincronizado sobre a versão atual.
