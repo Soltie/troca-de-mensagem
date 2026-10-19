@@ -8,6 +8,7 @@ local Presentation = require("@game/ReplicatedStorage/Shared/Game/ThreatPresenta
 local Audio = require("./AudioController")
 local Camera = require("./CameraController")
 local Fear = require("./FearController")
+local Jumpscare = require("./JumpscareController")
 local ScreenFx = require("./ScreenFxController")
 
 local player = Players.LocalPlayer
@@ -59,13 +60,18 @@ function Controller.Start()
 		end
 		if not reset and Presentation.captured(previousStatus, status, previousPhase, s.phase) then
 			captureCount += 1
-			captureUntil = now + 1.1
-			Camera.capture(target)
+			-- Pego pelo Tung Tung (pancada ou porta do armário): o jumpscare 3D cuida da câmera e do som.
+			local cause = player:GetAttribute("LastCaptureCause")
+			local scared = (cause == "tung" or cause == "search") and Jumpscare.play()
+			captureUntil = now + (if scared then 1.7 else 1.1)
+			if not scared then
+				Camera.capture(target)
+			end
 			ScreenFx.capture()
 			Fear.spike(0.45)
 			Audio.muffle(1.2)
 			-- O áudio de derrota solo já pertence ao AudioController. No coop o susto é pessoal.
-			if status ~= nil then
+			if status ~= nil and not scared then
 				Audio.play("StingerCapture", 1, nil, true)
 				Audio.play("Roar", 1, 0.8, true)
 			end

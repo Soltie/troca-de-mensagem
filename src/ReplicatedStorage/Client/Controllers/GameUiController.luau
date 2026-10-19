@@ -722,20 +722,13 @@ local function playScareThenFinale(s: GameState.Snapshot)
 	endToken += 1
 	local token = endToken
 	task.spawn(function()
+		-- O rosto 2D piscando foi aposentado: o susto de verdade é o jumpscare 3D na hora da pancada
+		-- (JumpscareController). Aqui fica só um corte seco para o preto antes da tela final.
 		ui.scare.Visible = true
-		local motion = SettingsController.get("flashes")
-		local frames = 16
-		for i = 1, frames do
-			if token ~= endToken then
-				return
-			end
-			local alt = i % 2 == 0
-			ui.faces[1].Visible = not alt
-			ui.faces[2].Visible = alt
-			-- Fundo pisca vermelho só com efeitos de movimento ligados (conforto).
-			ui.scare.BackgroundColor3 = if motion and alt and i < 8 then Color3.fromRGB(70, 0, 0) else Theme.Black
-			task.wait(1 / 8)
-		end
+		ui.scare.BackgroundColor3 = Theme.Black
+		ui.faces[1].Visible = false
+		ui.faces[2].Visible = false
+		task.wait(0.8)
 		if token ~= endToken then
 			return
 		end

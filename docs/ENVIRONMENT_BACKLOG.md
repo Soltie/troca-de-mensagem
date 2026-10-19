@@ -92,3 +92,8 @@ Móvel fujão (RunawayStash): em cada capítulo, uma das chaves (sorteada) fica 
 chega perto com a tarefa liberada: olhinhos de desenho e perninhas pretas com bolinhas, chacoalha e foge pelo
 cômodo aos pulinhos (até 4), olhando para quem persegue; cada pulo faz barulho. Encurralado ou alcançado numa
 pausa, cansa, senta ofegando e abre normalmente. Fotos em docs/evidence/environment/runaway.
+Jumpscare (JumpscareController): quando o Tung Tung derruba alguém (pancada ou porta do armário), só para quem foi
+pego: imagem congela e o som some; "TUM"... "TUM" no escuro; ele aparece colado (cópia local do modelo animado,
+rosto centralizado, luz de baixo) e avança erguendo o bastão com rugido; pancada com clarão (se flashes),
+tranco e câmera tombando; corte para o preto e volta. Interface e mão da lanterna somem durante o susto. O rosto 2D
+piscando da tela de derrota foi aposentado (fica um corte seco para o preto). Foto em docs/evidence/environment/jumpscare.

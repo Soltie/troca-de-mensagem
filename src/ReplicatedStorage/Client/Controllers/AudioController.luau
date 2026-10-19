@@ -419,7 +419,10 @@ function AudioController.Start()
 			AudioController.play("StingerAwaken", 1, nil, true)
 		end
 		if next.phase ~= previous.phase then
-			if next.phase == "Lost" then
+			-- O jumpscare 3D (JumpscareController) já tocou o rugido e a trilha: não repete em cima dele.
+			local scaredAt = player:GetAttribute("JumpscareAt")
+			local scared = type(scaredAt) == "number" and os.clock() - scaredAt < 4
+			if next.phase == "Lost" and not scared then
 				AudioController.play("StingerCapture", 1, nil, true)
 				AudioController.play("Roar", 1.1, 0.8, true)
 			elseif next.phase == "Won" then
