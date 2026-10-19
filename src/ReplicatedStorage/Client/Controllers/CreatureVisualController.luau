@@ -140,16 +140,103 @@ local function onModeChanged(previous: string, current: string)
 	end
 end
 
--- Passo pesado: baque grave + estalo de madeira do pé no assoalho.
+-- Passos que informam (ideia E): o som muda com o piso que ele pisa e com o andar. Em outro andar, o passo chega
+-- abafado (sem agudos, mais lento) e, se ele está em cima, o teto range junto. O jogador aprende a ler onde ele
+-- está só pelo som, como o Mr. X de Resident Evil 2.
+local STEP_BY_MATERIAL: { [Enum.Material]: string } = {
+	[Enum.Material.Wood] = "StepWood",
+	[Enum.Material.WoodPlanks] = "StepWood",
+	[Enum.Material.Concrete] = "StepConcrete",
+	[Enum.Material.Brick] = "StepConcrete",
+	[Enum.Material.Cobblestone] = "StepConcrete",
+	[Enum.Material.Slate] = "StepConcrete",
+	[Enum.Material.Marble] = "StepConcrete",
+	[Enum.Material.Granite] = "StepConcrete",
+	[Enum.Material.Basalt] = "StepConcrete",
+	[Enum.Material.Pavement] = "StepConcrete",
+	[Enum.Material.Metal] = "StepMetal",
+	[Enum.Material.DiamondPlate] = "StepMetal",
+	[Enum.Material.CorrodedMetal] = "StepMetal",
+	[Enum.Material.Carpet] = "StepFallback",
+	[Enum.Material.Fabric] = "StepFallback",
+	[Enum.Material.Grass] = "StepFallback",
+	[Enum.Material.Ground] = "StepFallback",
+	[Enum.Material.LeafyGrass] = "StepFallback",
+	[Enum.Material.Mud] = "StepWater",
+}
+local stepRays = RaycastParams.new()
+stepRays.FilterType = Enum.RaycastFilterType.Exclude
+
+local function floorUnder(root: BasePart): Enum.Material
+	local exclude: { Instance } = { visualModel() }
+	for _, other in Players:GetPlayers() do
+		if other.Character then
+			table.insert(exclude, other.Character)
+		end
+	end
+	stepRays.FilterDescendantsInstances = exclude
+	local hit = workspace:Raycast(root.Position, Vector3.new(0, -(HEIGHT / 2 + 3), 0), stepRays)
+	return if hit then hit.Material else Enum.Material.Wood
+end
+
+-- Abafa um som que vem de outro andar (parede/piso no meio): corta agudos e, de baixo, engrossa.
+local function muffle(sound: Sound, below: boolean)
+	local eq = Instance.new("EqualizerSoundEffect")
+	eq.HighGain = -22
+	eq.MidGain = if below then -10 else -6
+	eq.LowGain = if below then 5 else 0
+	eq.Parent = sound
+	sound.PlaybackSpeed *= 0.88
+	sound.Volume *= 0.75
+end
+
+local stepParity = false
 local function footstep(root: BasePart, camera: Camera?)
 	local distance = if camera then (root.Position - camera.CFrame.Position).Magnitude else math.huge
+	local dy = if camera then root.Position.Y - camera.CFrame.Position.Y else 0
+	local otherFloor = math.abs(dy) > 9
 	local volume = if root:GetAttribute("FalseExit") then 0.25 else 1
-	carry(AudioController.playAt("CreatureStep", emitter(), volume * 1.2, 0.42 + rng:NextNumber(-0.04, 0.04)), 16, 110)
-	carry(AudioController.playAt("StepWood", emitter(), volume * 1.5, rng:NextNumber(0.5, 0.6)), 14, 95)
+	local clip = STEP_BY_MATERIAL[floorUnder(root)] or "StepWood"
+	local soft = clip == "StepFallback"
+	local thud = carry(
+		AudioController.playAt(
+			"CreatureStep",
+			emitter(),
+			volume * (if soft then 0.9 else 1.2),
+			0.42 + rng:NextNumber(-0.04, 0.04)
+		),
+		16,
+		110
+	)
+	local surface = carry(
+		AudioController.playAt(
+			clip,
+			emitter(),
+			volume * (if soft then 0.9 elseif clip == "StepMetal" then 1.3 else 1.5),
+			if clip == "StepConcrete" then rng:NextNumber(0.7, 0.8) else rng:NextNumber(0.5, 0.6)
+		),
+		14,
+		95
+	)
+	if otherFloor then
+		muffle(thud, dy < 0)
+		muffle(surface, dy < 0)
+		-- Ele em cima: o teto range a cada dois passos, bem acima da sua cabeça.
+		stepParity = not stepParity
+		if dy > 0 and stepParity and camera and distance < 40 then
+			local creak = AudioController.playAtPosition(
+				"CreakWood",
+				Vector3.new(root.Position.X, camera.CFrame.Position.Y + 6, root.Position.Z),
+				0.9,
+				rng:NextNumber(0.5, 0.7)
+			)
+			creak.RollOffMaxDistance = 45
+		end
+	end
 	-- Tremor dos passos pela distância (o compositor respeita a opção de conforto).
 	if distance < 30 then
 		local k = (30 - distance) / 30
-		CameraController.addTrauma(0.22 * k * k)
+		CameraController.addTrauma(0.22 * k * k * (if otherFloor then 0.5 else 1))
 	end
 end
 
