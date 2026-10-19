@@ -663,6 +663,23 @@ function CreatureService.giveUp(player: Player)
 	frozen = false
 end
 
+-- Folga do diretor de tensão (ideia D): para de caçar quem não está vendo e vai para longe por `seconds` s.
+-- Se der de cara com alguém no caminho, ainda persegue.
+function CreatureService.retreat(seconds: number)
+	if not active or frozen then
+		return
+	end
+	exposure = 0
+	table.clear(seenPlayers)
+	local now = os.clock()
+	if brain.mode == "Chase" or brain.mode == "Investigate" then
+		brain.mode = "Search"
+		brain.searchUntil = now + 1
+	end
+	feintUntil, nextFeintAt = now + seconds, now + Config.House.FalseExitCooldown
+	feintDestination = nextPatrolNode()
+end
+
 -- Segundos desde a última vez que viu o jogador (esconderijo: "viu entrar?").
 function CreatureService.sawEntry(player: Player): boolean
 	return os.clock() - (seenPlayers[player.UserId] or -math.huge) < Config.Hide.SawEntryWindow

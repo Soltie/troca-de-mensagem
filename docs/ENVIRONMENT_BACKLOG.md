@@ -68,8 +68,9 @@ Decisão do humano (19/10/2026): fazer todas, do mais fácil ao mais difícil, m
 - F (coisa que só anda quando não olham): o humano vai fazer o MODELO 3D; implementar quando ele entregar.
 - H (som vira perigo): não fazer.
 - K (mini-jogos físicos): anotado para depois.
-Ordem combinada: B, E, A, I, G, J, C, M, D, L.
-Feitas e testadas: B, E, A, I, G, J, C, M. G (2 de cada ~10 armários por capítulo; olhos vermelhos numa fresta escura até 14 studs,
+- L (modos Infecção/Traidor): adiada pelo humano em 19/10/2026, fica na lista para depois.
+Ordem combinada: B, E, A, I, G, J, C, M, D; depois o móvel da chave que foge (perninhas e olhinhos), o encaixe de cada novidade e o polimento. L fica para depois.
+Feitas e testadas: B, E, A, I, G, J, C, M, D. G (2 de cada ~10 armários por capítulo; olhos vermelhos numa fresta escura até 14 studs,
 respiração; entrar sem olhar = porta abre, queda no chão, barulho 70 que chama o Tung; fotos em
 docs/evidence/environment/locker).
 J (capítulos 2-4, ~1 a cada 3-4 min depois de 60 s): luzes do corredor piscam e o vento cresce por 3 s, depois uma
@@ -84,3 +85,6 @@ no caminho de fuga. Portas dos cômodos ao lado batem depois que o grupo passa; 
 frente no corredor do porão, com o chão pegando fogo dos dois lados (pular passa limpo; andar esquenta 0,6);
 o corredor desaba atrás do grupo a 15 studs/s (andar perde, correr ganha), deixa entulho sólido e derruba quem
 fica para trás (causa "collapse", com dica). Depuração: DebugBridge "blaze". Fotos em docs/evidence/environment/escape.
+D (TensionModel/TensionDirector): tensão 0..1 por capítulo com fases Build/Peak/Relax (CampaignState.Tension e
+TensionPhase). Pancada = folga de 35 s (o Tung se afasta, sem sopro); pico acaba em 30 s ou quando ele perde o grupo;
+calmo demais por 70 s = ele investiga perto de alguém. Sopro só em Build; sustos esperam o pico passar.

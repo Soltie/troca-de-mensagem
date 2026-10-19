@@ -215,6 +215,11 @@ function ScareController.Start()
 		if player:GetAttribute("CampaignStatus") ~= "Active" then
 			return
 		end
+		-- Diretor de tensão: no pico (ele já está em cima) o susto espera; volta a valer quando a tensão baixa.
+		local campaign = game:GetService("ReplicatedStorage"):FindFirstChild("CampaignState")
+		if campaign and campaign:GetAttribute("TensionPhase") == "Peak" then
+			return
+		end
 		local character = player.Character
 		local body = character and character:FindFirstChild("HumanoidRootPart")
 		if not body or not body:IsA("BasePart") then

@@ -12,6 +12,7 @@ local RunService = game:GetService("RunService")
 
 local GustRules = require("@game/ReplicatedStorage/Shared/Game/GustRules")
 local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
+local TensionDirector = require("./TensionDirector")
 
 local GustService = {
 	Name = "GustService",
@@ -190,6 +191,8 @@ function GustService.Start()
 			state:GetAttribute("Phase") ~= "Playing"
 			or not GustRules.allowed(current)
 			or not GustRules.canRoll(now - stageAt, now - lastGustAt)
+			-- Diretor de tensão: nada de sopro no pico nem na folga.
+			or not TensionDirector.allowsEvents()
 			or rng:NextNumber() >= GustRules.Chance
 		then
 			return
