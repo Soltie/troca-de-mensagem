@@ -43,6 +43,9 @@ local mode = "Dormant"
 local headYaw = 0
 local chaseLoop: Sound? = nil
 local nextGrowlAt = 0
+-- Bastão batendo no chão e rangidos do piso enquanto anda (para dar para saber onde ele está).
+local nextTapAt = 0
+local nextCreakAt = 0
 local phase: GameState.Phase = "Loading"
 local rng = Random.new()
 local reaction = ""
@@ -68,6 +71,13 @@ local function emitter(): Attachment
 	end
 	assert(rig, "[CreatureVisualController] used before Init")
 	return rig.emitter
+end
+
+-- Sons do Tung Tung chegam longe: o jogador precisa ouvir de que lado ele vem, mesmo atrás de paredes.
+local function carry(sound: Sound, near: number, far: number): Sound
+	sound.RollOffMinDistance = near
+	sound.RollOffMaxDistance = far
+	return sound
 end
 
 local function animationFor(currentMode: string): (string, number)
@@ -118,7 +128,7 @@ local function onModeChanged(previous: string, current: string)
 		end
 	end
 	if current == "Chase" and previous ~= "Chase" then
-		AudioController.playAt("Snarl", emitter())
+		carry(AudioController.playAt("Snarl", emitter(), 1.1), 18, 150)
 		if chaseLoop then
 			chaseLoop:Play()
 		end
@@ -130,14 +140,12 @@ local function onModeChanged(previous: string, current: string)
 	end
 end
 
+-- Passo pesado: baque grave + estalo de madeira do pé no assoalho.
 local function footstep(root: BasePart, camera: Camera?)
 	local distance = if camera then (root.Position - camera.CFrame.Position).Magnitude else math.huge
-	AudioController.playAt(
-		"CreatureStep",
-		emitter(),
-		if root:GetAttribute("FalseExit") then 0.25 else 1,
-		0.42 + rng:NextNumber(-0.04, 0.04)
-	)
+	local volume = if root:GetAttribute("FalseExit") then 0.25 else 1
+	carry(AudioController.playAt("CreatureStep", emitter(), volume * 1.2, 0.42 + rng:NextNumber(-0.04, 0.04)), 16, 110)
+	carry(AudioController.playAt("StepWood", emitter(), volume * 1.5, rng:NextNumber(0.5, 0.6)), 14, 95)
 	-- Tremor dos passos pela distância (o compositor respeita a opção de conforto).
 	if distance < 30 then
 		local k = (30 - distance) / 30
@@ -270,10 +278,23 @@ local function update(dt: number)
 
 	-- Fora da perseguição: rosnados e o "TUM TUM TUM" do bastão (assinatura do Tung Tung).
 	local now = os.clock()
+	local awake = mode ~= "Dormant" and (phase == "Playing" or phase == "Intro")
+	if tung and awake and moving and mode ~= "Capture" then
+		-- Bastão arrastado/batendo no chão no ritmo da caminhada: "toc" grave que denuncia a direção.
+		if now >= nextTapAt then
+			nextTapAt = now + (if mode == "Chase" then rng:NextNumber(0.9, 1.4) else rng:NextNumber(2.2, 3.8))
+			carry(AudioController.playAt("StepWood", emitter(), 1.8, rng:NextNumber(0.36, 0.44)), 18, 120)
+		end
+		-- Assoalho rangendo sob o peso dele.
+		if now >= nextCreakAt then
+			nextCreakAt = now + rng:NextNumber(3, 6)
+			carry(AudioController.playAt("CreakWood", emitter(), 1.6, rng:NextNumber(0.7, 0.9)), 12, 70)
+		end
+	end
 	if now >= nextGrowlAt and mode ~= "Chase" and mode ~= "Capture" then
-		nextGrowlAt = now + rng:NextNumber(7, 14)
+		nextGrowlAt = now + rng:NextNumber(5, 9)
 		if tung and rng:NextNumber() < 0.6 then
-			AudioController.playAt("DoorBang", emitter(), 0.85, 0.72)
+			carry(AudioController.playAt("DoorBang", emitter(), 1, 0.72), 18, 140)
 			local distance = if camera then (root.Position - camera.CFrame.Position).Magnitude else math.huge
 			if distance < 60 then
 				-- Legenda no HUD (CampaignController): perto o bastante para ouvir.
@@ -283,7 +304,7 @@ local function update(dt: number)
 				)
 			end
 		else
-			AudioController.playAt("Growl", emitter(), 0.9, rng:NextNumber(0.75, 0.95))
+			carry(AudioController.playAt("Growl", emitter(), 1, rng:NextNumber(0.75, 0.95)), 16, 130)
 		end
 	end
 end
