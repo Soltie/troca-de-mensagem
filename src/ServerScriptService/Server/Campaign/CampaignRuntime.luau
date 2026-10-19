@@ -333,6 +333,12 @@ local function stage()
 	for _, player in Players:GetPlayers() do
 		freeze(player, true)
 	end
+	-- Tela de carregamento (LoadingController): avisa antes de remontar o mundo, que trava alguns quadros, e dá
+	-- tempo da tela entrar nos clientes.
+	if replicated then
+		replicated:SetAttribute("Loading", true)
+		task.wait(0.3)
+	end
 	channels, nextActionAt, tutorialHeld = {}, {}, {}
 	escapeEndsAt, lostRetryAt, lobbyReturnAt = 0, 0, 0
 	clearRescues()
@@ -367,6 +373,9 @@ local function stage()
 	end
 	built = Builder.build(world.root, plan, Config.Game.InteractDistance)
 	WorldService.setPower(session.stage >= 3 and session.stage < 6)
+	if replicated then
+		replicated:SetAttribute("Loading", false)
+	end
 	startedAt = if session.stage == 1 then workspace:GetServerTimeNow() else startedAt
 	nextStageAt, nextThreatAt, blackoutUntil = 0, workspace:GetServerTimeNow() + C.ThreatInterval, 0
 	for _, player in Players:GetPlayers() do

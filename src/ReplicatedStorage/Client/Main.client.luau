@@ -17,6 +17,8 @@ local log = Logger.new("Client")
 -- A ordem importa: Init e Start são chamados exatamente nesta ordem.
 -- { any }: cada Controller tem campos próprios; o Loader valida Name/Init/Start em runtime.
 local controllers: { any } = {
+	-- Primeiro: a tela de carregamento cobre a entrada desde o primeiro quadro.
+	require("./Controllers/LoadingController"),
 	require("./Controllers/SettingsController"),
 	require("./Controllers/TransitionController"),
 	require("./Controllers/AudioController"),

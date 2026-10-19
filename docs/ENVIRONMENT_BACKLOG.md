@@ -97,3 +97,7 @@ pego: imagem congela e o som some; "TUM"... "TUM" no escuro; ele aparece colado 
 rosto centralizado, luz de baixo) e avança erguendo o bastão com rugido; pancada com clarão (se flashes),
 tranco e câmera tombando; corte para o preto e volta. Interface e mão da lanterna somem durante o susto. O rosto 2D
 piscando da tela de derrota foi aposentado (fica um corte seco para o preto). Foto em docs/evidence/environment/jumpscare.
+Loading (LoadingController + CampaignState.Loading): a troca de capítulo remonta o mundo de uma vez e travava os
+quadros; agora o servidor avisa antes (0,3 s para a tela entrar) e no fim, e o cliente só tira a tela quando os
+quadros estabilizam (10 seguidos abaixo de 1/24 s). Também cobre a entrada no jogo. Teste: a pior travada da
+troca (0,475 s) ficou toda atrás da tela. Dicas rotativas das mecânicas novas. Foto em docs/evidence/environment/loading.
