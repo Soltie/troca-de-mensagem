@@ -25,6 +25,7 @@ local GuiService = game:GetService("GuiService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require("@game/ReplicatedStorage/Shared/Config")
+local AudioController = require("./AudioController")
 local CharacterController = require("./CharacterController")
 local SettingsController = require("./SettingsController")
 
@@ -137,6 +138,23 @@ local function undo()
 	applied = CFrame.identity
 end
 
+-- Queda do armário (fresta segurada demais): o olhar desaba de lado até o chão, fica caído e levanta devagar.
+local FALL_DOWN, FALL_HOLD, FALL_UP = 0.35, 0.9, 0.9
+local fallStart = -math.huge
+local function fallAmount(now: number): number
+	local t = now - fallStart
+	if t < 0 or t > FALL_DOWN + FALL_HOLD + FALL_UP then
+		return 0
+	elseif t < FALL_DOWN then
+		local x = t / FALL_DOWN
+		return x * x
+	elseif t < FALL_DOWN + FALL_HOLD then
+		return 1
+	end
+	local x = (t - FALL_DOWN - FALL_HOLD) / FALL_UP
+	return 1 - x * x * (3 - 2 * x)
+end
+
 local function positionOffset(dt: number, motion: CharacterController.Motion, root: BasePart): Vector3
 	local bobOn = SettingsController.get("bob")
 	local shakeOn = SettingsController.get("shake")
@@ -185,6 +203,10 @@ local function positionOffset(dt: number, motion: CharacterController.Motion, ro
 		local actualEye = root.Position.Y + 1.5
 		offset += Vector3.new(0, math.clamp(desiredEye - actualEye, -3, 1.5), 0)
 	end
+	local fall = fallAmount(os.clock())
+	if fall > 0 then
+		offset += Vector3.new(0.6 * fall, -3.7 * fall, 0)
+	end
 	return offset
 end
 
@@ -201,6 +223,13 @@ local function rotationOffset(dt: number, motion: CharacterController.Motion, no
 	-- Corrida: o olhar inclina um pouco para frente (entra e sai junto com o FOV).
 	if tiltOn then
 		pitch -= math.rad(C.SprintLean) * sprintAlpha
+	end
+
+	-- Caído no chão: cabeça de lado e olhando um pouco para baixo (vale mesmo com o conforto de inclinação).
+	local fall = fallAmount(now)
+	if fall > 0 then
+		roll += math.rad(76) * fall
+		pitch -= math.rad(14) * fall
 	end
 
 	-- Tremor por trauma (quadrático) + leve tremor de pânico.
@@ -591,7 +620,24 @@ function CameraController.debugState(): { [string]: any }
 	}
 end
 
+-- Cai no chão (queda do armário): trava o andar enquanto isso, baque e tremor no impacto.
+function CameraController.fall()
+	fallStart = os.clock()
+	CharacterController.stun(FALL_DOWN + FALL_HOLD + FALL_UP * 0.6)
+	task.delay(FALL_DOWN, function()
+		CameraController.addTrauma(0.55)
+		AudioController.play("Fall_box", 0.8, 0.85)
+		AudioController.play("Land", 1, 0.8)
+	end)
+end
+
 function CameraController.Start()
+	player:GetAttributeChangedSignal("HideFellAt"):Connect(function()
+		local at = player:GetAttribute("HideFellAt")
+		if type(at) == "number" and math.abs(workspace:GetServerTimeNow() - at) < 2 then
+			CameraController.fall()
+		end
+	end)
 	local playerGui = player:WaitForChild("PlayerGui")
 	local function track(instance: Instance)
 		if instance:IsA("GuiButton") then

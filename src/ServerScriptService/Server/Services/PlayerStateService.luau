@@ -283,7 +283,8 @@ local function tick()
 				expelHandler(player, hiddenIn)
 			end
 			leaveHide(player)
-			player:SetAttribute("HideFellAt", os.clock())
+			-- Hora do servidor: o cliente anima a queda (câmera no chão e levantar) e trava o andar enquanto isso.
+			player:SetAttribute("HideFellAt", workspace:GetServerTimeNow())
 			if root and noiseHandler then
 				noiseHandler(root.Position, Config.Hide.FallNoise)
 			end

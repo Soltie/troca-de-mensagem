@@ -78,6 +78,8 @@ local motion: Motion = {
 	steps = 0,
 }
 local stepCallbacks: { () -> () } = {}
+-- Caído (queda do armário): não anda até levantar.
+local stunnedUntil = 0
 
 local function humanoid(): Humanoid?
 	local character = player.Character
@@ -290,7 +292,7 @@ local function update(dt: number)
 	local rate = P.WalkSpeed / (if target > currentSpeed then P.AccelTime else P.DecelTime)
 	currentSpeed += math.clamp(target - currentSpeed, -rate * dt, rate * dt)
 	if phase == "Playing" and active() and not hidden then
-		h.WalkSpeed = math.max(currentSpeed, P.WalkSpeed * 0.45)
+		h.WalkSpeed = if now < stunnedUntil then 0 else math.max(currentSpeed, P.WalkSpeed * 0.45)
 		h.JumpHeight = if stance == "Crouch" then 0 else P.JumpHeight
 	end
 
@@ -412,6 +414,11 @@ end
 
 function CharacterController.getMotion(): Motion
 	return motion
+end
+
+-- Trava o andar por `seconds` (caído no chão).
+function CharacterController.stun(seconds: number)
+	stunnedUntil = math.max(stunnedUntil, os.clock() + seconds)
 end
 
 -- Cada pé que toca o chão (mesmo relógio do balanço da câmera).

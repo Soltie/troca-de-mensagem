@@ -1081,7 +1081,7 @@ function Runtime.Start()
 				if locker then
 					locker.occupant = nil
 				end
-				WorldService.swingLocker(lockerId)
+				WorldService.swingLocker(lockerId, true)
 			end)
 		end
 	end

@@ -644,14 +644,19 @@ function WorldService.locker(id: string): FeatureBuilder.LockerHandle?
 end
 
 -- Porta do armário abre e fecha (entrada/saída), em passos.
-function WorldService.swingLocker(id: string)
+-- `wide`: alguém caiu de dentro (fresta segurada demais): as folhas abrem de supetão, bem abertas, e só fecham
+-- depois que ele já está no chão.
+function WorldService.swingLocker(id: string, wide: boolean?)
 	local locker = getFeatures().lockers[id]
 	if not locker then
 		return
 	end
 	locker.sound:Play()
+	local steps: { number } = if wide
+		then { 60, 105, 112, 108, 110, 110, 110, 110, 110, 110, 110, 110, 110, 110, 95, 70, 40, 15, 0 }
+		else { 35, 70, 70, 30, 0 }
 	task.spawn(function()
-		for _, angle in { 35, 70, 70, 30, 0 } do
+		for _, angle in steps do
 			locker.door.CFrame = locker.hinge
 				* CFrame.Angles(0, math.rad(-angle), 0)
 				* (locker.hinge:Inverse() * locker.doorClosed)
