@@ -32,6 +32,7 @@ local snapshot: GameState.Snapshot? = nil
 local accumulator = 0
 local lastVisibilityCheck = 0
 local visible = false
+local behindWall = false
 local lastMode = "Dormant"
 local lastAlert = 0
 local darkness = 0
@@ -66,13 +67,10 @@ local function nearLight(position: Vector3): boolean
 	return false
 end
 
--- O Vigia está na tela e sem parede no meio?
-local function checkVisible(camera: Camera, root: BasePart): boolean
+-- O Vigia está na tela? Há parede no meio? (retorna visível, atrás da parede)
+local function checkVisible(camera: Camera, root: BasePart): (boolean, boolean)
 	local head = root.Position + Vector3.new(0, root.Size.Y * 0.35, 0)
 	local _, onScreen = camera:WorldToViewportPoint(head)
-	if not onScreen then
-		return false
-	end
 	local exclude: { Instance } = {}
 	if player.Character then
 		table.insert(exclude, player.Character)
@@ -88,7 +86,16 @@ local function checkVisible(camera: Camera, root: BasePart): boolean
 	table.insert(exclude, camera)
 	rayParams.FilterDescendantsInstances = exclude
 	local origin = camera.CFrame.Position
-	return workspace:Raycast(origin, head - origin, rayParams) == nil
+	local clear = workspace:Raycast(origin, head - origin, rayParams) == nil
+	return onScreen and clear, not clear
+end
+
+-- Susto: soma no medo; os grandes também fazem o jogador puxar o ar (com intervalo, no BodyAudio).
+local function spike(amount: number)
+	FearModel.spike(state, amount)
+	if amount >= 0.3 then
+		BodyAudioController.scare()
+	end
 end
 
 local FearController = {
@@ -108,7 +115,7 @@ function FearController.darkness(): number
 end
 
 function FearController.spike(amount: number)
-	FearModel.spike(state, amount)
+	spike(amount)
 end
 
 function FearController.onLevelChanged(callback: (level: number) -> ())
@@ -134,7 +141,7 @@ function FearController.Start()
 			FearModel.reset(state)
 		end
 		if previous and next.creatureActive and not previous.creatureActive and next.phase == "Playing" then
-			FearModel.spike(state, 0.25)
+			spike(0.25)
 		end
 	end)
 
@@ -169,20 +176,20 @@ function FearController.Start()
 
 		if active and root and distance < 70 and now - lastVisibilityCheck > 0.2 then
 			lastVisibilityCheck = now
-			visible = checkVisible(camera, root)
+			visible, behindWall = checkVisible(camera, root)
 		elseif not active or distance >= 70 then
-			visible = false
+			visible, behindWall = false, false
 		end
 
 		-- Picos de susto: ele te viu / te ouviu no armário.
 		if playing and mode == "Chase" and lastMode ~= "Chase" then
-			FearModel.spike(state, 0.35)
+			spike(0.35)
 		end
 		lastMode = mode
 		local alert = if root then (root:GetAttribute("Alert") :: number?) or 0 else 0
 		if alert ~= lastAlert then
 			if lastAlert ~= 0 then
-				FearModel.spike(state, 0.4)
+				spike(0.4)
 			end
 			lastAlert = alert
 		end
@@ -193,6 +200,7 @@ function FearController.Start()
 		local changed = FearModel.step(state, {
 			creatureDistance = if playing then distance else math.huge,
 			creatureVisible = playing and visible,
+			behindWall = behindWall,
 			chasing = playing and (mode == "Chase" or mode == "Capture"),
 			darkness = if playing then darkness else 0,
 			hidden = isHidden(),
@@ -205,6 +213,7 @@ function FearController.Start()
 		end
 
 		CameraController.setFear(state.value)
+		FlashlightController.setFear(state.value)
 		AudioController.setFear(state.value)
 		BodyAudioController.setFear(state.value)
 	end)

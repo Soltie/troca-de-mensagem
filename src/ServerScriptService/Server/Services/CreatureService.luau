@@ -609,6 +609,18 @@ function CreatureService.makeNoise(position: Vector3, radius: number)
 	end
 end
 
+-- Faro: pegadas molhadas frescas perto dele (FootprintService). Vai investigar onde o rastro termina.
+function CreatureService.followScent(position: Vector3)
+	if active and not frozen then
+		pendingNoise = position
+	end
+end
+
+-- Posição dos pés (para o faro de pegadas).
+function CreatureService.feetPosition(): Vector3?
+	return if active then feet() else nil
+end
+
 function CreatureService.silhouette()
 	active, frozen = true, true
 	placeAt(Vector3.new(26, 16, 8), Vector3.new(0, 0, 1))

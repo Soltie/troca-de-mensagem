@@ -51,6 +51,10 @@ local lostRetryAt = 0
 local lobbyReturnAt = 0
 local tutorialHeld: { [number]: number } = {}
 local supplies: { [number]: { [string]: number } } = {}
+-- Sem kit inicial: a mochila só tem o que o jogador coletar na casa (pedido do humano).
+local function starterSupplies(): { [string]: number }
+	return { battery = 0, oxygen = 0, decoy = 0 }
+end
 local endingPaid: { [number]: boolean } = {}
 local endingShown = false
 local spawning: { [Player]: boolean } = {}
@@ -748,7 +752,7 @@ local function restartCampaign()
 	for _, player in Players:GetPlayers() do
 		Session.join(session, player.UserId)
 		player:SetAttribute("GameModeVote", "")
-		supplies[player.UserId] = { battery = 1, oxygen = 1, decoy = 1 }
+		supplies[player.UserId] = starterSupplies()
 		slotFor(player.UserId)
 		player:SetAttribute("HasFlashlight", false)
 		player:SetAttribute(Tags.Attr.Flashlight, false)
@@ -1175,7 +1179,7 @@ function Runtime.Start()
 		end
 		slotFor(player.UserId)
 		if not supplies[player.UserId] then
-			supplies[player.UserId] = { battery = 1, oxygen = 1, decoy = 1 }
+			supplies[player.UserId] = starterSupplies()
 		end
 		player:SetAttribute("HouseSupplies", HttpService:JSONEncode(supplies[player.UserId]))
 		player:SetAttribute("GameModeVote", "")

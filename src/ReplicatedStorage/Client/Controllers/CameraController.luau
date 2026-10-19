@@ -45,7 +45,6 @@ local applied = CFrame.identity
 local appliedCamera: Camera? = nil
 
 -- Estado dos efeitos
-local bobPhase = 0
 local bobAmplitude = 0
 local breathClock = 0
 local tilt = 0
@@ -152,7 +151,8 @@ local function positionOffset(dt: number, motion: CharacterController.Motion, ro
 		targetAmplitude = base * math.clamp(motion.speed / P.WalkSpeed, 0.3, 1.4)
 	end
 	bobAmplitude = approach(bobAmplitude, targetAmplitude, 10, dt)
-	bobPhase += motion.speed * dt * C.BobFrequency * math.pi
+	-- Fase pela passada do CharacterController: o ponto mais baixo coincide com o som do pé.
+	local bobPhase = (motion.steps + motion.stride) * math.pi
 	local offset = Vector3.zero
 	if bobOn then
 		offset += Vector3.new(math.sin(bobPhase) * bobAmplitude * 0.55, -math.abs(math.cos(bobPhase)) * bobAmplitude, 0)
@@ -164,9 +164,14 @@ local function positionOffset(dt: number, motion: CharacterController.Motion, ro
 	end
 
 	-- Pouso: mola amortecida.
-	local accel = -140 * landOffset - 16 * landVelocity
-	landVelocity += accel * dt
-	landOffset += landVelocity * dt
+	-- Subpassos de no máximo 1/120 s: a mola se comporta igual a 30 ou 240 FPS.
+	local steps = math.max(1, math.ceil(dt * 120))
+	local h = dt / steps
+	for _ = 1, steps do
+		local accel = -140 * landOffset - 16 * landVelocity
+		landVelocity += accel * h
+		landOffset += landVelocity * h
+	end
 	if shakeOn then
 		offset += Vector3.new(0, math.clamp(landOffset, -0.9, 0.3), 0)
 	end
@@ -189,10 +194,14 @@ local function rotationOffset(dt: number, motion: CharacterController.Motion, no
 
 	-- Inclinação lateral (strafe) + balanço de exaustão.
 	local targetTilt = if tiltOn then -motion.lateral / P.WalkSpeed * C.StrafeTilt else 0
-	tilt = approach(tilt, math.clamp(targetTilt, -C.StrafeTilt * 1.3, C.StrafeTilt * 1.3), 8, dt)
-	local sway = if tiltOn then math.sin(now * 1.7) * motion.exhaustion * 1.4 else 0
-	local roll = math.rad(tilt + sway)
+	tilt = approach(tilt, math.clamp(targetTilt, -C.StrafeTilt, C.StrafeTilt), 8, dt)
+	local sway = if tiltOn then math.sin(now * 1.7) * motion.exhaustion * 0.6 else 0
+	local roll = math.rad(math.clamp(tilt + sway, -C.MaxRoll, C.MaxRoll))
 	local pitch = if tiltOn then math.rad(math.sin(now * 3.4) * motion.exhaustion * 0.6) else 0
+	-- Corrida: o olhar inclina um pouco para frente (entra e sai junto com o FOV).
+	if tiltOn then
+		pitch -= math.rad(C.SprintLean) * sprintAlpha
+	end
 
 	-- Tremor por trauma (quadrático) + leve tremor de pânico.
 	trauma = math.max(0, trauma - C.TraumaDecay * dt)
@@ -238,16 +247,19 @@ local peekTarget = 0
 local peekAmount = 0
 local peekLeaves: { PeekLeaf }? = nil
 local PEEK_BACK_CLOSED = 1.5
-local PEEK_BACK_OPEN = 0.9
-local PEEK_ANGLE = math.rad(13)
+local peekGlow: SpotLight? = nil
+local PEEK_BACK_OPEN = 0.7
+local PEEK_ANGLE = math.rad(20)
 
 local function findWardrobe(eye: CFrame): { PeekLeaf }?
 	local best: Model? = nil
 	local bestDistance = 3
 	for _, model in workspace:GetDescendants() do
 		if model:IsA("Model") and model.Name == "WardrobeDouble" then
-			local distance = (model:GetPivot().Position - eye.Position) * Vector3.new(1, 0, 1)
-			if distance.Magnitude < bestDistance then
+			-- Há um guarda-roupa por andar na mesma coluna: o do andar certo tem o pivô (chão) logo abaixo do olho.
+			local offset = model:GetPivot().Position - eye.Position
+			local distance = offset * Vector3.new(1, 0, 1)
+			if distance.Magnitude < bestDistance and offset.Y < 0 and offset.Y > -9 then
 				best, bestDistance = model, distance.Magnitude
 			end
 		end
@@ -300,6 +312,29 @@ local function updateHidden(camera: Camera, dt: number)
 	local back = if peekLeaves then PEEK_BACK_CLOSED + (PEEK_BACK_OPEN - PEEK_BACK_CLOSED) * peekAmount else 0
 	camera.CameraType = Enum.CameraType.Scriptable
 	camera.CFrame = origin * CFrame.new(0, 0, back) * CFrame.Angles(0, hiddenYaw, 0) * CFrame.Angles(hiddenPitch, 0, 0)
+	-- Luz fraca da fresta (só no cliente): fechado, um fio de luz no vão; espiando, clareia o cômodo à frente o
+	-- bastante para ver os vultos (sem virar lanterna).
+	local glow: SpotLight
+	local existing = peekGlow
+	if existing and existing.Parent then
+		glow = existing
+	else
+		local holder = Instance.new("Attachment")
+		holder.Name = "PeekGlow"
+		holder.Parent = workspace.Terrain
+		glow = Instance.new("SpotLight")
+		glow.Face = Enum.NormalId.Front
+		glow.Angle = 90
+		glow.Shadows = false
+		glow.Color = Color3.fromRGB(196, 206, 226)
+		glow.Parent = holder
+		peekGlow = glow
+	end
+	local holder = glow.Parent :: Attachment
+	holder.WorldCFrame = origin * CFrame.new(0, -0.6, -0.4)
+	glow.Enabled = true
+	glow.Brightness = 0.3 + 3.2 * peekAmount
+	glow.Range = 8 + 22 * peekAmount
 end
 
 local function updateCapture(camera: Camera, now: number, dt: number)
@@ -475,6 +510,9 @@ function CameraController.setHidden(eye: CFrame?)
 		peekLeaves = nil
 		peekTarget, peekAmount = 0, 0
 		hiddenOrigin = nil
+		if peekGlow then
+			peekGlow.Enabled = false
+		end
 		mode = "normal"
 		if camera then
 			camera.CameraType = Enum.CameraType.Custom
@@ -506,6 +544,9 @@ function CameraController.reset()
 	mode = "normal"
 	spectateTarget = nil
 	hiddenOrigin = nil
+	if peekGlow then
+		peekGlow.Enabled = false
+	end
 	captureTarget = nil
 	captureFrom = nil
 	captureZoom = 0

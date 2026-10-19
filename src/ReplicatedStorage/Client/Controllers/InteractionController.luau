@@ -336,7 +336,36 @@ function InteractionController.Start()
 		end
 		return Enum.ContextActionResult.Sink
 	end
-	ContextActionService:BindAction("HousePeek", peekAction, false, Enum.KeyCode.Space, Enum.KeyCode.ButtonR1)
+	-- Prioridade acima de tudo que usa Espaço (pulo do Roblox, pulo de obstáculo da mansão = 3500): dentro do
+	-- armário a fresta fica com a tecla; fora dele o peekAction devolve (Pass) e o resto funciona igual.
+	ContextActionService:BindActionAtPriority(
+		"HousePeek",
+		peekAction,
+		false,
+		Enum.ContextActionPriority.High.Value + 2000,
+		Enum.KeyCode.Space,
+		Enum.KeyCode.ButtonR1
+	)
+	-- Celular: botão ESPIAR só enquanto está escondido (o pulo do celular não é a tecla Espaço).
+	if UserInputService.TouchEnabled then
+		player:GetAttributeChangedSignal("Hidden"):Connect(function()
+			if hiddenId() then
+				ContextActionService:BindAction("HousePeekTouch", function(_, state)
+					if state == Enum.UserInputState.Begin then
+						InteractionController.requestPeek(true)
+					elseif state == Enum.UserInputState.End or state == Enum.UserInputState.Cancel then
+						InteractionController.requestPeek(false)
+					end
+					return Enum.ContextActionResult.Sink
+				end, true)
+				ContextActionService:SetTitle("HousePeekTouch", "ESPIAR")
+				ContextActionService:SetPosition("HousePeekTouch", UDim2.new(1, -170, 1, -150))
+			else
+				InteractionController.requestPeek(false)
+				ContextActionService:UnbindAction("HousePeekTouch")
+			end
+		end)
+	end
 	ContextActionService:BindAction("HouseInteract", function(_, state)
 		if state == Enum.UserInputState.Begin then
 			InteractionController.activate()
@@ -390,10 +419,8 @@ function InteractionController.Start()
 			return
 		end
 		if hiddenId() then
+			-- A dica do armário fica só no rodapé (NoirHud, CampaignController); aqui nada no meio da tela.
 			clearTarget()
-			GameUiController.setPrompt(
-				Text.HiddenHint .. (if player:GetAttribute("HoldBreath") then "\n" .. Text.HoldingBreath else "")
-			)
 			return
 		end
 		current = findTarget(camera)

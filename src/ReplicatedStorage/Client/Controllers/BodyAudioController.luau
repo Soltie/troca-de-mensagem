@@ -4,7 +4,7 @@
 	- Passos por material do chão: concreto, madeira, metal e água (poças), com variação de
 	  amostra/tom/volume e cadência pela distância andada (agachado é mais quieto e espaçado).
 	  Os passos padrão do Roblox são silenciados.
-	- Respiração: calma (quase nada), ofegante (exaustão) e com medo; o ritmo acelera com a
+	- Respiração: uma voz por vez; calmo = silêncio, ofegante (cansaço) e com medo; o ritmo acelera com a
 	  intensidade. Escondido e prendendo a respiração: silêncio; soltar = expiração; arquejo
 	  forçado quando o fôlego acaba.
 	- Pouso: baque com volume pela queda.
@@ -40,10 +40,17 @@ local MATERIALS: { [Enum.Material]: Surface } = {
 	[Enum.Material.Foil] = "metal",
 	[Enum.Material.Water] = "water",
 }
+local SOFT: { [Enum.Material]: boolean } = {
+	[Enum.Material.Fabric] = true,
+	[Enum.Material.Carpet] = true,
+	[Enum.Material.Grass] = true,
+	[Enum.Material.LeafyGrass] = true,
+	[Enum.Material.Mud] = true,
+	[Enum.Material.Ground] = true,
+}
 local BREATHS = { "Breath1", "Breath2", "Breath3", "Breath4" }
 
 local phase: GameState.Phase = "Loading"
-local stride = 0
 local leftFoot = false
 local nextBreathAt = 0
 local breathIndex = 1
@@ -101,6 +108,11 @@ local function step(motion: CharacterController.Motion, root: BasePart)
 	if surface == "metal" then
 		pitch *= 0.85
 	end
+	-- Tapete e grama abafam o passo (mais grave e baixo).
+	if SOFT[motion.floorMaterial :: any] then
+		loudness *= 0.5
+		pitch *= 0.85
+	end
 	AudioController.play(STEP_CLIPS[surface], loudness * rng:NextNumber(0.85, 1.05), pitch :: number)
 	-- Madeira velha range de vez em quando.
 	if surface == "wood" and rng:NextNumber() < 0.12 then
@@ -114,30 +126,75 @@ local function step(motion: CharacterController.Motion, root: BasePart)
 	end
 end
 
+--[[
+	Respiração unificada: UMA voz por vez (nunca dois áudios sobrepostos). Toda respiração passa por
+	`voice()`, que corta a anterior com um fade curto. Calmo = silêncio; o som só aparece ofegante
+	(cansaço) ou com medo de verdade, baixo e "dentro da cabeça".
+]]
+local voiceSound: Sound? = nil
+local lastScareAt = -math.huge
+
+local function fadeOut(sound: Sound, time: number)
+	local start = sound.Volume
+	task.spawn(function()
+		local t = 0
+		while t < time and sound.Parent do
+			t += task.wait()
+			sound.Volume = start * (1 - math.min(t / time, 1))
+		end
+		if sound.Parent then
+			sound:Destroy()
+		end
+	end)
+end
+
+local function voice(clip: string, volume: number, pitch: number): Sound
+	local previous = voiceSound
+	if previous and previous.Parent then
+		fadeOut(previous, 0.12)
+	end
+	local sound = AudioController.play(clip, volume, pitch)
+	voiceSound = sound
+	return sound
+end
+
+local function speaking(): boolean
+	local sound = voiceSound
+	return sound ~= nil and sound.Parent ~= nil and sound.IsPlaying
+end
+
 local function breathe(motion: CharacterController.Motion, now: number)
-	if now < nextBreathAt then
+	if now < nextBreathAt or speaking() then
 		return
 	end
-	local hidden = isHidden()
 	if holding then
 		nextBreathAt = now + 0.3
 		return
 	end
-	-- Intensidade: o maior entre exaustão e medo (escondido o medo pesa mais).
-	local intensity = math.max(
-		tonumber(player:GetAttribute("BreathIntensity")) or 0,
-		motion.exhaustion,
-		(fear - 0.25) / 0.75 * (if hidden then 1.2 else 1)
-	)
-	if intensity <= 0.05 then
-		nextBreathAt = now + 1
+	-- Cansaço (corrida/fôlego) e medo; escondido o medo pesa um pouco mais. Abaixo de 0,3 = calmo (silêncio).
+	local tired = math.max(tonumber(player:GetAttribute("BreathIntensity")) or 0, motion.exhaustion)
+	local scared = (fear - 0.45) / 0.55 * (if isHidden() then 1.15 else 1)
+	local intensity = math.clamp(math.max(tired, scared), 0, 1)
+	if intensity < 0.3 then
+		nextBreathAt = now + 0.8
 		return
 	end
-	intensity = math.clamp(intensity, 0, 1)
-	breathIndex = breathIndex % #BREATHS + 1
-	AudioController.play(BREATHS[breathIndex], 0.25 + intensity * 0.75, rng:NextNumber(1.05, 1.2) + intensity * 0.15)
-	-- Intervalo entre respirações: 3.2 s (leve) até 0.75 s (pânico/ofegante).
-	nextBreathAt = now + (3.2 - intensity * 2.45) * rng:NextNumber(0.9, 1.1)
+	-- Sem repetir a mesma amostra duas vezes seguidas.
+	local index = rng:NextInteger(1, #BREATHS - 1)
+	if index >= breathIndex then
+		index += 1
+	end
+	breathIndex = index
+	local panting = tired >= scared
+	local volume = if panting then 0.2 + intensity * 0.35 else 0.14 + intensity * 0.26
+	local pitch = (if panting then 1.02 else 0.94) + intensity * 0.06 + rng:NextNumber(-0.03, 0.03)
+	local sound = voice(BREATHS[index], volume, pitch)
+	-- Pausa depois que a respiração termina: 2,2 s (leve) até 0,35 s (ofegante/pânico).
+	local gap = (2.2 - intensity * 1.85) * rng:NextNumber(0.9, 1.1)
+	nextBreathAt = math.huge
+	sound.Destroying:Once(function()
+		nextBreathAt = math.min(nextBreathAt, os.clock() + gap)
+	end)
 end
 
 -- Silencia os sons padrão do personagem (passos de plástico etc.).
@@ -168,6 +225,17 @@ local BodyAudioController = {
 
 function BodyAudioController.setFear(value: number)
 	fear = math.clamp(value, 0, 1)
+end
+
+-- Susto: puxa o ar uma vez (no máximo a cada 8 s), cortando a respiração que estiver tocando.
+function BodyAudioController.scare()
+	local now = os.clock()
+	if now - lastScareAt < 8 or holding or phase ~= "Playing" then
+		return
+	end
+	lastScareAt = now
+	voice("Breath4", 0.4, 1.3)
+	nextBreathAt = now + 1.4
 end
 
 function BodyAudioController.lastSurface(): Surface
@@ -206,42 +274,36 @@ function BodyAudioController.Start()
 		local now = player:GetAttribute("HoldBreath") == true
 		if holding and not now and isHidden() then
 			-- Soltou: expiração longa e tremida.
-			AudioController.play("Breath2", 0.6, 0.9)
+			voice("Breath2", 0.45, 0.9)
 			nextBreathAt = os.clock() + 1.2
 		elseif now then
-			AudioController.play("Breath4", 0.4, 1.3)
+			voice("Breath4", 0.35, 1.3)
 		end
 		holding = now
 	end)
 	player:GetAttributeChangedSignal("Gasps"):Connect(function()
 		local count = (player:GetAttribute("Gasps") :: number?) or 0
 		if count > gasps then
-			AudioController.play("Gasp", 1, 1)
+			voice("Gasp", 0.85, 1)
 			nextBreathAt = os.clock() + 1.6
 		end
 		gasps = count
 	end)
 
-	RunService.RenderStepped:Connect(function(dt: number)
+	RunService.RenderStepped:Connect(function()
 		local character = player.Character
 		local root = character and character:FindFirstChild("HumanoidRootPart")
-		if not root or not root:IsA("BasePart") or (phase ~= "Playing" and phase ~= "Intro") then
+		if not root or not root:IsA("BasePart") or phase ~= "Playing" then
 			return
 		end
-		local motion = CharacterController.getMotion()
-		local now = os.clock()
-		if motion.grounded and not motion.hidden and motion.speed > 1 then
-			stride += motion.speed * dt
-			local length = if motion.stance == "Crouch" then 2.7 elseif motion.sprinting then 5.2 else 3.9
-			if stride >= length then
-				stride = 0
-				step(motion, root)
-			end
-		else
-			stride = math.min(stride, 1.5)
-		end
-		if phase == "Playing" then
-			breathe(motion, now)
+		breathe(CharacterController.getMotion(), os.clock())
+	end)
+	-- Passos no mesmo relógio do balanço da câmera (CharacterController).
+	CharacterController.onStep(function()
+		local character = player.Character
+		local root = character and character:FindFirstChild("HumanoidRootPart")
+		if root and root:IsA("BasePart") and (phase == "Playing" or phase == "Intro") then
+			step(CharacterController.getMotion(), root)
 		end
 	end)
 end

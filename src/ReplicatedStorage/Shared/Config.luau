@@ -100,9 +100,13 @@ local Config = {
 		-- Escala do corpo do jogador (R15 ~5,4 -> ~6,5 studs), proporcional às portas e ao Tung Tung.
 		BodyScale = 1.2,
 		FieldOfView = 72,
-		-- Aceleração/frenagem (studs/s por segundo) do WalkSpeed: o corpo tem peso.
-		Acceleration = 26,
-		Deceleration = 40,
+		-- Arranque e parada (s até a velocidade de andar): rápido, mas com peso.
+		AccelTime = 0.18,
+		DecelTime = 0.1,
+		-- Comprimento de cada passo (studs) por postura: dirige o som do pé e o balanço da câmera.
+		StrideWalk = 3.9,
+		StrideSprint = 5.2,
+		StrideCrouch = 2.7,
 		-- Fôlego em segundos de corrida; recarga por segundo parado/andando.
 		StaminaMax = 5,
 		StaminaRegen = 0.7,
@@ -150,6 +154,8 @@ local Config = {
 		DecayRate = 0.14,
 		ProximityRange = 42,
 		ProximityWeight = 0.55,
+		-- Com parede no meio a proximidade pesa só esta fração.
+		WallFactor = 0.5,
 		VisibleWeight = 0.22,
 		ChaseFloor = 0.75,
 		DarkWeight = 0.16,
@@ -183,16 +189,19 @@ local Config = {
 	},
 
 	Camera = {
-		-- Balanço (amplitude em studs, ciclos por stud andado).
+		-- Balanço (amplitude em studs; o ritmo vem da passada, Player.Stride*).
 		BobAmplitude = 0.11,
 		BobSprintAmplitude = 0.2,
 		BobCrouchAmplitude = 0.06,
-		BobFrequency = 0.36,
 		-- Respiração parada (amplitude em studs, ciclos/s).
 		IdleBreathAmplitude = 0.022,
 		IdleBreathRate = 0.24,
 		-- Inclinação lateral ao andar de lado (graus).
-		StrafeTilt = 1.8,
+		StrafeTilt = 1.2,
+		-- Inclinação total (strafe + cansaço) nunca passa disto (graus).
+		MaxRoll = 1.5,
+		-- Corrida: inclina o olhar um pouco para frente (graus).
+		SprintLean = 1.1,
 		-- FOV: + ao correr, - com medo alto, pancada na detecção.
 		SprintFov = 6,
 		FearFovNarrow = 6,

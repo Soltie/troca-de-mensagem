@@ -65,6 +65,20 @@ local function getWorld(): MapBuilder.World
 	return world
 end
 
+-- Placa "PASSAGEM SELADA" do portão: some inteira (tábua + texto) quando o portão abre, senão fica flutuando.
+local function gateSign(gate: Instance, visible: boolean)
+	for _, child in gate:GetDescendants() do
+		if child:IsA("BasePart") then
+			if child:GetAttribute("ShownTransparency") == nil then
+				child:SetAttribute("ShownTransparency", child.Transparency)
+			end
+			child.Transparency = if visible then child:GetAttribute("ShownTransparency") :: number else 1
+		elseif child:IsA("SurfaceGui") or child:IsA("Light") then
+			(child :: any).Enabled = visible
+		end
+	end
+end
+
 local function getFeatures(): FeatureBuilder.Built
 	assert(features, "[WorldService] used before Init")
 	return features
@@ -863,11 +877,7 @@ function WorldService.setHouseStage(chapter: number, seed: number?, mode: string
 					or (gate.Name == "basement" and chapter >= 4)
 					or (gate.Name == "ritual" and chapter >= 5)
 				gate.CanCollide, gate.CanQuery, gate.Transparency = not open, not open, if open then 1 else 0
-				for _, child in gate:GetDescendants() do
-					if child:IsA("SurfaceGui") then
-						child.Enabled = not open
-					end
-				end
+				gateSign(gate, not open)
 			end
 		end
 	end
@@ -884,6 +894,7 @@ function WorldService.setHouseStage(chapter: number, seed: number?, mode: string
 		local entry = gates and gates:FindFirstChild("entry")
 		if entry and entry:IsA("BasePart") then
 			entry.CanCollide, entry.CanQuery, entry.Transparency = false, false, 1
+			gateSign(entry, false)
 		end
 	end
 	HouseAccess.refresh(getWorld().root)
@@ -927,11 +938,7 @@ function WorldService.houseEvent(event: string?)
 		local entry = gates:FindFirstChild("entry")
 		if entry and entry:IsA("BasePart") then
 			entry.CanCollide, entry.CanQuery, entry.Transparency = false, false, 1
-			for _, child in entry:GetDescendants() do
-				if child:IsA("SurfaceGui") then
-					child.Enabled = false
-				end
-			end
+			gateSign(entry, false)
 		end
 	end
 	local gate = gates and gates:FindFirstChild(event)
@@ -939,11 +946,7 @@ function WorldService.houseEvent(event: string?)
 		-- A primeira pessoa a entrar não pode trancar os colegas que ainda estão no jardim.
 		local closing = false
 		gate.CanCollide, gate.CanQuery, gate.Transparency = closing, closing, if closing then 0 else 1
-		for _, child in gate:GetDescendants() do
-			if child:IsA("SurfaceGui") then
-				child.Enabled = false
-			end
-		end
+		gateSign(gate, false)
 	end
 	HouseAccess.refresh(getWorld().root)
 end

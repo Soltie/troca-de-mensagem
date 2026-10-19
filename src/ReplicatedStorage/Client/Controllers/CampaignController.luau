@@ -10,6 +10,7 @@ local Config = require("@game/ReplicatedStorage/Shared/Config")
 local Catalog = require("@game/ReplicatedStorage/Shared/Game/CampaignCatalog")
 local HouseCatalog = require("@game/ReplicatedStorage/Shared/Game/HouseCatalog")
 local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
+local Text = require("@game/ReplicatedStorage/Shared/Game/Text")
 local Guide = require("@game/ReplicatedStorage/Shared/Game/PlayerGuide")
 local Remotes = require("@game/ReplicatedStorage/Shared/Net/Remotes")
 local Hud = require("../UI/FieldHud")
@@ -80,7 +81,7 @@ function Controller.Start()
 	assert(state, "[CampaignUI] missing campaign state")
 	local ui = Hud.build(player:WaitForChild("PlayerGui"))
 	local noir = Noir.build(player:WaitForChild("PlayerGui"), UserInputService.TouchEnabled)
-	ui.feedback.FontFace = Noir.Serif
+	ui.feedback.FontFace = Noir.SansLight
 	local helpOpen, teamHeld = false, false
 	local noteOpen, bagOpen, selected = false, false, "flashlight"
 	-- Evita abrir e fechar no mesmo toque (tecla repetida ou clique duplo).
@@ -120,7 +121,7 @@ function Controller.Start()
 			end
 		end)
 	end
-	noir.useButton.Activated:Connect(function()
+	local function useSelected()
 		if selected == "flashlight" then
 			Flashlight.set(not Flashlight.isWanted())
 		elseif selected == "battery" or selected == "oxygen" or selected == "decoy" then
@@ -129,11 +130,58 @@ function Controller.Start()
 			return
 		end
 		bagOpen = false
-	end)
+	end
+	noir.useButton.Activated:Connect(useSelected)
 	guideToggle = function()
 		helpOpen = not helpOpen
 	end
 	local actions = game:GetService("ContextActionService")
+	-- Mochila aberta: E equipa/usa e ← → trocam o item (prioridade alta: não abre porta nem pega item atrás).
+	local bagKeysBound = false
+	local function bindBagKeys(value: boolean)
+		if value == bagKeysBound then
+			return
+		end
+		bagKeysBound = value
+		if not value then
+			actions:UnbindAction("NoirBagKeys")
+			return
+		end
+		actions:BindActionAtPriority(
+			"NoirBagKeys",
+			function(_, inputState, input)
+				if inputState ~= Enum.UserInputState.Begin then
+					return Enum.ContextActionResult.Sink
+				end
+				if input.KeyCode == Enum.KeyCode.E or input.KeyCode == Enum.KeyCode.ButtonA then
+					useSelected()
+					return Enum.ContextActionResult.Sink
+				end
+				local list = {}
+				for _, slot in noir.slots do
+					if slot.button.Visible then
+						table.insert(list, slot.item)
+					end
+				end
+				local at = table.find(list, selected) or 1
+				local step = if input.KeyCode == Enum.KeyCode.Left or input.KeyCode == Enum.KeyCode.DPadLeft
+					then -1
+					else 1
+				if #list > 0 then
+					selected = list[(at - 1 + step) % #list + 1]
+				end
+				return Enum.ContextActionResult.Sink
+			end,
+			false,
+			Enum.ContextActionPriority.High.Value + 10,
+			Enum.KeyCode.E,
+			Enum.KeyCode.ButtonA,
+			Enum.KeyCode.Left,
+			Enum.KeyCode.Right,
+			Enum.KeyCode.DPadLeft,
+			Enum.KeyCode.DPadRight
+		)
+	end
 	actions:BindAction("HouseGuideTouch", function(_, inputState)
 		if inputState == Enum.UserInputState.Begin then
 			helpOpen = not helpOpen
@@ -157,8 +205,12 @@ function Controller.Start()
 	decodeRoster()
 	local feedbackUntil = 0
 	player:GetAttributeChangedSignal("CampaignFeedbackSerial"):Connect(function()
-		ui.feedback.Text = messages[tostring(player:GetAttribute("CampaignFeedback"))]
-			or "Isso não dá para fazer agora."
+		local key = tostring(player:GetAttribute("CampaignFeedback"))
+		-- Entrar/sair do armário: a dica do rodapé (NoirHud) já explica; nada no meio da tela.
+		if key == "hide_enter" or key == "hide_exit" then
+			return
+		end
+		ui.feedback.Text = messages[key] or "Isso não dá para fazer agora."
 		feedbackUntil = os.clock() + 4
 		Juice.pop(ui.feedback, 0.25)
 	end)
@@ -265,6 +317,7 @@ function Controller.Start()
 		if not ui.gui.Enabled then
 			teamHeld = false
 			noteOpen, bagOpen = false, false
+			bindBagKeys(false)
 			noir.modal.Visible, noir.modal.Modal = false, false
 			player:SetAttribute("FieldGuideOpen", false)
 			return
@@ -471,41 +524,19 @@ function Controller.Start()
 			)
 			ui.pages.Size = UDim2.new(1, -16, 0, bounds.Y + 24)
 		end
-		ui.waypoint.Visible = active and (activity ~= nil or phase == "Extracting") and not ui.dossier.Visible
-		if ui.waypoint.Visible then
+		-- Única orientação do jogo: o ponteiro em cima da lanterna (nada de seta na tela).
+		local guideTarget: Vector3? = nil
+		if active and (activity ~= nil or phase == "Extracting") then
 			local world = workspace:FindFirstChild("CursedHouse")
 			local stations = world and world:FindFirstChild("CampaignActivities")
 			local model = stations and activity and stations:FindFirstChild(activity.id)
 			local station = model and model:FindFirstChild("Station")
-			local target = if phase == "Extracting"
+			guideTarget = if phase == "Extracting"
 				then Vector3.new(0, 4, if stage >= 6 then 870 else 106)
 				elseif station and station:IsA("BasePart") then station.Position + Vector3.new(0, 4, 0)
 				else nil
-			if target then
-				local point, onScreen = camera:WorldToViewportPoint(target)
-				local viewport = ui.viewport()
-				local width, height = viewport.X / factor, viewport.Y / factor
-				local x, y =
-					(point.X - ui.canvas.AbsolutePosition.X) / factor, (point.Y - ui.canvas.AbsolutePosition.Y) / factor
-				if point.Z < 0 then
-					x, y = width - x, height - y
-				end
-				local margin = if touch then 80 else 130
-				local top = if touch then math.min(height * 0.52, 180) else 170
-				x, y =
-					math.clamp(x, margin, math.max(margin, width - margin)),
-					math.clamp(y, top, math.max(top, height - (if touch then 140 else 170)))
-				ui.waypoint.Position = UDim2.fromOffset(x, y)
-				local distance = math.floor((target - camera.CFrame.Position).Magnitude / 3.57)
-				local direction = if onScreen then "" elseif x < width / 2 then "" else ""
-				local name = if phase == "Extracting"
-					then (if stage >= 6 then "RESGATE" else "SAÍDA DA CASA")
-					else Guide.roomName((activity :: Guide.Activity).room)
-				ui.waypoint.Text = `{direction} {name}\n{distance} m`
-			else
-				ui.waypoint.Visible = false
-			end
 		end
+		Flashlight.setGuide(guideTarget)
 		-- HUD de terror (NoirHud): a antiga só guarda o guia (H) e os avisos curtos.
 		ui.order.Visible = false
 		ui.tray.Visible = false
@@ -522,17 +553,29 @@ function Controller.Start()
 		local panelOpen = (noteOpen or bagOpen) and not ui.dossier.Visible
 		noir.note.Visible = noteOpen and not ui.dossier.Visible
 		noir.bag.Visible = bagOpen and not ui.dossier.Visible
+		bindBagKeys(noir.bag.Visible)
 		noir.modal.Visible, noir.modal.Modal = panelOpen, panelOpen
 		local quiet = ui.dossier.Visible or status ~= "Active"
 		local cornerBox = noir.cornerTitle.Parent
 		if cornerBox and cornerBox:IsA("GuiObject") then
 			cornerBox.Visible = not quiet and not noteOpen
 		end
-		noir.cornerChapter.Text = ui.chapter.Text
+		noir.cornerChapter.Text = Noir.spaced(ui.chapter.Text)
 		noir.cornerTitle.Text = title
-		noir.stamina.Visible = status == "Active" and not ui.dossier.Visible
+		-- Mochila aberta ocupa o rodapé: botões e barras somem (como na referência).
+		local bagShown = noir.bag.Visible
+		local buttonsBox = noir.objectiveButton.Parent
+		if buttonsBox and buttonsBox:IsA("GuiObject") then
+			buttonsBox.Visible = not bagShown
+		end
+		noir.stamina.Visible = status == "Active" and not ui.dossier.Visible and not bagShown
+		local hiddenIn = player:GetAttribute("Hidden")
+		local inHide = type(hiddenIn) == "string" and hiddenIn ~= ""
+		noir.hint.Visible = inHide and not panelOpen
+		noir.hint.Text = (if UserInputService.TouchEnabled then Text.HiddenHintTouch else Text.HiddenHint)
+			.. (if player:GetAttribute("HoldBreath") == true then "\n" .. Text.HoldingBreath else "")
 		noir.staminaFill.Size = UDim2.fromScale(breath, 1)
-		noir.air.Visible = status == "Active" and oxygen < 99.5
+		noir.air.Visible = status == "Active" and oxygen < 99.5 and not bagShown
 		noir.airFill.Size = UDim2.fromScale(oxygen / 100, 1)
 		noir.airFill.BackgroundColor3 = if oxygen < 25 then Noir.Blood else Noir.Paper
 		if title ~= noirObjective then
@@ -554,13 +597,9 @@ function Controller.Start()
 			noir.noteChapter.Text = ui.chapter.Text .. "  ·  " .. ui.destination.Text
 			noir.noteTitle.Text = title
 			noir.noteBody.Text = ui.action.Text
+			-- Um objetivo por vez: as próximas tarefas não aparecem (só o time, se houver).
 			local list = {}
-			for n, item in tasks do
-				local mark = if item.solved then "✓" elseif n == index then "›" else "·"
-				table.insert(list, `{mark}  {item.title or Catalog.KindNames[item.kind]}`)
-			end
 			if #roster > 1 then
-				table.insert(list, "")
 				for _, member in roster do
 					table.insert(
 						list,
@@ -585,39 +624,54 @@ function Controller.Start()
 				decoy = stock.decoy or 0,
 				empty = 0,
 			}
-			for _, slot in noir.slots do
-				local count = counts[slot.item] or 0
-				slot.count.Text = if slot.item == "empty"
-					then ""
-					elseif slot.item == "flashlight" then (if count > 0 then `{count}%` else "")
-					elseif slot.item == "keys" or slot.item == "fuses" then `{count}/3`
-					else `{count}`
-				slot.icon.Visible = slot.item ~= "empty"
-				for _, line in slot.icon:GetDescendants() do
-					if line:IsA("Frame") then
-						line.BackgroundTransparency = if count > 0 then 0 else 0.7
-					elseif line:IsA("UIStroke") then
-						line.Transparency = if count > 0 then 0 else 0.7
+			-- Só aparece o que o jogador tem; o escolhido mostra nome, valor e (lanterna) a barra da bateria.
+			local function owned(item: string): boolean
+				return if item == "flashlight"
+					then player:GetAttribute("HasFlashlight") == true
+					else (counts[item] or 0) > 0
+			end
+			if not owned(selected) then
+				for _, slot in noir.slots do
+					if owned(slot.item) then
+						selected = slot.item
+						break
 					end
 				end
-				local outline = slot.button:FindFirstChild("Outline") :: UIStroke?
-				if outline then
-					outline.Color = if slot.item == selected then Noir.Gold else Noir.GoldDim
-					outline.Transparency = if slot.item == selected then 0 else 0.5
+			end
+			for _, slot in noir.slots do
+				local count = counts[slot.item] or 0
+				local chosen = slot.item == selected
+				local value = if slot.item == "flashlight"
+					then `{count}%`
+					elseif slot.item == "keys" or slot.item == "fuses" then `{count}/3`
+					else `{count}`
+				slot.button.Visible = owned(slot.item)
+				slot.count.Text = if chosen or slot.item == "flashlight" then "" else value
+				slot.name.Visible = chosen
+				slot.name.Text = `{Noir.spaced(
+					string.upper((BAG_TEXT[slot.item] or BAG_TEXT.empty)[1]),
+					"\u{2009}\u{2009}"
+				)}\n{value}`
+				slot.track.Visible = chosen and slot.item == "flashlight"
+				slot.fill.Size = UDim2.fromScale(math.clamp(light, 0, 1), 1)
+				local view = slot.icon:FindFirstChild("View")
+				if view and view:IsA("ViewportFrame") then
+					view.ImageTransparency = if chosen then 0 else 0.45
 				end
 			end
-			local info = BAG_TEXT[selected] or BAG_TEXT.empty
+			local has = owned(selected)
+			local info = if has then BAG_TEXT[selected] or BAG_TEXT.empty else BAG_TEXT.empty
 			noir.detailName.Text = info[1]
-			noir.detailText.Text = string.format(info[2], counts[selected] or 0)
-			local usable = selected == "flashlight"
-				or (
-					(selected == "battery" or selected == "oxygen" or selected == "decoy")
-					and (counts[selected] or 0) > 0
-				)
+			noir.detailText.Text = if has
+				then string.format(info[2], counts[selected] or 0)
+				else "A mochila está vazia. O que você pegar na casa aparece aqui."
+			local usable = has
+				and (selected == "flashlight" or selected == "battery" or selected == "oxygen" or selected == "decoy")
 			noir.useButton.Visible = usable
-			noir.useButton.Text = if selected == "flashlight"
-				then (if Flashlight.isWanted() then "DESLIGAR" else "LIGAR")
-				else "USAR"
+			noir.useButton.Text = Noir.useLabel(
+				if selected == "flashlight" then (if Flashlight.isWanted() then "DESLIGAR" else "EQUIPAR") else "USAR",
+				UserInputService.TouchEnabled
+			)
 		end
 		if os.clock() > feedbackUntil then
 			ui.feedback.Text = ""

@@ -6,6 +6,7 @@ local RunService = game:GetService("RunService")
 local Story = require("@game/ReplicatedStorage/Shared/Game/StoryCatalog")
 local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
 local Create = require("../UI/Create")
+local Noir = require("../UI/NoirHud")
 local Cinema = require("./CinematicController")
 local Transition = require("./TransitionController")
 
@@ -42,11 +43,17 @@ function Controller.Start()
 	end
 	local revelation = text("RecoveredRecording", 0.72, 0.13)
 	-- Objetivo unificado no CampaignUi; aqui ficam somente gravações e cenas.
+	-- Mesmo estilo da dica do armário (NoirHud): só o texto no rodapé, sem faixa escura.
 	revelation.AnchorPoint = Vector2.new(0.5, 1)
-	revelation.Position = UDim2.new(0.5, 0, 1, -150)
-	revelation.Size = UDim2.new(0.78, 0, 0, 84)
-	revelation.TextScaled = true
-	Create("UITextSizeConstraint", { Parent = revelation, MinTextSize = 14, MaxTextSize = 17 })
+	revelation.Position = UDim2.new(0.5, 0, 1, -76)
+	revelation.Size = UDim2.new(0.7, 0, 0, 52)
+	revelation.BackgroundTransparency = 1
+	revelation.FontFace = Noir.SansLight
+	revelation.TextSize = 21
+	revelation.TextColor3 = Noir.Paper
+	revelation.TextTransparency = 0.1
+	revelation.TextStrokeTransparency = 0.7
+	revelation.TextYAlignment = Enum.TextYAlignment.Bottom
 	local endingAt = 0
 	local ending = text("Continues", 0, 1)
 	ending.Position, ending.Size = UDim2.fromScale(0, 0), UDim2.fromScale(1, 1)

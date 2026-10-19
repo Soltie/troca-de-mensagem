@@ -9,6 +9,7 @@ local function inputs(overrides: { [string]: any }): FearModel.Inputs
 	local i: { [string]: any } = {
 		creatureDistance = math.huge,
 		creatureVisible = false,
+		behindWall = false,
 		chasing = false,
 		darkness = 0,
 		hidden = false,
@@ -44,6 +45,17 @@ local spec: TestKit.Spec = {
 			t.expect(near > far).toBe(true)
 			t.expect(seen > near).toBe(true)
 			t.expect(FearModel.target(inputs({ chasing = true, creatureDistance = 60 })) >= F.ChaseFloor).toBe(true)
+		end)
+
+		t.it("walls between you and him soften the proximity fear", function()
+			local open = FearModel.target(inputs({ creatureDistance = 10 }))
+			local walled = FearModel.target(inputs({ creatureDistance = 10, behindWall = true }))
+			t.expect(walled < open).toBe(true)
+			t.expect(walled > 0).toBe(true)
+			t.expect(
+				FearModel.target(inputs({ creatureDistance = 10, behindWall = true, chasing = true })) >= F.ChaseFloor
+			)
+				.toBe(true)
 		end)
 
 		t.it("is always clamped to 0..1", function()

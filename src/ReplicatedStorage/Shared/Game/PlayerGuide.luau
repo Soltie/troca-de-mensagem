@@ -43,11 +43,11 @@ end
 
 function Guide.instruction(activity: Activity, now: number, activePlayers: number?): string
 	if activity.kind == "collect" then
-		return "Siga o marcador, encontre o objeto e aperte E para pegar. Vale para o time todo!"
+		return "Procure o objeto e aperte E para pegar. Vale para o time todo!"
 	elseif activity.kind == "clue" then
 		return "Chegue perto da pista e aperte E para ler. Ela ensina o próximo desafio."
 	elseif activity.kind == "explore" then
-		return "Siga a seta amarela até o ponto indicado."
+		return "O ponteiro em cima da lanterna aponta para onde ir."
 	elseif activity.kind == "hide" then
 		return "Entre no armário ou abrigo com E. Cabe só uma pessoa em cada esconderijo."
 	elseif activity.kind == "breath" then
@@ -114,7 +114,7 @@ Guide.SurvivalTips = {
 	"Shift corre, mas cansa e faz barulho. C agacha e deixa você mais silencioso.",
 	"Amigo caiu? Chegue perto, mire nele e aperte E para ajudar.",
 	"Moedas brilhantes valem Fichas! Pegue todas que encontrar.",
-	"Portas abrem com E. Siga a seta amarela para não se perder.",
+	"Portas abrem com E. Perdido? Olhe o ponteiro em cima da lanterna.",
 }
 
 return table.freeze(Guide)

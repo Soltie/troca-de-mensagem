@@ -35,6 +35,9 @@ export type Motion = {
 	floorPart: BasePart?,
 	standHipHeight: number,
 	hidden: boolean,
+	-- Passada: 0..1 dentro do passo atual (0 = pé no chão). Som e balanço da câmera usam o mesmo relógio.
+	stride: number,
+	steps: number,
 }
 
 local P = Config.Player
@@ -71,7 +74,10 @@ local motion: Motion = {
 	floorPart = nil,
 	standHipHeight = 2,
 	hidden = false,
+	stride = 0,
+	steps = 0,
 }
+local stepCallbacks: { () -> () } = {}
 
 local function humanoid(): Humanoid?
 	local character = player.Character
@@ -207,6 +213,27 @@ local function probeFloor(root: BasePart, character: Model)
 	end
 end
 
+-- Passos: a distância andada no chão vira fase; cada volta completa é um pé no chão.
+local function advanceStride(dt: number, hidden: boolean)
+	if motion.grounded and not hidden and motion.speed > 1 then
+		local length = if motion.stance == "Crouch"
+			then P.StrideCrouch
+			elseif motion.sprinting then P.StrideSprint
+			else P.StrideWalk
+		motion.stride += motion.speed * dt / length
+		if motion.stride >= 1 then
+			motion.stride -= math.floor(motion.stride)
+			motion.steps += 1
+			for _, callback in stepCallbacks do
+				task.spawn(callback)
+			end
+		end
+	elseif motion.stride > 0 then
+		-- Parou: termina a passada suavemente (sem pé "no ar" congelado).
+		motion.stride = math.min(1, motion.stride + dt * 2.5) % 1
+	end
+end
+
 local function update(dt: number)
 	local h = humanoid()
 	local root = rootPart()
@@ -259,7 +286,8 @@ local function update(dt: number)
 	if not moving then
 		target = math.min(target, P.WalkSpeed * 0.45)
 	end
-	local rate = if target > currentSpeed then P.Acceleration else P.Deceleration
+	-- Arranque em AccelTime e parada em DecelTime (s), independente do FPS.
+	local rate = P.WalkSpeed / (if target > currentSpeed then P.AccelTime else P.DecelTime)
 	currentSpeed += math.clamp(target - currentSpeed, -rate * dt, rate * dt)
 	if phase == "Playing" and active() and not hidden then
 		h.WalkSpeed = math.max(currentSpeed, P.WalkSpeed * 0.45)
@@ -278,6 +306,8 @@ local function update(dt: number)
 	motion.grounded = h.FloorMaterial ~= Enum.Material.Air
 	motion.standHipHeight = standHipHeight
 	probeFloor(root, character)
+
+	advanceStride(dt, hidden)
 
 	-- Queda: guarda a maior velocidade de descida até pousar.
 	if not motion.grounded then
@@ -382,6 +412,11 @@ end
 
 function CharacterController.getMotion(): Motion
 	return motion
+end
+
+-- Cada pé que toca o chão (mesmo relógio do balanço da câmera).
+function CharacterController.onStep(callback: () -> ())
+	table.insert(stepCallbacks, callback)
 end
 
 function CharacterController.onLanded(callback: (intensity: number) -> ())

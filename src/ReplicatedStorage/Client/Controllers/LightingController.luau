@@ -69,7 +69,7 @@ function controller.debugState(): { [string]: any }
 		shadows = Lighting.GlobalShadows,
 		style = Lighting.LightingStyle.Name,
 		bloom = bloom and bloom.Intensity,
-		depth = depth and depth.FarIntensity,
+		depth = if depth and depth.Enabled then depth.FarIntensity else 0,
 		contrast = grade and grade.Contrast,
 		quality = Settings.visualBudget().name,
 		shaders = Settings.shadersEnabled(),
@@ -172,8 +172,13 @@ function controller.Start()
 		Lighting.FogEnd = fog
 		local cinema = budget.depth and player:GetAttribute("CinematicActive") == true and Settings.motionEnabled()
 		if depth then
-			depth.Enabled = cinema
-			depth.FarIntensity = if cinema then 0.07 else 0
+			-- Jogo: profundidade de campo bem leve (o fundo distante perde um pouco o foco); cenas: um pouco mais.
+			-- Desliga junto com a opção de movimento/qualidade baixa (budget.depth).
+			local playing = budget.depth and Settings.motionEnabled()
+			depth.Enabled = playing
+			depth.FarIntensity = if cinema then 0.1 else 0.045
+			depth.FocusDistance = if cinema then 55 else 26
+			depth.InFocusRadius = if cinema then 45 else 34
 		end
 	end)
 	if RunService:IsStudio() then

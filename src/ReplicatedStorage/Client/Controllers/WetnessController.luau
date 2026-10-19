@@ -3,7 +3,8 @@
 	Corpos molhados pela chuva (só visual, no cliente; nada replica nem muda regra):
 	- cada personagem encharca ao ar livre e seca devagar sob telhado (Weather.wetness, telhado por raycast);
 	- molhado, pinga: gotinhas caem do corpo de todos e da lanterna na mão do jogador;
-	- dentro de casa, quem está molhado deixa pegadas escuras e brilhantes no piso, que somem em ~30 s.
+	- dentro de casa, quem está molhado deixa pegadas (o chão escurecido, inclusive sobre tapetes) que somem aos poucos
+	  em ~40 s. O servidor guarda o mesmo rastro (FootprintService) e o Tung Tung pode segui-lo.
 	Pegadas em pool fixo (MAX_PRINTS); gotinhas seguem o orçamento de partículas da qualidade visual.
 ]]
 local Players = game:GetService("Players")
@@ -15,7 +16,7 @@ local Settings = require("./SettingsController")
 local controller = { Name = "WetnessController" }
 
 local MAX_PRINTS = 48
-local PRINT_LIFE = 30
+local PRINT_LIFE = Weather.FootprintLife
 local DRIP = Color3.fromRGB(196, 206, 220)
 
 type Body = {
@@ -61,22 +62,68 @@ local function dripEmitter(parent: Instance, spread: Vector3): ParticleEmitter
 	return emitter
 end
 
-local function footprint(at: Vector3, facing: Vector3, alpha: number)
+-- Tapetes, capachos e passadeiras não respondem a raycast (CanQuery desligado): ficam numa lista própria.
+local rugs: { BasePart } = {}
+local rugsFrom: Instance? = nil
+local function collectRugs(world: Instance)
+	if rugsFrom == world then
+		return
+	end
+	rugsFrom = world
+	table.clear(rugs)
+	for _, item in world:GetDescendants() do
+		if
+			item:IsA("BasePart")
+			and not item.CanQuery
+			and item.Transparency < 0.9
+			and item.Size.Y <= 0.35
+			and item.Size.X >= 1
+			and item.Size.Z >= 1
+			and math.abs(item.CFrame.UpVector.Y) > 0.98
+		then
+			table.insert(rugs, item)
+		end
+	end
+end
+
+-- Superfície onde o pé pisou: o tapete mais alto sob o ponto, senão o piso do raycast.
+local function surfaceAt(at: Vector3): (number, Color3, boolean)
+	local hit = workspace:Raycast(at + Vector3.new(0, 2, 0), Vector3.new(0, -4, 0), groundParams)
+	local top = if hit then hit.Position.Y else at.Y
+	local color = if hit then (hit.Instance :: BasePart).Color else Color3.fromRGB(60, 44, 32)
+	local soft = hit ~= nil and (hit.Material == Enum.Material.Fabric or hit.Material == Enum.Material.Carpet)
+	for _, rug in rugs do
+		if rug.Parent then
+			local p = rug.CFrame:PointToObjectSpace(at)
+			local rugTop = rug.Position.Y + rug.Size.Y / 2
+			if
+				math.abs(p.X) <= rug.Size.X / 2
+				and math.abs(p.Z) <= rug.Size.Z / 2
+				and rugTop >= top - 0.05
+				and rugTop <= top + 0.6
+			then
+				top, color = rugTop, rug.Color
+				soft = rug.Material == Enum.Material.Fabric or rug.Material == Enum.Material.Carpet
+			end
+		end
+	end
+	return top, color, soft
+end
+
+local function footprint(at: Vector3, facing: Vector3, alpha: number, left: boolean)
 	local parent = folder
 	if not parent then
 		return
 	end
 	local slot = prints[nextPrint]
 	if not slot then
-		-- Sola de sapato: frente larga e calcanhar separados, como marca molhada escurecendo o piso.
+		-- Sola: frente oval e calcanhar separados, finos, como o piso escurecido pela água.
 		local function piece(name: string, size: Vector3): BasePart
 			local part = Instance.new("Part")
 			part.Name = name
 			part.Anchored, part.CanCollide, part.CanQuery, part.CanTouch = true, false, false, false
 			part.CastShadow = false
 			part.Material = Enum.Material.SmoothPlastic
-			part.Color = Color3.fromRGB(10, 6, 5)
-			part.Reflectance = 0.03
 			part.Size = size
 			local shape = Instance.new("SpecialMesh")
 			shape.MeshType = Enum.MeshType.Sphere
@@ -85,23 +132,30 @@ local function footprint(at: Vector3, facing: Vector3, alpha: number)
 			return part
 		end
 		slot = {
-			part = piece("WetFootprint", Vector3.new(0.34, 0.02, 0.56)),
-			heel = piece("WetFootprintHeel", Vector3.new(0.26, 0.02, 0.28)),
+			part = piece("WetFootprint", Vector3.new(0.4, 0.012, 0.64)),
+			heel = piece("WetFootprintHeel", Vector3.new(0.3, 0.012, 0.32)),
 			born = 0,
 			alpha = 0,
 		}
 		prints[nextPrint] = slot
 	end
 	nextPrint = nextPrint % MAX_PRINTS + 1
-	-- Assenta na superfície real (passadeira, tapete, piso), não na altura calculada dos pés.
-	local hit = workspace:Raycast(at + Vector3.new(0, 2, 0), Vector3.new(0, -4, 0), groundParams)
-	local floor = if hit then hit.Position else at
-	-- 0,085 acima do piso: passadeiras e tapetes (sem raycast) ficam até 0,07 acima dele.
-	local base = CFrame.lookAt(floor, floor + facing) * CFrame.new(0, 0.085, 0)
-	slot.part.CFrame = base * CFrame.new(0, 0, -0.2)
-	slot.heel.CFrame = base * CFrame.new(0, 0, 0.33)
+	-- Assenta logo acima da superfície real (tapete incluso): nada de brigar com a textura do capacho.
+	local top, color, soft = surfaceAt(at)
+	local floor = Vector3.new(at.X, top + 0.012, at.Z)
+	-- Pés levemente abertos para fora, como passo de verdade.
+	local toe = CFrame.Angles(0, math.rad(if left then 6 else -6), 0)
+	local base = CFrame.lookAt(floor, floor + facing) * toe
+	slot.part.CFrame = base * CFrame.new(0, 0, -0.24)
+	slot.heel.CFrame = base * CFrame.new(0, 0, 0.36)
+	-- Cor do próprio chão, só que molhado (mais escuro); tecido não brilha, madeira e pedra brilham um pouco.
+	local wet = color:Lerp(Color3.new(0, 0, 0), if soft then 0.55 else 0.68)
+	for _, part in { slot.part, slot.heel } do
+		part.Color = wet
+		part.Reflectance = if soft then 0 else 0.1
+	end
 	slot.born, slot.alpha = os.clock(), alpha
-	slot.part.Transparency = 1 - 0.5 * alpha
+	slot.part.Transparency = 1 - 0.6 * alpha
 	slot.heel.Transparency = slot.part.Transparency
 end
 
@@ -135,6 +189,9 @@ function controller.Start()
 			local world = workspace:FindFirstChild(Tags.WorldFolder)
 			params.FilterDescendantsInstances = if world then { world } else {}
 			groundParams.FilterDescendantsInstances = params.FilterDescendantsInstances
+			if world then
+				collectRugs(world)
+			end
 		end
 		for _, player in Players:GetPlayers() do
 			local character = player.Character
@@ -178,7 +235,7 @@ function controller.Start()
 					local flat = Vector3.new(move.X, 0, move.Z)
 					local facing = if flat.Magnitude > 0.01 then flat.Unit else Vector3.zAxis
 					local side = facing:Cross(Vector3.yAxis) * (if body.left then -0.32 else 0.32)
-					footprint(feet + side, facing, alpha)
+					footprint(feet + side, facing, alpha, body.left)
 					body.left = not body.left
 					body.lastStep = feet
 				end
@@ -197,11 +254,11 @@ function controller.Start()
 			local drips = lampDrips :: ParticleEmitter
 			drips.Rate = 10 * controller.wetness() * budget
 		end
-		-- Pegadas secam: somem aos poucos.
+		-- Pegadas secam: somem aos poucos (mais rápido no começo, como água evaporando da borda).
 		for _, slot in prints do
 			local age = now - slot.born
 			if age < PRINT_LIFE then
-				slot.part.Transparency = 1 - 0.5 * slot.alpha * (1 - age / PRINT_LIFE)
+				slot.part.Transparency = 1 - 0.6 * slot.alpha * (1 - age / PRINT_LIFE) ^ 1.6
 				slot.heel.Transparency = slot.part.Transparency
 			elseif slot.part.Transparency < 1 then
 				slot.part.Transparency = 1

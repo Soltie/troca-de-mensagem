@@ -49,7 +49,8 @@ local Text = {
 	},
 	-- Tecla da ação alternativa das portas.
 	AltKey = "[Q]",
-	HiddenHint = "[E] SAIR   ·   [ESPAÇO] ESPIAR   ·   [Z/LB] PRENDER A RESPIRAÇÃO",
+	HiddenHint = "[ESPAÇO] ver pela fresta (cuidado para não segurar demais)   ·   [Z] prender o ar   ·   [E] sair",
+	HiddenHintTouch = "Segure ESPIAR para ver pela fresta (cuidado para não segurar demais)",
 	HoldingBreath = "PRENDENDO A RESPIRAÇÃO...",
 
 	-- Mensagens que o servidor devolve no Result (chave -> texto).

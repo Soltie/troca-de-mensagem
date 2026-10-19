@@ -18,6 +18,8 @@ export type Inputs = {
 	creatureDistance: number,
 	-- Há linha de visão entre a câmera e o Vigia.
 	creatureVisible: boolean,
+	-- Há parede entre vocês (ouve, mas não vê): a proximidade assusta menos.
+	behindWall: boolean,
 	chasing: boolean,
 	-- 0 = bem iluminado .. 1 = breu (lanterna apagada, sem luz por perto).
 	darkness: number,
@@ -47,7 +49,7 @@ function FearModel.target(inputs: Inputs): number
 	local target = 0
 	if inputs.creatureDistance < F.ProximityRange then
 		local near = 1 - inputs.creatureDistance / F.ProximityRange
-		target += near ^ 1.5 * F.ProximityWeight
+		target += near ^ 1.5 * F.ProximityWeight * (if inputs.behindWall then F.WallFactor else 1)
 	end
 	if inputs.creatureVisible then
 		target += F.VisibleWeight

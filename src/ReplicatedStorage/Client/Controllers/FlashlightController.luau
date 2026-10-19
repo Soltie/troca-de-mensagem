@@ -48,6 +48,7 @@ local spill: PointLight? = nil
 local halos: { { light: SpotLight, share: number, reach: number } } = {}
 local dust: ParticleEmitter? = nil
 local smoothed: CFrame? = nil
+local fearLevel = 0
 local flickerClock = 0
 local flickerFactor = 1
 local forcedFlickerUntil = 0
@@ -140,6 +141,11 @@ local function buildViewmodel(): Viewmodel
 		local led = add(`Led{i}`, Vector3.new(0.035, 0.03, 0.05), Color3.fromRGB(20, 20, 20), Enum.Material.Neon)
 		table.insert(leds, led)
 	end
+	-- Ponteiro em cima da lanterna (única orientação do jogo): haste + ponta, gira para o objetivo.
+	local dial = add("GuideDial", Vector3.new(0.012, 0.15, 0.15), Color3.fromRGB(26, 24, 22), Enum.Material.Metal);
+	(dial :: Part).Shape = Enum.PartType.Cylinder
+	add("GuideNeedle", Vector3.new(0.022, 0.012, 0.1), Color3.fromRGB(200, 140, 60), Enum.Material.Neon)
+	add("GuideTip", Vector3.new(0.04, 0.012, 0.04), Color3.fromRGB(200, 140, 60), Enum.Material.Neon)
 	model.PrimaryPart = root
 	return { model = model, root = root, lens = lens, leds = leds, parts = parts }
 end
@@ -157,7 +163,38 @@ local OFFSETS: { [string]: CFrame } = {
 	Led2 = CFrame.new(0, 0.095, 0.12),
 	Led3 = CFrame.new(0, 0.095, 0.18),
 	Led4 = CFrame.new(0, 0.095, 0.24),
+	GuideDial = CFrame.new(0, 0.092, -0.3) * CFrame.Angles(0, 0, math.rad(90)),
 }
+
+-- Objetivo atual (CampaignController); nil = ponteiro escondido.
+local guideTarget: Vector3? = nil
+local guideYaw = 0
+
+-- Gira o ponteiro para o objetivo (só no plano da lanterna, com inércia de bússola).
+local function aimGuide(hand: CFrame, dt: number)
+	local vm = viewmodel
+	if not vm then
+		return
+	end
+	local target = guideTarget
+	local shown = target ~= nil
+	for _, part in vm.parts do
+		if part.Name == "GuideNeedle" or part.Name == "GuideTip" then
+			part.Transparency = if shown then 0 else 1
+		end
+	end
+	if not target then
+		return
+	end
+	local pivot = hand * CFrame.new(0, 0.105, -0.3)
+	local localDir = pivot:PointToObjectSpace(target)
+	local yaw = math.atan2(-localDir.X, -localDir.Z)
+	local delta = (yaw - guideYaw + math.pi) % (2 * math.pi) - math.pi
+	guideYaw += delta * (1 - math.exp(-6 * dt))
+	local needle = CFrame.new(0, 0.105, -0.3) * CFrame.Angles(0, guideYaw, 0)
+	OFFSETS.GuideNeedle = needle * CFrame.new(0, 0, -0.01)
+	OFFSETS.GuideTip = needle * CFrame.new(0, 0, -0.06) * CFrame.Angles(0, math.rad(45), 0)
+end
 
 local function placeViewmodel(base: CFrame)
 	local vm = viewmodel
@@ -234,6 +271,16 @@ end
 local FlashlightController = {
 	Name = "FlashlightController",
 }
+
+-- Para onde o ponteiro da lanterna aponta (nil = esconde).
+function FlashlightController.setGuide(target: Vector3?)
+	guideTarget = target
+end
+
+-- Medo 0..1 (vem do FearController): faz as mãos tremerem.
+function FlashlightController.setFear(value: number)
+	fearLevel = math.clamp(value, 0, 1)
+end
 
 function FlashlightController.isOn(): boolean
 	local status = player:GetAttribute("CampaignStatus")
@@ -544,12 +591,24 @@ function FlashlightController.Start()
 		-- Mão com peso: a rotação segue a câmera com atraso; corrida abaixa a lanterna.
 		local lower = if motion.sprinting then math.rad(-14) else 0
 		local target = camera.CFrame * CFrame.Angles(lower, 0, 0)
-		smoothed = if smoothed then smoothed:Lerp(target, math.min(1, dt * 11)) else target
+		smoothed = if smoothed then smoothed:Lerp(target, 1 - math.exp(-11 * dt)) else target
 		local rotation = (smoothed :: CFrame).Rotation
-		local bob = math.sin(now * (if motion.sprinting then 11 else 7)) * math.min(motion.speed / 16, 1)
+		-- Balanço no mesmo ritmo dos passos (meia volta por passo, como a câmera).
+		local bob = math.sin((motion.steps + motion.stride) * math.pi) * math.min(motion.speed / 16, 1)
 		local hand = CFrame.new(camera.CFrame.Position)
 			* rotation
 			* CFrame.new(0.42 + bob * 0.02, -0.42 + math.abs(bob) * -0.025, -0.95)
+		-- Mãos tremem com o medo (antes e mais que a câmera, que só treme no pânico).
+		local fright = math.clamp((fearLevel - 0.35) / 0.65, 0, 1)
+		if fright > 0 and SettingsController.get("shake") then
+			local t = now * 21
+			local angle = math.rad(1.3) * fright * fright
+			hand *= CFrame.Angles(
+				angle * math.noise(t, 3.1),
+				angle * math.noise(t, 7.7),
+				angle * 0.5 * math.noise(t, 12.4)
+			)
+		end
 		local raise = math.clamp(1 - (now - raisedAt) / 0.65, 0, 1)
 		local reach = math.sin(math.clamp((now - reachAt) / 0.45, 0, 1) * math.pi)
 		local click = math.sin(math.clamp((now - clickAt) / 0.2, 0, 1) * math.pi)
@@ -568,6 +627,7 @@ function FlashlightController.Start()
 			and phase ~= "Won"
 			and (phase == "Playing" or phase == "Intro" or phase == "Lost")
 		vm.model.Parent = if visible then camera else nil
+		aimGuide(hand, dt)
 		placeViewmodel(hand)
 		part.CFrame = hand * CFrame.new(0, 0, -0.62)
 		local volume = part:FindFirstChild("DustVolume")

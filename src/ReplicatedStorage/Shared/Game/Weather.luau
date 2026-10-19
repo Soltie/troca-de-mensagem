@@ -61,6 +61,8 @@ end
 -- Pegadas: só com o corpo molhado o bastante; quanto mais molhado, mais marcadas.
 Weather.FootprintMin = 0.12
 Weather.FootprintStride = 2.4
+-- Segundos até a pegada secar de vez (a imagem some aos poucos; o faro do Tung Tung vale enquanto existir).
+Weather.FootprintLife = 40
 function Weather.footprintAlpha(wet: number): number
 	if wet < Weather.FootprintMin then
 		return 0

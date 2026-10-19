@@ -82,6 +82,32 @@ local function label(props: { [string]: any }): TextLabel
 	return Create("TextLabel", defaults) :: TextLabel
 end
 
+-- Aviso de rodapé: texto branco maior, sem fundo, sem borda (pedido do humano: "só o texto embaixo").
+local BOTTOM_FONT = Font.new("rbxasset://fonts/families/Montserrat.json", Enum.FontWeight.Regular)
+local function bottomText(target: TextLabel, y: number)
+	target.AnchorPoint = Vector2.new(0.5, 1)
+	target.Position = UDim2.new(0.5, 0, 1, y)
+	target.Size = UDim2.new(0.9, 0, 0, 56)
+	target.BackgroundTransparency = 1
+	target.BorderSizePixel = 0
+	target.FontFace = BOTTOM_FONT
+	target.TextSize = 21
+	target.TextColor3 = Color3.fromRGB(240, 236, 228)
+	target.TextStrokeColor3 = Color3.new(0, 0, 0)
+	target.TextStrokeTransparency = 0.55
+	target.TextYAlignment = Enum.TextYAlignment.Bottom
+	for _, child in target:GetChildren() do
+		if
+			child:IsA("UIStroke")
+			or child:IsA("UICorner")
+			or child:IsA("UISizeConstraint")
+			or child:IsA("UIPadding")
+		then
+			child:Destroy()
+		end
+	end
+end
+
 local function frame(props: { [string]: any }, children: { any }?): Frame
 	local defaults: { [string]: any } = { BorderSizePixel = 0, BackgroundColor3 = Theme.Panel }
 	for key, value in props do
@@ -165,14 +191,8 @@ local function build(): Refs
 		Visible = false,
 		Parent = gui,
 	})
-	prompt.Font = Enum.Font.Code
-	prompt.TextSize = 17
-	prompt.TextColor3 = Theme.Hazard
-	prompt.BackgroundColor3 = Theme.Panel
-	prompt.BackgroundTransparency = 0.12
-	prompt.TextStrokeTransparency = 1
-	prompt.Size = UDim2.new(0.8, 0, 0, 54)
-	Create("UISizeConstraint", { Parent = prompt, MaxSize = Vector2.new(480, 54) })
+	-- Só o texto branco no rodapé (sem caixa nem moldura), no estilo do NoirHud.
+	bottomText(prompt, -118)
 
 	-- Objetivo (canto superior esquerdo)
 	local objectivePanel = frame({
@@ -236,7 +256,7 @@ local function build(): Refs
 	local caption = label({
 		Name = "Caption",
 		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, -64),
+		Position = UDim2.new(0.5, 0, 1, -150),
 		Size = UDim2.new(0.86, 0, 0, 48),
 		Text = "",
 		TextSize = Theme.SizeBody,
@@ -747,10 +767,10 @@ local function showCaption(text: string, duration: number?)
 	task.spawn(function()
 		ui.caption.Visible = true
 		ui.caption.Text = text
-		ui.caption.Position = UDim2.new(0.5, 0, 1, -64)
+		ui.caption.Position = UDim2.new(0.5, 0, 1, -150)
 		if SettingsController.motionEnabled() then
 			ui.caption.Position += UDim2.fromOffset(0, 8)
-			TweenService:Create(ui.caption, TweenInfo.new(0.16), { Position = UDim2.new(0.5, 0, 1, -64) }):Play()
+			TweenService:Create(ui.caption, TweenInfo.new(0.16), { Position = UDim2.new(0.5, 0, 1, -150) }):Play()
 		end
 		ui.caption.TextTransparency = 0.5
 		task.wait(STEP)
@@ -852,16 +872,12 @@ function GameUiController.Init()
 				UDim2.new(1, -12, 0, bounds.Y + 32), UDim2.fromOffset(0, bounds.Y + 32)
 		end
 		if touch then
-			ui.prompt.Position = UDim2.new(if size.X < 600 then 0.5 else 0.38, 0, 0.5, 12)
-			ui.prompt.Size = UDim2.fromOffset(math.min(400, size.X - (if size.X < 600 then 32 else 280)), 48)
-			ui.prompt.TextSize = 14
-			ui.caption.Position, ui.caption.Size = UDim2.new(0.5, 0, 1, -12), UDim2.new(1, -24, 0, 44)
+			-- Celular: acima dos botões de toque, ainda só texto.
+			ui.prompt.Position = UDim2.new(0.5, 0, 1, -190)
+			ui.prompt.TextSize = 18
 		end
 	end)
-	ui.caption.Font = Enum.Font.Code
-	ui.caption.TextSize = 16
-	ui.caption.BackgroundColor3 = Theme.Panel
-	ui.caption.BackgroundTransparency = 0.12
+	bottomText(ui.caption, -150)
 	local function visibility()
 		(shared :: ScreenGui).Enabled = player:GetAttribute("CinematicActive") ~= true
 			and player:GetAttribute("ComfortMenuOpen") ~= true
