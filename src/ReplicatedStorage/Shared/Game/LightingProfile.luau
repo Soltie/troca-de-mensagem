@@ -11,9 +11,9 @@ Profile.World = {
 	brightness = 1.05,
 	ambient = { 19, 22, 32 },
 	ambientPower = { 27, 28, 36 },
-	-- Sob o telhado: preenchimento quente e baixo, para nenhum cômodo virar tela preta sem energia.
-	ambientIndoor = { 44, 37, 34 },
-	ambientIndoorPower = { 54, 46, 40 },
+	-- Sob o telhado a casa é escura (a lanterna é a fonte principal); com energia, só um pouco menos.
+	ambientIndoor = { 9, 8, 9 },
+	ambientIndoorPower = { 22, 19, 17 },
 	outdoor = { 65, 74, 100 },
 	fog = { 30, 36, 51 },
 	fogPower = { 35, 40, 53 },
@@ -44,8 +44,9 @@ function Profile.grade(indoor: number, power: number): Grade
 	-- Cor local continua reconhecível; energia aquece só o interior.
 	return {
 		tint = { 240 + inside * on * 12, 246 + inside * on * 2, 255 - inside * on * 18 },
-		contrast = 0.075 + inside * 0.025,
-		saturation = -0.035 - inside * 0.025,
+		-- Dentro de casa: mais contraste e cor mais lavada (pretos fundos, luz quente só onde bate).
+		contrast = 0.08 + inside * 0.04,
+		saturation = -0.04 - inside * 0.06,
 		brightness = 0.005,
 	}
 end
@@ -67,7 +68,8 @@ function Profile.ambient(indoor: number, power: number, forest: number): RGB
 end
 
 function Profile.exposure(indoor: number, power: number): number
-	return 0.08 + math.clamp(indoor, 0, 1) * (0.08 - 0.06 * math.clamp(power, 0, 1))
+	-- Sem o reforço de exposição dentro de casa que deixava os cômodos claros; energia acrescenta pouco.
+	return 0.08 + math.clamp(indoor, 0, 1) * 0.03 * math.clamp(power, 0, 1)
 end
 
 -- Luz decorativa não deve preencher salas vizinhas nem competir com a lanterna.
