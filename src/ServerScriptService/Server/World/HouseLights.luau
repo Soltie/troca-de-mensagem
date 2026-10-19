@@ -12,6 +12,7 @@
 local CollectionService = game:GetService("CollectionService")
 
 local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
+local Palette = require("./Palette")
 
 local Lights = {}
 
@@ -91,6 +92,10 @@ function Lights.build(root: Instance)
 			light_.Range = math.min(light_.Range, ELECTRIC_RANGE)
 			light_.Brightness = math.min(light_.Brightness, ELECTRIC_BRIGHTNESS)
 			light_.Enabled = false -- a casa começa sem energia; WorldService.setPower religa
+			if holder.Transparency < 0.99 then
+				-- Luminária visível com cara de apagada (o setPower troca para neon quando a energia volta).
+				holder.Material, holder.Color = Enum.Material.SmoothPlastic, Palette.LampOff
+			end
 			holder:SetAttribute(Tags.Attr.LightKind, "Lamp")
 			holder:SetAttribute(Tags.Attr.Flicker, true)
 			holder:SetAttribute("BaseBrightness", light_.Brightness)
