@@ -72,6 +72,64 @@ local function dust(camera: Camera)
 	end)
 end
 
+-- Vinheta vermelha escura pulsando a cada batida do coração (sincronizada com o laço Heartbeat do AudioController).
+local edges: { Frame } = {}
+local edgeGui: ScreenGui? = nil
+local beatPhase = 0
+
+local function buildEdges()
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "ThreatPulse"
+	gui.IgnoreGuiInset = true
+	gui.ResetOnSpawn = false
+	gui.DisplayOrder = -3
+	gui.Enabled = false
+	for _, spec in
+		{
+			{ size = UDim2.fromScale(1, 0.28), pos = UDim2.fromScale(0, 0), rot = 90 },
+			{ size = UDim2.fromScale(1, 0.28), pos = UDim2.fromScale(0, 0.72), rot = -90 },
+			{ size = UDim2.fromScale(0.22, 1), pos = UDim2.fromScale(0, 0), rot = 0 },
+			{ size = UDim2.fromScale(0.22, 1), pos = UDim2.fromScale(0.78, 0), rot = 180 },
+		}
+	do
+		local frame = Instance.new("Frame")
+		frame.Size, frame.Position = spec.size, spec.pos
+		frame.BorderSizePixel = 0
+		frame.BackgroundColor3 = Color3.fromRGB(120, 8, 10)
+		frame.BackgroundTransparency = 1
+		local gradient = Instance.new("UIGradient")
+		gradient.Rotation = spec.rot
+		gradient.Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0),
+			NumberSequenceKeypoint.new(1, 1),
+		})
+		gradient.Parent = frame
+		frame.Parent = gui
+		table.insert(edges, frame)
+	end
+	gui.Parent = player:WaitForChild("PlayerGui")
+	edgeGui = gui
+end
+
+-- 96 bpm × velocidade do laço; a borda acende na batida e apaga rápido.
+local function pulse(dt: number)
+	local gui = edgeGui
+	if not gui then
+		return
+	end
+	if level <= 0.05 then
+		gui.Enabled = false
+		return
+	end
+	local bps = 96 / 60 * AudioController.heartbeatSpeed()
+	beatPhase = (beatPhase + dt * bps) % 1
+	local hit = (1 - beatPhase) ^ 4
+	gui.Enabled = true
+	for _, frame in edges do
+		frame.BackgroundTransparency = 1 - level * (0.12 + 0.45 * hit)
+	end
+end
+
 local function update(dt: number)
 	local camera = workspace.CurrentCamera
 	local character = player.Character
@@ -123,8 +181,10 @@ local function update(dt: number)
 
 	if body and body:IsA("BasePart") then
 		WorldFxController.threat(level, body.Position, LIGHT_RADIUS)
+		AudioController.setThreat(level)
 	else
 		WorldFxController.threat(0, Vector3.zero, 0)
+		AudioController.setThreat(0)
 	end
 	if level <= 0.05 then
 		if peak > 0.6 and level == 0 then
@@ -159,11 +219,13 @@ local function update(dt: number)
 end
 
 function ThreatWarningController.Start()
+	buildEdges()
 	GameState.observe(function(snapshot)
 		phase = snapshot.phase
 	end)
 	RunService.Heartbeat:Connect(function(dt: number)
 		update(dt)
+		pulse(dt)
 	end)
 end
 

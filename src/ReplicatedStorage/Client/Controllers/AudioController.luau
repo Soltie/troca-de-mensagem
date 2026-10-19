@@ -43,6 +43,8 @@ local zone = "Outside"
 local zones: { BasePart } = {}
 local musicState: MusicState = "none"
 local fear = 0
+-- Aviso de ameaça 0..1 (ThreatWarningController): o Tung Tung chegando no mesmo andar.
+local threat = 0
 local silenceUntil = 0
 local muffleOverride = 0
 local nextCreakAt = 0
@@ -251,6 +253,17 @@ end
 
 function AudioController.musicState(): MusicState
 	return musicState
+end
+
+-- Ameaça 0..1 (ThreatWarningController): puxa o batimento para cima e acelera.
+function AudioController.setThreat(value: number)
+	threat = math.clamp(value, 0, 1)
+end
+
+-- Velocidade atual do batimento (1 = 96 bpm), para sincronizar a vinheta.
+function AudioController.heartbeatSpeed(): number
+	local loop = loops.Heartbeat
+	return if loop then loop.PlaybackSpeed / math.max(speeds.Heartbeat, 1e-3) else 1
 end
 
 function AudioController.setFear(value: number)
@@ -475,9 +488,9 @@ function AudioController.Start()
 		targets.MusicRelief = if inPlay and music == "relief" then Audio.MusicRelief.volume else 0
 
 		-- Batimento: medo + proximidade. Sussurros só com medo muito alto.
-		local beat = math.clamp(fear * 0.7 + near * 0.35, 0, 1)
-		targets.Heartbeat = if inPlay then beat * 0.7 else 0
-		loops.Heartbeat.PlaybackSpeed = speeds.Heartbeat * (0.85 + beat * 0.6)
+		local beat = math.clamp(math.max(fear * 0.7 + near * 0.35, threat * 0.9), 0, 1)
+		targets.Heartbeat = if inPlay then math.min(1, beat * 0.7 + threat * 0.35) else 0
+		loops.Heartbeat.PlaybackSpeed = speeds.Heartbeat * (0.85 + beat * 0.6 + threat * 0.5)
 		targets.Whisper = if inPlay and fear > 0.72 then Audio.Whisper.volume * (fear - 0.72) / 0.28 else 0
 
 		for name, sound in loops do
