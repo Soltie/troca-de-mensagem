@@ -54,7 +54,7 @@ local function step(dt: number)
 		return
 	end
 	if seed ~= builtSeed then
-		nodes, builtSeed = FireSpread.build(seed), seed
+		nodes, builtSeed = FireSpread.build(seed, FireSpread.decodeFuel(root:GetAttribute("BlazeFuel"))), seed
 	end
 	local now = workspace:GetServerTimeNow()
 	local t = now - start
