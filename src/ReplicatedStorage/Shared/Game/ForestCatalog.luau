@@ -128,7 +128,7 @@ local Forest = {
 				},
 				{
 					room = "RadioIsland",
-					title = "Sintonizar os quatro canais do diário",
+					title = "Sintonizar no rádio os sons que ainda tocam na margem",
 					kind = "puzzle",
 					revelation = "Uma voz humana responde com a senha do guarda. A outra continua repetindo os nomes de vocês.",
 				},

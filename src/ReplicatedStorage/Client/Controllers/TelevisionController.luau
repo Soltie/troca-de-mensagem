@@ -6,9 +6,13 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Broadcast = require("@game/ReplicatedStorage/Shared/Game/HouseBroadcast")
 local Settings = require("./SettingsController")
+local AudioController = require("./AudioController")
+local GameUiController = require("./GameUiController")
 local Controller = { Name = "TelevisionController" }
 function Controller.Start()
 	local elapsed = 0
+	-- A fita toca sozinha quando alguém chega perto da TV (uma vez por capítulo): chiado e a voz da Dona Cida.
+	local playedStage: number? = nil
 	local screens: { [BasePart]: boolean } = {}
 	local function track(inst: Instance)
 		if inst:IsA("BasePart") then
@@ -40,6 +44,20 @@ function Controller.Start()
 		for screen in screens do
 			if not screen.Parent or (camera.CFrame.Position - screen.Position).Magnitude > 55 then
 				continue
+			end
+			if
+				playedStage ~= stage
+				and state
+				and state:GetAttribute("Phase") == "Playing"
+				and (camera.CFrame.Position - screen.Position).Magnitude < 14
+			then
+				playedStage = stage
+				AudioController.play("RadioStatic", 0.8)
+				for n, text in Broadcast[stage] do
+					task.delay(0.6 + (n - 1) * 4.2, function()
+						GameUiController.caption(`FITA: {text}`, 4)
+					end)
+				end
 			end
 			local gui = screen:FindFirstChildOfClass("SurfaceGui")
 			local label = gui and gui:FindFirstChildOfClass("TextLabel")

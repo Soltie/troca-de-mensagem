@@ -872,11 +872,17 @@ function GameUiController.Init()
 			ui.noteText.Size, reading.CanvasSize =
 				UDim2.new(1, -12, 0, bounds.Y + 32), UDim2.fromOffset(0, bounds.Y + 32)
 		end
+		-- Celular: acima dos botões de toque, ainda só texto.
+		local promptY = if touch then -240 else -156
 		if touch then
-			-- Celular: acima dos botões de toque, ainda só texto.
-			ui.prompt.Position = UDim2.new(0.5, 0, 1, -240)
 			ui.prompt.TextSize = 18
 		end
+		-- O aviso de ação nunca cobre a legenda: com legenda na tela, ele sobe acima da altura real dela.
+		local caption = ui.caption
+		if caption.Visible and caption.Text ~= "" then
+			promptY = math.min(promptY, -100 - caption.TextBounds.Y - 14)
+		end
+		ui.prompt.Position = UDim2.new(0.5, 0, 1, promptY)
 	end)
 	bottomText(ui.caption, -100)
 	local function visibility()

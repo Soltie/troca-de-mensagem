@@ -22,6 +22,9 @@ local Logger = require("@game/ReplicatedStorage/Shared/Logger")
 local ServerNet = require("../Net/ServerNet")
 local WorldService = require("../Services/WorldService")
 local CreatureService = require("../Services/CreatureService")
+local DoorSwapService = require("../Services/DoorSwapService")
+local CaptureSequenceService = require("../Services/CaptureSequenceService")
+local CaptureRules = require("../Game/CaptureRules")
 local LightningService = require("../Services/LightningService")
 local FireService = require("../Services/FireService")
 local GustService = require("../Services/GustService")
@@ -77,6 +80,8 @@ local rescueParts: { [number]: BasePart } = {}
 -- Pancadas que levantam sozinho neste capítulo (versão da etapa e quantas já levou). Solo: 2 (sem ninguém para
 -- resgatar, a terceira é a derrota); em grupo: 1 (os colegas resgatam).
 local wounded: { [number]: { version: number, count: number } } = {}
+-- A cena inteira da máquina só passa na primeira captura da partida (depois: puxado para a parede).
+local captureSceneSeen = false
 local modeVotes: Modes.Votes = {}
 local selectedMode: Modes.Id? = nil
 local sceneSerial = 0
@@ -229,6 +234,8 @@ local function publish()
 end
 
 local function clearRescues()
+	-- Móveis da captura somem junto (capítulo novo, continuar, partida nova).
+	CaptureSequenceService.clear()
 	for _, part in rescueParts do
 		part:Destroy()
 	end
@@ -481,6 +488,7 @@ local function selfRevive(player: Player, expectedVersion: number, message: stri
 	end
 	player:SetAttribute("CampaignGraceUntil", now + C.ReviveGrace)
 	-- Levantou: o Tung se afasta (folga real, não só a carência).
+	CaptureSequenceService.release(player, true)
 	CreatureService.retreat(C.ReviveGrace + 5)
 	freeze(player, false)
 	local beacon = rescueParts[player.UserId]
@@ -554,7 +562,30 @@ local function capture(player: Player, cause: string?)
 			selfRevive(player, captureVersion)
 		end)
 	end
-	local delay = if wound then C.CrawlSeconds + 2 elseif rising then Perks.SECOND_CHANCE_DELAY + 2 else nil
+	-- Captura de verdade no modo História: cena do Tung (arrasta até a máquina / parede / toco) e vira móvel.
+	local sceneKind: CaptureRules.Kind = if not wound
+			and not rising
+			and (cause == nil or cause == "tung" or cause == "search")
+		then CaptureRules.kind(selectedMode == "Story", session.stage, not captureSceneSeen)
+		else "none"
+	local sceneSeconds = 0
+	if sceneKind ~= "none" then
+		if sceneKind == "machine" then
+			captureSceneSeen = true
+		end
+		sceneSeconds = CaptureSequenceService.begin(player, sceneKind, session.stage, function()
+			local beacon = rescueParts[player.UserId]
+			if beacon then
+				beacon:SetAttribute(Tags.Attr.InteractPrompt, `TRÊS BATIDAS: {player.DisplayName}`)
+			end
+		end)
+	end
+	-- A derrota (solo) espera a cena acabar.
+	local delay = if wound
+		then C.CrawlSeconds + 2
+		elseif rising then Perks.SECOND_CHANCE_DELAY + 2
+		elseif sceneSeconds > 0 then sceneSeconds + 1
+		else nil
 	if not Session.capture(session, player.UserId, now, delay) then
 		return
 	end
@@ -595,7 +626,7 @@ local function capture(player: Player, cause: string?)
 	publish()
 	-- O cérebro legado termina em Capture; recolocar o Vigia permite continuar caçando a equipe.
 	local thisVersion = version
-	task.delay(C.CaptureRecovery, function()
+	task.delay(math.max(C.CaptureRecovery, sceneSeconds + 0.3), function()
 		-- Só a pegada do Tung deixa o cérebro em Capture; sopro e desabamento não teleportam ele.
 		if
 			(cause == nil or cause == "tung" or cause == "search")
@@ -714,9 +745,10 @@ local function interact(player: Player, id: string, _action: string?): { accepte
 			channels[player.UserId] = {
 				target = targetId,
 				-- Melhoria "Mãos de Socorrista" (nível publicado pelo StoreService) encurta o resgate.
-				endsAt = now
-					+ (if member.role == "medic" then C.MedicReviveSeconds else C.ReviveSeconds)
-						* Perks.factor("socorro", tonumber(player:GetAttribute("PerkSocorro")) or 0),
+				endsAt = now + (if CaptureSequenceService.isCaptiveId(targetId)
+					then CaptureRules.RescueSeconds
+					elseif member.role == "medic" then C.MedicReviveSeconds
+					else C.ReviveSeconds) * Perks.factor("socorro", tonumber(player:GetAttribute("PerkSocorro")) or 0),
 			}
 			return response(true, "rescuing")
 		end
@@ -727,11 +759,12 @@ local function interact(player: Player, id: string, _action: string?): { accepte
 		end
 		-- Puzzles do cap. 1 (HouseMiniPuzzles): o alvo decide; "solve" segue para recolher o item.
 		local handle = (station :: any).handle
+		local pressButton = station.button
 		if handle then
 			if session.tasks[station.taskId].solved or (station :: any).locked then
 				return response(false, "not_available")
 			end
-			if not Session.taskReady(session, station.taskId) then
+			if not (station :: any).anyTime and not Session.taskReady(session, station.taskId) then
 				return response(false, "story_order")
 			end
 			local result, message = handle(player)
@@ -739,10 +772,20 @@ local function interact(player: Player, id: string, _action: string?): { accepte
 				-- Erro chama o Tum Tum (no cap. 1 ele dorme: a casa só abre os Olhos no Veio).
 				CreatureService.makeNoise(focus.Position, 90)
 				Mini.eyes(focus.Position)
+			elseif result == "loud" then
+				-- Barulho escolhido (dar corda na caixinha): não é erro, mas ele ouve de longe.
+				CreatureService.makeNoise(focus.Position, 120)
 			end
 			if result ~= "solve" then
 				publish()
-				return response(result == "ok", message)
+				return response(result == "ok" or result == "loud", message)
+			end
+			-- Enigma de várias etapas resolvido de uma vez pelo alvo: registra as etapas antes da última.
+			if spec.kind == "puzzle" then
+				for step = 1, #spec.order - 1 do
+					Session.act(session, player.UserId, station.taskId, spec.order[step], now)
+				end
+				pressButton = spec.order[#spec.order]
 			end
 		end
 		-- Móvel de busca (HiddenStash): abrir faz barulho; vazio só avisa, o certo recolhe o item.
@@ -757,6 +800,10 @@ local function interact(player: Player, id: string, _action: string?): { accepte
 			if not station.decoy and Runaway.fleeing(station) then
 				return response(false, "runaway")
 			end
+			-- Fusíveis da Família (cap. 2): uma mão só. Quem carrega um fusível leva ao quadro antes do próximo.
+			if spec.item and Mini.FUSE_OWNERS[spec.item] and player:GetAttribute(Mini.CARRY_ATTRIBUTE) ~= nil then
+				return response(false, "hands_full")
+			end
 			if built then
 				Builder.open(built, id)
 			end
@@ -767,7 +814,7 @@ local function interact(player: Player, id: string, _action: string?): { accepte
 			end
 		end
 		local previous: Session.Phase = session.phase
-		local ok, message = Session.act(session, player.UserId, station.taskId, station.button, now)
+		local ok, message = Session.act(session, player.UserId, station.taskId, pressButton, now)
 		if message == "wrong_sequence" and spec.kind == "repair" then
 			-- Reparo guarda os passos: só avisa qual botão é o próximo.
 			message = "repair_order"
@@ -786,6 +833,9 @@ local function interact(player: Player, id: string, _action: string?): { accepte
 			CreatureService.makeNoise(focus.Position, if spec.item == "gas_pour" then 60 else 22)
 		end
 		if ok and message == "solved" then
+			if spec.item and Mini.FUSE_OWNERS[spec.item] then
+				player:SetAttribute(Mini.CARRY_ATTRIBUTE, spec.item)
+			end
 			WorldService.houseEvent(spec.event)
 			if spec.event == "silhouette" then
 				CreatureService.silhouette()
@@ -882,6 +932,11 @@ local function interact(player: Player, id: string, _action: string?): { accepte
 	then
 		nextActionAt[player.UserId] = now + C.ActionCooldown
 		local door = WorldService.door(id)
+		-- A Porta que Troca (DoorSwapService): a porta armada fica trancada no aviso e depois leva para outro cômodo.
+		local swapped = if door then DoorSwapService.intercept(player, id) else nil
+		if swapped then
+			return response(swapped.accepted == true, swapped.message)
+		end
 		if door then
 			WorldService.useDoor(id)
 			CreatureService.makeNoise(door.center, 30)
@@ -921,6 +976,7 @@ local function restartCampaign()
 	end
 	rewardCampaign += 1
 	taskPayments, supplies, endingPaid = {}, {}, {}
+	captureSceneSeen = false
 	endingShown = false
 	escapeEndsAt, lostRetryAt, lobbyReturnAt = 0, 0, 0
 	version += 1
@@ -998,6 +1054,7 @@ local function tick()
 			channels[helperId] = nil
 			if Session.revive(session, helperId, channel.target, now) then
 				target:SetAttribute("CampaignGraceUntil", now + C.ReviveGrace)
+				CaptureSequenceService.release(target, true)
 				CreatureService.retreat(C.ReviveGrace + 5)
 				freeze(target, false)
 				beacon:Destroy()

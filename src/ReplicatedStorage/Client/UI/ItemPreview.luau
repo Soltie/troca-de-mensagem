@@ -13,6 +13,8 @@
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
 local StoreCatalog = require("@game/ReplicatedStorage/Shared/Game/StoreCatalog")
 local StoreView = require("@game/ReplicatedStorage/Shared/Game/StoreView")
 local Create = require("./Create")
@@ -396,7 +398,11 @@ function ItemPreview.thumbnail(parent: Instance, item: Item): Frame
 	}, {
 		Create("UICorner", { CornerRadius = Theme.CornerSmall }),
 	}) :: Frame
-	if item.kind == "flashlight" then
+	-- Lanterna e farda em 3D (sem pixel art); o desenho plano fica só de reserva se o modelo falhar.
+	local solid = (item.kind == "flashlight" or item.kind == "uniform") and ItemPreview.still(frame, item) ~= nil
+	if solid then
+		frame.BackgroundColor3 = Color3.fromRGB(16, 12, 10)
+	elseif item.kind == "flashlight" then
 		flashlightThumb(frame, item)
 	elseif item.kind == "uniform" then
 		uniformThumb(frame, item)
@@ -435,8 +441,47 @@ local function part(
 	return p
 end
 
+-- Lanterna de época do Artista 3D (Assets/HouseArt/PeriodFlashlight), quando existe no place: a lente pega a cor
+-- do feixe do item e o corpo sem textura pega a cor do corpo. Devolve false para cair nos blocos abaixo.
+local function periodFlashlight(model: Model, item: Item): boolean
+	local assets = ReplicatedStorage:FindFirstChild("Assets")
+	local art = assets and assets:FindFirstChild("HouseArt")
+	local source = art and art:FindFirstChild("PeriodFlashlight")
+	if not source or not source:IsA("Model") then
+		return false
+	end
+	local copy = source:Clone()
+	local _, extents = copy:GetBoundingBox()
+	local longest = math.max(extents.X, extents.Y, extents.Z)
+	if longest > 0 then
+		copy:ScaleTo(copy:GetScale() * 5 / longest)
+	end
+	for _, piece in copy:GetDescendants() do
+		if piece:IsA("BasePart") then
+			piece.Anchored, piece.CanCollide, piece.CanQuery, piece.CanTouch = true, false, false, false
+			local name = string.lower(piece.Name)
+			if string.find(name, "lens") then
+				piece.Color = rgb(item.beam, Color3.fromRGB(255, 232, 196))
+				piece.Material = Enum.Material.Neon
+			elseif
+				string.find(name, "body")
+				and not piece:FindFirstChildWhichIsA("SurfaceAppearance")
+				and not (piece:IsA("MeshPart") and piece.TextureID ~= "")
+			then
+				piece.Color = rgb(item.body, piece.Color)
+			end
+		end
+	end
+	copy:PivotTo(CFrame.new())
+	copy.Parent = model
+	return true
+end
+
 -- Mesma lanterna low poly do FlashlightController (proporções ×5), lente acesa na cor do feixe.
 local function buildFlashlight(model: Model, item: Item)
+	if periodFlashlight(model, item) then
+		return
+	end
 	local material = materialOf(item)
 	local k = 5
 	part(
@@ -501,6 +546,42 @@ local function buildUniform(model: Model, item: Item)
 			part(model, "LegStripe", Vector3.new(1.04, 0.1, 1.04), CFrame.new(x, 0.6, 0), stripe)
 		end
 	end
+end
+
+-- Miniatura 3D parada (grade da loja): o mesmo modelo do painel de detalhe, sem girar e sem pegar clique.
+-- Luz quente e baixa, como a lamparina do menu. Substitui as miniaturas pixel art de lanterna e farda.
+function ItemPreview.still(parent: Instance, item: Item): ViewportFrame?
+	if item.kind ~= "flashlight" and item.kind ~= "uniform" then
+		return nil
+	end
+	local viewport = Create("ViewportFrame", {
+		Name = "Still3D",
+		Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1,
+		Ambient = Color3.fromRGB(120, 104, 90),
+		LightColor = Color3.fromRGB(255, 214, 170),
+		LightDirection = Vector3.new(-0.4, -0.7, -0.6),
+		Active = false,
+	}) :: ViewportFrame
+	local world = Instance.new("WorldModel")
+	world.Parent = viewport
+	local model = Instance.new("Model")
+	if item.kind == "flashlight" then
+		buildFlashlight(model, item)
+	else
+		buildUniform(model, item)
+	end
+	model.Parent = world
+	local box, extents = model:GetBoundingBox()
+	local distance = extents.Magnitude * (if item.kind == "flashlight" then 1.35 else 1.4)
+	local camera = Instance.new("Camera")
+	camera.FieldOfView = 35
+	camera.CFrame =
+		CFrame.lookAt(box.Position + Vector3.new(distance * 0.6, distance * 0.25, -distance * 0.8), box.Position)
+	camera.Parent = viewport
+	viewport.CurrentCamera = camera
+	viewport.Parent = parent
+	return viewport
 end
 
 -- Modelo 3D girável. Gira sozinho devagar; arrastar (mouse ou dedo) gira na mão. Limpa ao sair.

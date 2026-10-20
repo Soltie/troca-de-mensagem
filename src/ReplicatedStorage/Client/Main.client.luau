@@ -49,6 +49,7 @@ local controllers: { any } = {
 	require("./Controllers/BreathTestController"),
 	require("./Controllers/EscapeRunController"),
 	require("./Controllers/JumpscareController"),
+	require("./Controllers/CaptiveCameraController"),
 	require("./Controllers/ForestFxController"),
 	require("./Controllers/AchievementToastController"),
 	require("./Controllers/GameUiController"),
@@ -70,6 +71,8 @@ local controllers: { any } = {
 	require("./Controllers/UiFeedbackController"),
 	require("./Controllers/MomentController"),
 	require("./Controllers/DarkClueController"),
+	require("./Controllers/DoorSwapController"),
+	require("./Controllers/FurnitureMotionController"),
 }
 
 local count = Loader.boot(controllers, { label = "Client" })

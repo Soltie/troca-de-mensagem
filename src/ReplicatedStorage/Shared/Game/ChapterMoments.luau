@@ -15,8 +15,8 @@ export type Moment = "blackout" | "shadow" | "tunnel" | "quake"
 local ChapterMoments = {}
 
 local BY_TASK: { [number]: { index: number, moment: Moment } } = {
-	[1] = { index = 5, moment = "blackout" },
-	[2] = { index = 4, moment = "shadow" },
+	[1] = { index = 6, moment = "blackout" },
+	[2] = { index = 5, moment = "shadow" },
 	[3] = { index = 2, moment = "tunnel" },
 	[4] = { index = 5, moment = "quake" },
 }

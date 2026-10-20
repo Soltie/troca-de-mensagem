@@ -48,7 +48,8 @@ return {
 			for _ in fuseRooms do
 				count += 1
 			end
-			t.expect(count >= 3).toBe(true)
+			-- Fusíveis da Família: o da Dona Cida varia entre os dois lugares favoritos dela.
+			t.expect(count >= 2).toBe(true)
 			-- Fora da lista o plano é recusado.
 			local plan = Plan.create(1, 2, 1, "Story")
 			plan.activities[1].room = "Attic"
@@ -89,10 +90,11 @@ return {
 			Session.beginStage(s)
 			local plan = s.plan
 			assert(plan, "Missing plan")
-			for i = 1, 3 do
+			-- Fusíveis e o óleo do gerador (tarefa 4) antes do reparo.
+			for i = 1, 4 do
 				Session.act(s, 1, plan.activities[i].id, 1, 0)
 			end
-			local repair = plan.activities[4]
+			local repair = plan.activities[5]
 			t.expect(repair.kind).toBe("repair")
 			t.expect((Session.act(s, 1, repair.id, 3, 1))).toBe(false)
 			Session.act(s, 1, repair.id, 1, 2)

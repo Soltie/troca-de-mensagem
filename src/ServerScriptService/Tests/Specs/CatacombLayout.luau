@@ -39,7 +39,8 @@ local spec: TestKit.Spec = {
 					end
 					local five = Plan.create(seed, 5, 2, mode)
 					t.expect((Plan.validate(five))).toBe(true)
-					local first = five.activities[1]
+					-- O encaixe do coração (2ª tarefa: antes vem a lata de óleo) desce para a capela.
+					local first = five.activities[2]
 					local p = { x = first.x, y = first.y or 0, z = first.z }
 					t.expect(Layout.inside(Layout.Chapel, p, 2)).toBe(true)
 				end

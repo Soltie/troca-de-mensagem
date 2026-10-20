@@ -5,9 +5,10 @@
 	- Cap. 3, escritório: o RELÓGIO. Acertar 03:12, a hora em que o Tum Tum entrou na máquina. Ninguém escreve a
 	  hora: o videocassete da sala lembra "03:__" e o rádio-relógio do quarto infantil lembra "__:12", e os dois só
 	  acendem no escuro (lanterna apagada, World/HouseClocks + Client/DarkClueController).
-	- Cap. 4, porão dos símbolos: o PIANO da Lia. Cada tecla tem um desenho e uma cor (LUA, SOL, BASTÃO, ESTRELA,
-	  sorteados por partida); o painel do porão mostra os desenhos na ordem da música do sahur e, no escuro, a Lia toca
-	  sozinha o começo da música.
+	- Cap. 4, porão dos símbolos: o DUETO DA LIA (banco de puzzles v2). As teclas têm desenhos fixos (LUA, SOL,
+	  BASTÃO, ESTRELA, da esquerda para a direita). No escuro a Lia toca a primeira frase da música do sahur e o
+	  jogador responde com a segunda frase, a da caixinha do cap. 1 (Shared/Game/SahurMelody, sorteada pela semente).
+	  O painel do porão tem os mesmos desenhos e cada um toca a nota baixinho (lugar seguro para testar).
 	- Cap. 4, cofre: o código ESPALHADO. Os dois primeiros dígitos estão na catacumba, os dois últimos riscados no
 	  painel do porão. O teclado do cofre tem quatro dígitos sorteados.
 	- Floresta (cap. 6 a 8): o RÁDIO. Sintonizar as frequências do diário/código do guarda.
@@ -26,6 +27,8 @@ export type Style = {
 	forgiving: boolean?,
 }
 
+local SahurMelody = require("./SahurMelody")
+
 local PuzzleStyles = {}
 
 PuzzleStyles.SYMBOLS = table.freeze({
@@ -40,7 +43,7 @@ PuzzleStyles.CLOCK = table.freeze({
 	fixed = table.freeze({ 1, 4, 2, 3 }),
 	forgiving = true,
 }) :: Style
--- Desenhos das teclas do piano (a ordem das teclas é sorteada em `pianoMarks`).
+-- Desenhos das teclas do piano, da esquerda para a direita (lua no painel = lua no piano).
 PuzzleStyles.PIANO = table.freeze({
 	id = "piano",
 	labels = table.freeze({ "LUA", "SOL", "BASTÃO", "ESTRELA" }),
@@ -64,22 +67,6 @@ PuzzleStyles.MARK_COLORS = table.freeze({
 -- Velocidade de reprodução de cada tecla, da esquerda para a direita (escala maior a partir do DÓ).
 PuzzleStyles.PIANO_PITCH = table.freeze({ 1, 2 ^ (2 / 12), 2 ^ (4 / 12), 2 ^ (7 / 12) })
 
-local function shuffled(values: { string }, seed: number): { string }
-	local pool = table.clone(values)
-	local state = math.floor(math.abs(seed)) % 2147483647 + 1
-	for i = 1, #pool - 1 do
-		state = (state * 48271) % 2147483647
-		local pick = state % (#pool - i + 1) + i
-		pool[i], pool[pick] = pool[pick], pool[i]
-	end
-	return pool
-end
-
--- Desenho de cada tecla do piano nesta partida (da esquerda para a direita), reproduzível pela semente.
-function PuzzleStyles.pianoMarks(seed: number): { string }
-	return shuffled(PuzzleStyles.PIANO.labels, seed + 7)
-end
-
 -- Quatro dígitos diferentes (1 a 9) para o teclado do cofre, reproduzíveis pela semente.
 function PuzzleStyles.safeDigits(seed: number): { string }
 	local pool = { 1, 2, 3, 4, 5, 6, 7, 8, 9 }
@@ -98,11 +85,13 @@ function PuzzleStyles.forTask(stage: number, index: number, seed: number): Style
 	if stage == 3 and index == 5 then
 		return PuzzleStyles.CLOCK
 	elseif stage == 4 and index == 2 then
+		-- A resposta é a segunda frase da música do sahur (a mesma variação da caixinha do cap. 1).
 		return {
 			id = "piano",
-			labels = PuzzleStyles.pianoMarks(seed),
+			labels = PuzzleStyles.PIANO.labels,
 			prompt = PuzzleStyles.PIANO.prompt,
 			forgiving = true,
+			fixed = SahurMelody.second(seed),
 		}
 	elseif stage == 4 and index == 4 then
 		return { id = "safe", labels = PuzzleStyles.safeDigits(seed), prompt = "DIGITAR" }
@@ -127,7 +116,8 @@ function PuzzleStyles.clue(style: Style, order: { number }, extra: { string }?):
 	if style.id == "clock" then
 		return "O RELÓGIO PAROU QUANDO ELE ENTROU NA MÁQUINA.\nNO ESCURO, A CASA AINDA LEMBRA A HORA."
 	elseif style.id == "piano" then
-		local text = `A MÚSICA DO SAHUR\n{table.concat(answer, " - ")}`
+		-- O painel não diz a ordem: cada desenho canta a nota baixinho, e a música vem da caixinha do cap. 1.
+		local text = "A MÚSICA DO SAHUR: TOQUE NOS DESENHOS\nNO ESCURO, A LIA COMEÇA. RESPONDA COM A CAIXINHA."
 		if extra then
 			text ..= `\nRISCADO EMBAIXO: _ _ {extra[3]} {extra[4]}`
 		end
@@ -152,7 +142,7 @@ function PuzzleStyles.progress(style: Style, order: { number }, progress: number
 	elseif style.id == "safe" then
 		return `{table.concat(shown, " ")} · JUNTE AS DUAS METADES DO CÓDIGO`
 	elseif style.id == "piano" then
-		return `{progress}/4 NOTAS · TOQUE OS DESENHOS DO PAINEL`
+		return `{progress}/4 NOTAS · RESPONDA À LIA COM A MÚSICA DA CAIXINHA`
 	elseif style.id == "radio" then
 		return `{progress}/4 CANAIS · SIGA O PAPEL DO GUARDA`
 	end

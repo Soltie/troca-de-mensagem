@@ -11,6 +11,7 @@
 ]]
 
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
@@ -27,6 +28,11 @@ local CharacterController = require("./CharacterController")
 local player = Players.LocalPlayer
 local BASE_BRIGHTNESS = LightingProfile.Flashlight.brightness
 local WARM = Color3.fromRGB(255, 232, 196)
+-- Lâmpada incandescente: o filtro frio da cena deixava o feixe branco-azulado (crítico, 21/10). A luz (não a
+-- lente) passa por este filtro quente, em qualquer skin; o tom da skin continua reconhecível.
+local function incandescent(color: Color3): Color3
+	return Color3.new(color.R, color.G * 0.9, color.B * 0.72)
+end
 
 type Viewmodel = {
 	model: Model,
@@ -81,6 +87,11 @@ local HAND_PARTS = {
 	Tip2 = true,
 	Tip3 = true,
 	Tip4 = true,
+	Knuckle1 = true,
+	Knuckle2 = true,
+	Knuckle3 = true,
+	Knuckle4 = true,
+	Thumb2 = true,
 }
 local DROP_FALL = 0.42
 local DROP_BOUNCE = 0.34
@@ -146,7 +157,111 @@ local function localPart(
 	return part
 end
 
--- Lanterna low poly + mão + manga (só o jogador vê; peças locais sob a câmera).
+-- Posições locais das peças da lanterna de época (preenchidas ao clonar o modelo; ver `periodFlashlight`).
+local PERIOD_OFFSETS: { [string]: CFrame } = {}
+-- Quanto o ponteiro sobe em cima da lanterna de época (corpo mais grosso que a de peças).
+local dialLift = 0
+-- O .glb chega sem textura nas peças de metal (cinza Plastic): cor e material de época por nome da peça.
+-- Tons quentes de propósito: o filtro frio da cena puxa para o azul (o níquel neutro lia cinza-azulado).
+-- Peça com SurfaceAppearance (o couro) fica como veio.
+local PERIOD_FINISH: { [string]: { color: Color3, material: Enum.Material } } = {
+	Torch_Nickel = { color = Color3.fromRGB(165, 145, 115), material = Enum.Material.Metal },
+	Torch_Brass = { color = Color3.fromRGB(170, 120, 55), material = Enum.Material.Metal },
+	Torch_Steel = { color = Color3.fromRGB(70, 70, 74), material = Enum.Material.Metal },
+	Torch_Leather = { color = Color3.fromRGB(70, 40, 22), material = Enum.Material.Leather },
+	Torch_Reflector = { color = Color3.fromRGB(214, 196, 160), material = Enum.Material.Metal },
+}
+
+-- Lanterna de época do Artista 3D (níquel, latão, couro; 2 mil triângulos; frente = -Z; lente "Torch_Lens").
+-- Procura em ReplicatedStorage.Assets; sem o asset, a lanterna de peças continua (fallback).
+local function periodFlashlight(model: Model, add: (BasePart) -> ()): (BasePart?, BasePart?)
+	local assets = ReplicatedStorage:FindFirstChild("Assets")
+	local found = assets and assets:FindFirstChild("PeriodFlashlight", true)
+	if not found then
+		return nil, nil
+	end
+	local copy = found:Clone()
+	local pieces: { BasePart } = {}
+	if copy:IsA("BasePart") then
+		table.insert(pieces, copy)
+	end
+	for _, item in copy:GetDescendants() do
+		if item:IsA("BasePart") then
+			table.insert(pieces, item)
+		elseif item:IsA("Script") or item:IsA("LocalScript") or item:IsA("ModuleScript") then
+			item:Destroy() -- asset de arte não traz código
+		end
+	end
+	if #pieces == 0 then
+		copy:Destroy()
+		return nil, nil
+	end
+	-- Centro e tamanho de tudo: a frente (-Z) do modelo fica onde ficava a lente antiga.
+	local low, high = Vector3.one * math.huge, -Vector3.one * math.huge
+	for _, piece in pieces do
+		low = low:Min(piece.Position - piece.Size / 2)
+		high = high:Max(piece.Position + piece.Size / 2)
+	end
+	local center = CFrame.new((low + high) / 2)
+	local front = (high.Z - low.Z) / 2
+	local root: BasePart? = nil
+	local lens: BasePart? = nil
+	for index, piece in pieces do
+		local offset = center:ToObjectSpace(piece.CFrame)
+		local finish = PERIOD_FINISH[piece.Name]
+		if finish and not piece:FindFirstChildOfClass("SurfaceAppearance") then
+			piece.Color = finish.color
+			piece.Material = finish.material
+		end
+		local name = if string.find(piece.Name, "Lens") then "Lens" else `Period{index}`
+		piece.Name = name
+		PERIOD_OFFSETS[name] = CFrame.new(0, 0, -0.63 + front) * offset
+		piece.Anchored = true
+		piece.CanCollide = false
+		piece.CanQuery = false
+		piece.CanTouch = false
+		piece.CastShadow = false
+		piece.Parent = model
+		add(piece)
+		if name == "Lens" then
+			lens = piece
+		elseif not root or piece.Size.Magnitude > root.Size.Magnitude then
+			root = piece
+		end
+	end
+	copy:Destroy()
+	return root, lens
+end
+
+-- Mão fechada no cabo (eixo -Z), com o cabo de raio ~`radius` - 0,035. Os dedos saem da palma (embaixo, lado
+-- de fora) e dão a volta pelo lado esquerdo até o topo; cada falange fica tangente ao cabo, o nó na junta.
+local function gripOffsets(radius: number): { [string]: CFrame }
+	local out: { [string]: CFrame } = {}
+	local function at(angle: number, z: number): CFrame
+		local a = math.rad(angle)
+		-- Cilindro no eixo X: gira para o X ficar tangente ao círculo no ângulo `a`.
+		return CFrame.new(radius * math.cos(a), radius * math.sin(a), z) * CFrame.Angles(0, 0, a + math.pi / 2)
+	end
+	out.Hand = CFrame.new(0.03, -radius - 0.005, 0.07)
+	for i = 1, 4 do
+		local z = -0.08 + (i - 1) * 0.08
+		local k = if i == 4 then 0.8 else 1
+		-- Nó em -65°, falange até -122°, ponta até -168° (o mindinho fecha menos).
+		out[`Knuckle{i}`] = at(-65, z) * CFrame.new(0, 0.012, 0)
+		out[`Finger{i}`] = at(-65 - 57 * k / 2 - 5, z)
+		out[`Tip{i}`] = at(-122 - 46 * k / 2 + (1 - k) * 20, z) * CFrame.new(0, -0.004, 0)
+	end
+	-- Polegar por cima, apontando para a frente, de leve para dentro.
+	out.Thumb = CFrame.new(0.05, radius - 0.01, -0.03)
+		* CFrame.Angles(0, math.rad(80), 0)
+		* CFrame.Angles(0, 0, math.rad(-8))
+	out.Thumb2 = CFrame.new(0.035, radius - 0.02, -0.12)
+		* CFrame.Angles(0, math.rad(95), 0)
+		* CFrame.Angles(0, 0, math.rad(-18))
+	return out
+end
+
+-- Lanterna + mão + manga (só o jogador vê; peças locais sob a câmera).
 local function buildViewmodel(): Viewmodel
 	local model = Instance.new("Model")
 	model.Name = "Viewmodel"
@@ -162,24 +277,47 @@ local function buildViewmodel(): Viewmodel
 		(part :: Part).Shape = Enum.PartType.Cylinder
 		return part
 	end
-	local skin = Color3.fromRGB(150, 118, 96)
-	local root = round("Body", Vector3.new(0.85, 0.17, 0.17), Color3.fromRGB(38, 40, 44), Enum.Material.Metal)
-	round("Head", Vector3.new(0.2, 0.27, 0.27), Color3.fromRGB(52, 54, 58), Enum.Material.Metal)
-	round("Bezel", Vector3.new(0.04, 0.3, 0.3), Color3.fromRGB(28, 28, 30), Enum.Material.Metal)
-	local lens = round("Lens", Vector3.new(0.03, 0.22, 0.22), Color3.fromRGB(90, 88, 80), Enum.Material.SmoothPlastic)
-	for i = 1, 3 do
-		round(`Grip{i}`, Vector3.new(0.035, 0.185, 0.185), Color3.fromRGB(24, 24, 26), Enum.Material.DiamondPlate)
+	local root, lens = periodFlashlight(model, function(piece: BasePart)
+		table.insert(parts, piece)
+	end)
+	if root and not lens then
+		-- Modelo de uma peça só: lente fina na boca, para acender em Neon.
+		lens = round("Lens", Vector3.new(0.02, 0.17, 0.17), Color3.fromRGB(90, 88, 80), Enum.Material.SmoothPlastic)
+		PERIOD_OFFSETS.Lens = CFrame.new(0, 0, -0.635) * CFrame.Angles(0, math.rad(90), 0)
 	end
-	round("Tail", Vector3.new(0.05, 0.19, 0.19), Color3.fromRGB(28, 28, 30), Enum.Material.Metal)
-	add("Switch", Vector3.new(0.06, 0.04, 0.12), Color3.fromRGB(150, 32, 28))
-	-- Mão segurando por baixo: palma, quatro dedos curvados pelo lado e o polegar por cima.
-	add("Hand", Vector3.new(0.2, 0.15, 0.3), skin)
+	if not root then
+		root = round("Body", Vector3.new(0.85, 0.17, 0.17), Color3.fromRGB(38, 40, 44), Enum.Material.Metal)
+		round("Head", Vector3.new(0.2, 0.27, 0.27), Color3.fromRGB(52, 54, 58), Enum.Material.Metal)
+		round("Bezel", Vector3.new(0.04, 0.3, 0.3), Color3.fromRGB(28, 28, 30), Enum.Material.Metal)
+		lens = round("Lens", Vector3.new(0.03, 0.22, 0.22), Color3.fromRGB(90, 88, 80), Enum.Material.SmoothPlastic)
+		for i = 1, 3 do
+			round(`Grip{i}`, Vector3.new(0.035, 0.185, 0.185), Color3.fromRGB(24, 24, 26), Enum.Material.DiamondPlate)
+		end
+		round("Tail", Vector3.new(0.05, 0.19, 0.19), Color3.fromRGB(28, 28, 30), Enum.Material.Metal)
+		add("Switch", Vector3.new(0.06, 0.04, 0.12), Color3.fromRGB(150, 32, 28))
+	end
+	-- Mão de luva de couro fechada em volta do cabo: palma por baixo, quatro dedos de duas falanges que dão a volta
+	-- pelo lado (nó aparente em cada um, mindinho menor) e o polegar de duas partes por cima.
+	-- 21/10: luva escura (o crítico leu "bolinhas empilhadas" na pele com pontas em bola); 20/10 (Animador): dedos
+	-- articulados no lugar da cápsula única curvada.
+	local glove = Color3.fromRGB(46, 34, 27)
+	local gloveLight = Color3.fromRGB(52, 39, 31)
+	add("Hand", Vector3.new(0.2, 0.15, 0.3), glove, Enum.Material.Fabric)
 	for i = 1, 4 do
-		round(`Finger{i}`, Vector3.new(0.2, 0.072, 0.072), skin)
-		local tip = add(`Tip{i}`, Vector3.new(0.075, 0.075, 0.075), skin);
-		(tip :: Part).Shape = Enum.PartType.Ball
+		local k = if i == 4 then 0.8 else 1
+		round(`Finger{i}`, Vector3.new(0.115 * k, 0.07 * k, 0.07 * k), glove, Enum.Material.Fabric)
+		round(`Tip{i}`, Vector3.new(0.09 * k, 0.064 * k, 0.064 * k), glove, Enum.Material.Fabric)
+		local knuckle = add(`Knuckle{i}`, Vector3.new(0.078, 0.078, 0.078) * k, gloveLight, Enum.Material.Fabric);
+		(knuckle :: Part).Shape = Enum.PartType.Ball
 	end
-	round("Thumb", Vector3.new(0.18, 0.075, 0.075), Color3.fromRGB(140, 110, 90))
+	round("Thumb", Vector3.new(0.11, 0.074, 0.074), gloveLight, Enum.Material.Fabric)
+	round("Thumb2", Vector3.new(0.085, 0.068, 0.068), gloveLight, Enum.Material.Fabric)
+	if next(PERIOD_OFFSETS) then
+		-- Lanterna de época é mais grossa: a mão abre para o cabo dela.
+		for name, offset in gripOffsets(0.15) do
+			PERIOD_OFFSETS[name] = offset
+		end
+	end
 	round("Sleeve", Vector3.new(0.7, 0.34, 0.34), Color3.fromRGB(46, 58, 54), Enum.Material.Fabric)
 	round("Cuff", Vector3.new(0.09, 0.37, 0.37), Color3.fromRGB(34, 44, 40), Enum.Material.Fabric)
 	local leds: { BasePart } = {}
@@ -188,6 +326,15 @@ local function buildViewmodel(): Viewmodel
 		local led =
 			add(`Led{i}`, Vector3.new(0.03, 0.025, 0.04), Color3.fromRGB(20, 20, 20), Enum.Material.SmoothPlastic)
 		table.insert(leds, led)
+		if next(PERIOD_OFFSETS) then
+			-- Lanterna de época (mais grossa): visores pequenos, rente ao topo do latão, perto do polegar.
+			led.Size = Vector3.new(0.02, 0.012, 0.026)
+			PERIOD_OFFSETS[`Led{i}`] = CFrame.new(0, 0.128, 0.0 + i * 0.04)
+		end
+	end
+	if next(PERIOD_OFFSETS) then
+		dialLift = 0.035
+		PERIOD_OFFSETS.GuideDial = CFrame.new(0, 0.092 + dialLift, -0.3) * CFrame.Angles(0, 0, math.rad(90))
 	end
 	-- Ponteiro em cima da lanterna (única orientação do jogo): haste + ponta, gira para o objetivo.
 	local dial = add("GuideDial", Vector3.new(0.012, 0.15, 0.15), Color3.fromRGB(26, 24, 22), Enum.Material.Metal);
@@ -195,7 +342,7 @@ local function buildViewmodel(): Viewmodel
 	add("GuideNeedle", Vector3.new(0.022, 0.012, 0.1), Color3.fromRGB(200, 140, 60), Enum.Material.Neon)
 	add("GuideTip", Vector3.new(0.04, 0.012, 0.04), Color3.fromRGB(200, 140, 60), Enum.Material.Neon)
 	model.PrimaryPart = root
-	return { model = model, root = root, lens = lens, leds = leds, parts = parts }
+	return { model = model, root = root :: BasePart, lens = lens :: BasePart, leds = leds, parts = parts }
 end
 
 -- Posições locais (em relação ao corpo da lanterna, -Z = frente).
@@ -210,16 +357,6 @@ local OFFSETS: { [string]: CFrame } = {
 	Grip3 = CFrame.new(0, 0, 0.36) * ALONG,
 	Tail = CFrame.new(0, 0, 0.43) * ALONG,
 	Switch = CFrame.new(0, 0.1, -0.12),
-	Hand = CFrame.new(0.03, -0.12, 0.07),
-	Finger1 = CFrame.new(-0.02, -0.06, -0.08) * CFrame.Angles(0, 0, math.rad(150)),
-	Finger2 = CFrame.new(-0.02, -0.06, 0) * CFrame.Angles(0, 0, math.rad(150)),
-	Finger3 = CFrame.new(-0.02, -0.06, 0.08) * CFrame.Angles(0, 0, math.rad(150)),
-	Finger4 = CFrame.new(-0.02, -0.06, 0.16) * CFrame.Angles(0, 0, math.rad(150)),
-	Tip1 = CFrame.new(-0.11, -0.005, -0.08),
-	Tip2 = CFrame.new(-0.11, -0.005, 0),
-	Tip3 = CFrame.new(-0.11, -0.005, 0.08),
-	Tip4 = CFrame.new(-0.11, -0.005, 0.16),
-	Thumb = CFrame.new(0.06, 0.07, -0.04) * CFrame.Angles(0, math.rad(80), 0) * CFrame.Angles(0, 0, math.rad(-12)),
 	Sleeve = CFrame.new(0.05, -0.2, 0.6) * CFrame.Angles(math.rad(-12), 0, 0) * ALONG,
 	Cuff = CFrame.new(0.05, -0.18, 0.27) * CFrame.Angles(math.rad(-12), 0, 0) * ALONG,
 	Led1 = CFrame.new(0, 0.095, 0.06),
@@ -228,6 +365,10 @@ local OFFSETS: { [string]: CFrame } = {
 	Led4 = CFrame.new(0, 0.095, 0.24),
 	GuideDial = CFrame.new(0, 0.092, -0.3) * CFrame.Angles(0, 0, math.rad(90)),
 }
+
+for name, offset in gripOffsets(0.12) do
+	OFFSETS[name] = offset
+end
 
 -- Objetivo atual (CampaignController); nil = ponteiro escondido.
 local guideTarget: Vector3? = nil
@@ -249,12 +390,12 @@ local function aimGuide(hand: CFrame, dt: number)
 	if not target then
 		return
 	end
-	local pivot = hand * CFrame.new(0, 0.105, -0.3)
+	local pivot = hand * CFrame.new(0, 0.105 + dialLift, -0.3)
 	local localDir = pivot:PointToObjectSpace(target)
 	local yaw = math.atan2(-localDir.X, -localDir.Z)
 	local delta = (yaw - guideYaw + math.pi) % (2 * math.pi) - math.pi
 	guideYaw += delta * (1 - math.exp(-6 * dt))
-	local needle = CFrame.new(0, 0.105, -0.3) * CFrame.Angles(0, guideYaw, 0)
+	local needle = CFrame.new(0, 0.105 + dialLift, -0.3) * CFrame.Angles(0, guideYaw, 0)
 	OFFSETS.GuideNeedle = needle * CFrame.new(0, 0, -0.01)
 	OFFSETS.GuideTip = needle * CFrame.new(0, 0, -0.06) * CFrame.Angles(0, math.rad(45), 0)
 end
@@ -265,7 +406,7 @@ local function placeViewmodel(base: CFrame)
 		return
 	end
 	for _, part in vm.parts do
-		part.CFrame = base * (OFFSETS[part.Name] or CFrame.identity)
+		part.CFrame = base * (PERIOD_OFFSETS[part.Name] or OFFSETS[part.Name] or CFrame.identity)
 	end
 end
 
@@ -282,12 +423,13 @@ local function updateLeds(now: number)
 		local on = i <= lit and not (lit == 1 and blinkOff)
 		if not on then
 			led.Color = Color3.fromRGB(22, 22, 22)
+		-- Tons de lâmpada de época (o verde-ciano lia como brinquedo): âmbar claro, âmbar, vermelho.
 		elseif lit >= 3 then
-			led.Color = Color3.fromRGB(70, 255, 110)
+			led.Color = Color3.fromRGB(240, 200, 130)
 		elseif lit == 2 then
-			led.Color = Color3.fromRGB(255, 190, 60)
+			led.Color = Color3.fromRGB(235, 150, 60)
 		else
-			led.Color = Color3.fromRGB(255, 60, 50)
+			led.Color = Color3.fromRGB(220, 60, 45)
 		end
 	end
 end
@@ -466,13 +608,13 @@ function FlashlightController.applySkin(body: Color3, head: Color3, beam: Color3
 		headPart.Material = if material == Enum.Material.Neon then Enum.Material.Neon else Enum.Material.Metal
 	end
 	if spot then
-		spot.Color = beam
+		spot.Color = incandescent(beam)
 	end
 	for _, halo in halos do
-		halo.light.Color = beam
+		halo.light.Color = incandescent(beam)
 	end
 	if spill then
-		spill.Color = beam
+		spill.Color = incandescent(beam)
 	end
 	applyVisible()
 end
@@ -599,7 +741,7 @@ function FlashlightController.Init()
 	light.Angle = LightingProfile.Flashlight.angle
 	light.Range = LightingProfile.Flashlight.range
 	light.Brightness = BASE_BRIGHTNESS
-	light.Color = WARM
+	light.Color = incandescent(WARM)
 	light.Shadows = true
 	light.Parent = part
 
@@ -612,7 +754,7 @@ function FlashlightController.Init()
 		cone.Angle = ring.angle
 		cone.Range = LightingProfile.Flashlight.range * ring.reach
 		cone.Brightness = BASE_BRIGHTNESS * ring.share
-		cone.Color = WARM
+		cone.Color = incandescent(WARM)
 		cone.Shadows = false
 		cone.Parent = part
 		table.insert(halos, { light = cone, share = ring.share, reach = ring.reach })
@@ -621,7 +763,7 @@ function FlashlightController.Init()
 	local glow = Instance.new("PointLight")
 	glow.Range = LightingProfile.Flashlight.spillRange
 	glow.Brightness = LightingProfile.Flashlight.spill
-	glow.Color = WARM
+	glow.Color = incandescent(WARM)
 	glow.Shadows = false
 	glow.Parent = part
 
@@ -769,7 +911,9 @@ function FlashlightController.Start()
 		local bob = math.sin((motion.steps + motion.stride) * math.pi) * math.min(motion.speed / 16, 1)
 		local hand = CFrame.new(camera.CFrame.Position)
 			* rotation
-			* CFrame.new(0.42 + bob * 0.02, -0.42 + math.abs(bob) * -0.025, -0.95)
+			-- 21/10: mais baixa, mais à direita e um pouco mais longe (o crítico achou a lanterna dominante na tela):
+			-- metade inferior da mão sai do quadro.
+			* CFrame.new(0.47 + bob * 0.02, -0.52 + math.abs(bob) * -0.025, -1.0)
 		-- Mãos tremem com o medo (antes e mais que a câmera, que só treme no pânico).
 		local fright = math.clamp((fearLevel - 0.35) / 0.65, 0, 1)
 		if fright > 0 and SettingsController.get("shake") then
@@ -846,7 +990,8 @@ function FlashlightController.Start()
 				part.CFrame.LookVector * LightingProfile.FlashlightNear.full,
 				nearParams
 			)
-			nearTarget = if hit then LightingProfile.nearDim(hit.Distance) else 1
+			nearTarget = (if hit then LightingProfile.nearDim(hit.Distance) else 1)
+				* LightingProfile.aimDim(part.CFrame.LookVector.Y)
 		end
 		nearFactor += (nearTarget - nearFactor) * math.min(1, dt * 10)
 		local brightness = BASE_BRIGHTNESS * BatteryModel.brightness(charge()) * flickerFactor * nearFactor

@@ -14,7 +14,8 @@ local Config = {
 		Seed = nil :: number?,
 		minPlayers = 1,
 		maxPlayers = 6,
-		downedSeconds = 45,
+		-- Preso (derrubado ou virou móvel) com colegas: depois disto endurece e vira espectador até o próximo capítulo.
+		downedSeconds = 60,
 		relayWindow = 12,
 		LobbySeconds = 5,
 		StageIntroSeconds = 3,

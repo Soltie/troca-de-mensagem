@@ -23,9 +23,8 @@ local CameraController = require("./CameraController")
 local HEIGHT = Config.Creature.Height
 local V = Config.Visual
 
--- Velocidade (studs/s) que os pés percorrem em 1x em cada clipe (medida no bake).
-local WALK_FEET_SPEED = 1.55
-local RUN_FEET_SPEED = 16.5
+-- Acima disto (studs/s) ele corre mesmo fora da perseguição (caçada com a luz apagada).
+local RUN_FROM_SPEED = 12
 
 local rig: Rig.Rig? = nil
 local tung: TungTungRig.TungRig? = nil
@@ -37,20 +36,25 @@ local animation = "Idle"
 local displayBase: CFrame? = nil
 local lastBasePosition: Vector3? = nil
 local smoothSpeed = 0
-local lastCycle = 0
 local moving = false
 local mode = "Dormant"
 local headYaw = 0
 local chaseLoop: Sound? = nil
 local nextGrowlAt = 0
 -- Bastão batendo no chão e rangidos do piso enquanto anda (para dar para saber onde ele está).
-local nextTapAt = 0
 local nextCreakAt = 0
 local phase: GameState.Phase = "Loading"
 local rng = Random.new()
 local reaction = ""
 local reactionUntil = 0
 local lastMiss: any = nil
+-- Próxima ação de procura sorteada (espiar debaixo dos móveis ou bater o bastão) quando ele para na busca.
+local nextSearchActAt = 0
+-- Arrasto pelo pé até a máquina (DragSerial/ThrowSerial na Root, servidor do Desenvolvedor).
+local lastDrag: any = nil
+local lastThrow: any = nil
+local lastWall: any = nil
+local draggingUntil = 0
 local lastWindup: any = nil
 
 local function serverRoot(): BasePart?
@@ -98,6 +102,44 @@ local function animationFor(currentMode: string): (string, number)
 	return "Idle", V.PoseRate.Idle
 end
 
+-- Nuvem de serragem (só visual, no cliente): um estouro de lascas e pó marrom que cai devagar.
+local function sawdust(position: Vector3, amount: number)
+	local part = Instance.new("Part")
+	part.Anchored = true
+	part.CanCollide = false
+	part.CanQuery = false
+	part.CanTouch = false
+	part.Transparency = 1
+	part.Size = Vector3.new(3, 5, 3)
+	part.CFrame = CFrame.new(position)
+	local dust = Instance.new("ParticleEmitter")
+	dust.Color = ColorSequence.new(Color3.fromRGB(196, 150, 98), Color3.fromRGB(120, 84, 50))
+	dust.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.25), NumberSequenceKeypoint.new(1, 0.9) })
+	dust.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.1), NumberSequenceKeypoint.new(1, 1) })
+	dust.Lifetime = NumberRange.new(1.2, 2.4)
+	dust.Speed = NumberRange.new(3, 9)
+	dust.SpreadAngle = Vector2.new(180, 180)
+	dust.Acceleration = Vector3.new(0, -6, 0)
+	dust.Drag = 3
+	dust.Rate = 0
+	dust.Parent = part
+	part.Parent = workspace
+	dust:Emit(amount)
+	task.delay(3, function()
+		part:Destroy()
+	end)
+end
+
+-- Ação inteira (corpo todo) do Tung Tung: segura a troca de clipe até o fim dela.
+local function perform(t: TungTungRig.TungRig, name: TungTungRig.ClipName, speed: number, fade: number?)
+	local again = TungTungRig.playing(t) == name
+	TungTungRig.play(t, name, fade or 0.12, speed)
+	if again then
+		TungTungRig.restart(t)
+	end
+	reactionUntil = os.clock() + TungTungRig.duration(name) / speed
+end
+
 local function setShown(value: boolean)
 	if shown == value then
 		return
@@ -120,13 +162,16 @@ local function onModeChanged(previous: string, current: string)
 		reactionUntil = 0
 	end
 	if tung then
-		-- No Tung Tung as reações viram golpes do bastão (perseguição começa com uma pancada no ar).
+		-- Perseguição começa com uma pancada no ar (golpe aprovado); a captura é o agarrão com as duas mãos
+		-- depois do aviso (WindupSerial). Ouviu barulho: para a cabeça e escuta sem parar de andar.
 		if current == "Capture" then
-			TungTungRig.play(tung, "slash", 0.08, 1.15)
-			reactionUntil = os.clock() + 1.0
+			perform(tung, "grab", 1, 0.15)
 		elseif current == "Chase" and previous ~= "Chase" then
-			TungTungRig.play(tung, "slash", 0.1, 1.6)
-			reactionUntil = os.clock() + 0.7
+			perform(tung, "slash", 1.6, 0.2)
+		elseif current == "Investigate" then
+			TungTungRig.overlay(tung, "alert", 1)
+		elseif current == "Search" then
+			nextSearchActAt = os.clock() + rng:NextNumber(1.2, 2.2)
 		end
 	end
 	if current == "Chase" and previous ~= "Chase" then
@@ -250,6 +295,17 @@ local function lookYawAt(base: CFrame, camera: Camera?): number
 	return 0
 end
 
+-- TUM: o bastão bate no chão (ou num móvel). Grave, chega longe, treme a câmera de quem está perto.
+local function tum(root: BasePart, camera: Camera?)
+	carry(AudioController.playAt("StepWood", emitter(), 2.2, rng:NextNumber(0.3, 0.34)), 20, 130)
+	carry(AudioController.playAt("CreatureStep", emitter(), 1.4, 0.36), 16, 110)
+	local distance = if camera then (root.Position - camera.CFrame.Position).Magnitude else math.huge
+	if distance < 26 then
+		local k = (26 - distance) / 26
+		CameraController.addTrauma(0.3 * k * k)
+	end
+end
+
 -- Tung Tung: segue a Root a cada quadro, escolhe o clipe pela velocidade/estado e emite passos no ciclo.
 local function updateTung(t: TungTungRig.TungRig, root: BasePart, dt: number, camera: Camera?)
 	local base = root.CFrame * CFrame.new(0, -HEIGHT / 2, 0)
@@ -263,32 +319,57 @@ local function updateTung(t: TungTungRig.TungRig, root: BasePart, dt: number, ca
 	moving = smoothSpeed > 1.2
 	TungTungRig.place(t, base)
 
-	local reacting = os.clock() < reactionUntil
+	-- Três posturas que dá para ler de longe pela silhueta: patrulha (alto, bastão pendurado), procura (bastão
+	-- no ombro, cabeça varrendo) e perseguição (baixo, bastão erguido atrás da cabeça). Andar e correr tocam na
+	-- velocidade da Root para o pé plantado não escorregar.
+	local now = os.clock()
+	local reacting = now < reactionUntil
 	if not reacting then
-		if mode == "Capture" then
-			TungTungRig.play(t, "slash", 0.08, 1.15)
-		elseif mode == "Search" and not moving then
-			TungTungRig.play(t, "strafe", 0.25, 0.55)
-		elseif smoothSpeed > 5 then
-			TungTungRig.play(t, "run", 0.22, math.clamp(smoothSpeed / RUN_FEET_SPEED, 0.55, 1.35))
+		local running = moving and (mode == "Chase" or smoothSpeed > RUN_FROM_SPEED)
+		if now < draggingUntil then
+			-- Arrastando o jogador pelo pé: curvado, puxando com a mão esquerda, na velocidade da Root.
+			TungTungRig.play(t, "drag", 0.2, math.clamp(smoothSpeed / TungTungRig.feetSpeed("drag"), 0.5, 1.6))
+		elseif mode == "Capture" then
+			-- Fica na última pose do agarrão.
+			TungTungRig.play(t, "grab", 0.2)
+		elseif running then
+			TungTungRig.play(t, "run", 0.25, math.clamp(smoothSpeed / TungTungRig.feetSpeed("run"), 0.6, 1.5))
+		elseif mode == "Search" and moving then
+			local rate = math.clamp(smoothSpeed / TungTungRig.feetSpeed("searchwalk"), 0.6, 1.8)
+			TungTungRig.play(t, "searchwalk", 0.25, rate)
 		elseif moving then
-			TungTungRig.play(t, "walk", 0.25, math.clamp(smoothSpeed / WALK_FEET_SPEED, 0.8, 3.2))
+			TungTungRig.play(t, "walk", 0.25, math.clamp(smoothSpeed / TungTungRig.feetSpeed("walk"), 0.6, 1.8))
+		elseif mode == "Search" then
+			if now >= nextSearchActAt then
+				-- Procura de verdade: espia debaixo dos móveis ou bate o bastão neles (como em Hello Neighbor).
+				nextSearchActAt = now + rng:NextNumber(3.5, 6)
+				perform(t, if rng:NextNumber() < 0.5 then "peek" else "bash", 1, 0.25)
+			else
+				TungTungRig.play(t, "search", 0.3)
+			end
+		elseif mode == "Chase" then
+			-- Parado na perseguição (perdeu de vista, recuperando o golpe): para e escuta, respirando.
+			TungTungRig.play(t, "listen", 0.25)
 		else
-			TungTungRig.play(t, "idle", 0.35)
+			TungTungRig.play(t, "stand", 0.35)
 		end
 	end
 
 	headYaw += (lookYawAt(base, camera) - headYaw) * math.min(1, dt * 10)
 	TungTungRig.step(t, dt, headYaw)
 
-	-- Passos: dois por ciclo na corrida/lateral, quatro no andar arrastado.
-	local playing = TungTungRig.playing(t)
-	local steps = if playing == "walk" then 4 elseif playing == "run" or playing == "strafe" then 2 else 0
-	local cycle = TungTungRig.cycle(t)
-	if steps > 0 and math.floor(cycle * steps) ~= math.floor(lastCycle * steps) then
-		footstep(root, camera)
+	-- Som no quadro exato da animação: passo quando o pé toca o chão, TUM quando o bastão bate.
+	for _, marker in TungTungRig.markers(t) do
+		if marker == "step" then
+			footstep(root, camera)
+		elseif marker == "tap" then
+			-- Bastão no chão: TUM (parado, batidas) ou a ponta raspando a cada passo do lado manco (patrulha).
+			tum(root, camera)
+		elseif marker == "throw" then
+			-- O corpo some na boca da máquina neste quadro (o servidor esconde o jogador em 0,55 s).
+			carry(AudioController.playAt("WoodSplinter", emitter(), 1.6, 0.8), 14, 90)
+		end
 	end
-	lastCycle = cycle
 	t.eyeLight.Brightness = if mode == "Chase" then 1.8 else 1.1
 end
 
@@ -362,7 +443,7 @@ local function update(dt: number)
 		do
 			reaction, reactionUntil = "Lunge", os.clock() + 0.9
 			if tung then
-				TungTungRig.play(tung, "slash", 0.05, 1.5)
+				perform(tung, "slash", 1.5, 0.15)
 			end
 			carry(AudioController.playAt("SwingMiss", emitter(), 1.8), 10, 90)
 			if root:GetAttribute("MissTarget") == Players.LocalPlayer.UserId then
@@ -381,12 +462,49 @@ local function update(dt: number)
 		lastWindup = windup
 		reaction, reactionUntil = "Lunge", os.clock() + Config.Creature.CaptureWindup
 		if tung then
-			TungTungRig.play(tung, "slash", 0.05, 0.8)
+			-- Aviso no corpo: trava para trás e abre os braços em "Y" com o bastão no alto (dura o windup todo).
+			perform(tung, "warn", TungTungRig.duration("warn") / Config.Creature.CaptureWindup, 0.15)
 		end
 		carry(AudioController.playAt("Growl", emitter(), 1.8, 0.7), 16, 90)
 		if root:GetAttribute("WindupTarget") == Players.LocalPlayer.UserId then
 			CameraController.addTrauma(0.25)
 		end
+	end
+
+	-- Arrasto e arremesso na máquina (só visual; o servidor move a Root e esconde o jogador no impacto).
+	local drag = tonumber(root:GetAttribute("DragSerial")) or 0
+	local throw = tonumber(root:GetAttribute("ThrowSerial")) or 0
+	if lastDrag == nil then
+		lastDrag, lastThrow = drag, throw
+	end
+	if drag ~= lastDrag then
+		lastDrag = drag
+		draggingUntil = os.clock() + 6
+		reactionUntil = 0
+	end
+	if throw ~= lastThrow then
+		lastThrow = throw
+		draggingUntil = 0
+		if tung then
+			perform(tung, "throw", 1, 0.2)
+		end
+		-- A máquina "come": ronco grave que chega longe, como se ela acordasse lá embaixo.
+		task.delay(0.55, function()
+			carry(AudioController.playAt("Machinery", emitter(), 3, 0.45), 30, 220)
+		end)
+	end
+	-- Capturas seguintes: arrastado 1,4 s e some dentro da parede numa nuvem de serragem.
+	local wall = tonumber(root:GetAttribute("WallSerial")) or 0
+	if lastWall == nil then
+		lastWall = wall
+	end
+	if wall ~= lastWall then
+		lastWall = wall
+		draggingUntil = os.clock() + 1.4
+		task.delay(1.4, function()
+			sawdust(root.Position, 60)
+			carry(AudioController.playAt("WallBurst", emitter(), 1.4, 0.9), 14, 100)
+		end)
 	end
 
 	if tung then
@@ -406,11 +524,6 @@ local function update(dt: number)
 	local now = os.clock()
 	local awake = mode ~= "Dormant" and (phase == "Playing" or phase == "Intro")
 	if tung and awake and moving and mode ~= "Capture" then
-		-- Bastão arrastado/batendo no chão no ritmo da caminhada: "toc" grave que denuncia a direção.
-		if now >= nextTapAt then
-			nextTapAt = now + (if mode == "Chase" then rng:NextNumber(0.9, 1.4) else rng:NextNumber(2.2, 3.8))
-			carry(AudioController.playAt("StepWood", emitter(), 1.8, rng:NextNumber(0.36, 0.44)), 18, 120)
-		end
 		-- Assoalho rangendo sob o peso dele.
 		if now >= nextCreakAt then
 			nextCreakAt = now + rng:NextNumber(3, 6)
@@ -420,7 +533,12 @@ local function update(dt: number)
 	if now >= nextGrowlAt and mode ~= "Chase" and mode ~= "Capture" then
 		nextGrowlAt = now + rng:NextNumber(5, 9)
 		if tung and rng:NextNumber() < 0.6 then
-			carry(AudioController.playAt("DoorBang", emitter(), 1, 0.72), 18, 140)
+			if not moving and now >= reactionUntil and mode ~= "Search" then
+				-- Parado: as três batidas no chão (TUM TUM TUM), cada som no quadro do impacto.
+				perform(tung, "knock3", 1, 0.2)
+			else
+				carry(AudioController.playAt("DoorBang", emitter(), 1, 0.72), 18, 140)
+			end
 			local distance = if camera then (root.Position - camera.CFrame.Position).Magnitude else math.huge
 			if distance < 60 then
 				-- Legenda no HUD (CampaignController): perto o bastante para ouvir.
@@ -444,9 +562,11 @@ function CreatureVisualController.react(name: string)
 		reaction, reactionUntil = name, os.clock() + 0.45
 		if tung then
 			-- Pancada do bastão na porta.
-			TungTungRig.play(tung, "slash", 0.08, 1.4)
-			reactionUntil = os.clock() + 0.85
+			perform(tung, "slash", 1.4, 0.2)
 		end
+	elseif tung and (name == "Stunned" or name == "Knock3") then
+		-- Momentos da história (escorregou da van, caiu da ponte, as batidas do final).
+		perform(tung, if name == "Stunned" then "stunned" else "knock3", 1, 0.1)
 	end
 end
 

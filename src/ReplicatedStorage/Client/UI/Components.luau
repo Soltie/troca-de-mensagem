@@ -163,7 +163,7 @@ local function paint(button: TextButton, hovered: boolean?)
 	end
 	local icon = button:FindFirstChild("IconSlot")
 	if icon then
-		local holder = icon:FindFirstChildWhichIsA("Frame")
+		local holder = icon:FindFirstChildWhichIsA("ImageLabel") or icon:FindFirstChildWhichIsA("Frame")
 		if holder then
 			Icons.tint(holder, palette.text)
 		end
@@ -234,7 +234,10 @@ function Components.icon(parent: Instance, kind: string, size: number, color: Co
 			BackgroundTransparency = 1,
 		}, props)
 	) :: Frame
-	Icons.pixel(slot, kind, color)
+	-- Imagem do Artista 3D quando existe (IconAssets); senão o desenho em pixels.
+	if not Icons.image(slot, kind, color) then
+		Icons.pixel(slot, kind, color)
+	end
 	slot.Parent = parent
 	return slot
 end

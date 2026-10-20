@@ -218,7 +218,38 @@ local function animate(other: Player, dt: number)
 		end
 	end
 	local rootBase = rig.motors.Root and rig.bases[rig.motors.Root]
-	if down and other:GetAttribute("Crawling") == true then
+	local dragged = other:GetAttribute("BeingDragged") == true
+	local thrown = other:GetAttribute("Thrown") == true
+	if dragged or thrown then
+		-- Arrastado pelo pé até a máquina (o servidor deita o corpo de costas atrás do Tung): a perna esquerda vai
+		-- esticada para cima, presa na mão dele; a outra perna e os braços vão soltos, arrastando e quicando nas
+		-- tábuas. Arremessado: encolhe e se debate no ar. Só visual, nada de física.
+		rig.crawl += dt * (if thrown then 9 else 4.3)
+		local bump = math.sin(rig.crawl)
+		local jolt = math.sin(rig.crawl * 2.3 + 1.1)
+		if thrown then
+			joint(rig, "Waist", CFrame.Angles(math.rad(-30 + 12 * bump), 0, 0))
+			joint(rig, "Neck", CFrame.Angles(math.rad(-25), math.rad(15 * jolt), 0))
+			joint(rig, "LeftHip", CFrame.Angles(math.rad(60 + 20 * bump), 0, 0))
+			joint(rig, "RightHip", CFrame.Angles(math.rad(70 - 20 * bump), 0, 0))
+			joint(rig, "LeftKnee", CFrame.Angles(math.rad(-70), 0, 0))
+			joint(rig, "RightKnee", CFrame.Angles(math.rad(-80), 0, 0))
+			joint(rig, "LeftShoulder", CFrame.Angles(math.rad(120 + 40 * jolt), 0, math.rad(30)))
+			joint(rig, "RightShoulder", CFrame.Angles(math.rad(120 - 40 * jolt), 0, math.rad(-30)))
+		else
+			joint(rig, "Waist", CFrame.Angles(math.rad(4 * bump), math.rad(5 * jolt), 0))
+			joint(rig, "Neck", CFrame.Angles(math.rad(-12 + 10 * jolt), math.rad(18 * bump), 0))
+			joint(rig, "LeftHip", CFrame.Angles(math.rad(75), 0, math.rad(-6)))
+			joint(rig, "LeftKnee", CFrame.Angles(math.rad(-4), 0, 0))
+			joint(rig, "LeftAnkle", CFrame.Angles(math.rad(-20), 0, 0))
+			joint(rig, "RightHip", CFrame.Angles(math.rad(10 + 8 * jolt), 0, math.rad(12)))
+			joint(rig, "RightKnee", CFrame.Angles(math.rad(-35 - 10 * bump), 0, 0))
+			joint(rig, "LeftShoulder", CFrame.Angles(math.rad(165 + 8 * bump), 0, math.rad(18 + 6 * jolt)))
+			joint(rig, "RightShoulder", CFrame.Angles(math.rad(160 - 8 * bump), 0, math.rad(-22 - 6 * jolt)))
+			joint(rig, "LeftElbow", CFrame.Angles(math.rad(-15 - 10 * math.max(0, jolt)), 0, 0))
+			joint(rig, "RightElbow", CFrame.Angles(math.rad(-20 - 10 * math.max(0, -jolt)), 0, 0))
+		end
+	elseif down and other:GetAttribute("Crawling") == true then
 		-- Rastejando de bruços: corpo deitado rente ao chão, braços puxando à frente e pernas empurrando, em ciclo
 		-- com a velocidade (parado, só respira).
 		local speed = Vector3.new(root.AssemblyLinearVelocity.X, 0, root.AssemblyLinearVelocity.Z).Magnitude

@@ -99,11 +99,12 @@ function Materials.apply(part: BasePart, finish: Finish)
 	part.Color = finish.color
 end
 
--- Cozinha e banheiro: ladrilho xadrez de mármore gasto (Poly Haven floor_tiles_06).
+-- Banheiro: ladrilho xadrez de mármore gasto (Poly Haven floor_tiles_06). A cozinha voltou a ser tábua: é lá que
+-- ficam as tábuas soltas da Tábua Oca (cap. 1), e tábua solta em cima de azulejo não faz sentido.
 local TILES: Finish = { variant = "MansionTiles", material = Enum.Material.Slate, color = rgb(214, 206, 196) }
 local TILED: { Vector3 } = {}
 for _, room in House.Rooms do
-	if room.id == "Kitchen" or room.id == "Bath" then
+	if room.id == "Bath" then
 		table.insert(TILED, Vector3.new(room.x, room.y, room.z))
 	end
 end

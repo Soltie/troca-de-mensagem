@@ -10,23 +10,25 @@ local Plan = require("./HousePlan")
 local Generator = require("./CampaignGenerator")
 local TaskProps = require("../World/HouseTaskProps")
 local Stash = require("./HiddenStash")
+local ForestMaps = require("@game/ReplicatedStorage/Shared/Game/ForestMaps")
 local Runaway = require("./RunawayStash")
 local Progress = require("@game/ReplicatedStorage/Shared/Game/HouseProgression")
 local WormTunnel = require("@game/ReplicatedStorage/Shared/Game/WormTunnel")
 local PuzzleStyles = require("@game/ReplicatedStorage/Shared/Game/PuzzleStyles")
 local PuzzleProps = require("../World/PuzzleProps")
 local Mini = require("./HouseMiniPuzzles")
+local SahurMelody = require("@game/ReplicatedStorage/Shared/Game/SahurMelody")
 local Activities = {}
 local repairSteps = { "ISOLAR O CIRCUITO", "ENCAIXAR OS FUSÍVEIS", "TESTAR A ENERGIA" }
 local gold = Color3.fromRGB(219, 171, 80)
 local symbols = { "LUA", "OLHO", "CHAMA", "PORTA" }
--- No escuro, a Lia (o piano) toca sozinha o começo da música: a cada 9 s, se alguém está perto com a lanterna
--- apagada, as duas primeiras teclas da ordem acendem e soam. O painel mostra a música inteira; a Lia confirma.
-local function liaEcho(model: Instance, keys: { BasePart }, order: { number })
+-- Dueto da Lia: no escuro, a Lia (o piano) toca sozinha a primeira frase da música do sahur e espera a resposta.
+-- A cada 9 s, se alguém está perto com a lanterna apagada, as teclas da primeira frase acendem e soam.
+local function liaEcho(model: Instance, keys: { BasePart })
 	task.spawn(function()
 		while model.Parent do
 			task.wait(9)
-			local first = keys[order[1]]
+			local first = keys[1]
 			if not first or first:GetAttribute(Tags.Attr.InteractEnabled) ~= true then
 				continue
 			end
@@ -46,9 +48,9 @@ local function liaEcho(model: Instance, keys: { BasePart }, order: { number })
 			if not listening then
 				continue
 			end
-			for step = 1, 2 do
-				local key = keys[order[step]]
-				local sound = Build.sound(key, "LiaNote", Audio.PianoKey.id, 1.2, PuzzleStyles.PIANO_PITCH[order[step]])
+			for _, note in SahurMelody.FIRST do
+				local key = keys[note]
+				local sound = Build.sound(key, "LiaNote", Audio.PianoKey.id, 1.2, PuzzleStyles.PIANO_PITCH[note])
 				sound:Play()
 				Debris:AddItem(sound, 3)
 				local material = key.Material
@@ -123,10 +125,11 @@ local function blocked(
 	floorY: number,
 	avoid: { Vector3 }?,
 	reach: number,
-	ignore: Instance?
+	ignore: Instance?,
+	gap: number?
 ): boolean
 	for _, other in (avoid or {}) :: { Vector3 } do
-		if (other - at).Magnitude < 4.6 then
+		if (other - at).Magnitude < (gap or 4.6) then
 			return true
 		end
 	end
@@ -180,7 +183,8 @@ end
 
 -- Móvel de busca encostado numa parede do cômodo, de frente para o meio dele. A parede é achada com raios
 -- saindo do centro; ao longo dela tenta alguns pontos livres de móveis.
-local function wallSpot(world: Instance, center: Vector3, avoid: { Vector3 }?): (Vector3, Vector3?)
+-- `gap`: distância mínima entre móveis (a Caixinha da Lia espalha os seis para nenhum ficar colado no outro).
+local function wallSpot(world: Instance, center: Vector3, avoid: { Vector3 }?, gap: number?): (Vector3, Vector3?)
 	local architecture = world:FindFirstChild("Architecture")
 	if not architecture then
 		return clearSpot(world, center, avoid), nil
@@ -201,9 +205,9 @@ local function wallSpot(world: Instance, center: Vector3, avoid: { Vector3 }?): 
 		end
 		local along = Vector3.new(side.Z, 0, -side.X)
 		local wall = center + side * ((hit.Position - origin).Magnitude - 2)
-		for _, shift in { 0, 3, -3, 6, -6, 9, -9, 12, -12 } do
+		for _, shift in { 0, 3, -3, 6, -6, 9, -9, 12, -12, 14.5, -14.5 } do
 			local at = wall + along * shift
-			if not blocked(nearby, at, center.Y, avoid, 1.4, hit.Instance) and not nearHole(at) then
+			if not blocked(nearby, at, center.Y, avoid, 1.4, hit.Instance, gap) and not nearHole(at) then
 				return at, -side
 			end
 		end
@@ -248,6 +252,80 @@ function Activities.build(parent: Instance, plan: Generator.Plan, distance: numb
 			gold,
 			{ collide = false, query = false, transparency = 1 }
 		)
+		-- Cap. 3 (banco v2): Sombra do Pêndulo (relógio do sótão), Retrato que Olha (fotografia) e Relógio Pintado
+		-- (escritório).
+		if plan.stage == 3 and (spec.item == "clock" or spec.item == "photo" or spec.kind == "puzzle") then
+			local made
+			if spec.item == "clock" then
+				made = Mini.pendulum(root, spec, p, distance)
+			elseif spec.item == "photo" then
+				local center = Stash.center(spec) or p
+				made = Mini.portraits(root, spec, function(avoid)
+					return wallSpot(parent, center, avoid)
+				end, distance)
+			else
+				made = Mini.paintedClock(root, spec, p, distance)
+			end
+			for id, target in made do
+				built.targets[id] = target
+			end
+			continue
+		end
+		-- Cap. 7 (banco v2): Sons da Margem (o rádio da ilha pede os sons vivos da trilha, na ordem do caminho).
+		local lakeMap = if plan.stage == 7 and spec.kind == "puzzle" then ForestMaps.get(7) else nil
+		if lakeMap and lakeMap.lake then
+			local map, lake = lakeMap, lakeMap.lake
+			for id, target in
+				Mini.marginSounds(root, spec, p, map.trail, lake.southDock.z, function(x, z)
+					return ForestMaps.groundHeight(map, x, z)
+				end, distance)
+			do
+				built.targets[id] = target
+			end
+			continue
+		end
+		-- Cap. 5 (banco v2): Ritmo da Sobrecarga (o coração encaixado na pausa da máquina, na Oficina secreta).
+		if plan.stage == 5 and index == 2 and spec.kind == "activate" then
+			for id, target in Mini.overload(root, spec, p, distance) do
+				built.targets[id] = target
+			end
+			continue
+		end
+		-- Cap. 4 (banco v2): Sussurro do Juca (metade do código do cofre num de seis nichos da catacumba).
+		if plan.stage == 4 and spec.item == "safe_clue" then
+			local safe = plan.activities[4]
+			local text = if safe and safe.kind == "puzzle"
+				then PuzzleStyles.clue(PuzzleStyles.forTask(plan.stage, 4, plan.seed), safe.order)
+				else "O PAPAI NUNCA ACHOU AQUI."
+			for id, target in
+				Mini.whisper(root, spec, function(avoid)
+					return clearSpot(parent, p, avoid)
+				end, text, distance)
+			do
+				built.targets[id] = target
+			end
+			continue
+		end
+		-- Cap. 2 (banco v2): Fusíveis da Família no quadro de luz da Sala de Máquinas (só na História).
+		if plan.stage == 2 and spec.event == "power" and spec.kind == "activate" then
+			-- O quadro fica na parede do fundo, à esquerda da mesa antiga: o meio da sala é da máquina de marceneiro.
+			local board = Vector3.new(16, p.Y, -81.5)
+			local station = model:FindFirstChild("Station")
+			if station and station:IsA("BasePart") then
+				station.Position = board
+			end
+			for id, target in Mini.fuseBoard(root, spec, board, distance) do
+				built.targets[id] = target
+			end
+			continue
+		end
+		-- Cap. 1: a cadeira da Dona Cida, que foge da lanterna; com a luz apagada ela dá a dica da caixinha.
+		if plan.stage == 1 and spec.item == "cida_talk" then
+			for id, target in Mini.cidaChair(root, parent, spec, distance) do
+				built.targets[id] = target
+			end
+			continue
+		end
 		-- Cap. 1 (banco v2): Tábua Oca (chave do Juca) e Banquinho que Foge (chave do Valdemar).
 		if plan.stage == 1 and (spec.item == "key_kitchen" or spec.item == "key_dining") then
 			local center = Stash.center(spec) or p
@@ -273,7 +351,7 @@ function Activities.build(parent: Instance, plan: Generator.Plan, distance: numb
 			local music = plan.stage == 1 and spec.item == "key_living"
 			for id, target in
 				Stash.build(root, spec, center, function(avoid)
-					return wallSpot(parent, center, avoid)
+					return wallSpot(parent, center, avoid, if music then 5 else nil)
 				end, distance, if music then 6 else nil)
 			do
 				built.targets[id] = target
@@ -347,35 +425,37 @@ function Activities.build(parent: Instance, plan: Generator.Plan, distance: numb
 					and plan.activities[4].kind == "puzzle"
 				then PuzzleStyles.answer(PuzzleStyles.forTask(plan.stage, 4, plan.seed), plan.activities[4].order)
 				else nil
-			local text = if target and solvedBy
-				then PuzzleStyles.clue(PuzzleStyles.forTask(plan.stage, solvedBy, plan.seed), target.order, extra)
+			local text = if plan.stage == 7 and spec.item == "forest_radio_clue"
+				then Mini.MARGIN_DIARY
+				elseif target and solvedBy then PuzzleStyles.clue(
+					PuzzleStyles.forTask(plan.stage, solvedBy, plan.seed),
+					target.order,
+					extra
+				)
 				elseif plan.stage >= 6 then "O ECO SOBREVIVEU À CASA.\nCHAMEM O RESGATE PELA TORRE."
-				else "ELE NÃO É O DONO.\nO CORAÇÃO ESTÁ SOB A CASA."
+				else "ELE NÃO NASCEU MAU.\nFOI A MÁQUINA."
+			-- Papel de pista em fonte com acento (B7). Na casa ele fica deitado em cima do móvel, como uma carta
+			-- largada (crítico, bug 7: o papel branco boiando e claro no escuro); o painel do porão e a mata ficam em pé.
+			local standing = spec.item == "panel_clue" or plan.stage >= 6
 			Build.sign(
 				model,
 				"Clue",
-				p + Vector3.new(0, 4.5, -0.4),
-				Vector3.zAxis,
-				Vector2.new(8, 2.7),
+				if standing then p + Vector3.new(0, 4.2, -0.4) else p + Vector3.new(0, 1.78, 0.1),
+				if standing then Vector3.zAxis else Vector3.new(0, 1, 0.35).Unit,
+				if standing then Vector2.new(5, 1.7) else Vector2.new(2.6, 1.6),
 				text,
-				{ textColor = gold, background = Color3.fromRGB(28, 21, 19), lit = true }
+				{
+					textColor = Color3.fromRGB(46, 31, 22),
+					background = Color3.fromRGB(176, 160, 128),
+					lit = false,
+					font = Enum.Font.Merriweather,
+					pixelsPerStud = 90,
+				}
 			)
-			-- Painel do porão: a música do sahur pintada em bolinhas, da esquerda para a direita, nas cores das teclas.
+			-- Painel do porão (Dueto da Lia): os quatro desenhos das teclas; tocar num deles canta a nota baixinho.
 			if spec.item == "panel_clue" and target then
-				for slot, key in target.order do
-					local label = PuzzleStyles.forTask(plan.stage, solvedBy :: number, plan.seed).labels[key]
-					local rgb = PuzzleStyles.MARK_COLORS[label] or { 232, 224, 204 }
-					local dot = Build.cylinder(
-						model,
-						"NoteColor",
-						p + Vector3.new((slot - 2.5) * 1.7, 6.8, -0.45),
-						Vector3.zAxis,
-						0.15,
-						1.3,
-						Color3.fromRGB(rgb[1], rgb[2], rgb[3]),
-						{ material = Enum.Material.Neon, collide = false, query = false }
-					)
-					dot.CastShadow = false
+				for id, mark in Mini.panelMarks(model, target.id, p, distance) do
+					built.targets[id] = mark
 				end
 			end
 		end
@@ -392,6 +472,18 @@ function Activities.build(parent: Instance, plan: Generator.Plan, distance: numb
 			)
 		elseif spec.item == "flashlight" then
 			Build.light(base, "Street", Color3.fromRGB(255, 210, 139), 18, 0.9, true)
+		elseif spec.item == "gasoline" or spec.item == "generator_oil" then
+			-- A lata é o óleo de máquina do Valdemar (roteiro "A Casa de Madeira": nada de gasolina).
+			Build.sign(
+				model,
+				"OilLabel",
+				p + Vector3.new(0, 3.4, 1.1),
+				Vector3.zAxis,
+				Vector2.new(2.6, 0.7),
+				"ÓLEO — OFICINA",
+				{ textColor = Color3.fromRGB(226, 196, 140), background = Color3.fromRGB(40, 26, 18) }
+			).CanQuery =
+				false
 		end
 		local count = if spec.kind == "puzzle" then 4 elseif spec.kind == "repair" then 3 else 1
 		local piano = style ~= nil and style.id == "piano"
@@ -445,7 +537,11 @@ function Activities.build(parent: Instance, plan: Generator.Plan, distance: numb
 						then style.labels[button]
 						elseif spec.kind == "repair" then `{button} {repairSteps[button]}`
 						else `{button} {symbols[button]}`,
-					{ textColor = if piano and style then markColor(style.labels[button]) else gold, lit = true }
+					{
+						textColor = if piano and style then markColor(style.labels[button]) else gold,
+						lit = not piano,
+						font = Enum.Font.Merriweather,
+					}
 				)
 			end
 		end
@@ -454,18 +550,21 @@ function Activities.build(parent: Instance, plan: Generator.Plan, distance: numb
 			for button = 1, count do
 				table.insert(pianoKeys, built.targets[`{spec.id}_{button}`].focus)
 			end
-			liaEcho(model, pianoKeys, spec.order)
+			liaEcho(model, pianoKeys)
+			-- A caixinha da Lia voltou: em cima do piano, dar corda toca a música inteira, alto (ele ouve).
+			for id, box in Mini.windBox(model, spec, p, plan.seed, distance) do
+				built.targets[id] = box
+			end
 		end
 		if spec.kind == "repair" or spec.kind == "puzzle" then
-			local status = Build.sign(
-				model,
-				"TaskProgress",
-				p + Vector3.new(0, 6, 0),
-				Vector3.zAxis,
-				Vector2.new(9, 1.2),
-				"",
-				{ textColor = gold, lit = true }
-			)
+			local status =
+				Build.sign(model, "TaskProgress", p + Vector3.new(0, 6, 0), Vector3.zAxis, Vector2.new(6, 0.75), "", {
+					textColor = gold,
+					lit = true,
+					font = Enum.Font.GothamMedium,
+					backgroundTransparency = 1,
+					pixelsPerStud = 70,
+				})
 			built.labels[spec.id] = status:FindFirstChildWhichIsA("TextLabel", true)
 		end
 	end
@@ -511,7 +610,7 @@ function Activities.refresh(built: any, tasks: any)
 		if target.handle then
 			target.focus:SetAttribute(
 				Tags.Attr.InteractEnabled,
-				ready[target.taskId] == true and not state.solved and not target.locked
+				(ready[target.taskId] == true or target.anyTime == true) and not state.solved and not target.locked
 			)
 			continue
 		end

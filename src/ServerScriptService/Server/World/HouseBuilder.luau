@@ -11,6 +11,7 @@ local Architecture = require("./HouseArchitecture")
 local Layout = require("@game/ReplicatedStorage/Shared/Game/HouseLayout")
 local Television = require("./HouseTelevision")
 local Clocks = require("./HouseClocks")
+local Machine = require("./HouseMachine")
 local Access = require("./HouseAccess")
 local Builder = {}
 local wood = Color3.fromRGB(75, 48, 32)
@@ -54,9 +55,10 @@ local function sign(parent: Instance, text: string, position: Vector3, facing: V
 		"Plaque",
 		position,
 		facing or Vector3.zAxis,
-		Vector2.new(8, 1.2),
+		Vector2.new(5, 0.8),
 		text,
-		{ textColor = gold, background = dark, lit = true, font = Enum.Font.SpecialElite }
+		-- Sem brilho próprio e menor (crítico: as placas acesas eram o ponto mais claro do hall).
+		{ textColor = gold, background = dark, lit = false, font = Enum.Font.Merriweather, pixelsPerStud = 70 }
 	)
 end
 local function tag(part: BasePart, id: string, prompt: string)
@@ -178,6 +180,42 @@ function Builder.build(parent: Instance): (MapBuilder.World, FeatureBuilder.Buil
 	Architecture.build(structure, props)
 	Television.build(props)
 	Clocks.build(props)
+	-- Marca na escada do sótão (crítico, B8): placa de tábua pintada à mão no começo da subida, vista do patamar.
+	Build.sign(
+		props,
+		"AtticStairSign",
+		Vector3.new(32, 23.5, 51),
+		Vector3.zAxis,
+		Vector2.new(4.2, 1.2),
+		"^ SÓTÃO ^",
+		{
+			textColor = Color3.fromRGB(226, 214, 190),
+			background = Color3.fromRGB(58, 40, 28),
+			partColor = Color3.fromRGB(58, 40, 28),
+		}
+	).CanQuery =
+		false
+	-- Poço da escada do porão: guarda-corpo no térreo em volta do vão. Só se desce pela boca da escada (z ≈ 50–54);
+	-- antes, o caminho mandava pular do deque para o meio da rampa e o bot travava em (−22, 4, 13).
+	for _, rail in
+		{
+			{ Vector3.new(10.8, 9, 0.4), Vector3.new(-16, 4.5, 22.2) },
+			{ Vector3.new(0.4, 9, 28), Vector3.new(-10.6, 4.5, 36) },
+			{ Vector3.new(0.4, 9, 28), Vector3.new(-21.4, 4.5, 36) },
+		}
+	do
+		local size, at = rail[1], rail[2]
+		Build.part(structure, "StairWellGuard", size, CFrame.new(at), dark, { transparency = 1, query = false })
+		Build.part(
+			structure,
+			"StairWellRail",
+			Vector3.new(if size.X > 1 then size.X else 0.3, 0.3, if size.Z > 1 then size.Z else 0.3),
+			CFrame.new(at.X, 3.2, at.Z),
+			dark,
+			{ material = Enum.Material.Wood }
+		)
+	end
+	Machine.build(props)
 	block(structure, "StairRoof", 10.5, 47, 38, 70, 1, 53, dark)
 	block(structure, "HouseRoof", 0, 48, -36, 94, 1, 106, dark)
 	for _, side in { -1, 1 } do
@@ -229,12 +267,23 @@ function Builder.build(parent: Instance): (MapBuilder.World, FeatureBuilder.Buil
 			continue
 		end
 		local center = Vector3.new(room.x, room.y, room.z)
-		sign(
+		-- Plaquinha de madeira sem brilho próprio (crítico: as placas grandes e acesas cobriam o hall).
+		local plaque = Build.sign(
 			props,
+			"Plaque",
+			Vector3.new(if room.x < 0 then -7.4 else 7.4, room.y + 8.6, room.z + 9),
+			if room.x < 0 then Vector3.xAxis else -Vector3.xAxis,
+			Vector2.new(3.4, 0.6),
 			room.title,
-			Vector3.new(if room.x < 0 then -7.35 else 7.35, room.y + 9, room.z + 9),
-			if room.x < 0 then Vector3.xAxis else -Vector3.xAxis
+			{
+				textColor = Color3.fromRGB(214, 196, 160),
+				background = Color3.fromRGB(46, 31, 22),
+				lit = false,
+				font = Enum.Font.Merriweather,
+				pixelsPerStud = 80,
+			}
 		)
+		plaque.CanQuery = false
 		local lamp = block(props, "Candle", room.x, room.y + 7, room.z - 12, 0.35, 1, 0.35, gold)
 		Build.light(lamp, "Street", Color3.fromRGB(255, 188, 105), 31, 0.85, true, false)
 		local light = block(props, "PowerLamp", room.x + 3, room.y + 12, room.z, 1, 0.25, 1, gold)

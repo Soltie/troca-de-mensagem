@@ -3,6 +3,7 @@
 --   draw   ícones finos do HUD (bateria, fôlego, oxigênio) em offsets de 24 px.
 --   pixel  ícones pixel-art 12×12 dos menus (remaster); escalam pelo tamanho do contêiner.
 local Create = require("./Create")
+local IconAssets = require("./IconAssets")
 local Icons = {}
 function Icons.draw(parent: Instance, kind: string, color: Color3)
 	local function box(x: number, y: number, w: number, h: number, rotation: number?): Frame
@@ -525,8 +526,30 @@ function Icons.pixel(parent: Instance, kind: string, color: Color3): Frame
 	return holder
 end
 
+-- Ícone em imagem (IconAssets), tingido pela cor pedida. Devolve nil quando o kind ainda não tem imagem.
+function Icons.image(parent: Instance, kind: string, color: Color3): ImageLabel?
+	local id = IconAssets[kind]
+	if not id then
+		return nil
+	end
+	local image = Create("ImageLabel", {
+		Name = `Icon_{kind}`,
+		Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1,
+		Image = id,
+		ImageColor3 = color,
+		ScaleType = Enum.ScaleType.Fit,
+	}) :: ImageLabel
+	image.Parent = parent
+	return image
+end
+
 -- Troca a cor de um ícone já desenhado (estado selecionado/desabilitado).
 function Icons.tint(icon: Instance, color: Color3)
+	if icon:IsA("ImageLabel") then
+		icon.ImageColor3 = color
+		return
+	end
 	for _, px in icon:GetChildren() do
 		if px:IsA("Frame") then
 			px.BackgroundColor3 = color

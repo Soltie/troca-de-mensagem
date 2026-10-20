@@ -1,132 +1,60 @@
-> **IA de outro computador:** comece por [LEIA_IA_COLEGA.md](LEIA_IA_COLEGA.md) e [docs/IA/README.md](docs/IA/README.md).
+# Tung Tung Sahur: The Cursed House (Roblox, terror leve)
 
-# Projeto independente: Tung Tung Sahur
+Place `tungtung`, PlaceId 82955516040017. Responda em pt-BR, curto, só o que mudou.
+Estado/decisões: [PROGRESSO.md](PROGRESSO.md). Referências e régua do crítico: [docs/referencias.md](docs/referencias.md).
+CLAUDE.md antigo (histórico longo): `backup/CLAUDE.md`.
 
-Raiz atual: `C:/Users/xpg/Documents/tung-tung-sahur`.
-Leia primeiro [INICIAR_AQUI.md](INICIAR_AQUI.md). Edite somente o src desta pasta.
-Os caminhos, worktrees e reservas anteriores nos documentos abaixo são históricos.
-Use Studio e Script Sync próprios deste jogo; não conecte à árvore do outro jogo.
-A conexão da nova places/Dev.rbxlx ainda precisa ser configurada e verificada.
-
----
-
-# CLAUDE.md — como trabalhar neste repositório
-
-**Coordenação do mapa:** leia [LEIA_CLAUDE.md](LEIA_CLAUDE.md) antes de integrar mudanças no mundo
-ou usar o Studio. A expansão do Codex está entregue; escopo, commit e QA estão nesse aviso.
-
-Template de jogo Roblox feito para agentes. **O repositório é a fonte da verdade**: código vive em
-`src/` e chega ao Studio pelo **Script Sync**; o agente testa no Studio pelo **MCP oficial** (`Roblox_Studio`).
-Responda ao humano em **português do Brasil**, curto e direto.
-
-O jogo em si está descrito (quando existir) em `docs/GAME_SPEC.md`. Decisões em `docs/DECISIONS.md`,
-arquitetura em `docs/ARCHITECTURE.md`, estado do ambiente em `docs/SETUP_REPORT.md`.
-
-## Onde fica cada coisa
-
+## Estrutura
 ```
-src/ServerScriptService/            -> ServerScriptService (Script Sync)
-  Server/Main.server.luau           bootstrap ÚNICO do servidor (lista ordenada de Services)
-  Server/Services/*.luau            Services: { Name, Init?, Start? } + API própria
-  Server/Net/ServerNet.luau         handlers de remote: rate limit + validação + pcall
-  Server/Data/                      PlayerDataSchema (formato/migração), MockDataStore
-  Tests/TestKit.luau, Run.luau      framework + runner no Studio; Tests/Specs/*.luau = specs
-src/ReplicatedStorage/              -> ReplicatedStorage (Script Sync)
-  Client/Main.client.luau           bootstrap ÚNICO do cliente (Script RunContext=Client)
-  Client/Controllers/*.luau         Controllers: { Name, Init?, Start? }
-  Client/UI/Create.luau             helper de UI por código
-  Shared/                           Config, Types, Logger, Loader, Net/{Remotes,Guard,RateLimiter}, Util/
-places/Dev.project.json             mundo base (sem scripts) -> places/Dev.rbxlx (place de trabalho, não versionada)
-places/world/                       definição versionada do mundo base (.model.json)
-default.project.json                layout Rojo SÓ para `rojo sourcemap` e `rojo build` (nunca `rojo serve`)
-scripts/*.luau                      tarefas em Lune (check, test, build, format, sourcemap)
+src/ServerScriptService/Server/   Main.server.luau (bootstrap único), Services/, Campaign/, Game/ (regras puras), World/, Net/, Data/
+src/ServerScriptService/Tests/    TestKit, Run, Specs/ (testes)
+src/ReplicatedStorage/Client/     Main.client.luau (bootstrap único), Controllers/, Creature/, UI/
+src/ReplicatedStorage/Shared/     Config, Net/Remotes, Game/ (catálogos, regras puras), Util
+src/ReplicatedStorage/Assets/     .rbxm (TungTung etc.)
+src/MaterialService/              materiais
+places/world/                     mundo base (.model.json)
+build/                            saídas geradas (não ler); build/arte3d = modelos Blender
+docs/critica/                     prints do crítico (pode ler)
 ```
 
-## Jogo atual: TUNG TUNG SAHUR — THE CURSED HOUSE (terror leve para crianças)
+## Convenções
+- `--!strict`; tabs, 120 col; identificadores em inglês, comentários em PT-BR, logs em inglês via `Logger`.
+- Servidor autoritativo; remotes só em `Shared/Net/Remotes.luau`, via `ServerNet` com Guard + rate limit.
+- Novo código = novo Service/Controller registrado no `Main`. UI por código (`UI/Create`), nunca à mão no Studio.
+- Regras puras (sem `game`/`task`) em módulos com spec em `Tests/Specs`.
+- Valores ajustáveis em `Shared/Config.luau`. Mudou `PlayerData`? Suba `Config.Data.SchemaVersion` e migre.
+- Tung oficial = `Assets.TungTung` (`TungTung_Quebrado` está quebrado). Gasolina removida (lata = óleo do Valdemar).
 
-Estado e entrega do polish final: [docs/FINAL_POLISH.md](docs/FINAL_POLISH.md). A casa vem de
-`World/HouseBuilder`; cenário, terreno e móveis em `World/HouseScenery` e `World/HouseFurniture`.
-O Tung Tung é `ReplicatedStorage/Assets/TungTung.rbxm` animado por `Client/Creature/TungTungRig`
-(clipes gerados por `tools/tungtung/bake.js`; não editar `TungTungClips.luau` à mão).
-Moedas: `Server/Game/CoinPlan` (puro) + `CoinService` + `CoinController`. UI: `UI/Theme`, `UI/Juice`, `UI/FieldHud`.
-O `.rbxm` só entra em builds Rojo (`tools/reopen_qa.ps1` gera e abre `build/FinalPolish.rbxlx`).
-
-## Referência antiga: SUBESTAÇÃO 9 (protótipo de terror)
-
-Comece por `docs/HANDOFF.md` (estado, como jogar, problemas conhecidos) e `docs/GAME_SPEC.md`.
-
-```
-Server/World/      Layout (planta, dados puros), MapBuilder/Build/Props/Palette (mundo por código)
-Server/Game/       Objectives, RoundRules, CreatureBrain (regras PURAS, testadas no Lune)
-Server/Services/   WorldService, CreatureService, RoundService, DebugService (+ PlayerDataService)
-Shared/Game/       GameState (atributos replicados), Tags, Text (PT-BR), PixelText, Audio (IDs)
-Client/Controllers Settings, Audio, Character, Flashlight, RetroFx, WorldFx, CreatureVisual, GameUi, Interaction, Hud
-Client/Creature/   Rig + Poses (Vigia em stop-motion), AdemirPortrait/AdemirFaceData (rosto)
-```
-
-- **`execute_luau` roda em outra VM:** `require` de um módulo lá cria uma CÓPIA nova (estado zerado).
-  Leia o estado real por instâncias/atributos (`ReplicatedStorage.GameState`, `Workspace.Vigia.Root`) ou
-  pela ponte `game.ServerStorage.DebugBridge:Invoke("state")` (só no Studio; comandos em `DebugService.luau`).
-- Valores ajustáveis do jogo ficam em `Shared/Config.luau` (`Game`, `Player`, `Creature`, `Visual`, `Effects`).
-- Mudou o mapa? Mantenha `Layout` coerente e rode os testes: `Layout` (Lune) e `Navigation` (Studio:
-  rotas reais para o jogador e para o Vigia). Corredores e portas precisam de folga para o agente.
-- Textos em fonte pixel passam por `PixelText` (a fonte Arcade não tem É/Í/Ó/Ú maiúsculos).
-- **Loja/monetização** (`docs/MONETIZATION.md`): regras puras em `Shared/Game/{StoreCatalog,Economy}`, servidor
-  em `StoreService` (+ Cosmetic/Reward/Collectible). Compras Robux com ID 0 são simuladas só no Studio.
-  Nunca crie produtos nem mexa no Creator Hub: isso é passo humano. Depuração: `DebugBridge`
-  `storeGrant(f, c)`, `endRound("Won"|"Lost")`, `tape`.
-- **Vantagens pagas e menu inicial** (`docs/MONETIZATION.md` seção 11): regras puras em `Shared/Game/{Perks,StoryRewards,ServerList}`,
-  jogo em `PerkService`/`LobbyService` + ganchos na campanha; menu em `MainMenuController`, derrota em `ContinueController`.
-
-## Loop de desenvolvimento
-
-1. Editar o arquivo em `src/` (nunca no Studio).
-2. `lune run scripts/check` — format, lint, sourcemap, tipos (strict), testes Lune. Tem que dar `ALL GREEN`.
-   (`lune run scripts/format` corrige formatação.)
-3. Confirmar o sync no Studio (skill `script-sync`, ou ler o `Source` via `execute_luau` Edit).
-4. Playtest via MCP (skill `roblox-playtest`): `start_stop_play` -> `get_console_output`
-   -> testes via `execute_luau` (Server) -> `screen_capture` se houver UI -> parar o play.
-5. Ler o console: zero erros e zero warnings inesperados.
-6. Corrigir e repetir.
-7. Commit pequeno e descritivo (`git add` + `git commit`). Não faça push.
-
-## Regras
-
-- **Nunca edite no Studio um script sincronizado** (nem via `multi_edit`). Edite o arquivo.
-- **Servidor autoritativo**: o cliente só pede; todo remote passa por `ServerNet` com `Guard` em
-  todos os argumentos e rate limit. Remotes só existem em `Shared/Net/Remotes.luau` (DEFINITIONS).
-- **Nada de segredos** no código/repo (chaves, tokens, cookies). Use Secrets do Roblox (servidor).
-- **Sempre passe `studio_id`** nas ferramentas do MCP (pegue com `list_roblox_studios`).
-- **Economize contexto**: filtre `search_game_tree` por caminho e profundidade; ignore CoreGui e CoreScripts.
-  Se as ferramentas de busca voltarem só um resumo de uma linha, use `execute_luau` retornando JSON
-  (receita na skill `roblox-playtest`).
-- `execute_luau` em `Edit` altera a place: use para leitura. Testes rodam em `Server` durante o Play.
-- Não rode `rojo serve` (conflita com o Script Sync). Não use `generate_*`/`insert_asset`/`upload_image`
-  sem pedido explícito. Não publique nada, não mexa no Creator Hub nem em monetização.
-- Um bootstrap por lado. Novo código = novo Service/Controller registrado na lista do `Main`.
-- Nunca `.client.luau` em `StarterPlayerScripts`/`StarterCharacterScripts` (roda duas vezes).
-- UI é construída por código (Controllers + `UI/Create`), nunca montada à mão no Studio.
-- Mudou o formato de `PlayerData`? Suba `Config.Data.SchemaVersion` e migre em `PlayerDataSchema`.
-
-## Convenções de código (resumo; detalhes na skill `luau-conventions`)
-
-`--!strict` em todo arquivo; StyLua (tabs, 120 col); identificadores em inglês, comentários em PT-BR,
-logs em inglês via `Logger`; requires por string (`./`, `../` na mesma árvore; `@game/...` entre serviços);
-módulos puros (sem `game`/`task`) com testes em `Tests/Specs`.
-
-## Comandos úteis
-
-| Comando | O que faz |
+## Comandos
+| Comando | Uso |
 | --- | --- |
-| `lune run scripts/check` | tudo que precisa estar verde antes do commit |
-| `lune run scripts/test` | só os testes puros (Lune) |
-| `lune run scripts/format` | aplica StyLua |
-| `lune run scripts/sourcemap` | regenera `sourcemap.json` |
-| `lune run scripts/build` | `build/Test.rbxlx` (mundo + código), descartável |
-| `lune run scripts/build dev` | `places/Dev.rbxlx` (só mundo); não sobrescreve sem `--force` |
-| `rokit install` | instala a toolchain fixada em `rokit.toml` |
+| `lune run scripts/check` | format + lint + tipos + testes Lune (tem que dar ALL GREEN) |
+| `lune run scripts/test` | só testes puros |
+| `selene src` / `stylua --check src` | lint / formato (rodar antes de chamar o crítico) |
+| `rojo sourcemap default.project.json -o sourcemap.json` | sourcemap |
+| `rojo serve sync.project.json` | sincroniza scripts (ver "Rojo" abaixo) |
+| `powershell scripts/upload.ps1 -Folder <pasta>` | sobe .fbx/.png para Roblox (Open Cloud), IDs em `assets_ids.md` |
+| Studio (MCP, Server, com Play) | `return require(game.ServerScriptService.Tests.Run)()` |
 
-Testes no Studio (MCP, `execute_luau`, `datamodel_type = "Server"`, com Play rodando):
-`return require(game:GetService("ServerScriptService").Tests.Run)()`
+Rojo: `default.project.json` serve só para sourcemap/build. `sync.project.json` mapeia só scripts
+(`$ignoreUnknownInstances`, não apaga o resto do place). O place hoje está com Script Sync desligado e o
+código foi aplicado à mão: o place tem código extra (PvP/Mansão do Codex) fora do `src`. Antes do 1º sync, comparar.
 
-Estado do jogo no Studio (MCP, Server): `return game.ServerStorage.DebugBridge:Invoke("state")`
+## Regras de trabalho
+- Um Roblox Studio por vez. Sempre passar `studio_id` nas ferramentas do MCP.
+- Nunca publicar no Roblox sem o usuário (ele clica Publish). Nunca mexer em Creator Hub/monetização.
+- Assets do Toolbox: remover scripts antes de usar. SEM Mixamo: animações feitas à mão (Blender → TungTungClips).
+- Nunca apagar: mover o que for substituído para `backup/` mantendo o caminho relativo. Sem git destrutivo.
+- Apontar arquivo exato em vez de explorar. Juntar pedidos pequenos. Plano antes de tarefa grande.
+- Testar só a cena/script alterado. Rodar selene + stylua antes de pedir o crítico.
+- Agentes não conversam entre si: escrevem resultado em `.md` (`docs/roteiro.md`, `docs/puzzles_aprovados.md`...) e o próximo lê só o necessário.
+- Modelos: Opus orquestra/planeja/revisa e assume se um subagente falhar 2x; Sonnet = subagente padrão;
+  Haiku = tarefas simples (formatar, renomear, edições pequenas, resumos, atualizar PROGRESSO).
+  Se Sonnet/Haiku insistir (~2 tentativas) e não conseguir, não esperar: o Opus faz na hora.
+- No máximo 2 agentes ao mesmo tempo.
+- Crítico só ao fim de cada etapa concluída; no máx. 2 rodadas por item; nota >= 8 aprova (substitui a regra antiga de 9).
+- Capítulo N+1 só depois do crítico aprovar o N. Git (commit/push) é tarefa do coordenador ao fim da etapa.
+
+## Ferramentas de economia de tokens
+- **caveman** (plugin, ativo): respostas curtas; `/caveman`. Subagentes `caveman:cavecrew-*` para achar/editar/revisar.
+- **graphify** (skill): `/graphify` gera `graphify-out/` (grafo do código). Consultar `/graphify query "..."` antes de explorar.

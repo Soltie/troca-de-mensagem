@@ -122,7 +122,14 @@ local function decorate(root: Instance, folder: Instance, body: BasePart)
 			local cabinet = body :: BasePart
 			cabinet.Transparency, cabinet.CastShadow = 1, false
 		end
-	elseif body.Name == "PowerLamp" and furnishings and body.Parent == furnishings and body.Transparency < 0.5 then
+	elseif
+		body.Name == "PowerLamp"
+		and furnishings
+		and body.Parent == furnishings
+		and body.Transparency < 0.5
+		-- Porão sem lustre de cristal (crítico): lá a lâmpada fica como está, uma luz pendurada simples.
+		and body.Position.Y > -1
+	then
 		-- Lâmpada elétrica do cômodo (bloco solto abaixo do teto): lustre pequeno preso ao teto. A peça continua
 		-- sendo a luz "Lamp" que o WorldService liga com a energia; só deixa de aparecer.
 		local assets = library()

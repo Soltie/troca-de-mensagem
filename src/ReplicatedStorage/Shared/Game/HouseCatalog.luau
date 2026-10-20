@@ -69,13 +69,22 @@ local House = {
 					"flashlight",
 					"F: lanterna. Luz ajuda a enxergar; depois poderá atrair a criatura."
 				),
+				-- Roteiro: a cadeira que balança é a Dona Cida; ela foge da lanterna. Apagar a luz e chegar devagar.
+				objective(
+					"Living",
+					"Falar com a cadeira da Dona Cida no escuro",
+					"activate",
+					"cida_talk",
+					nil,
+					'A cadeira range e fala baixinho: "A caixinha da Lia ainda toca... mas só com a luz apagada."'
+				),
 				objective(
 					"Living",
 					"Encontrar a chave da sala",
 					"collect",
 					"key_living",
 					nil,
-					"A chave tem a mesma marca da porta na fita. A televisão já estava ligada."
+					"Na caixinha de música da Lia, a chave presa na corda e a fita de cabelo dela amarrada."
 				),
 				objective(
 					"Kitchen",
@@ -108,10 +117,42 @@ local House = {
 			title = "02 · ELE ACORDOU",
 			subtitle = "A casa respira com você",
 			objectives = {
-				objective("Living", "Recolher o primeiro fusível", "collect", "fuse_1", nil),
-				objective("Kitchen", "Recolher o segundo fusível", "collect", "fuse_2", nil),
-				objective("Bath", "Recolher o terceiro fusível", "collect", "fuse_3", nil),
-				objective("Machine", "Restaurar energia parcial", "activate", nil, "power"),
+				-- Fusíveis da Família (banco v2): cada um no lugar favorito de alguém e enrolado em algo dele;
+				-- no quadro de luz, cada encaixe tem o desenho da pessoa (HouseMiniPuzzles.fuseBoard).
+				objective(
+					"Living",
+					"Recolher o primeiro fusível",
+					"collect",
+					"fuse_1",
+					nil,
+					"Um fusível enrolado em linha de tricô, igual ao novelo da cadeira de balanço."
+				),
+				objective(
+					"Kitchen",
+					"Recolher o segundo fusível",
+					"collect",
+					"fuse_2",
+					nil,
+					"Um fusível amarrado com uma fita de cabelo, igual à da caixinha de música."
+				),
+				objective(
+					"Bath",
+					"Recolher o terceiro fusível",
+					"collect",
+					"fuse_3",
+					nil,
+					"Um fusível enrolado no barbante de um pião, igual ao da tábua oca."
+				),
+				-- Óleo de máquina do Valdemar ("ÓLEO — OFICINA"): o gerador travado só volta untado.
+				objective(
+					"Machine",
+					"Untar o gerador com o óleo da oficina",
+					"activate",
+					"generator_oil",
+					nil,
+					"As engrenagens do gerador giram de novo. No vidro do relógio do sótão há manchas desse mesmo óleo."
+				),
+				objective("Machine", "Encaixar cada fusível no desenho do dono", "activate", nil, "power"),
 				objective(
 					"Library",
 					"Entrar no armário da biblioteca",
@@ -175,7 +216,14 @@ local House = {
 			subtitle = "O coração está trancado",
 			objectives = {
 				objective("Basement", "Inspecionar o painel do porão", "clue", "panel_clue", nil),
-				objective("Symbols", "Tocar no piano a melodia do painel", "puzzle", nil, nil),
+				objective(
+					"Symbols",
+					"Responder à Lia no piano com a música da caixinha",
+					"puzzle",
+					nil,
+					nil,
+					"Vocês lembraram. O Juca guardava tudo nas figurinhas."
+				),
 				objective("Tunnel", "Encontrar a pista do código do cofre", "clue", "safe_clue", nil),
 				objective("Safe", "Abrir o cofre com as duas metades do código", "puzzle", nil, nil),
 				objective(
@@ -192,37 +240,46 @@ local House = {
 		{
 			title = "05 · A ÚLTIMA NOITE",
 			subtitle = "Devolva o coração. Corra.",
-			-- Queimar a casa: galão e isqueiro, gasolina espalhada pela casa toda com o Tung Tung atrás, e o
-			-- rastro aceso no porão (FireSpread: a gasolina estoura em sequência e o fogo corre atrás de vocês).
+			-- Roteiro "A Casa de Madeira" (sem gasolina): o coração sobrecarrega a máquina, que dá curto e pega fogo. O
+			-- time derrama o óleo da máquina na madeira dos cômodos e leva o fogo dela na lamparina do Valdemar até o
+			-- rastro (FireSpread: o óleo estoura em sequência e o fogo corre atrás de vocês). Os ids internos (gasoline,
+			-- gas_pour, gas_ignite) continuam os mesmos.
 			objectives = {
 				objective(
-					"Ritual",
-					"Devolver o coração ao altar",
-					"activate",
-					nil,
-					nil,
-					"O coração não aceita voltar. Só o fogo acaba com esta casa."
-				),
-				objective(
 					"Machine",
-					"Pegar o galão de gasolina",
+					"Pegar a lata de óleo da máquina",
 					"collect",
 					"gasoline",
 					nil,
-					"O galão está pesado e cheio. Espalhe pela casa sem fazer barulho."
+					"Óleo grosso de marceneiro. Nas engrenagens, a máquina dispara; na madeira, leva o fogo pela casa."
 				),
-				objective("Library", "Espalhar gasolina na biblioteca", "activate", "gas_pour", nil),
-				objective("Dining", "Espalhar gasolina na sala de jantar", "activate", "gas_pour", nil),
-				objective("Living", "Espalhar gasolina na sala de estar", "activate", "gas_pour", nil),
-				objective("Kitchen", "Pegar o isqueiro", "collect", "lighter", nil, "Um isqueiro velho. Ainda acende."),
-				objective("Hall", "Espalhar gasolina no corredor", "activate", "gas_pour", nil),
+				objective(
+					"Ritual",
+					"Untar as engrenagens e encaixar o coração na pausa",
+					"activate",
+					nil,
+					nil,
+					"A máquina dá curto e pega fogo; o coração pula para fora. Só o fogo acaba com esta casa."
+				),
+				objective("Library", "Derramar o óleo na biblioteca", "activate", "gas_pour", nil),
+				objective("Dining", "Derramar o óleo na sala de jantar", "activate", "gas_pour", nil),
+				objective("Living", "Derramar o óleo na sala de estar", "activate", "gas_pour", nil),
+				objective(
+					"Kitchen",
+					"Pegar a lamparina do Valdemar",
+					"collect",
+					"lighter",
+					nil,
+					"A lamparina do Valdemar: a última luz que o Tum Tum viu antes da máquina. Ainda acende."
+				),
+				objective("Hall", "Derramar o óleo no corredor", "activate", "gas_pour", nil),
 				objective(
 					"Mechanism",
-					"Acender o rastro de gasolina e fugir",
+					"Levar o fogo da máquina ao rastro de óleo e fugir",
 					"activate",
 					"gas_ignite",
 					"destruction",
-					"O fogo corre pelo rastro. Saia pelo hall e atravesse o portão antes que a casa desabe!"
+					"O fogo corre pelo óleo. Saia pelo hall e atravesse o portão antes que a casa desabe!"
 				),
 			},
 		},
@@ -230,12 +287,13 @@ local House = {
 }
 -- Itens que mudam de cômodo a cada partida (veredito 20/10: rejogar e procurar mais). Só cômodos já abertos
 -- naquele capítulo; o HousePlan sorteia sem repetir dentro do capítulo.
-local GROUND = { "Living", "Kitchen", "Dining", "Bath", "Library" }
 local UPSTAIRS = { "Attic", "AtticPhoto", "Bedroom", "Child" }
 local POOLS: { [string]: { string } } = {
-	fuse_1 = GROUND,
-	fuse_2 = GROUND,
-	fuse_3 = GROUND,
+	-- Lugares favoritos: Dona Cida na sala ou na mesa de jantar, Lia na biblioteca ou no jantar, Juca na cozinha ou
+	-- no banheiro.
+	fuse_1 = { "Living", "Dining" },
+	fuse_2 = { "Library", "Dining" },
+	fuse_3 = { "Kitchen", "Bath" },
 	mask = UPSTAIRS,
 	photo = UPSTAIRS,
 	lighter = { "Kitchen", "Bath", "Bedroom", "Child" },

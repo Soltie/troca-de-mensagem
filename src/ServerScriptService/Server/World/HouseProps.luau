@@ -15,6 +15,7 @@ local Audio = require("@game/ReplicatedStorage/Shared/Game/Audio")
 local House = require("@game/ReplicatedStorage/Shared/Game/HouseCatalog")
 local Layout = require("@game/ReplicatedStorage/Shared/Game/HouseLayout")
 local Build = require("./Build")
+local HouseArt = require("./HouseArt")
 local PrimitiveFinish = require("./HousePrimitiveFinish")
 
 local Props = {}
@@ -342,7 +343,35 @@ ROOMS.Living = function(folder, root, room)
 		end
 	end
 	against(folder, room, "Sofa", "facade", -1.5, 1.05 * SOFA)
-	Props.place(folder, "Armchair", at(-8.6, 10.5, 0), V3(-1, 0, -0.15), 1.05, "floor")
+	-- A cadeira de balanço da Dona Cida (roteiro "A Casa de Madeira"), com o novelo de tricô pendurado no braço: é a
+	-- pista que liga o fusível enrolado em tricô (cap. 2) ao encaixe da CADEIRA no quadro de luz.
+	local chairAt = at(-8.6, 10.5, 0)
+	-- Modelo do artista (CidaRockingChair_v2, ou a primeira versão) quando existe no place; senão, a cadeira de
+	-- balanço da biblioteca de props.
+	local chairPivot = CFrame.lookAt(chairAt, chairAt + V3(-1, 0, -0.15))
+	if
+		not HouseArt.place(folder, "CidaRockingChair_v2", chairPivot)
+		and not HouseArt.place(folder, "CidaRockingChair", chairPivot)
+	then
+		Props.place(folder, "RockingChair", chairAt, V3(-1, 0, -0.15), 1.05, "floor")
+	end
+	local yarn = Build.part(
+		folder,
+		"KnittingYarn",
+		V3(0.9, 0.9, 0.9),
+		CFrame.new(at(-8.6, 10.5, 0) + V3(0.9, 2.1, 0.9)),
+		rgb(176, 44, 52),
+		{ material = Enum.Material.Fabric, collide = false, query = false }
+	);
+	(yarn :: Part).Shape = Enum.PartType.Ball
+	Build.part(
+		folder,
+		"KnittingNeedle",
+		V3(0.08, 0.08, 1.4),
+		CFrame.new(at(-8.6, 10.5, 0) + V3(0.9, 2.3, 0.9)) * CFrame.Angles(math.rad(30), 0, math.rad(20)),
+		rgb(200, 190, 170),
+		{ material = Enum.Material.Wood, collide = false, query = false }
+	)
 	Props.place(folder, "Armchair", at(10.5, -11.5, 0), V3(-1, 0, 0.6), 1.05, "floor")
 	lampOn(folder, room, "facade", -14.3)
 	-- A estante da fachada (12,6) saiu: o guarda-roupa do esconderijo ocupa esse canto.

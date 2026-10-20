@@ -31,6 +31,7 @@ local RoundRules = require("../Game/RoundRules")
 local ServerNet = require("../Net/ServerNet")
 local CollectibleService = require("./CollectibleService")
 local CreatureService = require("./CreatureService")
+local DoorSwapService = require("./DoorSwapService")
 local PlayerStateService = require("./PlayerStateService")
 local WorldService = require("./WorldService")
 
@@ -250,6 +251,11 @@ local function pressBreaker(player: Player, id: string, position: Vector3): Resp
 end
 
 local function useDoor(player: Player, id: string, action: string, position: Vector3): Response
+	-- A Porta que Troca (DoorSwapService) cuida da porta armada: aviso trancado, depois a travessia.
+	local swapped = DoorSwapService.intercept(player, id)
+	if swapped then
+		return swapped :: any
+	end
 	if WorldService.isLocked(id) then
 		if objectives.hasKey and action ~= "alt" and Objectives.useKey(objectives, id) then
 			WorldService.unlockDoor(id, player)

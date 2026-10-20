@@ -9,6 +9,7 @@ local Debris = game:GetService("Debris")
 
 local Audio = require("@game/ReplicatedStorage/Shared/Game/Audio")
 local Build = require("./Build")
+local HouseArt = require("./HouseArt")
 
 local PuzzleProps = {}
 
@@ -226,13 +227,38 @@ local function safe(parent: Instance, p: Vector3)
 end
 
 -- Monta o móvel do enigma `style` atrás do pedestal em `p` (o radio da floresta já existe no HouseTaskProps).
+-- Pivô de um modelo de arte encostado atrás do pedestal, de frente para os jogadores (+Z).
+local function facing(p: Vector3, back: number): CFrame
+	local at = p + Vector3.new(0, 0, back)
+	return CFrame.lookAt(at, at + Vector3.zAxis)
+end
+
 function PuzzleProps.build(parent: Instance, p: Vector3, style: string)
 	if style == "clock" then
 		clock(parent, p)
 	elseif style == "piano" then
-		piano(parent, p)
+		-- Piano da Lia do artista (frente para +Z, onde ficam as teclas do enigma); sem ele, o piano em blocos.
+		local art = HouseArt.swap(parent, "LiaPiano", facing(p, -2.3), function(folder)
+			piano(folder, p)
+		end)
+		if art then
+			-- A luz quente das velas continua: o piano é o único ponto quente do porão.
+			local glow = Build.part(
+				parent,
+				"PianoGlow",
+				Vector3.new(0.2, 0.2, 0.2),
+				CFrame.new(p + Vector3.new(0, 6.5, -1.6)),
+				Color3.fromRGB(255, 176, 92),
+				{ collide = false, query = false, transparency = 1 }
+			)
+			local light = Instance.new("PointLight")
+			light.Color, light.Range, light.Brightness, light.Shadows = Color3.fromRGB(255, 170, 96), 14, 0.9, false
+			light.Parent = glow
+		end
 	elseif style == "safe" then
-		safe(parent, p)
+		HouseArt.swap(parent, "BasementSafe", facing(p, -2.8), function(folder)
+			safe(folder, p)
+		end)
 	end
 end
 

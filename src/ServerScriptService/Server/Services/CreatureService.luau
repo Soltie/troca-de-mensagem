@@ -787,6 +787,16 @@ function CreatureService.scriptPlace(position: Vector3, look: Vector3)
 	arrived = true
 end
 
+-- Cena da captura (CaptureSequenceService): o Root marca DragSerial/ThrowSerial para o cliente animar.
+function CreatureService.rootPart(): BasePart
+	return getRoot()
+end
+
+-- Pés do Tung agora (ativo ou não; a cena da captura roda com ele congelado).
+function CreatureService.feetNow(): Vector3
+	return feet()
+end
+
 -- Segundos desde a última vez que viu o jogador (esconderijo: "viu entrar?").
 function CreatureService.sawEntry(player: Player): boolean
 	return os.clock() - (seenPlayers[player.UserId] or -math.huge) < Config.Hide.SawEntryWindow

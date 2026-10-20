@@ -32,6 +32,12 @@ local WOOD = Color3.fromRGB(66, 44, 31)
 local TRIM = Color3.fromRGB(48, 32, 23)
 local BRASS = Color3.fromRGB(176, 136, 64)
 local COUNT = 3
+-- Cor do que enrola cada fusível do cap. 2: tricô da Dona Cida, fita da Lia, barbante do pião do Juca.
+local FUSE_WRAPS: { [string]: Color3 } = {
+	fuse_1 = Color3.fromRGB(176, 44, 52),
+	fuse_2 = Color3.fromRGB(232, 120, 170),
+	fuse_3 = Color3.fromRGB(210, 190, 140),
+}
 -- Um gerador só para o servidor todo: criar um por cômodo no mesmo instante repetia o sorteio.
 local rng = Random.new()
 
@@ -122,6 +128,51 @@ local function placeItem(model: Model, item: string, at: Vector3, scale: number)
 	return parts
 end
 
+-- Variações de um mesmo móvel (crítico, B9): tom da madeira sorteado entre três e um enfeite em cima
+-- (nada, toco de vela, pilha de livros ou paninho de renda). Só aparência, nada que mexe na abertura.
+local TONES = { WOOD, Color3.fromRGB(84, 58, 40), Color3.fromRGB(52, 35, 25) }
+local function vary(model: Model, frame: CFrame, top: number)
+	local tone = TONES[rng:NextInteger(1, #TONES)]
+	for _, part in model:GetChildren() do
+		if part:IsA("BasePart") and part.Color == WOOD then
+			part.Color = tone
+		end
+	end
+	local style = rng:NextInteger(1, 4)
+	if style == 2 then
+		local candle = piece(
+			model,
+			"DecorCandle",
+			Vector3.new(0.3, 0.6, 0.3),
+			frame * CFrame.new(0.9, top + 0.3, 0.2),
+			Color3.fromRGB(220, 210, 186),
+			Enum.Material.SmoothPlastic
+		)
+		candle.Shape = Enum.PartType.Cylinder
+		candle.CFrame *= CFrame.Angles(0, 0, math.rad(90))
+	elseif style == 3 then
+		for n = 0, 2 do
+			piece(
+				model,
+				"DecorBook",
+				Vector3.new(0.9, 0.18, 0.65),
+				frame * CFrame.new(-0.8, top + 0.09 + n * 0.18, 0.1) * CFrame.Angles(0, math.rad(n * 12 - 10), 0),
+				Color3.fromHSV(rng:NextNumber(0, 0.12), 0.45, 0.35),
+				Enum.Material.Fabric
+			)
+		end
+	elseif style == 4 then
+		piece(
+			model,
+			"DecorCloth",
+			Vector3.new(1.6, 0.04, 1.1),
+			frame * CFrame.new(0, top + 0.02, 0),
+			Color3.fromRGB(214, 206, 188),
+			Enum.Material.Fabric
+		)
+	end
+end
+
 local function build(
 	root: Instance,
 	name: string,
@@ -130,7 +181,9 @@ local function build(
 	chest: boolean
 ): (Model, CFrame, { BasePart }, CFrame?, CFrame?, Vector3)
 	local model = Build.model(root, name)
+	-- Sem repetição visível (crítico, B9): giro leve fora do esquadro em cada móvel.
 	local frame = CFrame.lookAt(at, at + Vector3.new(facing.X, 0, facing.Z))
+		* CFrame.Angles(0, math.rad(rng:NextNumber(-7, 7)), 0)
 	local moving: { BasePart } = {}
 	if chest then
 		-- Baú: caixa com tampa que gira na dobradiça de trás.
@@ -190,6 +243,7 @@ local function build(
 		)
 		table.insert(moving, handle)
 		local hinge = frame * CFrame.new(0, 1.6, 1.05)
+		vary(model, frame, 1.95)
 		return model, frame, moving, hinge, nil, (frame * CFrame.new(0, 1.05, 0)).Position
 	end
 	-- Cômoda: três gavetas; a de cima desliza para fora.
@@ -234,6 +288,7 @@ local function build(
 	for _, part in { drawer, front, knob, inlay } do
 		table.insert(moving, part)
 	end
+	vary(model, frame, 3.17)
 	return model, frame, moving, nil, CFrame.new(frame.LookVector * 1.4), (frame * CFrame.new(0, 2.75, -0.1)).Position
 end
 
@@ -248,12 +303,26 @@ function Stash.build(
 	count: number?
 ): { [string]: Target }
 	local total = count or COUNT
-	local real = rng:NextInteger(1, total)
+	-- Lugares primeiro: com muitos móveis (Caixinha da Lia), quem não achou parede fica de fora (nada no meio do
+	-- tapete), e o móvel certo é sorteado só entre os que estão encostados numa parede.
 	local taken: { Vector3 } = {}
-	local targets: { [string]: Target } = {}
-	for n = 1, total do
+	local spots: { { at: Vector3, wall: Vector3? } } = {}
+	for _ = 1, total do
 		local at, wallFacing = spot(taken)
+		if count and not wallFacing then
+			continue
+		end
 		table.insert(taken, at)
+		table.insert(spots, { at = at, wall = wallFacing })
+	end
+	if #spots == 0 then
+		local at, wallFacing = spot({})
+		table.insert(spots, { at = at, wall = wallFacing })
+	end
+	local real = rng:NextInteger(1, #spots)
+	local targets: { [string]: Target } = {}
+	for n, place in spots do
+		local at, wallFacing = place.at, place.wall
 		local toCenter = Vector3.new(center.X - at.X, 0, center.Z - at.Z)
 		local facing = wallFacing or (if toCenter.Magnitude > 0.5 then toCenter.Unit else Vector3.zAxis)
 		local chest = rng:NextNumber() < 0.45
@@ -262,6 +331,43 @@ function Stash.build(
 		local item: { BasePart } = {}
 		if n == real then
 			item = placeItem(model, spec.item, inside, if chest then 1.2 else 0.9)
+			-- Caixinha da Lia (cap. 1): a chave aparece presa na corda da caixinha de música, com a fita de cabelo.
+			if spec.item == "key_living" and count then
+				local box = piece(
+					model,
+					"MusicBox",
+					Vector3.new(1.1, 0.6, 0.8),
+					CFrame.new(inside + Vector3.new(0, -0.15, 0)),
+					Color3.fromRGB(120, 70, 50)
+				)
+				local ribbon = piece(
+					model,
+					"HairRibbon",
+					Vector3.new(0.12, 0.45, 0.85),
+					CFrame.new(inside + Vector3.new(0.45, 0.05, 0)),
+					Color3.fromRGB(232, 120, 170),
+					Enum.Material.Fabric
+				)
+				for _, part in { box, ribbon } do
+					part.Transparency = 1
+					table.insert(item, part)
+				end
+			end
+			-- Fusíveis da Família (cap. 2): cada fusível vem enrolado em algo da pessoa dona dele.
+			local wrap = FUSE_WRAPS[spec.item]
+			if wrap and #item > 0 then
+				local ring = piece(
+					model,
+					"FuseWrap",
+					Vector3.new(0.5, 0.55, 0.55),
+					CFrame.new(inside) * CFrame.Angles(0, 0, math.rad(90)),
+					wrap,
+					Enum.Material.Fabric
+				)
+				ring.Shape = Enum.PartType.Cylinder
+				ring.Transparency = 1
+				table.insert(item, ring)
+			end
 			-- O item anda junto com a gaveta.
 			if slide then
 				for _, part in item do

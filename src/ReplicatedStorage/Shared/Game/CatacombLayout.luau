@@ -38,7 +38,7 @@ function Layout.relocate(stage: number, item: string?, event: string?, index: nu
 	if stage == 4 and item == "safe_clue" then
 		return Layout.CatacombTask
 	end
-	if stage == 5 and index == 1 and item == nil and event == nil then
+	if stage == 5 and index == 2 and item == nil and event == nil then
 		return Layout.ChapelTask
 	end
 	return nil

@@ -1,0 +1,20 @@
+{
+	"name": "TungTungSync",
+	"emitLegacyScripts": false,
+	"servePort": 34872,
+	"tree": {
+		"$className": "DataModel",
+		"ReplicatedStorage": {
+			"$className": "ReplicatedStorage",
+			"$ignoreUnknownInstances": true,
+			"Client": { "$path": "src/ReplicatedStorage/Client" },
+			"Shared": { "$path": "src/ReplicatedStorage/Shared" }
+		},
+		"ServerScriptService": {
+			"$className": "ServerScriptService",
+			"$ignoreUnknownInstances": true,
+			"Server": { "$path": "src/ServerScriptService/Server" },
+			"Tests": { "$path": "src/ServerScriptService/Tests" }
+		}
+	}
+}

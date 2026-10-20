@@ -21,6 +21,7 @@ local Lights = require("./HouseLights")
 local Finish = require("./HouseFinish")
 local Materials = require("./HouseMaterials")
 local Props = require("./HouseProps")
+local Dressing = require("./HouseDressing")
 
 local Scenery = {}
 
@@ -526,6 +527,8 @@ function Scenery.build(root: Instance)
 	Finish.build(root)
 	Props.build(root)
 	Materials.build(root)
+	-- Reforma "A Casa de Madeira": cenografia por cômodo (começa pela sala de estar do cap. 1).
+	Dressing.build(root)
 	Exterior.build(root)
 	Ground.build(root)
 	Lights.build(root)

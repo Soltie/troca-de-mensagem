@@ -11,11 +11,11 @@ Profile.World = {
 	brightness = 0.75, -- lua fraca: o exterior é lido pelas luzes da casa e pela lanterna (20/10: levemente mais clara)
 	ambient = { 16, 18, 26 },
 	ambientPower = { 24, 25, 31 },
-	-- Sob o telhado a casa é escura (a lanterna é a fonte principal), mas nunca preta: um piso frio de luar
-	-- deixa ler portas e caminho a ~10 studs sem lanterna (critério do crítico, 20/10). Abaixo de ~40 o
-	-- Future + contraste zeram a madeira escura. Com energia, um pouco mais e mais neutro.
-	ambientIndoor = { 40, 42, 54 },
-	ambientIndoorPower = { 54, 51, 52 },
+	-- Sob o telhado a casa é escura (a lanterna é a fonte principal), mas nunca preta. 21/10 (crítico, v2 "parece
+	-- fim de tarde"): ambiente mais baixo; quem deixa ler portas e caminho é a luz de presença fraca e o luar
+	-- que entra pelas janelas (`Moonlight`), fontes que o jogador vê. Com energia, um pouco mais e mais neutro.
+	ambientIndoor = { 30, 32, 42 },
+	ambientIndoorPower = { 44, 42, 44 },
 	outdoor = { 36, 42, 58 },
 	fog = { 30, 36, 51 },
 	fogPower = { 35, 40, 53 },
@@ -32,17 +32,19 @@ Profile.Bloom = { intensity = 0.1, size = 10, threshold = 1.9 }
 -- Foco redondo e nítido (pedido do humano): cone principal mais fechado e forte; auréola fraca só para a borda
 -- não cortar seco; quase nada de luz espalhada em volta da mão.
 Profile.Flashlight = {
-	brightness = 5.6,
+	-- 21/10 (crítico v3): 5,6 → 4,4. Com a casa escura, o feixe cheio estourava em branco no lençol do sofá e no
+	-- tijolo do porão; continua o foco forte e redondo que o humano aprovou, só sem clipar.
+	brightness = 4.4,
 	spill = 0.2,
 	spillRange = 8,
 	angle = 36,
 	range = 64,
 	-- Borda em degradê (pedido de 20/10): quatro anéis cada vez mais abertos e fracos em volta do foco.
 	halo = {
-		{ angle = 46, share = 0.42, reach = 0.9 },
-		{ angle = 58, share = 0.22, reach = 0.8 },
-		{ angle = 72, share = 0.1, reach = 0.62 },
-		{ angle = 90, share = 0.04, reach = 0.42 },
+		{ angle = 46, share = 0.3, reach = 0.85 },
+		{ angle = 58, share = 0.12, reach = 0.7 },
+		{ angle = 72, share = 0.05, reach = 0.5 },
+		{ angle = 90, share = 0.015, reach = 0.32 },
 	},
 }
 -- Luz de presença (estilo DOORS): luar fraco, sem sombra, preso à câmera, só dentro de casa. No Future o
@@ -52,7 +54,7 @@ Profile.Flashlight = {
 -- Só existe no cliente (cada jogador vê a sua; ninguém ilumina a sala dos outros). Alcance curto (14): o Tung a
 -- 15 studs nunca é revelado por ela; e quando ele chega perto (`near`..`far` studs) ela se apaga, para a silhueta
 -- dele vir só da lanterna e dos olhos (pedido do crítico, 20/10).
-Profile.Fill = { brightness = 2.6, range = 14, flashlight = 0.35, near = 6, far = 22, nearShare = 0.1 }
+Profile.Fill = { brightness = 1.7, range = 14, flashlight = 0.15, near = 6, far = 22, nearShare = 0.1 }
 function Profile.fill(indoor: number, flashlightOn: boolean, cinematic: boolean, creature: number?): number
 	if cinematic then
 		return 0
@@ -67,24 +69,52 @@ end
 -- casa (o crítico achou o porão cinza-azulado e limpo). A luz de presença cai e fica âmbar suja.
 Profile.Basement = {
 	below = -2,
-	ambient = { 30, 24, 19 },
+	ambient = { 18, 15, 12 },
 	fillColor = { 176, 138, 96 },
-	fill = 0.75,
+	fill = 0.45,
 	tint = { 255, 232, 205 },
 	saturation = 0.12, -- soma ao grade: recupera o marrom
-	contrast = 0.04, -- cantos mais fundos
+	contrast = 0.08, -- cantos mais fundos
+}
+-- Luar pelas janelas da fachada (`WindowPane`): luz fria entrando no cômodo, a fonte visível do escuro legível.
+-- O vidro fica escuro e meio transparente (antes era um retângulo branco liso) para ver a noite lá fora.
+Profile.Moonlight = {
+	brightness = 0.9,
+	range = 18,
+	angle = 70,
+	glass = { 38, 48, 62 },
+	transparency = 0.55,
+}
+-- Tetos de gesso claro (forros e teto do hall) estouravam sob a lanterna e as luminárias: escurecidos para um
+-- gesso velho e encardido. `ceiling` multiplica a cor original (uma vez por peça).
+Profile.Ceilings = {
+	names = {
+		RoomCeiling = true,
+		RoomCeilingPanel = true,
+		CorridorCeilingPanel = true,
+		FoyerCeilingPanel = true,
+		CorridorRoof = true,
+	},
+	shade = 0.5,
 }
 -- Placas de caminho (SurfaceGui das plaquinhas "SALA DE ESTAR", "COZINHA"...): eram o ponto mais claro do hall.
 Profile.Signs = { lightInfluence = 0.75, brightness = 0.6 }
 -- Feixe perto de uma superfície (teto, parede) estourava em branco: abaixo de `full` studs o brilho cai até
 -- `floor` (a 2 studs). Longe nada muda, então o alcance de leitura das pistas fica igual.
-Profile.FlashlightNear = { full = 12, close = 2, floor = 0.4 }
+-- 21/10: alcance 12 → 18 (o teto do hall, alto e claro, ficava a ~12–16 studs e ainda estourava) e piso 0,35.
+Profile.FlashlightNear = { full = 18, close = 2, floor = 0.35, upward = 0.7 }
 function Profile.nearDim(distance: number): number
 	local near = Profile.FlashlightNear
 	local t = math.clamp((distance - near.close) / (near.full - near.close), 0, 1)
 	-- Curva suave (smoothstep): sem degrau perceptível ao aproximar.
 	t = t * t * (3 - 2 * t)
 	return near.floor + (1 - near.floor) * t
+end
+-- Apontada para cima (componente Y da direção do feixe), a lanterna cai até `upward`: tetos são de gesso claro
+-- e não guardam pista; o feixe forte é para o chão e as paredes.
+function Profile.aimDim(lookY: number): number
+	local k = math.clamp((lookY - 0.45) / 0.4, 0, 1)
+	return 1 + (Profile.FlashlightNear.upward - 1) * k
 end
 -- Filtro de cor "frio" (opção B, escolhida pelo humano): azulado, menos saturado e mais contraste, por cima do tom
 -- de cada ambiente.

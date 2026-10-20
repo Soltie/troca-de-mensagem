@@ -1,5 +1,6 @@
 --!strict
 local PuzzleStyles = require("@game/ReplicatedStorage/Shared/Game/PuzzleStyles")
+local SahurMelody = require("@game/ReplicatedStorage/Shared/Game/SahurMelody")
 local TestKit = require("../TestKit")
 
 local spec: TestKit.Spec = {
@@ -43,25 +44,19 @@ local spec: TestKit.Spec = {
 			t.expect(string.find(catacomb, `{answer[1]} {answer[2]} _ _`, 1, true) ~= nil).toBe(true)
 			local panel = PuzzleStyles.clue(PuzzleStyles.PIANO, { 1, 2, 3, 4 }, answer)
 			t.expect(string.find(panel, `_ _ {answer[3]} {answer[4]}`, 1, true) ~= nil).toBe(true)
-			t.expect(string.find(panel, "LUA - SOL - BASTÃO - ESTRELA", 1, true) ~= nil).toBe(true)
+			-- O painel não entrega a ordem do piano (ela vem da caixinha do cap. 1).
+			t.expect((string.find(panel, "LUA - SOL - BASTÃO - ESTRELA", 1, true))).toBeNil()
 			for _, label in PuzzleStyles.PIANO.labels do
 				t.expect(PuzzleStyles.MARK_COLORS[label] ~= nil).toBe(true)
 			end
 		end)
 
-		t.it("piano keys get the four drawings in a seeded order and forgive mistakes", function()
+		t.it("the piano answer is the second phrase of the music box and forgives mistakes", function()
 			for seed = 1, 30 do
-				local marks = PuzzleStyles.pianoMarks(seed)
-				local seen: { [string]: boolean } = {}
-				for _, mark in marks do
-					seen[mark] = true
-				end
-				t.expect(#marks).toBe(4)
-				for _, label in PuzzleStyles.PIANO.labels do
-					t.expect(seen[label]).toBe(true)
-				end
 				local style = PuzzleStyles.forTask(4, 2, seed)
-				t.expect(table.concat(style.labels, ",")).toBe(table.concat(marks, ","))
+				-- Desenhos fixos: lua no painel = lua no piano.
+				t.expect(table.concat(style.labels, ",")).toBe(table.concat(PuzzleStyles.PIANO.labels, ","))
+				t.expect(table.concat(style.fixed :: { number }, ",")).toBe(table.concat(SahurMelody.second(seed), ","))
 				t.expect(style.forgiving).toBe(true)
 			end
 			t.expect(PuzzleStyles.CLOCK.forgiving).toBe(true)

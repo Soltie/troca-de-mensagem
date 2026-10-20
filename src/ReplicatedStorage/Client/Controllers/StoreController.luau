@@ -249,7 +249,10 @@ local function onNotice(payload: { [string]: any })
 		table.insert(lines, Text.Rewards.run)
 	elseif kind == "task" then
 		table.insert(lines, "OBJETIVO CONCLUÍDO")
-		table.insert(lines, if payload.contributed then "BÔNUS POR AJUDAR A EQUIPE" else "RECOMPENSA DA EQUIPE")
+		-- Jogando sozinho não há equipe para ajudar: só o "objetivo concluído".
+		if #Players:GetPlayers() > 1 then
+			table.insert(lines, if payload.contributed then "BÔNUS POR AJUDAR A EQUIPE" else "RECOMPENSA DA EQUIPE")
+		end
 	elseif kind == "tape" then
 		local tape = StoreCatalog.TapeById[payload.tape or ""]
 		local title = if tape then tape.title else "?"
@@ -2627,10 +2630,14 @@ function StoreController.setOpen(value: boolean)
 end
 
 -- Abre numa aba (menu inicial: LOJA, PASSE, RECOMPENSAS, ROBUX).
-function StoreController.openTab(key: string)
+-- `kind` (opcional) abre a loja já filtrada numa categoria (ex.: "uniform" para a entrada SKINS do menu).
+function StoreController.openTab(key: string, kind: string?)
 	if table.find(TABS, key :: Tab) then
 		tab = key :: Tab
 		track("view", key)
+	end
+	if tab == "shop" and kind and table.find(StoreCatalog.KINDS, kind :: any) then
+		kindFilter, selectedItem = kind :: any, nil
 	end
 	if isOpen then
 		setMessage(nil)
@@ -2645,13 +2652,19 @@ function StoreController.Init()
 end
 
 function StoreController.Start()
+	-- Menu inicial com o palco 3D: o atalho "[L] LOJA" some (a loja já está na coluna do menu).
+	player:GetAttributeChangedSignal("MenuStageActive"):Connect(function()
+		if hintLabel then
+			hintLabel.Visible = allowed() and phase ~= "Loading" and player:GetAttribute("MenuStageActive") ~= true
+		end
+	end)
 	GameState.observe(function(snapshot)
 		phase = snapshot.phase
 		if isOpen and not allowed() then
 			setOpen(false)
 		end
 		if hintLabel then
-			hintLabel.Visible = allowed() and phase ~= "Loading"
+			hintLabel.Visible = allowed() and phase ~= "Loading" and player:GetAttribute("MenuStageActive") ~= true
 		end
 	end)
 	player:GetAttributeChangedSignal("CampaignStatus"):Connect(function()
@@ -2659,7 +2672,7 @@ function StoreController.Start()
 			setOpen(false)
 		end
 		if hintLabel then
-			hintLabel.Visible = allowed() and phase ~= "Loading"
+			hintLabel.Visible = allowed() and phase ~= "Loading" and player:GetAttribute("MenuStageActive") ~= true
 		end
 	end)
 	-- Qualquer mudança de saldo/itens redesenha a loja aberta.

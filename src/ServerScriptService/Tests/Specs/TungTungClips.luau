@@ -3,7 +3,27 @@ local ClipCodec = require("@game/ReplicatedStorage/Client/Creature/ClipCodec")
 local TungTungClips = require("@game/ReplicatedStorage/Client/Creature/TungTungClips")
 local TestKit = require("../TestKit")
 
-local EXPECTED = { walk = true, run = true, slash = true, strafe = true, sheath = true }
+local EXPECTED = {
+	walk = true,
+	run = true,
+	slash = true,
+	strafe = true,
+	sheath = true,
+	stand = true,
+	searchwalk = true,
+	search = true,
+	alert = true,
+	peek = true,
+	bash = true,
+	warn = true,
+	grab = true,
+	knock3 = true,
+	stunned = true,
+	menuidle = true,
+	drag = true,
+	throw = true,
+	listen = true,
+}
 
 local testSpec: TestKit.Spec = {
 	name = "TungTungClips",
@@ -49,12 +69,23 @@ local testSpec: TestKit.Spec = {
 		end)
 		t.it("looping clips stay in place (root motion removed)", function()
 			local hips = table.find(TungTungClips.Bones, "mixamorig:Hips") :: number
-			for _, name in { "walk", "run", "strafe" } do
+			for _, name in { "walk", "run", "strafe", "searchwalk", "stand", "search" } do
 				local decoded = ClipCodec.decode((TungTungClips.Clips :: any)[name], TungTungClips.Bones, 16)
 				local x1, _, z1 = ClipCodec.position(decoded, 1, hips)
 				local x2, _, z2 = ClipCodec.position(decoded, decoded.frames, hips)
 				t.expect(math.abs(x2 - x1) < 0.05).toBe(true)
 				t.expect(math.abs(z2 - z1) < 0.05).toBe(true)
+			end
+		end)
+		t.it("sound markers fall inside their clip and gait clips know their feet speed", function()
+			for name, list in (TungTungClips :: any).Markers do
+				local decoded = ClipCodec.decode((TungTungClips.Clips :: any)[name], TungTungClips.Bones, 16)
+				for _, marker in list do
+					t.expect(marker.time >= 0 and marker.time <= decoded.duration).toBe(true)
+				end
+			end
+			for _, name in { "walk", "run", "searchwalk", "drag" } do
+				t.expect(((TungTungClips :: any).FeetSpeed[name] or 0) > 1).toBe(true)
 			end
 		end)
 	end,

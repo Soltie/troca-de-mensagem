@@ -33,9 +33,13 @@ return {
 			local powered = P.ambient(1, 1, 0)
 			local forest = P.ambient(1, 1, 1)
 			-- Piso de leitura: abaixo de ~38 a madeira escura vira preto; acima de ~60 a lanterna perde o papel.
-			t.expect(P.luma(dark) >= 38 and P.luma(dark) <= 50).toBe(true)
+			-- 21/10: ambiente baixo (a leitura vem do luar das janelas e da luz de presença, fontes visíveis).
+			t.expect(P.luma(dark) >= 24 and P.luma(dark) <= 40).toBe(true)
 			t.expect(P.luma(powered) > P.luma(dark)).toBe(true)
-			t.expect(P.luma(powered) <= 60).toBe(true)
+			t.expect(P.luma(powered) <= 50).toBe(true)
+			-- O porão é o lugar mais escuro da casa.
+			t.expect(P.luma(P.Basement.ambient) < P.luma(dark)).toBe(true)
+			t.expect(P.Basement.fill < 1).toBe(true)
 			-- Sem energia o interior é frio (luar); com energia, mais neutro.
 			t.expect(dark[3] > dark[1]).toBe(true)
 			for i = 1, 3 do
@@ -64,7 +68,9 @@ return {
 					t.expect(P.luma(chilled)).toBeCloseTo(P.luma(warm))
 					-- Dentro de casa o capítulo tardio puxa para o azul do luar (a noite lá fora já é azul).
 					if indoor == 1 then
-						t.expect(chilled[3] / chilled[1] > warm[3] / warm[1] - 1e-6).toBe(true)
+						local moonHue = P.Moon[3] / P.Moon[1]
+						local before = math.abs(warm[3] / warm[1] - moonHue)
+						t.expect(math.abs(chilled[3] / chilled[1] - moonHue) <= before + 1e-6).toBe(true)
 					end
 				end
 			end
@@ -80,6 +86,14 @@ return {
 			t.expect(P.fill(1, false, false, 40)).toBe(P.Fill.brightness)
 			t.expect(P.fill(1, false, false, 4)).toBeCloseTo(P.Fill.brightness * P.Fill.nearShare)
 			t.expect(P.fill(1, false, false, 12) < P.fill(1, false, false, 20)).toBe(true)
+		end)
+		t.it("flashlight dims when aimed up at pale ceilings, never when aimed level or down", function()
+			t.expect(P.aimDim(0)).toBe(1)
+			t.expect(P.aimDim(-1)).toBe(1)
+			t.expect(P.aimDim(1)).toBeCloseTo(P.FlashlightNear.upward)
+			t.expect(P.aimDim(0.7) < 1 and P.aimDim(0.7) > P.FlashlightNear.upward).toBe(true)
+			-- O teto do hall (~14 studs, olhando para cima) fica bem abaixo do brilho cheio.
+			t.expect(P.nearDim(14) * P.aimDim(0.9) < 0.75).toBe(true)
 		end)
 		t.it("flashlight dims smoothly on close surfaces and keeps full reach far away", function()
 			t.expect(P.nearDim(0)).toBe(P.FlashlightNear.floor)

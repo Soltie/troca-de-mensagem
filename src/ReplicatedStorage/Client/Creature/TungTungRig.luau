@@ -4,6 +4,10 @@
 	animado no cliente: os clipes de TungTungClips viram Bone.Transform a cada quadro, com mistura
 	suave entre clipes. Não usa Animator nem assets de animação publicados.
 
+	Os clipes são animados no Blender (tools/tungtung/blender): pés plantados com IK, então o pé só não
+	escorrega se o clipe tocar na velocidade certa (feetSpeed). Marcadores de som (passo, batida do bastão)
+	saem no quadro exato por markers().
+
 	O pivô do modelo fica entre os pés, olhando para -Z (frente do Roblox).
 ]]
 
@@ -12,7 +16,27 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ClipCodec = require("./ClipCodec")
 local TungTungClips = require("./TungTungClips")
 
-export type ClipName = "idle" | "walk" | "run" | "slash" | "strafe" | "sheath"
+export type ClipName =
+	"idle"
+	| "stand"
+	| "walk"
+	| "searchwalk"
+	| "run"
+	| "search"
+	| "alert"
+	| "listen"
+	| "peek"
+	| "bash"
+	| "warn"
+	| "grab"
+	| "knock3"
+	| "stunned"
+	| "menuidle"
+	| "drag"
+	| "throw"
+	| "slash"
+	| "strafe"
+	| "sheath"
 
 type Track = {
 	name: ClipName,
@@ -36,6 +60,11 @@ export type TungRig = {
 	fade: number,
 	fadeTime: number,
 	breath: number,
+	-- Tempo do clipe atual no quadro anterior (para achar marcadores atravessados).
+	lastTime: number,
+	-- Ação só do tronco para cima (cabeça, braços) por cima do andar: escutar andando, por exemplo.
+	overlay: Track?,
+	overlayWeight: number,
 }
 
 local TungTungRig = {}
@@ -44,11 +73,21 @@ local TungTungRig = {}
 local VISUAL_SCALE = 1.24
 local WIDTH_SCALE = 1.18
 local SKIN_TINT = Color3.fromRGB(170, 140, 106)
+-- Olhos: âmbar pré-compensado para o filtro frio da cena (ColorCorrection multiplica ~0,73/0,82/1,0 e tira 35% da
+-- saturação). Depois do filtro fica ~(185,123,40), âmbar quente; o amarelo antigo saía esverdeado. Brilho vem do
+-- tamanho/alcance, não de mais verde.
+local EYE_COLOR = Color3.fromRGB(255, 150, 40)
 
 -- Clipes decodificados uma vez por cliente: quadro -> lista de CFrames por osso.
 local cache: { [string]: { frames: { { CFrame } }, decoded: ClipCodec.Decoded } } = {}
 
+-- "idle" (guarda do jumpscare e das cenas antigas) continua sendo o 1º quadro do golpe com respiração procedural;
+-- o parado novo do jogo é "stand". Os clipes do Mixamo (golpe, guardar, lateral) ficam exatamente como eram.
+local SOURCE: { [string]: string } = { idle = "slash" }
+local LEGACY: { [string]: boolean } = { slash = true, sheath = true, strafe = true }
+
 local function clipData(name: string): ({ { CFrame } }, ClipCodec.Decoded)
+	name = SOURCE[name] or name
 	local hit = cache[name]
 	if hit then
 		return hit.frames, hit.decoded
@@ -56,13 +95,15 @@ local function clipData(name: string): ({ { CFrame } }, ClipCodec.Decoded)
 	local raw = (TungTungClips.Clips :: any)[name]
 	assert(raw, `[TungTungRig] unknown clip {name}`)
 	local decoded = ClipCodec.decode(raw, TungTungClips.Bones, TungTungClips.PosRange)
+	-- A translação do quadril cresce junto com o modelo (senão o pé flutua quando ele agacha).
+	local grow = if LEGACY[name] then 1 else VISUAL_SCALE
 	local frames = table.create(decoded.frames)
 	for frame = 1, decoded.frames do
 		local list = table.create(decoded.boneCount)
 		for bone = 1, decoded.boneCount do
 			local qx, qy, qz, qw = ClipCodec.rotation(decoded, frame, bone)
 			local px, py, pz = ClipCodec.position(decoded, frame, bone)
-			list[bone] = CFrame.new(px, py, pz, qx, qy, qz, qw)
+			list[bone] = CFrame.new(px * grow, py * grow, pz * grow, qx, qy, qz, qw)
 		end
 		frames[frame] = list
 	end
@@ -70,15 +111,16 @@ local function clipData(name: string): ({ { CFrame } }, ClipCodec.Decoded)
 	return frames, decoded
 end
 
--- "idle" não veio do Mixamo: é o primeiro quadro do golpe (bastão em guarda) com respiração procedural.
-local SOURCE: { [ClipName]: string } = {
-	idle = "slash",
-	walk = "walk",
-	run = "run",
-	slash = "slash",
-	strafe = "strafe",
-	sheath = "sheath",
-}
+-- Velocidade (studs/s) que os pés plantados percorrem com o clipe em 1x, já na escala do visual.
+function TungTungRig.feetSpeed(name: ClipName): number
+	local speeds = (TungTungClips :: any).FeetSpeed :: { [string]: number }
+	return (speeds[name] or 0) * VISUAL_SCALE
+end
+
+function TungTungRig.duration(name: ClipName): number
+	local _, decoded = clipData(name)
+	return decoded.duration
+end
 
 function TungTungRig.available(): boolean
 	local assets = ReplicatedStorage:FindFirstChild("Assets")
@@ -113,6 +155,16 @@ function TungTungRig.build(parent: Instance?): TungRig?
 			skin.Color = SKIN_TINT
 		end)
 	end
+	-- Peças Neon de olho que venham no modelo (versões do Artista 3D) seguem a mesma cor.
+	for _, part in model:GetDescendants() do
+		if
+			part:IsA("BasePart")
+			and part.Material == Enum.Material.Neon
+			and string.find(string.lower(part.Name), "eye")
+		then
+			part.Color = EYE_COLOR
+		end
+	end
 	body.Anchored = true
 	body.CanCollide = false
 	body.CanQuery = false
@@ -129,7 +181,7 @@ function TungTungRig.build(parent: Instance?): TungRig?
 	emitter.Parent = body
 	-- Olhos acesos: o Tung Tung aparece no escuro antes de chegar perto (justo para quem joga).
 	local light = Instance.new("PointLight")
-	light.Color = Color3.fromRGB(255, 196, 120)
+	light.Color = EYE_COLOR
 	-- Alcance curto: acende o rosto, não o corpo todo (senão ele vira um boneco laranja chapado).
 	light.Range = 6
 	light.Brightness = 1
@@ -160,6 +212,9 @@ function TungTungRig.build(parent: Instance?): TungRig?
 		fade = 1,
 		fadeTime = 0.2,
 		breath = 0,
+		lastTime = 0,
+		overlay = nil,
+		overlayWeight = 0,
 	}
 	TungTungRig.play(rig, "idle", 0)
 	return rig
@@ -176,7 +231,7 @@ function TungTungRig.play(rig: TungRig, name: ClipName, fadeTime: number?, speed
 		current.speed = speed or current.speed
 		return
 	end
-	local frames, decoded = clipData(SOURCE[name])
+	local frames, decoded = clipData(name)
 	rig.previous = current
 	rig.current = {
 		name = name,
@@ -188,6 +243,54 @@ function TungTungRig.play(rig: TungRig, name: ClipName, fadeTime: number?, speed
 	}
 	rig.fadeTime = fadeTime or 0.2
 	rig.fade = if rig.previous and rig.fadeTime > 0 then 0 else 1
+	rig.lastTime = -1e-3
+end
+
+-- Recomeça o clipe atual do início (para repetir uma ação curta, como a batida).
+function TungTungRig.restart(rig: TungRig)
+	if rig.current then
+		rig.current.time = 0
+		rig.lastTime = -1e-3
+	end
+end
+
+-- Toca `name` só no tronco, braços e cabeça (as pernas seguem o clipe atual). Some sozinho no fim.
+function TungTungRig.overlay(rig: TungRig, name: ClipName, speed: number?)
+	local frames, decoded = clipData(name)
+	rig.overlay = { name = name, frames = frames, decoded = decoded, time = 0, speed = speed or 1, weight = 1 }
+end
+
+-- Marcadores do clipe atual atravessados desde o último step (nomes, na ordem). Clipes em laço dão a volta.
+function TungTungRig.markers(rig: TungRig): { string }
+	local hits: { string } = {}
+	local track = rig.current
+	local list = track
+		and ((TungTungClips :: any).Markers :: { [string]: { { name: string, time: number } } })[track.name]
+	if not track or not list then
+		return hits
+	end
+	local duration = track.decoded.duration
+	local from, to = rig.lastTime, track.time
+	if to <= from then
+		return hits
+	end
+	local loop = track.decoded.loop and duration > 0
+	for _, marker in list do
+		local t = marker.time
+		if loop then
+			-- Conta quantas vezes `t + k·duration` caiu em (from, to].
+			local k = math.ceil((from - t) / duration)
+			if t + k * duration <= from then
+				k += 1
+			end
+			if t + k * duration <= to then
+				table.insert(hits, marker.name)
+			end
+		elseif t > from and t <= to then
+			table.insert(hits, marker.name)
+		end
+	end
+	return hits
 end
 
 function TungTungRig.setSpeed(rig: TungRig, speed: number)
@@ -221,13 +324,36 @@ end
 
 local SPINE = table.find(TungTungClips.Bones, "mixamorig:Spine2") :: number
 local NECK = table.find(TungTungClips.Bones, "mixamorig:Neck") :: number
+-- Ossos do tronco para cima (sem quadril e pernas), usados pelo overlay.
+local UPPER: { [number]: boolean } = {}
+for index, name in TungTungClips.Bones do
+	if
+		not string.find(name, "Leg")
+		and not string.find(name, "Foot")
+		and not string.find(name, "Toe")
+		and name ~= "mixamorig:Hips"
+	then
+		UPPER[index] = true
+	end
+end
+local OVERLAY_FADE = 0.15
 
--- Avança os clipes e escreve Bone.Transform. `lookYaw` (graus) vira a cabeça para um alvo.
-function TungTungRig.step(rig: TungRig, dt: number, lookYaw: number?)
+-- Depuração (Studio, só no cliente): workspace:SetAttribute("AnimSlow", 0.25) deixa o Tung e o jumpscare a 1/4 da
+-- velocidade para tirar prints quadro a quadro. Sem o atributo (padrão), 1.
+function TungTungRig.slow(): number
+	local value = workspace:GetAttribute("AnimSlow")
+	return if type(value) == "number" and value > 0 then math.min(value, 1) else 1
+end
+
+-- Avança os clipes e escreve Bone.Transform. `lookYaw`/`lookPitch` (graus) viram o pescoço para um alvo
+-- (positivo = para a esquerda dele / para baixo); o menu usa para ele olhar o botão sob o mouse.
+function TungTungRig.step(rig: TungRig, dt: number, lookYaw: number?, lookPitch: number?)
 	local current = rig.current
 	if not current then
 		return
 	end
+	dt *= TungTungRig.slow()
+	rig.lastTime = current.time
 	current.time += dt * current.speed
 	local previous = rig.previous
 	if previous then
@@ -240,17 +366,34 @@ function TungTungRig.step(rig: TungRig, dt: number, lookYaw: number?)
 	end
 	rig.breath += dt
 	local alpha = rig.fade * rig.fade * (3 - 2 * rig.fade)
+	local overlay = rig.overlay
+	local overlayAlpha = 0
+	if overlay then
+		overlay.time += dt * overlay.speed
+		local left = overlay.decoded.duration - overlay.time
+		if left <= 0 then
+			rig.overlay = nil
+			overlay = nil
+		else
+			local w = math.min(1, overlay.time / OVERLAY_FADE, left / OVERLAY_FADE)
+			overlayAlpha = w * w * (3 - 2 * w)
+		end
+	end
 	local breathe = if current.name == "idle" then math.sin(rig.breath * 2.2) * 0.04 else 0
 	local yaw = math.rad(lookYaw or 0)
+	local pitch = math.rad(lookPitch or 0)
 	for index, bone in rig.bones do
 		local target = sample(current, index)
 		if previous then
 			target = sample(previous, index):Lerp(target, alpha)
 		end
+		if overlay and overlayAlpha > 0 and UPPER[index] then
+			target = target:Lerp(sample(overlay, index), overlayAlpha)
+		end
 		if index == SPINE and breathe ~= 0 then
 			target *= CFrame.Angles(breathe, 0, 0)
-		elseif index == NECK and yaw ~= 0 then
-			target *= CFrame.Angles(0, yaw, 0)
+		elseif index == NECK and (yaw ~= 0 or pitch ~= 0) then
+			target *= CFrame.Angles(pitch, yaw, 0)
 		end
 		bone.Transform = target
 	end

@@ -136,6 +136,12 @@ end
 
 -- Telhado acima da câmera (casa, varanda, pavilhões) e chão abaixo dela.
 local function probe(position: Vector3)
+	-- Palco 3D do menu (MainMenuController): quarto fechado longe do mapa, sem chuva nem gotas na lente.
+	if Players.LocalPlayer:GetAttribute("MenuStageActive") == true then
+		outdoorTarget = 0
+		groundY = position.Y - 5
+		return
+	end
 	local world = workspace:FindFirstChild(Tags.WorldFolder)
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Include

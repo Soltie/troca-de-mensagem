@@ -3,9 +3,10 @@
 local TableUtil = require("../Util/TableUtil")
 local Broadcast = {
 	{
-		"A fita estava rodando antes de vocês chegarem.",
-		"Ela mostra a porta da frente. Pelo lado de dentro.",
-		"Três chaves. Uma pergunta: quem está gravando?",
+		-- Fita da Dona Cida (roteiro "A Casa de Madeira", cap. 1).
+		"Aqui é a Cida. Se você está vendo isto, a porta já fechou.",
+		"Não acendam a luz perto dos móveis. Eles ainda são gente.",
+		"Três chaves abrem o corredor: a do Juca, a da Lia e a do Valdemar.",
 	},
 	{
 		"Na gravação, ele bate à porta de cada quarto.",

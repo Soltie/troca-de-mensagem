@@ -57,6 +57,11 @@ function Plan.create(seed: number, chapter: number, players: number, mode: strin
 		local dz = if use <= 2 then -3 else 6
 		if room.id == "Hall" then
 			dx, dz = 0, -(use - 1) * 14
+		elseif room.id == "Machine" then
+			-- A máquina de marceneiro (World/HouseMachine) ocupa o meio da sala: as tarefas vão para a parede do
+			-- fundo, entre a mesa antiga e a caldeira, com a frente livre.
+			-- Segunda tarefa na mesma sala (o quadro de luz do cap. 2): canto da porta, também com a frente livre.
+			dx, dz, offset = if use == 1 then 10 else -14, if use == 1 then -10 else -6, 0
 		end
 		if objective.kind == "hide" or objective.kind == "breath" then
 			-- Frente do guarda-roupa (HouseBuilder: encostado na fachada, de frente para a porta do cômodo).

@@ -25,7 +25,7 @@ return {
 			Session.beginStage(s)
 			t.expect(Session.taskReady(s, "task_3")).toBe(true)
 			t.expect((Session.act(s, 2, "task_3", 1, 1))).toBe(true)
-			t.expect((Session.act(s, 1, "task_4", 1, 2))).toBe(false)
+			t.expect((Session.act(s, 1, "task_5", 1, 2))).toBe(false)
 			Session.act(s, 1, "task_1", 1, 3)
 			Session.act(s, 2, "task_2", 1, 4)
 			t.expect(Session.taskReady(s, "task_4")).toBe(true)

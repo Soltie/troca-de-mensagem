@@ -24,6 +24,7 @@ local services: { any } = {
 	require("./Services/PresenceService"),
 	require("./Services/LobbyService"),
 	require("./Services/CreatureService"),
+	require("./Services/CaptureSequenceService"),
 	require("./Services/PropService"),
 	require("./Services/CosmeticService"),
 	require("./Services/CollectibleService"),
@@ -41,6 +42,7 @@ local services: { any } = {
 	require("./Services/ForestHazardService"),
 	require("./Services/TunnelService"),
 	require("./Services/ChapterMomentService"),
+	require("./Services/DoorSwapService"),
 	require("./Services/DifficultyService"),
 	require("./Services/DebugService"), -- só age no Studio
 }

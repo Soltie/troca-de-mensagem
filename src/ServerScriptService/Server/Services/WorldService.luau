@@ -238,16 +238,44 @@ local function animateDoor(door: MapBuilder.DoorHandle, state: DoorState, instan
 	sound.PlaybackSpeed = if state == "crack" then 1.25 else (if closing then 1.1 else 0.9)
 	sound.Volume = Audio.Door.volume * (if state == "crack" then 0.45 else 1)
 	sound:Play()
-	local frames = math.max(3, math.ceil(math.abs(delta) / math.rad(10)))
+	-- Porta de casa velha (pedido do crítico, cap. 1): ao abrir ela emperra, dá um tranco curto, abre rápido e
+	-- passa um pouco do ponto, voltando com um balanço; ao fechar bate e quica. Curva por quadro a 30 Hz.
+	local duration = math.clamp(math.abs(delta) / math.rad(150), 0.35, 0.9)
+	local opening = not closing and state ~= "crack"
+	local function shape(t: number): number
+		if opening then
+			-- 0..0,18: tranco (6% do curso e volta para 3%); depois abre com aceleração e passa 6% do alvo.
+			if t < 0.09 then
+				return 0.06 * math.sin(t / 0.09 * math.pi / 2)
+			elseif t < 0.18 then
+				return 0.06 - 0.03 * ((t - 0.09) / 0.09)
+			end
+			local u = (t - 0.18) / 0.82
+			local base = 0.03 + 0.97 * (1 - (1 - u) ^ 3)
+			return base + 0.06 * math.sin(u * math.pi) * (1 - u)
+		elseif closing then
+			-- Fecha acelerando e quica duas vezes no batente.
+			if t < 0.7 then
+				local u = t / 0.7
+				return u * u
+			end
+			local u = (t - 0.7) / 0.3
+			return 1 - 0.05 * math.abs(math.sin(u * math.pi * 2)) * (1 - u)
+		end
+		return t * t * (3 - 2 * t)
+	end
 	task.spawn(function()
-		for i = 1, frames do
+		local start = os.clock()
+		while true do
 			if doorTokens[door.id] ~= token then
 				return
 			end
-			local t = i / frames
-			local eased = t * t * (3 - 2 * t)
-			door.panel.CFrame = doorPose(door, from + delta * eased)
-			task.wait(1 / 12)
+			local t = math.min(1, (os.clock() - start) / duration)
+			door.panel.CFrame = doorPose(door, from + delta * shape(t))
+			if t >= 1 then
+				break
+			end
+			task.wait(1 / 30)
 		end
 		if closing then
 			local latch = latches[door.id]

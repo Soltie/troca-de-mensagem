@@ -153,10 +153,54 @@ function controller.Start()
 			item.Brightness = math.min(item.Brightness, Profile.Signs.brightness)
 		end
 	end
-	for _, item in workspace:GetDescendants() do
-		tameSign(item)
+	-- Janelas da fachada: vidro escuro e um facho de luar entrando (só no cliente, sem sombra).
+	local function moonWindow(item: Instance)
+		if not item:IsA("BasePart") or item.Name ~= "WindowPane" or item:FindFirstChild("Moonlight") then
+			return
+		end
+		local moon = Profile.Moonlight
+		item.Color = rgb(moon.glass)
+		item.Material = Enum.Material.Glass
+		item.Transparency = math.max(item.Transparency, moon.transparency)
+		-- A face que olha para o centro da casa (x = 0) é a de dentro.
+		local inward = item.CFrame:VectorToObjectSpace(Vector3.new(-math.sign(item.Position.X), 0, 0))
+		local light = Instance.new("SurfaceLight")
+		light.Name = "Moonlight"
+		light.Face = Enum.NormalId.Right
+		if inward.X < -0.5 then
+			light.Face = Enum.NormalId.Left
+		elseif inward.Z > 0.5 then
+			light.Face = Enum.NormalId.Back
+		elseif inward.Z < -0.5 then
+			light.Face = Enum.NormalId.Front
+		elseif inward.Y > 0.5 then
+			light.Face = Enum.NormalId.Top
+		elseif inward.Y < -0.5 then
+			light.Face = Enum.NormalId.Bottom
+		end
+		light.Color = rgb(Profile.Moon)
+		light.Brightness = moon.brightness
+		light.Range = moon.range
+		light.Angle = moon.angle
+		light.Shadows = false
+		light.Parent = item
 	end
-	workspace.DescendantAdded:Connect(tameSign)
+	local function shadeCeiling(item: Instance)
+		if item:IsA("BasePart") and Profile.Ceilings.names[item.Name] and not item:GetAttribute("LightShaded") then
+			item:SetAttribute("LightShaded", true)
+			local k = Profile.Ceilings.shade
+			item.Color = Color3.new(item.Color.R * k, item.Color.G * k, item.Color.B * k)
+		end
+	end
+	local function prepare(item: Instance)
+		tameSign(item)
+		moonWindow(item)
+		shadeCeiling(item)
+	end
+	for _, item in workspace:GetDescendants() do
+		prepare(item)
+	end
+	workspace.DescendantAdded:Connect(prepare)
 	RunService.RenderStepped:Connect(function(dt)
 		-- A luz de presença acompanha a câmera a cada quadro (o resto do compositor roda a 20 Hz).
 		local holder = fillPart
@@ -211,6 +255,16 @@ function controller.Start()
 			grade.Contrast = (values.contrast + cave.contrast * cellar) * treatment
 			grade.Saturation = (values.saturation + cave.saturation * cellar) * treatment
 			grade.Brightness = values.brightness * treatment
+		end
+		-- Palco 3D do menu (MainMenuController): só a lamparina ilumina, sem luz ambiente nem a correção fria
+		-- (que esverdeava o amarelo dos olhos do Tung).
+		if player:GetAttribute("MenuStageActive") == true then
+			Lighting.Ambient = Color3.new()
+			Lighting.OutdoorAmbient = Color3.new()
+			if grade then
+				grade.TintColor = Color3.new(1, 1, 1)
+				grade.Contrast, grade.Saturation, grade.Brightness = 0.1, 0, 0
+			end
 		end
 		if bloom then
 			bloom.Intensity = Profile.approach(bloom.Intensity, budget.bloom, delta)

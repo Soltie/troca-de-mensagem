@@ -29,10 +29,13 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
 local Config = require("@game/ReplicatedStorage/Shared/Config")
+local Logger = require("@game/ReplicatedStorage/Shared/Logger")
 local Economy = require("@game/ReplicatedStorage/Shared/Game/Economy")
 local GameState = require("@game/ReplicatedStorage/Shared/Game/GameState")
 local Perks = require("@game/ReplicatedStorage/Shared/Game/Perks")
 local StoreCatalog = require("@game/ReplicatedStorage/Shared/Game/StoreCatalog")
+local Season = require("@game/ReplicatedStorage/Shared/Game/Season")
+local SeasonCatalog = require("@game/ReplicatedStorage/Shared/Game/SeasonCatalog")
 local StoryRewards = require("@game/ReplicatedStorage/Shared/Game/StoryRewards")
 local Text = require("@game/ReplicatedStorage/Shared/Game/Text")
 local Remotes = require("@game/ReplicatedStorage/Shared/Net/Remotes")
@@ -46,37 +49,54 @@ local AudioController = require("./AudioController")
 local Cinema = require("./CinematicController")
 local Store = require("./StoreController")
 local Settings = require("./SettingsController")
-local TungTungRig = require("../Creature/TungTungRig")
+local Camera = require("./CameraController")
+local MenuSkin = require("../UI/MenuSkin")
+local MenuStage = require("../UI/MenuStage")
 
-type TabId = "play" | "perks" | "store" | "season" | "daily" | "servers" | "friends" | "settings"
+type TabId = "home" | "play" | "skins" | "perks" | "store" | "season" | "daily" | "servers" | "friends" | "settings"
 
 local player = Players.LocalPlayer
+local log = Logger.new("MainMenu")
 local GREEN = Theme.Success
-local VEIL = Theme.Overlay
 local CARD = Theme.BgPanel
+-- Menu preto (página "Menu da Casa de Madeira"): osso sobre preto, brasa só no foco, logo em serifa cor de osso.
+local BONE = Color3.fromRGB(233, 223, 210)
+local BONE_DIM = Color3.fromRGB(138, 123, 109)
+local EMBER = Color3.fromRGB(226, 114, 63)
+local BRASS = Color3.fromRGB(201, 160, 92)
+local CARD_EDGE = Color3.fromRGB(122, 74, 46)
+local LOGO_FONT = Font.new("rbxasset://fonts/families/Merriweather.json", Enum.FontWeight.Regular)
+local MENU_FONT = Font.new("rbxasset://fonts/families/Montserrat.json", Enum.FontWeight.Medium)
+local MENU_FONT_BOLD = Font.new("rbxasset://fonts/families/Montserrat.json", Enum.FontWeight.SemiBold)
+local TIP_FONT = Font.new("rbxasset://fonts/families/Merriweather.json", Enum.FontWeight.Regular, Enum.FontStyle.Italic)
 
--- `short` é o rótulo do trilho compacto (cabe em 76 px).
+-- `short` é o rótulo da coluna no celular. No celular os 4 primeiros ficam à vista e o resto vai para MAIS.
 local NAV: { { id: TabId, label: string, short: string, icon: string } } = {
 	{ id = "play", label = "JOGAR", short = "JOGAR", icon = "Play" },
-	{ id = "perks", label = "MELHORIAS", short = "MELHORIAS", icon = "Perks" },
 	{ id = "store", label = "LOJA", short = "LOJA", icon = "Store" },
-	{ id = "season", label = "PASSE DA TEMPORADA", short = "PASSE", icon = "Season" },
+	{ id = "skins", label = "SKINS", short = "SKINS", icon = "Store" },
+	{ id = "season", label = "PASSE DE BATALHA", short = "PASSE", icon = "Season" },
+	{ id = "perks", label = "MELHORIAS", short = "MELHORIAS", icon = "Perks" },
 	{ id = "daily", label = "PRÊMIO DIÁRIO", short = "PRÊMIOS", icon = "Daily" },
 	{ id = "servers", label = "SERVIDORES", short = "SERVIDORES", icon = "Servers" },
 	{ id = "friends", label = "AMIGOS", short = "AMIGOS", icon = "Friends" },
 	{ id = "settings", label = "AJUSTES", short = "AJUSTES", icon = "Settings" },
 }
--- Abas que só abrem a loja.
-local STORE_TABS: { [string]: string } = { store = "shop", season = "season", daily = "daily" }
+-- Abas que só abrem a loja (SKINS = loja filtrada em uniformes).
+local STORE_TABS: { [string]: string } = { store = "shop", skins = "shop", season = "season", daily = "daily" }
+local STORE_KIND: { [string]: string } = { skins = "uniform" }
+-- Frases do rodapé (uma por vez): dicas na voz da casa.
 local TIPS = {
-	"OUVIU TUM TUM TUM? APAGUE A LANTERNA E SE ESCONDA!",
-	"AGACHADO VOCÊ FAZ MENOS BARULHO.",
-	"AMIGO CAIU? CHEGUE PERTO E APERTE E PARA AJUDAR.",
-	"MOEDAS BRILHANTES VIRAM FICHAS. A GEMA ROXA VALE MUITO MAIS!",
-	"FITAS VHS ESCONDIDAS DÃO FICHAS PARA O TIME TODO.",
-	"NO MODO HISTÓRIA, TERMINAR SEM CAIR DÁ BÔNUS.",
-	"CONVIDE AMIGOS: EM TIME É MAIS FÁCIL (E MAIS DIVERTIDO)!",
+	"Não deixe a lamparina apagar.",
+	"Ouviu tum, tum, tum? Apague a lanterna e se esconda.",
+	"Agachado, a madeira range menos.",
+	"Se alguém cair, chegue perto e levante. Ninguém fica para trás.",
+	"Moeda que brilha vira ficha. A gema roxa vale muito mais.",
+	"Tem fita escondida nesta casa. Ache, e o time todo ganha.",
+	"Em grupo é mais fácil. E menos solitário.",
 }
+-- Quem fala no rodapé (como na página do menu).
+local TIP_AUTHOR = "Dona Cida"
 
 local Controller = { Name = "MainMenuController" }
 
@@ -95,7 +115,7 @@ local bodyTop = 66
 local pendingConfirm: (() -> ())? = nil
 local rootFrame: Frame? = nil
 local rootScale: UIScale? = nil
-local currentTab: TabId = "play"
+local currentTab: TabId = "home"
 local dirty = true
 local live: { () -> () } = {}
 local busy = false
@@ -107,7 +127,15 @@ local lastServerFetch = 0
 local wasOpen = false
 local tipIndex = 1
 local compactMenu = false
-local singleColumn = false
+-- Palco 3D (UI/MenuStage) atrás de tudo, painel de conteúdo e a borda direita do trilho (unidades do Root).
+local stage: MenuStage.Stage? = nil
+local contentPanel: Frame? = nil
+local railRight = 0
+local brandScale: UIScale? = nil
+-- Só aparecem na tela inicial (sem aba aberta): passe de batalha e skin em destaque.
+local homeOnly: { GuiObject } = {}
+-- Definida com a coluna do menu (mais abaixo); o renderTab repinta os botões.
+local paintNav: (id: string, hovered: boolean?) -> ()
 
 -- A fonte do tema (FredokaOne) tem acentos; o texto passa direto.
 local function px(value: string): string
@@ -535,7 +563,7 @@ end
 local function buildPerks(b: Frame)
 	local width = b.AbsoluteSize.X
 	local columns = if width >= 640 then 2 else 1
-	singleColumn = columns == 1
+
 	local scroll = Create("ScrollingFrame", {
 		Name = "PerksScroll",
 		Size = UDim2.fromScale(1, 1),
@@ -1189,8 +1217,10 @@ local function cardMetrics(): CardMetrics
 	return { art = 88, height = 306, title = 28, desc = 15, pad = 14, vote = 48 }
 end
 
--- Arte original do cartão: céu noturno em gradiente, lua e horizonte pixel-art (casa ou mata).
+-- Arte do cartão de campanha (tábuas e luz; sem pixel art).
 local function campaignArt(parent: Instance, story: boolean, m: CardMetrics): Frame
+	-- Faixa de tábuas iluminada de baixo (História: brasa da lamparina; Desafio: musgo da floresta).
+	-- Sem pixel art: só madeira, luz e o título do modo por cima (desenhado pelo modeCard).
 	local art = Create("Frame", {
 		Name = "Art",
 		Size = UDim2.new(1, 0, 0, m.art),
@@ -1203,47 +1233,41 @@ local function campaignArt(parent: Instance, story: boolean, m: CardMetrics): Fr
 	Create("UIGradient", {
 		Rotation = 90,
 		Color = if story
-			then ColorSequence.new(Color3.fromRGB(30, 42, 66), Color3.fromRGB(86, 58, 36))
-			else ColorSequence.new(Color3.fromRGB(16, 34, 44), Color3.fromRGB(24, 56, 42)),
+			then ColorSequence.new(Color3.fromRGB(12, 8, 6), Color3.fromRGB(104, 48, 22))
+			else ColorSequence.new(Color3.fromRGB(8, 9, 9), Color3.fromRGB(48, 58, 30)),
 		Parent = art,
 	})
-	local moon = Create("Frame", {
-		Name = "Moon",
-		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -20, 0, 10),
-		Size = UDim2.fromOffset(22, 22),
-		BackgroundColor3 = Theme.GoldLight,
-		BackgroundTransparency = 0.1,
-		BorderSizePixel = 0,
-		Parent = art,
-	})
-	Components.corner(moon, Theme.CornerPill)
-	-- Horizonte: silhuetas escuras; as janelas da casa deixam o céu quente aparecer como luz acesa.
-	local big = math.max(36, math.floor((m.art - 16) / 12) * 12)
-	local small = math.max(24, big - 24)
-	local shapes: { { string | number } } = if story
-		then { { "Tree", small, 0.52 }, { "House", big, 0.66 }, { "Tree", small, 0.8 } }
-		else {
-			{ "Tree", small, 0.5 },
-			{ "Tree", big, 0.62 },
-			{ "Tree", small + 12, 0.75 },
-			{ "Tree", small, 0.86 },
-		}
-	for _, shape in shapes do
-		local size = shape[2] :: number
-		Components.icon(art, shape[1] :: string, size, Theme.Overlay, {
-			AnchorPoint = Vector2.new(0.5, 1),
-			Position = UDim2.new(shape[3] :: number, 0, 1, 2),
+	local random = Random.new(if story then 5 else 9)
+	local x = 0
+	while x < 1 do
+		local width = random:NextNumber(0.07, 0.12)
+		Create("Frame", {
+			Name = "Seam",
+			Position = UDim2.fromScale(x + width, 0),
+			Size = UDim2.new(0, 2, 1, 0),
+			BackgroundColor3 = Color3.new(0, 0, 0),
+			BackgroundTransparency = 0.45,
+			BorderSizePixel = 0,
+			Parent = art,
 		})
+		x += width
 	end
+	-- Escurece o topo: o título lê bem e a luz parece vir de baixo.
 	Create("Frame", {
-		Name = "Ground",
-		AnchorPoint = Vector2.new(0, 1),
-		Position = UDim2.fromScale(0, 1),
-		Size = UDim2.new(1, 0, 0, 4),
-		BackgroundColor3 = Theme.Overlay,
+		Name = "Shade",
+		Size = UDim2.fromScale(1, 1),
+		BackgroundColor3 = Color3.new(0, 0, 0),
 		BorderSizePixel = 0,
 		Parent = art,
+	}, {
+		Create("UIGradient", {
+			Rotation = 90,
+			Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 0.2),
+				NumberSequenceKeypoint.new(0.7, 0.85),
+				NumberSequenceKeypoint.new(1, 1),
+			}),
+		}),
 	})
 	return art
 end
@@ -1328,7 +1352,7 @@ local function modeCard(
 	local border = Components.stroke(card, Theme.Border, 1, 0.45)
 	local story = id == "Story"
 	local art = campaignArt(card, story, m)
-	Components.chip(eyebrow, if story then Theme.Gold else GREEN, {
+	Components.chip(eyebrow, if story then Theme.Gold else Color3.fromRGB(173, 150, 130), {
 		Position = UDim2.fromOffset(m.pad, 10),
 		Parent = art,
 	})
@@ -1336,7 +1360,7 @@ local function modeCard(
 		Name = "Title",
 		AnchorPoint = Vector2.new(0, 1),
 		Position = UDim2.new(0, m.pad, 1, -8),
-		Size = UDim2.new(0.62, 0, 0, m.title + 6),
+		Size = UDim2.new(1, -2 * m.pad, 0, m.title + 6),
 		Text = title,
 		TextSize = m.title,
 		TextWrapped = false,
@@ -1403,7 +1427,7 @@ local function modeCard(
 			Components.setVariant(vote, wanted)
 		end
 		vote.Text = px(if mine then "SEU VOTO" else "VOTAR")
-		border.Color = if mine then Theme.Gold else Theme.Border
+		border.Color = if mine then Theme.Gold else CARD_EDGE
 		border.Transparency = if mine then 0 else 0.45
 		border.Thickness = if mine then 2 else 1
 	end)
@@ -1611,91 +1635,6 @@ local function kitPanel(parent: Instance, position: UDim2, size: UDim2)
 	end
 end
 
--- Vitrine: o próprio Tung Tung do jogo, animado, com a "fala" dele.
-local function showcase(parent: Instance, order: number)
-	local portraitWidth = if singleColumn then 110 else 200
-	local textX = portraitWidth + 10
-	local box = Components.panel({
-		Name = "Showcase",
-		ClipsDescendants = true,
-		Size = UDim2.new(1, 0, 0, if compactMenu then 132 else 150),
-		LayoutOrder = order,
-		Parent = parent,
-	})
-	Create("UIGradient", {
-		Color = ColorSequence.new(Theme.BgElevated, Theme.Bg),
-		Rotation = 0,
-		Parent = box,
-	})
-	local viewport = Create("ViewportFrame", {
-		Name = "TungTung",
-		Size = UDim2.new(0, portraitWidth, 1, 0),
-		BackgroundTransparency = 1,
-		Ambient = Color3.fromRGB(150, 140, 170),
-		LightColor = Color3.fromRGB(255, 226, 180),
-		LightDirection = Vector3.new(-0.6, -1, 0.4),
-		Parent = box,
-	}) :: ViewportFrame
-	Components.icon(box, "Drum", 24, Theme.Gold, { Position = UDim2.fromOffset(textX, 12) })
-	label({
-		Position = UDim2.fromOffset(textX + 32, 8),
-		Size = UDim2.new(1, -textX - 44, 0, 32),
-		Text = "TUNG TUNG SAHUR",
-		TextSize = if singleColumn then 20 else 26,
-		TextColor3 = Theme.GoldLight,
-		Parent = box,
-	})
-	note({
-		Position = UDim2.fromOffset(textX, 46),
-		Size = UDim2.new(1, -textX - 12, 0, 24),
-		Text = "“TUM... TUM... TUM... SAHUR!”",
-		TextSize = 15,
-		TextColor3 = Theme.TextPrimary,
-		Parent = box,
-	})
-	note({
-		Position = UDim2.fromOffset(textX, 74),
-		Size = UDim2.new(1, -textX - 12, 0, 56),
-		Text = "Ele anda pela casa com o bastão. Apague a lanterna, se esconda nos armários e salve seus amigos!",
-		TextSize = 14,
-		Parent = box,
-	})
-	local world = Instance.new("WorldModel")
-	world.Parent = viewport
-	local rig = TungTungRig.build(world)
-	if rig then
-		local camera = Instance.new("Camera")
-		camera.FieldOfView = 30
-		camera.CFrame = CFrame.lookAt(Vector3.new(0, 4.6, -13.5), Vector3.new(0, 3.9, 0))
-		camera.Parent = viewport
-		viewport.CurrentCamera = camera
-		local clips: { TungTungRig.ClipName } = { "idle", "slash", "strafe", "walk", "sheath" }
-		local index, showClock, sway = 1, 0, 0
-		local connection: RBXScriptConnection? = nil
-		connection = RunService.RenderStepped:Connect(function(dt)
-			if not viewport.Parent then
-				if connection then
-					connection:Disconnect()
-				end
-				return
-			end
-			local screen = gui
-			if not screen or not screen.Enabled then
-				return
-			end
-			showClock += dt
-			sway += dt
-			if showClock > 3 then
-				showClock = 0
-				index = index % #clips + 1
-				TungTungRig.play(rig, clips[index], 0.3)
-			end
-			TungTungRig.place(rig, CFrame.Angles(0, math.sin(sway * 0.6) * 0.5, 0))
-			TungTungRig.step(rig, dt)
-		end)
-	end
-end
-
 local function buildPlay(parent: Frame)
 	local width = parent.AbsoluteSize.X
 	if width <= 0 then
@@ -1703,7 +1642,7 @@ local function buildPlay(parent: Frame)
 	end
 	local columns = MenuLayout.columns(width)
 	columnsShown = columns
-	singleColumn = columns == 1
+
 	local m = cardMetrics()
 	-- Conteúdo maior que o painel rola numa única lista vertical.
 	local scroll = Create("ScrollingFrame", {
@@ -1735,7 +1674,7 @@ local function buildPlay(parent: Frame)
 		columns,
 		"Story",
 		"MODO HISTÓRIA",
-		"THE CURSED HOUSE",
+		"A CASA DE MADEIRA",
 		"Casa + floresta: 8 capítulos, perseguição e resgate. Solo ou equipe de até 6.",
 		function(inner, cm)
 			local ay, ah = slotY(cm, "A")
@@ -1885,7 +1824,6 @@ local function buildPlay(parent: Frame)
 	end
 	-- Dificuldade, modificadores e conquistas (UI/DifficultyPanel).
 	DifficultyPanel.build(scroll, 3, columns)
-	showcase(scroll, 4)
 end
 
 local TITLES: { [string]: { string } } = {
@@ -1920,16 +1858,20 @@ local function renderTab()
 	if subheader then
 		subheader.Text = titles[2]
 	end
-	for id, nav in navButtons do
-		local selected = id == currentTab
-		-- No PC o JOGAR é sempre a ação principal; os demais destinos marcam a aba aberta.
-		if id ~= "play" or compactMenu then
-			Components.setVariant(nav, if selected then "secondary" elseif id == "play" then "primary" else "ghost")
-		end
-		local bar = nav:FindFirstChild("Bar")
-		if bar and bar:IsA("Frame") then
-			bar.Visible = selected
-		end
+	for id in navButtons do
+		paintNav(id)
+	end
+	-- Tela inicial: só o palco, o logo e os botões; o painel aparece quando uma aba abre.
+	local home = currentTab == "home"
+	local panel = contentPanel
+	if panel then
+		panel.Visible = not home
+	end
+	for _, item in homeOnly do
+		item.Visible = home
+	end
+	if home then
+		return
 	end
 	if currentTab == "perks" then
 		buildPerks(b)
@@ -1964,8 +1906,13 @@ local function selectTab(id: TabId)
 	end
 	local storeTab = STORE_TABS[id]
 	if storeTab then
-		Store.openTab(storeTab)
+		Store.openTab(storeTab, STORE_KIND[id])
 		return
+	end
+	local s = stage
+	if s and id == "play" and currentTab ~= "play" then
+		-- Entrar no JOGAR: ele percebe (gesto de alerta) e o palco desliza para a faixa ao lado do painel.
+		MenuStage.react(s, "bash")
 	end
 	currentTab = id
 	dirty = true
@@ -1999,357 +1946,542 @@ local function notifyDot(parent: Instance, position: UDim2): Frame
 	return dot
 end
 
--- Barra superior: marca à esquerda; moedas, + Créditos e perfil (nível/XP) à direita.
+-- Carteira e perfil em osso e latão sobre preto (sem os selos coloridos da loja). Devolve a altura ocupada.
+-- PC: à direita no topo. Celular: no rodapé da coluna esquerda, longe do rosto do Tung.
+local function wallet(parent: Instance, compact: boolean): Frame
+	local row = Create("Frame", {
+		Name = "Wallet",
+		AutomaticSize = Enum.AutomaticSize.X,
+		Size = UDim2.fromOffset(0, if compact then 44 else 40),
+		BackgroundTransparency = 1,
+		Parent = parent,
+	}, {
+		Create("UIListLayout", {
+			FillDirection = Enum.FillDirection.Horizontal,
+			VerticalAlignment = Enum.VerticalAlignment.Center,
+			Padding = UDim.new(0, if compact then 12 else 18),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		}),
+	}) :: Frame
+	local function amount(order: number, caption: string): TextLabel
+		return Create("TextLabel", {
+			Name = caption,
+			LayoutOrder = order,
+			AutomaticSize = Enum.AutomaticSize.X,
+			Size = UDim2.fromScale(0, 1),
+			BackgroundTransparency = 1,
+			FontFace = MENU_FONT,
+			RichText = true,
+			Text = "",
+			TextSize = if compact then 17 else 20,
+			TextColor3 = BONE_DIM,
+			Parent = row,
+		}) :: TextLabel
+	end
+	local fichas = amount(1, "Fichas")
+	local creditos = amount(2, "Creditos")
+	local add = Create("TextButton", {
+		Name = "AddCredits",
+		LayoutOrder = 3,
+		Size = UDim2.fromOffset(44, 44),
+		BackgroundTransparency = 1,
+		AutoButtonColor = false,
+		FontFace = MENU_FONT_BOLD,
+		Text = "+",
+		TextSize = 28,
+		TextColor3 = BRASS,
+		Parent = row,
+	}) :: TextButton
+	add.MouseEnter:Connect(function()
+		add.TextColor3 = BONE
+	end)
+	add.MouseLeave:Connect(function()
+		add.TextColor3 = BRASS
+	end)
+	add.Activated:Connect(function()
+		click()
+		Store.openTab("robux")
+	end)
+	local brass = BRASS:ToHex()
+	table.insert(frameUpdates, function()
+		local f = number(tonumber(player:GetAttribute("Fichas")) or 0)
+		local c = number(tonumber(player:GetAttribute("Creditos")) or 0)
+		fichas.Text = `<font color="#{brass}">{f}</font>  FICHAS`
+		creditos.Text = `<font color="#{brass}">{c}</font>  CRÉDITOS`
+	end)
+	return row
+end
+
 local function topBar(root: Frame, mode: MenuLayout.Mode): number
 	local compact = mode.compact
-	local height = if mode.short then 46 elseif compact then 52 else 60
-	local margin = if compact then 8 else 28
-	local y = if compact then 6 else 20
+	local height = if compact then 44 else 56
+	local margin = if compact then 8 else 40
+	local y = if compact then 6 else 34
+	if compact then
+		-- Celular: nada no topo (o rosto do Tung fica livre); a carteira vai para a coluna (menuColumn).
+		return y + height
+	end
 	local bar = Create("Frame", {
 		Name = "TopBar",
-		Position = UDim2.fromOffset(margin, y),
-		Size = UDim2.new(1, -2 * margin, 0, height),
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -margin, 0, y),
+		Size = UDim2.fromOffset(640, height),
 		BackgroundTransparency = 1,
 		Parent = root,
-	})
-	-- O "REC" da câmera de segurança já aparece atrás do menu (CinematicController); sem ponto duplicado.
-	local brandY = if compact then 0 else -9
-	local logo = Components.title({
-		Name = "Logo",
-		AnchorPoint = Vector2.new(0, 0.5),
-		Position = UDim2.new(0, 0, 0.5, brandY),
-		Size = UDim2.fromOffset(if compact then 210 else 440, 38),
-		Text = "TUNG TUNG SAHUR",
-		TextSize = if compact then 21 else 34,
-		TextColor3 = Theme.GoldLight,
-		TextTruncate = Enum.TextTruncate.AtEnd,
-		Parent = bar,
-	})
-	logo.TextStrokeColor3 = Theme.Overlay
-	logo.TextStrokeTransparency = 0.1
-	if not compact then
-		Components.text({
-			Name = "Subtitle",
-			Position = UDim2.new(0, 0, 0.5, 11),
-			Size = UDim2.fromOffset(440, 18),
-			Text = "THE CURSED HOUSE · EXPLORE, PEGUE MOEDAS E FUJA DO TUM TUM TUM",
-			FontFace = Theme.Font,
-			TextSize = 13,
-			TextColor3 = Theme.TextSecondary,
-			TextWrapped = false,
-			Parent = bar,
-		})
-	end
-
-	local status = Create("Frame", {
-		Name = "Status",
-		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.fromScale(1, 0.5),
-		Size = UDim2.new(1, -240, 1, 0),
-		BackgroundTransparency = 1,
-		Parent = bar,
 	}, {
 		Create("UIListLayout", {
 			FillDirection = Enum.FillDirection.Horizontal,
 			HorizontalAlignment = Enum.HorizontalAlignment.Right,
 			VerticalAlignment = Enum.VerticalAlignment.Center,
-			Padding = UDim.new(0, 8),
+			Padding = UDim.new(0, 26),
 			SortOrder = Enum.SortOrder.LayoutOrder,
 		}),
 	})
-	local badgeHeight = if compact then 38 else 40
-	local badgeWidth = if compact then 100 else 140
-	local _, setFichas = Components.currency("fichas", {
-		Size = UDim2.fromOffset(badgeWidth, badgeHeight),
-		LayoutOrder = 1,
-		Parent = status,
-	})
-	local _, setCreditos = Components.currency("creditos", {
-		Size = UDim2.fromOffset(badgeWidth, badgeHeight),
-		LayoutOrder = 2,
-		Parent = status,
-	})
-	Components.iconButton("success", "Plus", nil, {
-		Name = "AddCredits",
-		Size = UDim2.fromOffset(badgeHeight, badgeHeight),
-		LayoutOrder = 3,
-		Parent = status,
-	}, function()
-		click()
-		Store.openTab("robux")
-	end)
-
-	local profileHeight = if compact then 40 else 48
-	local avatar = profileHeight - 8
+	wallet(bar, false).LayoutOrder = 1
+	-- Perfil: retrato redondo com aro de latão, nome e nível (sem caixa).
 	local profile = Create("Frame", {
 		Name = "Profile",
-		Size = UDim2.fromOffset(if compact then 118 else 240, profileHeight),
-		BackgroundColor3 = Theme.BgSunken,
-		BackgroundTransparency = 0.15,
-		BorderSizePixel = 0,
-		LayoutOrder = 4,
-		Parent = status,
-	})
-	Components.corner(profile, Theme.CornerLarge)
-	Components.stroke(profile, Theme.Gold, 1, 0.55)
+		LayoutOrder = 2,
+		AutomaticSize = Enum.AutomaticSize.X,
+		Size = UDim2.fromOffset(0, height),
+		BackgroundTransparency = 1,
+		Parent = bar,
+	}) :: Frame
 	local face = Create("ImageLabel", {
 		Name = "Avatar",
-		Position = UDim2.fromOffset(4, 4),
-		Size = UDim2.fromOffset(avatar, avatar),
-		BackgroundColor3 = Theme.BgElevated,
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.fromScale(0, 0.5),
+		Size = UDim2.fromOffset(44, 44),
+		BackgroundColor3 = Color3.fromRGB(20, 15, 11),
 		BorderSizePixel = 0,
 		Image = `rbxthumb://type=AvatarHeadShot&id={player.UserId}&w=150&h=150`,
 		Parent = profile,
 	})
 	Components.corner(face, Theme.CornerPill)
-	local textX = avatar + 12
-	local nameLabel: TextLabel? = nil
-	if not compact then
-		nameLabel = Components.text({
-			Name = "PlayerName",
-			Position = UDim2.fromOffset(textX, 4),
-			Size = UDim2.new(1, -(textX + 8), 0, 18),
-			FontFace = Theme.Font,
-			TextSize = 15,
-			TextWrapped = false,
-			TextTruncate = Enum.TextTruncate.AtEnd,
-			Text = player.DisplayName,
-			Parent = profile,
-		})
-	end
-	local levelLabel = Components.text({
-		Name = "Level",
-		Position = UDim2.fromOffset(textX, if compact then 3 else 22),
-		Size = UDim2.new(1, -(textX + 8), 0, 16),
-		FontFace = Theme.Font,
-		TextSize = 13,
-		TextColor3 = Theme.Gold,
-		TextWrapped = false,
-		TextTruncate = Enum.TextTruncate.AtEnd,
-		Text = "",
+	Components.stroke(face, BRASS, 1.5, 0.2)
+	local nameLabel = Create("TextLabel", {
+		Name = "PlayerName",
+		Position = UDim2.fromOffset(56, 6),
+		AutomaticSize = Enum.AutomaticSize.X,
+		Size = UDim2.fromOffset(0, 24),
+		BackgroundTransparency = 1,
+		FontFace = MENU_FONT,
+		Text = player.DisplayName,
+		TextSize = 20,
+		TextColor3 = BONE,
+		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = profile,
-	})
-	local xpTrack, setXp = Components.progress({
-		Name = "Xp",
-		Position = UDim2.new(0, textX, 1, -12),
-		Size = UDim2.new(1, -(textX + 10), 0, 6),
-	}, GREEN)
-	xpTrack.Parent = profile
+	}) :: TextLabel
+	local levelLabel = Create("TextLabel", {
+		Name = "Level",
+		Position = UDim2.fromOffset(56, 30),
+		AutomaticSize = Enum.AutomaticSize.X,
+		Size = UDim2.fromOffset(0, 20),
+		BackgroundTransparency = 1,
+		FontFace = MENU_FONT,
+		Text = "",
+		TextSize = 16,
+		TextColor3 = BRASS,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = profile,
+	}) :: TextLabel
 	table.insert(frameUpdates, function()
-		setFichas(tonumber(player:GetAttribute("Fichas")) or 0)
-		setCreditos(tonumber(player:GetAttribute("Creditos")) or 0)
-		local xp = tonumber(player:GetAttribute("Xp")) or 0
-		local level, into, needed = Economy.levelInfo(xp)
-		levelLabel.Text =
-			px(if compact then `NÍVEL {level}` else `NÍVEL {level} · {number(into)}/{number(needed)} XP`)
-		setXp(into / math.max(needed, 1))
-		local nameText = nameLabel
-		if nameText then
-			local titleId = player:GetAttribute("Title")
-			local titleItem = if type(titleId) == "string" then StoreCatalog.ItemById[titleId] else nil
-			local suffix = (if titleItem then ` · {titleItem.name}` else "")
-				.. (if player:GetAttribute("Vip") == true then " · VIP" else "")
-			nameText.Text = player.DisplayName .. suffix
-		end
+		local level, into, needed = Economy.levelInfo(tonumber(player:GetAttribute("Xp")) or 0)
+		levelLabel.Text = `NÍVEL {level}  ·  {number(into)}/{number(needed)} XP`
+		local titleId = player:GetAttribute("Title")
+		local titleItem = if type(titleId) == "string" then StoreCatalog.ItemById[titleId] else nil
+		nameLabel.Text = player.DisplayName
+			.. (if titleItem then `  ·  {titleItem.name}` else "")
+			.. (if player:GetAttribute("Vip") == true then "  ·  VIP" else "")
 	end)
 	return y + height
 end
 
--- Trilho do PC: JOGAR em destaque e os demais destinos com ícone e rótulo.
-local function desktopRail(root: Frame, top: number): number
-	local width = 248
-	local rail = Create("Frame", {
-		Name = "Rail",
-		Position = UDim2.fromOffset(28, top),
-		Size = UDim2.new(0, width, 1, -(top + 28)),
-		BackgroundTransparency = 1,
-		Parent = root,
-	}, {
-		Create("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }),
-	})
-	for i, item in NAV do
-		local isPlay = item.id == "play"
-		local nav = Components.iconButton(if isPlay then "primary" else "ghost", item.icon, item.label, {
-			Name = `Nav_{item.id}`,
-			LayoutOrder = i * 10,
-			Size = UDim2.new(1, 0, 0, if isPlay then 60 else 46),
-			TextSize = if isPlay then 26 else 18,
-			Parent = rail,
-		}, function()
-			click()
-			selectTab(item.id)
-		end)
-		if not isPlay then
-			Create("Frame", {
-				Name = "Bar",
-				AnchorPoint = Vector2.new(0, 0.5),
-				Position = UDim2.fromScale(0, 0.5),
-				Size = UDim2.new(0, 4, 0.6, 0),
-				BackgroundColor3 = Theme.Gold,
-				BorderSizePixel = 0,
-				Visible = false,
-				Parent = nav,
-			})
+-- ===================== Tela inicial: passe de batalha e skin em destaque =====================
+
+local function featuredSkin(): StoreCatalog.Item?
+	local best: StoreCatalog.Item? = nil
+	local bestRank = -1
+	for _, item in StoreCatalog.Items do
+		if item.kind == "uniform" and (item.fichas or item.creditos) then
+			local rarity = (StoreCatalog.Rarities :: any)[item.rarity]
+			local rank = if rarity then rarity.order else 0
+			if rank > bestRank then
+				best, bestRank = item, rank
+			end
 		end
-		if STORE_TABS[item.id] or item.id == "settings" then
-			-- Abre outra janela (loja/ajustes): seta discreta deixa isso claro antes do clique.
-			Components.text({
-				Name = "Opens",
-				AnchorPoint = Vector2.new(1, 0.5),
-				Position = UDim2.new(1, -12, 0.5, 0),
-				Size = UDim2.fromOffset(16, 20),
-				Text = "›",
-				TextSize = 22,
-				TextColor3 = Theme.TextMuted,
-				TextXAlignment = Enum.TextXAlignment.Right,
-				Parent = nav,
-			})
-		end
-		if item.id == "daily" then
-			notifyDot(nav, UDim2.new(1, -38, 0.5, 0))
-		end
-		if isPlay then
-			Create("Frame", {
-				Name = "Spacer",
-				Size = UDim2.new(1, 0, 0, 6),
-				BackgroundTransparency = 1,
-				LayoutOrder = 15,
-				Parent = rail,
-			})
-		end
-		navButtons[item.id] = nav
 	end
-	return 28 + width + 20
+	return best
 end
 
--- Peça do trilho compacto: ícone em cima, rótulo curto embaixo (alvo de toque >= 52 px).
-local function railTile(
+-- Espaçamento entre letras (a página usa letter-spacing; o Roblox não tem): espaço fino entre cada letra.
+local function tracked(text: string): string
+	local letters = {}
+	for _, code in utf8.codes(text) do
+		table.insert(letters, utf8.char(code))
+	end
+	return table.concat(letters, "\u{2009}")
+end
+
+local function caption(parent: Instance, text: string, position: UDim2, size: UDim2, textSize: number, color: Color3)
+	return Create("TextLabel", {
+		Position = position,
+		Size = size,
+		BackgroundTransparency = 1,
+		FontFace = MENU_FONT,
+		Text = text,
+		TextSize = textSize,
+		TextColor3 = color,
+		TextXAlignment = Enum.TextXAlignment.Right,
+		TextTruncate = Enum.TextTruncate.AtEnd,
+		Parent = parent,
+	}) :: TextLabel
+end
+
+-- Passe de batalha e skin em destaque: só texto no canto de baixo, como o rodapé da página (sem caixas).
+local function homeWidgets(root: Frame, mode: MenuLayout.Mode)
+	local compact = mode.compact
+	local width = if compact then 230 else 330
+	local holder = Create("Frame", {
+		Name = "HomeWidgets",
+		AnchorPoint = Vector2.new(1, 1),
+		Position = UDim2.new(1, if compact then -14 else -64, 1, if compact then -10 else -34),
+		Size = UDim2.fromOffset(width, if compact then 96 else 104),
+		BackgroundTransparency = 1,
+		Parent = root,
+	}) :: Frame
+	homeOnly = { holder }
+	local function link(name: string, y: number, height: number, onClick: () -> ()): TextButton
+		local entry = Create("TextButton", {
+			Name = name,
+			Position = UDim2.fromOffset(0, y),
+			Size = UDim2.new(1, 0, 0, height),
+			BackgroundTransparency = 1,
+			AutoButtonColor = false,
+			Text = "",
+			Parent = holder,
+		}) :: TextButton
+		entry.Activated:Connect(function()
+			click()
+			onClick()
+		end)
+		return entry
+	end
+	local pass = link("PassWidget", 0, 48, function()
+		selectTab("season")
+	end)
+	local passLevel = caption(pass, "", UDim2.new(), UDim2.new(1, 0, 0, 20), if compact then 16 else 15, BONE_DIM)
+	local track = Create("Frame", {
+		Name = "Track",
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, 0, 0, 28),
+		Size = UDim2.new(1, 0, 0, 3),
+		BackgroundColor3 = Color3.fromRGB(40, 30, 22),
+		BorderSizePixel = 0,
+		Parent = pass,
+	})
+	local fill = Create("Frame", {
+		Name = "Fill",
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.fromScale(1, 0),
+		Size = UDim2.fromScale(0, 1),
+		BackgroundColor3 = EMBER,
+		BorderSizePixel = 0,
+		Parent = track,
+	}) :: Frame
+	pass.MouseEnter:Connect(function()
+		passLevel.TextColor3 = BONE
+	end)
+	pass.MouseLeave:Connect(function()
+		passLevel.TextColor3 = BONE_DIM
+	end)
+	table.insert(frameUpdates, function()
+		local id = player:GetAttribute("SeasonId")
+		local season = if type(id) == "string" then SeasonCatalog.SeasonById[id] else nil
+		if not season then
+			passLevel.Text = "PASSE  ·  EM BREVE"
+			fill.Size = UDim2.fromScale(0, 1)
+			return
+		end
+		local tier, into, need = Season.tierInfo(season, tonumber(player:GetAttribute("SeasonXp")) or 0)
+		passLevel.Text = `PASSE  ·  NÍVEL {tier}`
+		fill.Size = UDim2.fromScale(math.clamp(into / math.max(need, 1), 0, 1), 1)
+	end)
+	local item = featuredSkin()
+	if item then
+		local skin = link("FeaturedSkin", 52, 44, function()
+			selectTab("skins")
+		end)
+		local price = if item.creditos then `{number(item.creditos)} CRÉDITOS` else `{number(item.fichas or 0)} FICHAS`
+		local title = caption(
+			skin,
+			tracked("SKIN EM DESTAQUE"),
+			UDim2.new(),
+			UDim2.new(1, 0, 0, 18),
+			if compact then 16 else 14,
+			BONE_DIM
+		)
+		local name = caption(
+			skin,
+			`{string.upper(item.name)}  ·  {price}`,
+			UDim2.fromOffset(0, 20),
+			UDim2.new(1, 0, 0, 22),
+			if compact then 16 else 17,
+			BONE
+		)
+		skin.MouseEnter:Connect(function()
+			title.TextColor3 = BONE
+			name.TextColor3 = EMBER
+		end)
+		skin.MouseLeave:Connect(function()
+			title.TextColor3 = BONE_DIM
+			name.TextColor3 = BONE
+		end)
+	end
+end
+
+-- ===================== Coluna esquerda: logo e botões só de texto (página "Menu da Casa de Madeira") =====================
+
+-- Logo como na página: duas linhas da mesma serifa, cor de osso, e o subtítulo espaçado em cinza quente.
+local function brand(parent: Instance, compact: boolean, short: boolean): number
+	local size = if compact then (if short then 30 else 36) else 64
+	local line = math.floor(size * 0.98)
+	local subtitle = if short then 0 else (if compact then 22 else 30)
+	local holder = Create("Frame", {
+		Name = "Brand",
+		LayoutOrder = 1,
+		Size = UDim2.new(1, 0, 0, line * 2 + subtitle),
+		BackgroundTransparency = 1,
+		Parent = parent,
+	}) :: Frame
+	brandScale = Create("UIScale", { Parent = holder }) :: UIScale
+	for index, word in { "TUNG TUNG", "SAHUR" } do
+		Create("TextLabel", {
+			Name = `Word{index}`,
+			Position = UDim2.fromOffset(0, (index - 1) * line),
+			Size = UDim2.new(1, 0, 0, line),
+			BackgroundTransparency = 1,
+			FontFace = LOGO_FONT,
+			Text = word,
+			TextSize = size,
+			TextColor3 = BONE,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			TextYAlignment = Enum.TextYAlignment.Bottom,
+			Parent = holder,
+		})
+	end
+	if not short then
+		Create("TextLabel", {
+			Name = "Subtitle",
+			Position = UDim2.fromOffset(2, line * 2 + 6),
+			Size = UDim2.new(1, 0, 0, subtitle - 6),
+			BackgroundTransparency = 1,
+			FontFace = MENU_FONT,
+			Text = tracked("A  CASA  DE  MADEIRA"),
+			TextSize = 16,
+			TextColor3 = BONE_DIM,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			TextYAlignment = Enum.TextYAlignment.Top,
+			Parent = holder,
+		})
+	end
+	return holder.Size.Y.Offset
+end
+
+-- Pinta um botão do menu: cinza quente parado; osso e ponto de brasa no foco ou na aba aberta.
+function paintNav(id: string, hovered: boolean?)
+	local nav = navButtons[id]
+	if not nav then
+		return
+	end
+	local selected = id == currentTab
+	local lit = hovered == true or selected
+	nav.TextColor3 = if lit then BONE else BONE_DIM
+	local dot = nav:FindFirstChild("Dot")
+	if dot and dot:IsA("Frame") then
+		dot.Visible = lit
+	end
+end
+
+-- A cabeça do Tung vira para o botão em foco (o menu fica à esquerda da tela = à direita dele).
+local function lookAt(nav: GuiObject)
+	local s = stage
+	local root = rootFrame
+	if not s or not root then
+		return
+	end
+	local height = math.max(root.AbsoluteSize.Y, 1)
+	local v = (nav.AbsolutePosition.Y + nav.AbsoluteSize.Y / 2 - root.AbsolutePosition.Y) / height
+	MenuStage.look(s, 34 - (v - 0.5) * 10)
+end
+
+local function navHeight(compact: boolean): number
+	return if compact then 44 else 36
+end
+
+local function navItem(
 	parent: Instance,
 	id: string,
 	text: string,
-	icon: string,
 	order: number,
-	height: number,
+	mode: MenuLayout.Mode,
 	onClick: () -> ()
 ): TextButton
-	local tile = Components.button(if id == "play" then "primary" else "ghost", {
+	local compact = mode.compact
+	local nav = Create("TextButton", {
 		Name = `Nav_{id}`,
-		Text = "",
 		LayoutOrder = order,
-		Size = UDim2.new(1, 0, 0, height),
+		Size = UDim2.new(1, 0, 0, navHeight(compact)),
+		BackgroundTransparency = 1,
+		AutoButtonColor = false,
+		FontFace = MENU_FONT_BOLD,
+		Text = tracked(text),
+		TextSize = if compact then 17 else 17,
+		TextColor3 = BONE_DIM,
+		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = parent,
-	}, function()
+	}) :: TextButton
+	-- Sem o retângulo cinza de seleção do Roblox (foco por controle/teclado usa o mesmo ponto de brasa).
+	nav.SelectionImageObject = Create("Frame", { BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1) }) :: Frame
+	nav.SelectionGained:Connect(function()
+		paintNav(id, true)
+	end)
+	nav.SelectionLost:Connect(function()
+		paintNav(id, false)
+	end)
+	local dot = Create("Frame", {
+		Name = "Dot",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0, -14, 0.5, 0),
+		Size = UDim2.fromOffset(6, 6),
+		BackgroundColor3 = EMBER,
+		BorderSizePixel = 0,
+		Visible = false,
+		Parent = nav,
+	})
+	Components.corner(dot, Theme.CornerPill)
+	nav.MouseEnter:Connect(function()
+		paintNav(id, true)
+		lookAt(nav)
+		AudioController.play("CreakWood", 0.16, 1.5 + order * 0.02, true)
+	end)
+	nav.MouseLeave:Connect(function()
+		paintNav(id, false)
+		local s = stage
+		if s then
+			MenuStage.look(s, 0)
+		end
+	end)
+	nav.Activated:Connect(function()
 		click()
+		lookAt(nav)
 		onClick()
 	end)
-	Components.icon(tile, icon, 24, tile.TextColor3, {
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, if height < 56 then 6 else 8),
-	})
-	local caption = Components.text({
-		Name = "Label",
-		Position = UDim2.new(0, 2, 1, -20),
-		Size = UDim2.new(1, -4, 0, 16),
-		Text = text,
-		FontFace = Theme.Font,
-		TextSize = 11,
-		TextColor3 = tile.TextColor3,
-		TextXAlignment = Enum.TextXAlignment.Center,
-		TextWrapped = false,
-		TextTruncate = Enum.TextTruncate.AtEnd,
-		Parent = tile,
-	})
-	tile:GetPropertyChangedSignal("TextColor3"):Connect(function()
-		caption.TextColor3 = tile.TextColor3
-	end)
-	return tile
+	navButtons[id] = nav
+	paintNav(id)
+	return nav
 end
 
--- Trilho do celular: 4 destinos + MAIS (prêmio diário, servidores, amigos, ajustes num menu curto).
-local function compactRail(root: Frame, top: number, mode: MenuLayout.Mode): number
-	local width = 76
-	local rail = Create("ScrollingFrame", {
-		Name = "Rail",
-		Position = UDim2.fromOffset(8, top),
-		Size = UDim2.new(0, width, 1, -(top + 8)),
+-- Coluna da página: logo + lista, centrada na altura da tela e a 5% da borda esquerda.
+local function menuColumn(root: Frame, mode: MenuLayout.Mode): number
+	local compact = mode.compact
+	local x = if compact then 30 else 72
+	local width = if compact then 230 else 360
+	local visible, overflow = MenuLayout.split(NAV, compact)
+	local count = #visible + (if #overflow > 0 then 1 else 0)
+	local gap = if compact then 10 else 22
+	local column = Create("Frame", {
+		Name = "Column",
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, x, 0.5, if compact then -16 else 0),
+		Size = UDim2.fromOffset(width, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
 		BackgroundTransparency = 1,
-		BorderSizePixel = 0,
-		ScrollBarThickness = 0,
-		ScrollingDirection = Enum.ScrollingDirection.Y,
-		CanvasSize = UDim2.new(),
-		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		Parent = root,
 	}, {
-		Create("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }),
+		Create("UIListLayout", { Padding = UDim.new(0, gap), SortOrder = Enum.SortOrder.LayoutOrder }),
+	}) :: Frame
+	brand(column, compact, mode.short)
+	local list = Create("Frame", {
+		Name = "Rail",
+		LayoutOrder = 2,
+		Size = UDim2.new(1, 0, 0, count * (navHeight(compact) + 2)),
+		BackgroundTransparency = 1,
+		Parent = column,
+	}, {
+		Create("UIListLayout", { Padding = UDim.new(0, 2), SortOrder = Enum.SortOrder.LayoutOrder }),
 	})
-	local height = if mode.short then 52 else 58
-	local visible, overflow = MenuLayout.split(NAV, true)
 	for i, item in visible do
-		navButtons[item.id] = railTile(rail, item.id, item.short, item.icon, i, height, function()
+		local nav = navItem(list, item.id, if compact then item.short else item.label, i, mode, function()
 			selectTab(item.id)
 		end)
+		if item.id == "daily" then
+			notifyDot(nav, UDim2.new(1, -16, 0.5, 0))
+		end
 	end
-	-- Fundo que fecha o MAIS ao tocar fora; o menu fica ao lado do trilho, acima do painel.
-	local catcher = Create("TextButton", {
-		Name = "MoreCatcher",
-		Size = UDim2.fromScale(1, 1),
-		BackgroundColor3 = Theme.Overlay,
-		BackgroundTransparency = 0.6,
-		Text = "",
-		AutoButtonColor = false,
-		Visible = false,
-		ZIndex = 20,
-		Parent = root,
-	}) :: TextButton
-	local itemHeight = Theme.TouchMin
-	local popover = Components.panel({
-		Name = "More",
-		AnchorPoint = Vector2.new(0, 1),
-		Position = UDim2.new(0, 8 + width + 8, 1, -8),
-		Size = UDim2.fromOffset(240, #overflow * (itemHeight + 6) + 18),
-		BackgroundColor3 = Theme.BgPanel,
-		BackgroundTransparency = 0,
-		Visible = false,
-		ZIndex = 21,
-		Parent = root,
-	}, {
-		Create("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }),
-	})
-	Components.padding(popover, 9)
-	local function setMore(open: boolean)
-		popover.Visible = open
-		catcher.Visible = open
+	if compact then
+		-- Celular: carteira no pé da coluna (no topo ela cobriria o rosto do Tung).
+		local purse = wallet(root, true)
+		purse.AnchorPoint = Vector2.new(0, 1)
+		purse.Position = UDim2.new(0, x, 1, -6)
 	end
-	catcher.Activated:Connect(function()
-		setMore(false)
-	end)
-	for i, item in overflow do
-		local entry = Components.iconButton("ghost", item.icon, item.label, {
-			Name = `More_{item.id}`,
-			LayoutOrder = i,
-			Size = UDim2.new(1, 0, 0, itemHeight),
-			TextSize = 16,
-			ZIndex = 22,
-			Parent = popover,
-		}, function()
-			click()
+	if #overflow > 0 then
+		-- MAIS (celular): os outros destinos num menu curto ao lado da coluna.
+		local catcher = Create("TextButton", {
+			Name = "MoreCatcher",
+			Size = UDim2.fromScale(1, 1),
+			BackgroundColor3 = Color3.new(0, 0, 0),
+			BackgroundTransparency = 0.35,
+			Text = "",
+			AutoButtonColor = false,
+			Visible = false,
+			ZIndex = 20,
+			Parent = root,
+		}) :: TextButton
+		local popover = Create("Frame", {
+			Name = "More",
+			AnchorPoint = Vector2.new(0, 0.5),
+			Position = UDim2.new(0, x + width - 40, 0.5, 0),
+			Size = UDim2.fromOffset(250, #overflow * 46 + 24),
+			BackgroundColor3 = Color3.fromRGB(8, 6, 5),
+			BorderSizePixel = 0,
+			Visible = false,
+			ZIndex = 21,
+			Parent = root,
+		}, {
+			Create("UIListLayout", { Padding = UDim.new(0, 2), SortOrder = Enum.SortOrder.LayoutOrder }),
+		}) :: Frame
+		Components.corner(popover, Theme.CornerSmall)
+		Components.stroke(popover, EMBER, 1, 0.7)
+		Components.padding(popover, 12, 12)
+		local function setMore(open: boolean)
+			popover.Visible = open
+			catcher.Visible = open
+		end
+		catcher.Activated:Connect(function()
 			setMore(false)
-			selectTab(item.id)
 		end)
-		for _, child in entry:GetDescendants() do
-			if child:IsA("GuiObject") then
-				child.ZIndex = 22
+		for i, item in overflow do
+			local entry = navItem(popover, item.id, item.label, i, mode, function()
+				setMore(false)
+				selectTab(item.id)
+			end)
+			for _, child in entry:GetDescendants() do
+				if child:IsA("GuiObject") then
+					child.ZIndex = 22
+				end
+			end
+			entry.ZIndex = 22
+			if item.id == "daily" then
+				notifyDot(entry, UDim2.new(1, -16, 0.5, 0)).ZIndex = 23
 			end
 		end
-		if item.id == "daily" then
-			notifyDot(entry, UDim2.new(1, -16, 0.5, 0)).ZIndex = 23
-		end
+		local more = navItem(list, "more", "MAIS", #visible + 1, mode, function()
+			setMore(not popover.Visible)
+		end)
+		notifyDot(more, UDim2.new(1, -16, 0.5, 0))
 	end
-	local more = railTile(rail, "more", "MAIS", "More", #visible + 1, height, function()
-		setMore(not popover.Visible)
-	end)
-	notifyDot(more, UDim2.new(1, -12, 0, 12))
-	return 8 + width + 8
+	return x + width
 end
 
 local function build(mode: MenuLayout.Mode): ScreenGui
@@ -2381,49 +2513,94 @@ local function build(mode: MenuLayout.Mode): ScreenGui
 	})
 	rootFrame = root
 	rootScale = Create("UIScale", { Scale = mode.scale, Parent = root }) :: UIScale
-	-- Véu: escuro à esquerda (leitura), aberto à direita (as câmeras da casa aparecem atrás).
+	-- Marcador para o PvPHudController (fora deste repo): com um "MidnightHuntEntry" dentro do menu ligado, o
+	-- atalho solto da Caçada no rodapé some. A entrada de verdade fica no painel do JOGAR.
+	Create("Frame", { Name = "MidnightHuntEntry", Visible = false, BackgroundTransparency = 1, Parent = root })
+	-- Atrás da UI fica a cena 3D (UI/MenuStage). Só um véu à esquerda para o texto ler bem sobre o preto.
 	Create("Frame", {
 		Name = "Veil",
 		Size = UDim2.fromScale(1, 1),
-		BackgroundColor3 = VEIL,
+		BackgroundColor3 = Color3.new(0, 0, 0),
 		BorderSizePixel = 0,
 		Parent = root,
 	}, {
 		Create("UIGradient", {
 			Transparency = NumberSequence.new({
-				NumberSequenceKeypoint.new(0, 0.05),
-				NumberSequenceKeypoint.new(0.35, 0.25),
-				NumberSequenceKeypoint.new(1, 0.5),
+				NumberSequenceKeypoint.new(0, 0.15),
+				NumberSequenceKeypoint.new(0.32, 0.55),
+				NumberSequenceKeypoint.new(0.6, 1),
+				NumberSequenceKeypoint.new(1, 1),
 			}),
 		}),
 	})
 
 	local top = topBar(root, mode) + (if mode.compact then 6 else 20)
-	local left = if mode.compact then compactRail(root, top, mode) else desktopRail(root, top)
+	local left = menuColumn(root, mode)
+	railRight = left
+	homeWidgets(root, mode)
 	local margin = if mode.compact then 8 else 28
 
+	-- Painel à direita, deixando uma faixa entre a coluna e o painel para o Tung continuar à vista (PC e celular).
 	local right = Components.panel({
 		Name = "Content",
-		Position = UDim2.fromOffset(left, top),
-		Size = UDim2.new(1, -(left + margin), 1, -(top + margin)),
-		BackgroundColor3 = Theme.Bg,
-		BackgroundTransparency = 0.12,
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -margin, 0, if mode.compact then 8 else top),
+		Size = if mode.compact
+			then UDim2.new(1, -(left + margin + 150), 1, -16)
+			else UDim2.new(0.5, 0, 1, -(top + margin)),
+		BackgroundColor3 = Color3.fromRGB(10, 8, 7),
+		BackgroundTransparency = 0.06,
+		Visible = false,
 		Parent = root,
 	})
-	local rightCorner = right:FindFirstChildOfClass("UICorner")
-	if rightCorner then
-		rightCorner.CornerRadius = Theme.CornerLarge
+	contentPanel = right
+	-- Conteúdo das abas na pele "Casa de Madeira" (UI/MenuSkin): mesmos construtores, outra aparência.
+	MenuSkin.apply(right, if mode.compact then 16 else 14)
+	if not mode.compact then
+		Create("UISizeConstraint", { MinSize = Vector2.new(680, 0), Parent = right })
+	end
+	local outline = right:FindFirstChildOfClass("UIStroke")
+	if outline then
+		outline.Color, outline.Transparency = EMBER, 0.78
 	end
 	local padX = if mode.compact then 10 else 20
 	local padY = if mode.compact then 8 else 16
 	Components.padding(right, padX, padY)
 	header = Components.title({
 		Name = "Header",
-		Size = UDim2.new(1, 0, 0, if mode.compact then 26 else 32),
+		Size = UDim2.new(1, -130, 0, if mode.compact then 26 else 32),
 		Text = "",
-		TextSize = if mode.compact then 20 else 28,
+		FontFace = MENU_FONT_BOLD,
+		TextColor3 = BONE,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextSize = if mode.compact then 22 else 30,
 		Parent = right,
 	})
+	-- Voltar à tela inicial (o Tung volta para o centro do palco).
+	local back = Create("TextButton", {
+		Name = "Back",
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, 0, 0, -4),
+		Size = UDim2.fromOffset(120, 44),
+		BackgroundTransparency = 1,
+		AutoButtonColor = false,
+		FontFace = MENU_FONT,
+		Text = "‹  VOLTAR",
+		TextSize = if mode.compact then 18 else 20,
+		TextColor3 = BONE_DIM,
+		TextXAlignment = Enum.TextXAlignment.Right,
+		Parent = right,
+	}) :: TextButton
+	back.MouseEnter:Connect(function()
+		back.TextColor3 = BONE
+	end)
+	back.MouseLeave:Connect(function()
+		back.TextColor3 = BONE_DIM
+	end)
+	back.Activated:Connect(function()
+		click()
+		selectTab("home")
+	end)
 	subheader = note({
 		Name = "Subheader",
 		Position = UDim2.fromOffset(0, if mode.compact then 28 else 36),
@@ -2442,28 +2619,33 @@ local function build(mode: MenuLayout.Mode): ScreenGui
 		BackgroundTransparency = 1,
 		Parent = right,
 	})
-	if not mode.compact then
-		local tip = label({
-			Name = "Tip",
-			AnchorPoint = Vector2.new(0, 1),
-			Position = UDim2.fromScale(0, 1),
-			Size = UDim2.new(1, -440, 0, 20),
-			Text = "",
-			TextSize = Theme.SizeSmall,
-			TextColor3 = Theme.TextMuted,
-			Parent = right,
-		})
-		tip.TextWrapped, tip.TextTruncate = false, Enum.TextTruncate.AtEnd
-		local tipClock = 0
-		table.insert(frameUpdates, function(dt)
-			tipClock += dt
-			if tipClock > 6 or tip.Text == "" then
-				tipClock = 0
-				tipIndex = tipIndex % #TIPS + 1
-				tip.Text = px("DICA: " .. TIPS[tipIndex])
-			end
-		end)
-	end
+	-- Rodapé: uma frase da casa por vez (dicas), em serifa itálica, sob a coluna do menu.
+	local tip = Create("TextLabel", {
+		Name = "Tip",
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.new(0, if mode.compact then 16 else 56, 1, if mode.compact then -6 else -26),
+		Size = UDim2.fromOffset(if mode.compact then 230 else 520, if mode.compact then 30 else 22),
+		BackgroundTransparency = 1,
+		FontFace = TIP_FONT,
+		Text = "",
+		TextSize = if mode.compact then 12 else 16,
+		TextColor3 = BONE_DIM,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextYAlignment = Enum.TextYAlignment.Bottom,
+		TextWrapped = mode.compact,
+		TextTruncate = Enum.TextTruncate.AtEnd,
+		Visible = not mode.compact,
+		Parent = root,
+	}) :: TextLabel
+	local tipClock = 0
+	table.insert(frameUpdates, function(dt)
+		tipClock += dt
+		if tipClock > 7 or tip.Text == "" then
+			tipClock = 0
+			tipIndex = tipIndex % #TIPS + 1
+			tip.Text = `“{TIPS[tipIndex]}” — {TIP_AUTHOR}`
+		end
+	end)
 	-- Aviso curto de resultado (compra, erro, voto). No celular fica sobre a base do painel.
 	feedback = label({
 		Name = "Feedback",
@@ -2501,6 +2683,95 @@ local function currentMode(): MenuLayout.Mode
 	return MenuLayout.mode(size.X, size.Y, UserInputService.TouchEnabled)
 end
 
+-- ===================== Palco 3D =====================
+
+-- Fração horizontal da tela onde o Tung fica (desliza quando o painel abre ou fecha).
+local stageU = 0.65
+-- Momento (time()) da primeira abertura com o palco: medido para a régua de "abre em menos de 3 s".
+local openedAt: number? = nil
+
+-- Centro da faixa livre entre a coluna do menu e o painel (ou a borda direita), em fração da tela.
+local function stageTarget(viewport: Vector2): number
+	local root = rootFrame
+	if not root or root.AbsoluteSize.X <= 0 or viewport.X <= 0 then
+		return stageU
+	end
+	local scale = if rootScale then rootScale.Scale else 1
+	local left = root.AbsolutePosition.X + railRight * scale
+	local right = root.AbsolutePosition.X + root.AbsoluteSize.X
+	local panel = contentPanel
+	if panel and panel.Visible then
+		right = panel.AbsolutePosition.X - 8
+	end
+	-- Tela inicial: o Tung fica entre a coluna e os cartões do passe/skin (no celular eles ficariam em cima dele).
+	local widgets = homeOnly[1]
+	if widgets and widgets.Visible and not (panel and panel.Visible) then
+		right = math.min(right, widgets.AbsolutePosition.X - 8)
+	end
+	return math.clamp((left + right) / 2 / viewport.X, 0.2, 0.85)
+end
+
+-- Abertura: TUM · TUM · TUM e o Tung bate o bastão.
+local function openingKnocks()
+	local s = stage
+	if s then
+		MenuStage.react(s, "bash")
+	end
+	task.spawn(function()
+		for index = 1, 3 do
+			AudioController.play("StepWood", 0.42 - index * 0.06, 0.5, true)
+			task.wait(0.42)
+		end
+	end)
+end
+
+local function updateStage(dt: number, open: boolean, opened: boolean)
+	local s = stage
+	if not s then
+		return
+	end
+	MenuStage.setActive(s, open)
+	-- O palco substitui as câmeras de segurança (laço Attract do CinematicController) atrás do menu.
+	if player:GetAttribute("MenuStageActive") ~= open then
+		player:SetAttribute("MenuStageActive", open)
+		if open then
+			Cinema.stop()
+		end
+	end
+	if not open then
+		if opened then
+			Camera.endCinema()
+		end
+		return
+	end
+	-- Uma ação principal só (JOGAR): o atalho solto da Caçada (MidnightHuntUi, fora deste repo) some com o menu
+	-- aberto; a Caçada fica dentro do painel do JOGAR.
+	local hunt = player.PlayerGui:FindFirstChild("MidnightHuntUi")
+	local huntEntry = hunt and hunt:FindFirstChild("MidnightHuntEntry", true)
+	if huntEntry and huntEntry:IsA("GuiObject") then
+		huntEntry.Visible = false
+	end
+	if not openedAt then
+		-- Prova do tempo de abertura (régua do Crítico: menos de 3 s até o menu aparecer com o palco).
+		local now = time()
+		openedAt = now
+		log.info("open with 3D stage at %.2f s of client time", now)
+	end
+	local beat = MenuStage.step(s, dt)
+	local camera = workspace.CurrentCamera
+	local viewport = camera.ViewportSize
+	stageU += (stageTarget(viewport) - stageU) * (1 - math.exp(-dt * 6))
+	local frameCf, fov = MenuStage.frame(s, stageU, viewport.X / math.max(viewport.Y, 1), camera.FieldOfView)
+	Camera.setCinema(frameCf, fov)
+	if beat then
+		AudioController.play("StepWood", 0.22, 0.5, true)
+	end
+	local logo = brandScale
+	if logo then
+		logo.Scale = 1 + s.pulse * s.pulse * 0.035
+	end
+end
+
 -- ===================== Ciclo =====================
 
 function Controller.debugState(): { [string]: any }
@@ -2517,13 +2788,94 @@ function Controller.select(id: string)
 	selectTab(id :: TabId)
 end
 
+-- Abertura em menos de 3 s: logo sobre preto já no Init (antes de o mundo e o palco existirem). Some com um
+-- esmaecer quando o menu abre de verdade (ou quando a abertura do jogo assume a tela).
+local splash: ScreenGui? = nil
+
+function Controller.Init()
+	local screen = Create("ScreenGui", {
+		Name = "MenuSplash",
+		ResetOnSpawn = false,
+		IgnoreGuiInset = true,
+		DisplayOrder = 250,
+	}) :: ScreenGui
+	local black = Create("Frame", {
+		Name = "Black",
+		Size = UDim2.fromScale(1, 1),
+		BackgroundColor3 = Color3.new(0, 0, 0),
+		BorderSizePixel = 0,
+		Parent = screen,
+	})
+	Create("TextLabel", {
+		Name = "Logo",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.46),
+		Size = UDim2.new(1, -40, 0, 70),
+		BackgroundTransparency = 1,
+		FontFace = LOGO_FONT,
+		Text = "TUNG TUNG SAHUR",
+		TextScaled = true,
+		TextColor3 = BONE,
+		Parent = black,
+	}, {
+		Create("UITextSizeConstraint", { MaxTextSize = 64 }),
+	})
+	Create("TextLabel", {
+		Name = "Hint",
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0.46, 50),
+		Size = UDim2.new(1, -40, 0, 24),
+		BackgroundTransparency = 1,
+		FontFace = MENU_FONT,
+		Text = "A CASA ESTÁ ACORDANDO...",
+		TextSize = 18,
+		TextColor3 = BONE_DIM,
+		Parent = black,
+	})
+	screen.Parent = player:WaitForChild("PlayerGui")
+	splash = screen
+	log.info("splash on screen at %.2f s of client time", time())
+end
+
+-- Tira a abertura com um esmaecer curto (a cena 3D aparece por baixo).
+local function dropSplash()
+	local screen = splash
+	if not screen then
+		return
+	end
+	splash = nil
+	for _, item in screen:GetDescendants() do
+		if item:IsA("Frame") then
+			TweenService:Create(item, TweenInfo.new(0.8), { BackgroundTransparency = 1 }):Play()
+		elseif item:IsA("TextLabel") then
+			TweenService:Create(item, TweenInfo.new(0.5), { TextTransparency = 1 }):Play()
+		end
+	end
+	task.delay(0.9, function()
+		screen:Destroy()
+	end)
+end
+
 function Controller.Start()
 	if GameState.wait():GetAttribute("CampaignActive") ~= true then
+		dropSplash()
 		return
 	end
 	local state = ReplicatedStorage:WaitForChild("CampaignState")
 	menuMode = currentMode()
 	gui = build(menuMode :: MenuLayout.Mode)
+	-- Cena 3D do menu (fica apagada e parada enquanto o menu está fechado).
+	stage = MenuStage.build()
+	MenuStage.setActive(stage :: MenuStage.Stage, false)
+	-- Loja, Ajustes e Caçada abrem por cima do menu: mesma pele (madeira escura, Oswald), sem mudar tamanhos.
+	task.spawn(function()
+		for _, name in { "StoreUi", "ComfortOptions", "MidnightHuntUi" } do
+			local screen = player:WaitForChild("PlayerGui"):WaitForChild(name, 10)
+			if screen then
+				MenuSkin.apply(screen, 0, 0)
+			end
+		end
+	end)
 	-- Qualquer mudança de saldo, estoque, nível ou voto redesenha a aba (no máximo uma vez por quadro).
 	for _, name in
 		{
@@ -2582,6 +2934,11 @@ function Controller.Start()
 			return
 		end
 		local open = state:GetAttribute("Phase") == "Lobby" and player:GetAttribute("OpeningActive") ~= true
+		if
+			splash and (open or player:GetAttribute("OpeningActive") == true or state:GetAttribute("Phase") ~= "Lobby")
+		then
+			dropSplash()
+		end
 		player:SetAttribute("ModeMenuOpen", open)
 		if open then
 			-- Troca de classe (PC ↔ celular ↔ celular baixo) reconstrói a moldura; só escala, ajusta.
@@ -2608,11 +2965,17 @@ function Controller.Start()
 				end
 			end
 		end
-		-- A loja abre por cima: o menu some enquanto ela estiver aberta.
-		screen.Enabled = open and not Store.isOpen()
+		-- A loja abre por cima: a moldura some enquanto ela estiver aberta. O ScreenGui segue ligado (o atalho
+		-- solto da Caçada, fora deste repo, só some com o menu ligado), só o conteúdo se esconde.
+		screen.Enabled = open
+		local frameRoot = rootFrame
+		if frameRoot then
+			frameRoot.Visible = not Store.isOpen()
+		end
 		if open and not wasOpen then
 			Cinema.stop()
-			currentTab = "play"
+			currentTab = "home"
+			openingKnocks()
 			dirty = true
 		end
 		if open then
@@ -2633,6 +2996,7 @@ function Controller.Start()
 		elseif wasOpen then
 			UserInputService.MouseIconEnabled = false
 		end
+		updateStage(dt, open, wasOpen)
 		wasOpen = open
 	end)
 end

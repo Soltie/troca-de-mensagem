@@ -749,8 +749,13 @@ function Controller.Start()
 			teaserCountdown.Text = `CONTINUA...  ·  A equipe volta ao lobby em {remaining}s`
 		end
 		if not current then
-			-- Lobby com o menu de modo aberto: câmeras de segurança ao fundo.
-			if phase == "Lobby" and player:GetAttribute("ModeMenuOpen") == true and not Store.isOpen() then
+			-- Lobby com o menu de modo aberto: câmeras de segurança ao fundo (só se o palco 3D do menu não existir).
+			if
+				phase == "Lobby"
+				and player:GetAttribute("ModeMenuOpen") == true
+				and player:GetAttribute("MenuStageActive") ~= true
+				and not Store.isOpen()
+			then
 				Controller.play(Shots.Attract, { loop = true, quiet = true })
 			end
 			return
