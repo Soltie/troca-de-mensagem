@@ -17,6 +17,14 @@ KeroseneLamp 72491381523314, KnitBasket 89070774022341, OvalRug 101130053061860,
 PhotoKidsTumTum 115432814014690, PhotoValdemar 83750386732975, SheetArmchair 134644723083715, SheetSofa 75342931413885.
 Antigos soltos no Workspace foram para `ServerStorage.Backup_ArtStray`. Falta: prova no jogo (print no escuro) e o usuário salvar/publicar.
 
+## Prova no jogo (Play, 20/10)
+Print: `docs/critica/arte_cap1_sala_sofa.jpg` (sala, câmera fixa por script, UI escondida). Colocados em `CursedHouse.LivingDressing`: OvalRug, SheetSofa,
+KnitBasket, PhotoFamily, PhotoKidsTumTum, PhotoValdemar, KeroseneLamp. Escala do sofá ok (8,3 x 2,9 x 4,6 studs, proporcional à TV e à poltrona).
+Problemas: (1) SheetArmchair e os 3 entalhes (Carving*) NÃO aparecem no jogo: o código do place é mais antigo que o repo (sem as linhas de
+entalhe/poltrona); precisa sincronizar `HouseDressing`. (2) No print o sofá parece de couro com almofadas, sem lençol visível: conferir se a
+textura do lençol carregou. (3) Prints seguintes saíram pretos (só poeira), provável efeito de luz/cena do jogo; sem prova em lanterna.
+Nota: não rodei Crítico.
+
 ## Bloqueio (resolvido)
 - Importar GLB no Studio exige a UI (Home → Import 3D). Computer use é negado neste thread e a fila `pedidos_tela` foi aposentada.
   O usuário (ou o agente desktop) precisa importar: Living_* da lista acima, depois rodar `build/arte3d/pos_import_v2.luau`
