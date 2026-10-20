@@ -28,12 +28,13 @@ local Config = {
 		-- Primeira pancada no capítulo: tempo rastejando até levantar sozinho.
 		CrawlSeconds = 8,
 		MedicReviveSeconds = 2.5,
-		ReviveGrace = 6,
+		-- Depois de levantar (sozinho ou resgatado): carência e o Tung se afasta (CampaignRuntime).
+		ReviveGrace = 10,
 		SpawnGrace = 8,
 		-- Começo do capítulo (depois da cena): carência de quem joga e tempo parado do Tung antes de caçar. A carência
 		-- do surgimento (SpawnGrace) acabava durante a cena da história e ele pegava nos primeiros segundos.
-		ChapterStartGrace = 12,
-		ChapterWakeHold = 6,
+		ChapterStartGrace = 20,
+		ChapterWakeHold = 8,
 		-- Capítulo 2 ("Ele acordou"): ele já anda pela casa, mas fica parado mais tempo no começo.
 		ChapterTwoWakeHold = 20,
 		CaptureRecovery = 2,
@@ -146,10 +147,10 @@ local Config = {
 	Battery = {
 		StartCharge = 0.85,
 		-- Carga cheia dura 1/DrainPerSecond segundos de luz contínua.
-		DrainPerSecond = 1 / 170,
+		DrainPerSecond = 1 / 340,
 		-- Desligada, a pilha "descansa" e recupera devagar até RechargeCap (a missão nunca trava).
 		RechargePerSecond = 1 / 40,
-		RechargeCap = 0.35,
+		RechargeCap = 0.6,
 		MinToTurnOn = 0.04,
 		LowLevel = 0.2,
 		PickupAmount = 0.6,
@@ -310,6 +311,8 @@ local Config = {
 		MissRecover = 1.3,
 		-- Aviso de corpo antes da pegada de verdade: ergue o bastão por CaptureWindup s. Quem sai do alcance escapa.
 		CaptureWindup = 0.6,
+		-- Ao ver alguém, anda na velocidade de patrulha por SpotWindup s antes de correr.
+		SpotWindup = 1.5,
 		-- Na folga do diretor de tensão ele ainda ataca quem está a menos disto e à vista.
 		RetreatAttackRange = 6,
 		DoorSlamWindow = 8,

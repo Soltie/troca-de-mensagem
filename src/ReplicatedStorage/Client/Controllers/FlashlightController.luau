@@ -693,6 +693,8 @@ function FlashlightController.Start()
 	player:GetAttributeChangedSignal(Tags.Attr.Flashlight):Connect(function()
 		applyVisible()
 		if wanted and not serverOn() and charge() <= 0.001 and phase == "Playing" then
+			-- Apagou sozinha: o próximo F liga (antes o primeiro F só "desligava" o pedido antigo).
+			wanted = false
 			hint("battery_dead")
 			AudioController.play("Flashlight", 0.7, 0.6)
 		end

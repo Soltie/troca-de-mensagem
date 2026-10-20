@@ -60,6 +60,8 @@ local nextBangAt = 0
 local feintUntil = 0
 local nextFeintAt = 0
 local feintDestination: Vector3? = nil
+-- Hora do último "spotted" (arrancada lenta da perseguição).
+local spottedAt = -math.huge
 
 -- Movimento
 local waypoints: { Vector3 } = {}
@@ -400,6 +402,13 @@ local function brainTick()
 	)
 	-- Modificadores da partida (Pesadelo, Pernas Longas): mais rápido, nunca mais que a corrida do jogador.
 	command.speed = Difficulty.creatureSpeed(command.speed, DifficultyService.modifiers(), Config.Player.SprintSpeed)
+	-- "Ele te viu": arranca devagar por SpotWindup s antes do sprint (tempo de reagir e correr).
+	if command.event == "spotted" then
+		spottedAt = now
+	end
+	if command.mode == "Chase" and now - spottedAt < C.SpotWindup then
+		command.speed = math.min(command.speed, C.PatrolSpeed)
+	end
 	local striking = command.event == "capture"
 		or command.event == "miss"
 		or command.event == "windup"
@@ -600,6 +609,7 @@ function CreatureService.reset()
 	exposure = 0
 	holdUntil = 0
 	nextBangAt, feintUntil, nextFeintAt = 0, 0, 0
+	spottedAt = -math.huge
 	arrived = true
 	pathBusy = false
 	pauseUntil = 0
@@ -609,25 +619,54 @@ function CreatureService.reset()
 	setAttributes("Dormant")
 end
 
--- Acorda no ponto de surgimento mais distante do jogador (ou em `at`).
+-- Ponto de surgimento: longe de todos os jogadores e, se der, fora da vista de cada um (no cap. 3 ele acordava no
+-- fim da reta do hall e via quem acabou de nascer). Conta também quem está na carência.
+local function wakeSpot(): Vector3?
+	local eyes: { Vector3 } = {}
+	local excluded: { Instance } = {}
+	for _, player in Players:GetPlayers() do
+		local character = player.Character
+		local hrp = character and character:FindFirstChild("HumanoidRootPart")
+		if character and hrp and hrp:IsA("BasePart") then
+			table.insert(eyes, hrp.Position + UP * 1.5)
+			table.insert(excluded, character)
+		end
+	end
+	if model then
+		table.insert(excluded, model)
+	end
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = excluded
+	local best, bestScore = nil, -math.huge
+	for _, p in WorldService.creatureSpawns() do
+		local position = vec(p)
+		local head = position + UP * (HEIGHT - 0.7)
+		local nearest, seen = math.huge, false
+		for _, eye in eyes do
+			nearest = math.min(nearest, (position - eye).Magnitude)
+			if not seen and workspace:Raycast(eye, head - eye, params) == nil then
+				seen = true
+			end
+		end
+		if #eyes == 0 then
+			nearest = position.Magnitude
+		end
+		-- Fora da vista vale mais que qualquer distância.
+		local score = nearest + (if seen then 0 else 10000)
+		if score > bestScore then
+			best, bestScore = position, score
+		end
+	end
+	return best
+end
+
+-- Acorda no ponto de surgimento mais distante e escondido dos jogadores (ou em `at`).
 function CreatureService.activate(at: Vector3?)
 	if active then
 		return
 	end
-	local spawnAt = at
-	if spawnAt == nil then
-		local target = findTarget()
-		local reference = if target then target.root.Position else Vector3.zero
-		local best, bestDistance = nil, -1
-		for _, p in WorldService.creatureSpawns() do
-			local position = vec(p)
-			local distance = (position - reference).Magnitude
-			if distance > bestDistance then
-				best, bestDistance = position, distance
-			end
-		end
-		spawnAt = best
-	end
+	local spawnAt = at or wakeSpot()
 	assert(spawnAt, "no spawn point")
 	placeAt(spawnAt, nil)
 	active = true

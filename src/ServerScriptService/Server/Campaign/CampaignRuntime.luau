@@ -477,6 +477,8 @@ local function selfRevive(player: Player, expectedVersion: number, message: stri
 		return
 	end
 	player:SetAttribute("CampaignGraceUntil", now + C.ReviveGrace)
+	-- Levantou: o Tung se afasta (folga real, não só a carência).
+	CreatureService.retreat(C.ReviveGrace + 5)
 	freeze(player, false)
 	local beacon = rescueParts[player.UserId]
 	if beacon then
@@ -961,6 +963,7 @@ local function tick()
 			channels[helperId] = nil
 			if Session.revive(session, helperId, channel.target, now) then
 				target:SetAttribute("CampaignGraceUntil", now + C.ReviveGrace)
+				CreatureService.retreat(C.ReviveGrace + 5)
 				freeze(target, false)
 				beacon:Destroy()
 				rescueParts[channel.target] = nil
