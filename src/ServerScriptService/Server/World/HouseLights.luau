@@ -115,7 +115,61 @@ function Lights.build(root: Instance)
 			end
 		end
 	end
+	Lights.dimLamps(root)
 	root:SetAttribute("HouseLightPlan", `{stats.electric} elétricas, {stats.flame} chamas, {stats.off} desligadas`)
+end
+
+-- Lampiões de óleo fracos presos na parede mais próxima (cap. 1: sem eles o corredor e a cozinha ficavam pretos
+-- demais antes da energia). Chama pequena, sem sombra, tremulando; nada de luz forte.
+local DIM_LAMPS: { { name: string, at: Vector3 } } = {
+	{ name = "OilLampHall", at = Vector3.new(0, 5.6, -20) },
+	{ name = "OilLampKitchen", at = Vector3.new(26, 5.6, -4) },
+}
+local LAMP_COLOR = Color3.fromRGB(255, 170, 90)
+
+function Lights.dimLamps(root: Instance)
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	local folder = Instance.new("Folder")
+	folder.Name = "DimLamps"
+	folder.Parent = root
+	params.FilterDescendantsInstances = { folder }
+	for _, spec in DIM_LAMPS do
+		local best: RaycastResult? = nil
+		for _, dir in { Vector3.xAxis, -Vector3.xAxis, Vector3.zAxis, -Vector3.zAxis } do
+			local hit = workspace:Raycast(spec.at, dir * 24, params)
+			if hit and math.abs(hit.Normal.Y) < 0.3 and (not best or hit.Distance < best.Distance) then
+				best = hit
+			end
+		end
+		if not best then
+			continue
+		end
+		local normal = best.Normal
+		local frame = CFrame.lookAt(best.Position + normal * 0.45, best.Position + normal * 2)
+		local body = Instance.new("Part")
+		body.Name = spec.name
+		body.Size = Vector3.new(0.5, 0.8, 0.5)
+		body.CFrame = frame
+		body.Anchored, body.CanCollide, body.CanQuery, body.CanTouch = true, false, false, false
+		body.Material, body.Color = Enum.Material.Metal, Color3.fromRGB(58, 44, 34)
+		body.CastShadow = false
+		body.Parent = folder
+		local glass = Instance.new("Part")
+		glass.Name = "LampGlass"
+		glass.Size = Vector3.new(0.34, 0.44, 0.34)
+		glass.CFrame = frame * CFrame.new(0, 0.05, 0.02)
+		glass.Anchored, glass.CanCollide, glass.CanQuery, glass.CanTouch = true, false, false, false
+		glass.Material, glass.Color = Enum.Material.Neon, LAMP_COLOR
+		glass.Transparency = 0.25
+		glass.CastShadow = false
+		glass.Parent = folder
+		local light = Instance.new("PointLight")
+		light.Color, light.Range, light.Brightness = LAMP_COLOR, 15, 0.45
+		light.Shadows = false
+		light.Parent = body
+		body:SetAttribute(Tags.Attr.Flicker, true)
+	end
 end
 
 return Lights

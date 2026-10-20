@@ -30,3 +30,11 @@ lâmpada fraca no corredor e na cozinha (precisa das posições no mapa).
 
 ## Como testar
 `lune run scripts/check` (ALL GREEN). No Studio: iniciar História cap. 1; pegar 1ª e 2ª chave; criar peça com tag `TungPresenceZone` e `Presence`.
+
+## Aplicado ao place (20/10, 2ª passada)
+Backups em `ServerStorage.Backup_Code_Cap1` e `Backup_Code_Cap1_b`.
+- Luz v4: `LightingController` + `LightingProfile` (tetos 50%), lanterna mais quente e dedos da mão (`FlashlightController`).
+- Tranco de porta: trecho de `animateDoor` em `WorldService` aplicado por cima do código do place (PvP/Mansão intactos).
+- `FurnitureMotionController` criado e registrado em `Client/Main`; `GameUiController` com o aviso acima da legenda.
+- Lampiões fracos (`HouseLights.dimLamps`): hall/corredor (7, 5.6, -20) e cozinha (26, 5.6, -19), luz 0,45, alcance 15.
+- Não aplicado: `MainMenuController` (menu; place tem o código do PvP, mesclar à parte). Play ok, 62 controllers, testes 439/439.
