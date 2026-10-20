@@ -5,12 +5,21 @@ local TestKit = require("../TestKit")
 local spec: TestKit.Spec = {
 	name = "GustRules",
 	run = function(t)
-		t.it("only blows in the middle house chapters", function()
-			t.expect(GustRules.allowed(1)).toBe(false)
+		t.it("blows in the house chapters except the fire escape", function()
+			t.expect(GustRules.allowed(1)).toBe(true)
+			t.expect(GustRules.allowed(0)).toBe(false)
 			t.expect(GustRules.allowed(2)).toBe(true)
 			t.expect(GustRules.allowed(4)).toBe(true)
 			t.expect(GustRules.allowed(5)).toBe(false)
 			t.expect(GustRules.allowed(7)).toBe(false)
+		end)
+
+		t.it("chapter 1 gusts only after the 3rd key, at most twice, away from the visit", function()
+			t.expect(GustRules.chapterReady(1, 4, 0, 999)).toBe(false)
+			t.expect(GustRules.chapterReady(1, 5, 0, 999)).toBe(true)
+			t.expect(GustRules.chapterReady(1, 5, 2, 999)).toBe(false)
+			t.expect(GustRules.chapterReady(1, 5, 1, 30)).toBe(false)
+			t.expect(GustRules.chapterReady(2, 0, 9, 0)).toBe(true)
 		end)
 
 		t.it("respects start grace and cooldown", function()

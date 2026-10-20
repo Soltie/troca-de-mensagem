@@ -23,9 +23,21 @@ GustRules.Cooldown = 120
 -- Chance por rolagem: ~1 sopro a cada 3-4 min quando liberado.
 GustRules.Chance = 0.05
 
--- Capítulos com sopro: só os da casa, sem o tutorial (1) e sem a fuga do incêndio (5).
+-- Capítulos com sopro: os da casa até o 4 (o 5 é a fuga do incêndio). No 1 ele vale só depois da 3ª chave
+-- (chapterReady), no máximo 2 vezes, e nunca no mesmo minuto da Visita do Tung ou da revista do armário.
 function GustRules.allowed(stage: number): boolean
-	return stage >= 2 and stage <= 4
+	return stage >= 1 and stage <= 4
+end
+
+GustRules.Ch1KeysSolved = 5 -- tarefas resolvidas do cap. 1 quando a 3ª chave sai (entrada, lanterna e 3 chaves)
+GustRules.Ch1MaxGusts = 2
+GustRules.VisitGap = 60
+
+function GustRules.chapterReady(stage: number, solved: number, gusts: number, sinceVisit: number): boolean
+	if stage ~= 1 then
+		return true
+	end
+	return solved >= GustRules.Ch1KeysSolved and gusts < GustRules.Ch1MaxGusts and sinceVisit >= GustRules.VisitGap
 end
 
 function GustRules.canRoll(sinceStageStart: number, sinceLastGust: number): boolean

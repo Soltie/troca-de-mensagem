@@ -31,6 +31,8 @@ type Gust = {
 local hitCallbacks: { (Player) -> () } = {}
 local active: { Gust } = {}
 local lastGustAt = -math.huge
+local gustsThisStage = 0
+local lastVisitAt = -math.huge
 local rng = Random.new()
 local params = RaycastParams.new()
 params.FilterType = Enum.RaycastFilterType.Include
@@ -98,6 +100,8 @@ function GustService.trigger(player: Player): boolean
 	end
 	local now = workspace:GetServerTimeNow()
 	lastGustAt = os.clock()
+	gustsThisStage += 1
+	ReplicatedStorage:SetAttribute("GustAt", workspace:GetServerTimeNow())
 	local delta = to - from
 	local part = Instance.new("Part")
 	part.Name = "Gust"
@@ -185,12 +189,29 @@ function GustService.Start()
 		local current = (tonumber(state:GetAttribute("Stage")) or 0) :: number
 		if current ~= stage then
 			stage, stageAt = current, os.clock()
+			gustsThisStage = 0
 		end
 		local now = os.clock()
+		-- Revista do armário e Visita do Tung: o sopro espera um minuto depois de qualquer um dos dois.
+		local visiting = state:GetAttribute("VisitPhase")
+		if type(visiting) == "string" and visiting ~= "" then
+			lastVisitAt = now
+		end
+		for _, player in Players:GetPlayers() do
+			if player:GetAttribute("BreathTestAt") ~= nil then
+				lastVisitAt = now
+			end
+		end
 		if
 			state:GetAttribute("Phase") ~= "Playing"
 			or not GustRules.allowed(current)
 			or not GustRules.canRoll(now - stageAt, now - lastGustAt)
+			or not GustRules.chapterReady(
+				current,
+				tonumber(state:GetAttribute("Solved")) or 0,
+				gustsThisStage,
+				now - lastVisitAt
+			)
 			-- Diretor de tensão: nada de sopro no pico nem na folga.
 			or not TensionDirector.allowsEvents()
 			or rng:NextNumber() >= GustRules.Chance

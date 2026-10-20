@@ -24,8 +24,6 @@ TungVisit.SightDark = 10
 TungVisit.SightLight = 34
 TungVisit.SightRunning = 22
 TungVisit.RunningSpeed = 15
--- Dentro do armário só a lanterna acesa colada na fresta entrega (e só com ele parado diante do armário).
-TungVisit.HiddenLightRange = 7
 
 -- Pé da escada (onde ele aparece) e o hall.
 TungVisit.StairFoot = { x = 8, z = 20 } :: Point
@@ -98,8 +96,9 @@ function TungVisit.sees(s: Sight): boolean
 	if s.sinceSpawn < TungVisit.GraceSeconds or not s.clear then
 		return false
 	end
+	-- Escondido nunca é "visto": se ele para diante do armário, é a revista (TungVisit.searches).
 	if s.hidden then
-		return s.atCloset and s.flashlight and s.distance <= TungVisit.HiddenLightRange
+		return false
 	end
 	local range = TungVisit.SightDark
 	if s.flashlight then
@@ -108,6 +107,12 @@ function TungVisit.sees(s: Sight): boolean
 		range = TungVisit.SightRunning
 	end
 	return s.distance <= range
+end
+
+-- Revista do armário: ele está parado diante do armário e este jogador está escondido perto (no armário dele).
+TungVisit.SearchRange = 6
+function TungVisit.searches(hidden: boolean, atCloset: boolean, distance: number): boolean
+	return hidden and atCloset and distance <= TungVisit.SearchRange
 end
 
 TungVisit.Captions = table.freeze({

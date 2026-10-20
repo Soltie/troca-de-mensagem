@@ -878,6 +878,10 @@ local visitCaptureCallbacks: { (Player) -> () } = {}
 function CreatureService.onVisitCapture(callback: (Player) -> ())
 	table.insert(visitCaptureCallbacks, callback)
 end
+-- Revista do armário pela Visita: o fluxo normal do golpe em quem está escondido (CampaignRuntime abre a respiração).
+function CreatureService.forceSearch(player: Player)
+	fireCapture(player)
+end
 
 function CreatureService.forceCapture(player: Player)
 	for _, callback in visitCaptureCallbacks do

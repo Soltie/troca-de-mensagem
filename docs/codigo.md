@@ -60,3 +60,12 @@ No repo (aplicar ao place; `Backup_Code_Cap1_*` guarda as versões anteriores):
   - Visto = capturado (mesmo caminho do golpe: cai/rasteja ou derrota no solo): fora do armário a ≤10 st; com lanterna ≤34 st; correndo ≤22 st; escondido só é visto com lanterna acesa a ≤7 st dele parado no armário. 1,5 s de graça ao aparecer.
   - Gatilho padrão: 25 s após a 2ª chave. **API do Level:** `TungVisitService.start({ early = true?, room = "Living"|"Kitchen"|"Dining"? })` (Melodia errada → `early = true`). Estado em `CampaignState.VisitPhase/VisitEndsAt/VisitRoom/VisitSerial`. Uma vez por capítulo; zera ao reiniciar.
   - Rotas e armários: ver docs/level.md. O corpo é o real (`Assets.TungTung` desenhado pelo `CreatureVisualController`), cérebro desligado.
+
+## Rodada 5 — aplicada ao place (backup `ServerStorage.Backup_Code_Cap1_d`)
+- Visita do Tung testada em Play: aviso → patrulha → captura (jogador cai, Tung volta a `Dormant` no canto) e ronda completa sem ninguém por perto; testes do place 443/443.
+- **Revista do armário** encaixada na Visita: parado diante do armário, quem está escondido ali (≤6 st) entra na respiração (`CreatureService.forceSearch` → fluxo `LockerSearchService`; passou = ele segue, falhou = captura). Escondido nunca é "visto" fora disso.
+- Capturas da Visita usam a causa `visit` (não religam o cérebro de caça; dica da Cida em `GuidingLightController`).
+- **Sopro no cap. 1** (`GustRules.allowed(1)` = true + `chapterReady`): só depois da 3ª chave (`Solved ≥ 5`), no máximo 2 por capítulo, nunca no mesmo minuto da Visita ou da revista (`GustService` guarda `lastVisitAt`; a Visita espera até 60 s se houve sopro, `ReplicatedStorage.GustAt`).
+- **Armário com surpresa** já estava ligado ao cap. 1 (`WorldService.curseLockers`, 10 % dos armários, fora o da biblioteca); nada a mudar.
+- Ponte de depuração no Studio: `ServerStorage.TungVisitBridge:Invoke({ early = true, room = "Living" })`.
+- Não toquei em `TungTungRig` nem `MenuStage` (Arte).

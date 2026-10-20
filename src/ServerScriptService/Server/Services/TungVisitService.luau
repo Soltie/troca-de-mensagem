@@ -159,6 +159,7 @@ local function patrol(myToken: number, room: TungVisit.Room)
 	publish("patrol", nil, room)
 	local spawnedAt = os.clock()
 	local caught = false
+	local searched: { [Player]: boolean } = {}
 	local last = os.clock()
 	local function tick(atCloset: boolean): boolean
 		local dt = os.clock() - last
@@ -174,6 +175,24 @@ local function patrol(myToken: number, room: TungVisit.Room)
 				for _, player in seen do
 					log.info("seen %s", player.Name)
 					CreatureService.forceCapture(player)
+				end
+			end
+		end
+		-- Revista: parado diante do armário, quem está escondido ali segura a respiração no ritmo (LockerSearchService).
+		if atCloset then
+			for _, player in activePlayers() do
+				local root = (player.Character :: Model):FindFirstChild("HumanoidRootPart") :: BasePart
+				if
+					not searched[player]
+					and TungVisit.searches(
+						PlayerStateService.isHidden(player),
+						true,
+						(root.Position - position).Magnitude
+					)
+				then
+					searched[player] = true
+					log.info("search %s", player.Name)
+					CreatureService.forceSearch(player)
 				end
 			end
 		end
@@ -286,6 +305,17 @@ function TungVisitService.Start()
 			keysSeen += 1
 			if keysSeen == 2 then
 				task.delay(25, function()
+					-- Nunca no mesmo minuto de um sopro: espera até 60 s.
+					local waited = 0
+					while
+						waited < 60
+						and workspace:GetServerTimeNow()
+								- ((ReplicatedStorage:GetAttribute("GustAt") :: number?) or -1e9)
+							< 60
+					do
+						task.wait(2)
+						waited += 2
+					end
 					TungVisitService.start()
 				end)
 			end
@@ -294,10 +324,17 @@ function TungVisitService.Start()
 	-- Capítulo novo ou partida reiniciada (fase Intro/Lobby): a visita vale de novo.
 	task.spawn(function()
 		local lastPhase: any = nil
+		local lastScene: any = nil
 		while true do
 			task.wait(0.5)
 			local state = campaign()
 			local phase = if state then state:GetAttribute("Phase") else nil
+			-- Cada início de capítulo/recomeço publica uma cena nova (StorySceneSerial): a visita vale de novo.
+			local scene = if state then state:GetAttribute("StorySceneSerial") else nil
+			if scene ~= lastScene then
+				lastScene = scene
+				TungVisitService.reset()
+			end
 			if phase ~= lastPhase then
 				lastPhase = phase
 				if phase == "Intro" or phase == "Lobby" then
