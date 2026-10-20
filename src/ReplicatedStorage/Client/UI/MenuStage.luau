@@ -58,8 +58,9 @@ local LAMP_SWING = math.rad(4)
 local WALL_Z = 7
 local SHADOW_SCALE = 2
 local SHADOW_Z = 6.2
--- Brilho dos olhos: no espaço do osso da cabeça (medida do Animador na malha; z conferido por print, 20/10).
-local EYE_OFFSETS = { Vector3.new(-0.26, 0.45, -0.93), Vector3.new(0.26, 0.45, -0.93) }
+-- Brilho dos olhos: no espaço do osso da cabeça (medida do Animador na malha). z = -0,93 era a superfície do rosto, então a
+-- bolinha saltava para fora de lado (Crítico 20/10); recuado 0,13 e achatado em Z para ficar dentro da órbita.
+local EYE_OFFSETS = { Vector3.new(-0.26, 0.45, -0.8), Vector3.new(0.26, 0.45, -0.8) }
 -- Amarelo quente da página. O LightingController deixa a cena do menu sem a correção fria (que esverdeava).
 local EYE_COLOR = Color3.fromRGB(255, 210, 122)
 
@@ -185,7 +186,7 @@ end
 local function eyeGlints(folder: Folder): { BasePart }
 	local eyes: { BasePart } = {}
 	for index = 1, #EYE_OFFSETS do
-		local eye = part(folder, `Eye{index}`, Vector3.new(0.2, 0.2, 0.2), CFrame.new(), EYE_COLOR)
+		local eye = part(folder, `Eye{index}`, Vector3.new(0.2, 0.2, 0.1), CFrame.new(), EYE_COLOR)
 		eye.Shape = Enum.PartType.Ball
 		eye.Material = Enum.Material.Neon
 		eye.CastShadow = false
