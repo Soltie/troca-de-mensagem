@@ -17,6 +17,7 @@ local CollectionService = game:GetService("CollectionService")
 local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Audio = require("@game/ReplicatedStorage/Shared/Game/Audio")
 local PuzzleStyles = require("@game/ReplicatedStorage/Shared/Game/PuzzleStyles")
@@ -1445,8 +1446,22 @@ function Mini.cidaChair(root: Instance, world: Instance, spec: any, distance: nu
 		local from = chair:GetPivot()
 		local to = CFrame.new(CHAIR_SPOTS[spot]) * from.Rotation
 		local any = chair:FindFirstChildWhichIsA("BasePart", true)
+		-- Aviso antes de mexer: legenda, rangido e um tremor de 1,2 s (o jogador entende que a luz a assusta).
+		local campaign = ReplicatedStorage:FindFirstChild("CampaignState")
+		if campaign then
+			campaign:SetAttribute("Caption", "A cadeira range e treme... ela tem medo da luz.")
+			campaign:SetAttribute("CaptionSerial", (campaign:GetAttribute("CaptionSerial") or 0) + 1)
+		end
 		if any then
-			play(any, "CreakWood", 1, 0.8, 60)
+			play(any, "CreakWood", 1, 0.7, 60)
+		end
+		for t = 1, 24 do
+			chair:PivotTo(from * CFrame.Angles(0, 0, math.rad(math.sin(t * 1.6) * 5)))
+			task.wait(0.05)
+		end
+		chair:PivotTo(from)
+		if any then
+			play(any, "CreakWood", 1, 0.9, 60)
 		end
 		for t = 1, 25 do
 			chair:PivotTo(from:Lerp(to, t / 25))

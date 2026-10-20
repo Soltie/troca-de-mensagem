@@ -20,3 +20,6 @@ Testar: tÃ¡buas da cozinha desalinhadas; carta da biblioteca Ã© uma folha lisa; 
 - 3 Sustos: legenda curta em cada um (hall, cozinha, jantar, biblioteca, corredor), via CampaignState.Caption.
 - 4 Carta: só o papel deitado, fundo mais escuro (removi minha folha duplicada). 5 Caixinha de música visível ao abrir o móvel certo.
 - Tests.Run 439/0. Não revi o jogo a olho em todos os cômodos.
+
+## Polimento final cap. 1: aviso da cadeira da Cida
+Antes de fugir da luz a cadeira agora treme por 1,2 s com rangido e legenda "A cadeira range e treme... ela tem medo da luz.", depois desliza. No repo (HouseMiniPuzzles.cidaChair); falta aplicar no place quando o Studio liberar.
