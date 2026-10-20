@@ -56,3 +56,5 @@ Outros brilhos de olho no Tung (não mexi, modelo oficial): (1) `TungTungRig` cr
 ## Olhos do Tung sem brilho também no jogo (decisão 20/10, repo; place pendente)
 `Creature/TungTungRig.luau`: `eyeLight` nasce com `Enabled = false` (continua no rig: Jumpscare/Perseguição/Trailer só mexem em Brightness/Range) e peças Neon com "eye" viram plástico escuro fosco. Menu: `EYE_OFFSETS = {}`. Modelo/textura intocados. check ALL GREEN.
 Aplicar no place com o Studio livre: `TungTungRig` (as 2 mudanças acima) e `MenuStage` (`EYE_OFFSETS = {}`); o place tem `MenuStage` e `TungTungRig` diferentes do repo, então aplicar por trecho, não colar o arquivo. Conferir jumpscare/perseguição sem luz laranja no rosto.
+Aplicado no place (20/10 18:4x, por trecho): `TungTungRig` (luz desligada, Neon "eye" fosco) e `MenuStage` (`EYE_OFFSETS = {}`); lido de volta; Play sem erro de script do jogo no boot (33 serviços/63 controllers).
+`Assets.TungSilhouette` (vulto com animação própria): NÃO feito, fica para depois (precisa modelar e animar; não cabe sem prova de corpo inteiro).
