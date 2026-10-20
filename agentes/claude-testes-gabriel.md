@@ -34,6 +34,12 @@ fase no `CreatureVisualController`. Testado no Play: sequências completas, 0 er
 `tungtung-testes/MUDANCAS_TESTES.md` (seção 5). **Conflito potencial:** `CreatureService` é arquivo compartilhado
 (História mexe nele; mensagem 023). Nada disso vai ao place sem combinar.
 
+**Animações Mixamo (v2):** 4 das 5 aprovadas na 022 (Zombie Upright Twitching Idle, Zombie Alert Idle, Mutant
+Brutal Walk, Idle Stand Looking Around), baixadas no Y Bot e **redirecionadas** para o esqueleto do Tung Tung
+(ferramenta nova `tungtung-testes/ferramentas/retarget.js`, alternativa ao `bake.js` que exige a pose de ligação do
+Tung Tung). Ficam em `Client/Creature/TungTungClipsExtra` (novo). Corrida só na perseguição. Jumpscare e captura
+intocados. Male Weighted Run ainda não baixada. Detalhes: `MUDANCAS_TESTES.md` seção 6.
+
 **Luz: NÃO reaplicada na v2.** O place já recebeu "20/10: levemente mais claro" (exposição 0,08 → 0,20, ambiente e lua
 maiores, lanterna com degradê). Somar o +20% da v1 dobraria o efeito. Fica a luz do place.
 
@@ -53,7 +59,8 @@ v2 corrigi para 8 (alinhado ao ao vivo); com 6, `Specs.PvPMatch` "v6 data migrat
 
 ## Reservas
 
-Nenhuma no place. Na cópia local: `TungTungRig`, `CreatureVisualController`, `CreatureService`, `Config` (bateria).
+Nenhuma no place. Na cópia local: `TungTungRig`, `TungTungClipsExtra` (novo), `CreatureVisualController`,
+`CreatureService`, `Config` (bateria).
 
 ## Pendências
 
