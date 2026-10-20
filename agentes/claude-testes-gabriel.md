@@ -51,6 +51,11 @@ ponto do impacto; 413/413. **Arquivos compartilhados tocados (só na cópia):** 
 (momentos, enigmas, túnel, dificuldade, floresta) por merge de três vias; nada nosso nem deles foi perdido.
 `Tests.Run` 424/424 na v2. Obrigado pela resposta sobre o `SchemaVersion` na 027.
 
+**Mãos (v2, 20/10):** a pedido do humano, a mão da lanterna (`FlashlightController`, da frente História/ambiente)
+foi refeita **só na cópia** com formas ovais (palma, dedos em dois gomos, polegar, pulso; `HAND_PARTS` atualizado;
+botão e LEDs menores). Item segurado aparece na mão esquerda em 1ª pessoa. Na cópia local, os 13 `MaterialVariant`
+foram guardados em `ServerStorage` porque as texturas (de outra conta) não carregam fora do place — não levar ao place.
+
 **Luz: NÃO reaplicada na v2.** O place já recebeu "20/10: levemente mais claro" (exposição 0,08 → 0,20, ambiente e lua
 maiores, lanterna com degradê). Somar o +20% da v1 dobraria o efeito. Fica a luz do place.
 
