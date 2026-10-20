@@ -33,11 +33,14 @@ Profile.Flashlight = {
 	brightness = 5.6,
 	spill = 0.2,
 	spillRange = 8,
-	angle = 38,
+	angle = 36,
 	range = 64,
+	-- Borda em degradê (pedido de 20/10): quatro anéis cada vez mais abertos e fracos em volta do foco.
 	halo = {
-		{ angle = 54, share = 0.18, reach = 0.8 },
-		{ angle = 74, share = 0.05, reach = 0.5 },
+		{ angle = 46, share = 0.42, reach = 0.9 },
+		{ angle = 58, share = 0.22, reach = 0.8 },
+		{ angle = 72, share = 0.1, reach = 0.62 },
+		{ angle = 90, share = 0.04, reach = 0.42 },
 	},
 }
 -- Filtro de cor "frio" (opção B, escolhida pelo humano): azulado, menos saturado e mais contraste, por cima do tom
