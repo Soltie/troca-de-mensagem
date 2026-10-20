@@ -230,7 +230,8 @@ function Session.act(state: State, id: number, taskId: string, button: number, n
 		if kind == "puzzle" or kind == "repair" then
 			if activity.spec.order[activity.progress + 1] ~= button then
 				-- Enigma de símbolos: chute errado zera a sequência (precisa da pista). O reparo guarda os passos feitos.
-				if kind == "puzzle" then
+				-- Relógio e piano (`forgiving`) também guardam: o castigo é o barulho que chama o Tum Tum.
+				if kind == "puzzle" and not activity.spec.forgiving then
 					activity.progress = 0
 				end
 				return false, "wrong_sequence"

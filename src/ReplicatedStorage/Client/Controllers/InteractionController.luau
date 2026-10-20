@@ -167,7 +167,10 @@ local function interact(id: string, part: BasePart?, action: string?)
 		end
 	else
 		AudioController.play("UiBlip", 1, 0.55)
-		if data.kind == "BreakerWrong" or (campaign and data.message == "wrong_sequence") then
+		if
+			data.kind == "BreakerWrong"
+			or (campaign and (data.message == "wrong_sequence" or data.message == "puzzle_alarm"))
+		then
 			CameraController.addTrauma(0.5)
 			FearController.spike(0.15)
 			ScreenFxController.pulse(Color3.fromRGB(165, 25, 25))

@@ -1,14 +1,18 @@
 --!strict
 --[[
-	Enigmas de verdade (veredito 20/10/2026, item 3). A regra continua a mesma no servidor (quatro botões numa ordem,
-	chute errado zera), mas cada enigma vira um objeto que faz sentido na história:
-	- Cap. 3, escritório: o RELÓGIO. Acertar 03:12 (a hora de todas as fitas). O livro do sótão traz "03:1_" com o
-	  último número rasgado; o relógio recuperado no sótão diz a hora inteira.
-	- Cap. 4, porão dos símbolos: o PIANO velho. O painel do porão traz a melodia (DÓ RÉ MI SOL, sorteada); cada tecla
-	  toca a nota.
+	Enigmas de verdade (veredito 20/10/2026, item 3; refeitos pelo crítico no mesmo dia). Quatro botões numa ordem,
+	e cada enigma vira um objeto que faz sentido na história:
+	- Cap. 3, escritório: o RELÓGIO. Acertar 03:12, a hora em que o Tum Tum entrou na máquina. Ninguém escreve a
+	  hora: o videocassete da sala lembra "03:__" e o rádio-relógio do quarto infantil lembra "__:12", e os dois só
+	  acendem no escuro (lanterna apagada, World/HouseClocks + Client/DarkClueController).
+	- Cap. 4, porão dos símbolos: o PIANO da Lia. Cada tecla tem um desenho e uma cor (LUA, SOL, BASTÃO, ESTRELA,
+	  sorteados por partida); o painel do porão mostra os desenhos na ordem da música do sahur e, no escuro, a Lia toca
+	  sozinha o começo da música.
 	- Cap. 4, cofre: o código ESPALHADO. Os dois primeiros dígitos estão na catacumba, os dois últimos riscados no
 	  painel do porão. O teclado do cofre tem quatro dígitos sorteados.
 	- Floresta (cap. 6 a 8): o RÁDIO. Sintonizar as frequências do diário/código do guarda.
+	Erro: no relógio e no piano (`forgiving`) o chute errado não apaga o que já foi feito; ele badala/desafina alto e
+	chama o Tum Tum. Nos outros, o chute errado zera a sequência.
 	Puro: sem `game`; testado no Lune.
 ]]
 
@@ -18,6 +22,8 @@ export type Style = {
 	prompt: string,
 	-- Ordem fixa (o relógio sempre marca 03:12); nil = sorteada pelo plano.
 	fixed: { number }?,
+	-- Chute errado não zera o progresso (o castigo é o barulho que chama o Tum Tum).
+	forgiving: boolean?,
 }
 
 local PuzzleStyles = {}
@@ -32,11 +38,14 @@ PuzzleStyles.CLOCK = table.freeze({
 	labels = table.freeze({ "0", "1", "2", "3" }),
 	prompt = "GIRAR O PONTEIRO PARA",
 	fixed = table.freeze({ 1, 4, 2, 3 }),
+	forgiving = true,
 }) :: Style
+-- Desenhos das teclas do piano (a ordem das teclas é sorteada em `pianoMarks`).
 PuzzleStyles.PIANO = table.freeze({
 	id = "piano",
-	labels = table.freeze({ "DÓ", "RÉ", "MI", "SOL" }),
-	prompt = "TOCAR",
+	labels = table.freeze({ "LUA", "SOL", "BASTÃO", "ESTRELA" }),
+	prompt = "TOCAR A TECLA DA",
+	forgiving = true,
 }) :: Style
 PuzzleStyles.RADIO = table.freeze({
 	id = "radio",
@@ -44,8 +53,32 @@ PuzzleStyles.RADIO = table.freeze({
 	prompt = "SINTONIZAR",
 }) :: Style
 
--- Velocidade de reprodução de cada tecla (escala maior a partir do DÓ).
+-- Cor de cada desenho (RGB). Cor e nome juntos: quem não distingue vermelho e verde ainda lê o desenho.
+PuzzleStyles.MARK_COLORS = table.freeze({
+	["LUA"] = table.freeze({ 70, 130, 235 }),
+	["SOL"] = table.freeze({ 245, 200, 50 }),
+	["BASTÃO"] = table.freeze({ 215, 70, 50 }),
+	["ESTRELA"] = table.freeze({ 235, 235, 240 }),
+} :: { [string]: { number } })
+
+-- Velocidade de reprodução de cada tecla, da esquerda para a direita (escala maior a partir do DÓ).
 PuzzleStyles.PIANO_PITCH = table.freeze({ 1, 2 ^ (2 / 12), 2 ^ (4 / 12), 2 ^ (7 / 12) })
+
+local function shuffled(values: { string }, seed: number): { string }
+	local pool = table.clone(values)
+	local state = math.floor(math.abs(seed)) % 2147483647 + 1
+	for i = 1, #pool - 1 do
+		state = (state * 48271) % 2147483647
+		local pick = state % (#pool - i + 1) + i
+		pool[i], pool[pick] = pool[pick], pool[i]
+	end
+	return pool
+end
+
+-- Desenho de cada tecla do piano nesta partida (da esquerda para a direita), reproduzível pela semente.
+function PuzzleStyles.pianoMarks(seed: number): { string }
+	return shuffled(PuzzleStyles.PIANO.labels, seed + 7)
+end
 
 -- Quatro dígitos diferentes (1 a 9) para o teclado do cofre, reproduzíveis pela semente.
 function PuzzleStyles.safeDigits(seed: number): { string }
@@ -65,7 +98,12 @@ function PuzzleStyles.forTask(stage: number, index: number, seed: number): Style
 	if stage == 3 and index == 5 then
 		return PuzzleStyles.CLOCK
 	elseif stage == 4 and index == 2 then
-		return PuzzleStyles.PIANO
+		return {
+			id = "piano",
+			labels = PuzzleStyles.pianoMarks(seed),
+			prompt = PuzzleStyles.PIANO.prompt,
+			forgiving = true,
+		}
 	elseif stage == 4 and index == 4 then
 		return { id = "safe", labels = PuzzleStyles.safeDigits(seed), prompt = "DIGITAR" }
 	elseif stage >= 6 then
@@ -87,9 +125,9 @@ end
 function PuzzleStyles.clue(style: Style, order: { number }, extra: { string }?): string
 	local answer = PuzzleStyles.answer(style, order)
 	if style.id == "clock" then
-		return "ACERTE O RELÓGIO DO ESCRITÓRIO\nNA HORA DAS FITAS: 03:1_ (RASGADO)"
+		return "O RELÓGIO PAROU QUANDO ELE ENTROU NA MÁQUINA.\nNO ESCURO, A CASA AINDA LEMBRA A HORA."
 	elseif style.id == "piano" then
-		local text = `MELODIA DO PIANO DO PORÃO\n{table.concat(answer, " - ")}`
+		local text = `A MÚSICA DO SAHUR\n{table.concat(answer, " - ")}`
 		if extra then
 			text ..= `\nRISCADO EMBAIXO: _ _ {extra[3]} {extra[4]}`
 		end
@@ -110,11 +148,11 @@ function PuzzleStyles.progress(style: Style, order: { number }, progress: number
 		shown[i] = if i <= progress then answer[i] else "_"
 	end
 	if style.id == "clock" then
-		return `{shown[1]}{shown[2]}:{shown[3]}{shown[4]} · QUE HORAS AS FITAS MARCAM?`
+		return `{shown[1]}{shown[2]}:{shown[3]}{shown[4]} · QUE HORAS A CASA LEMBRA NO ESCURO?`
 	elseif style.id == "safe" then
 		return `{table.concat(shown, " ")} · JUNTE AS DUAS METADES DO CÓDIGO`
 	elseif style.id == "piano" then
-		return `{progress}/4 NOTAS · TOQUE A MELODIA DO PAINEL`
+		return `{progress}/4 NOTAS · TOQUE OS DESENHOS DO PAINEL`
 	elseif style.id == "radio" then
 		return `{progress}/4 CANAIS · SIGA O PAPEL DO GUARDA`
 	end

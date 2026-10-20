@@ -237,18 +237,21 @@ local function build(
 	return model, frame, moving, nil, CFrame.new(frame.LookVector * 1.4), (frame * CFrame.new(0, 2.75, -0.1)).Position
 end
 
--- Monta os três móveis do cômodo. `spot(avoid)` devolve um lugar livre perto da tarefa.
+-- Monta os móveis do cômodo (três, ou `count`). `spot(avoid)` devolve um lugar livre perto da tarefa.
 function Stash.build(
 	root: Instance,
 	spec: any,
 	center: Vector3,
 	spot: ({ Vector3 }) -> (Vector3, Vector3?),
-	distance: number
+	distance: number,
+	-- Quantos móveis (3 por padrão; a Caixinha da Lia usa 6).
+	count: number?
 ): { [string]: Target }
-	local real = rng:NextInteger(1, COUNT)
+	local total = count or COUNT
+	local real = rng:NextInteger(1, total)
 	local taken: { Vector3 } = {}
 	local targets: { [string]: Target } = {}
-	for n = 1, COUNT do
+	for n = 1, total do
 		local at, wallFacing = spot(taken)
 		table.insert(taken, at)
 		local toCenter = Vector3.new(center.X - at.X, 0, center.Z - at.Z)

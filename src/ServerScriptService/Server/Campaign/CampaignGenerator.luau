@@ -18,6 +18,8 @@ export type Activity = {
 	x: number,
 	z: number,
 	title: string?,
+	-- Enigma em que o chute errado não zera o progresso (relógio e piano: o castigo é o barulho).
+	forgiving: boolean?,
 }
 export type Plan = {
 	house: boolean?,

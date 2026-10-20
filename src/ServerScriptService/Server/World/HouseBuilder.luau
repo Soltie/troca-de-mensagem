@@ -10,6 +10,7 @@ local FeatureBuilder = require("./FeatureBuilder")
 local Architecture = require("./HouseArchitecture")
 local Layout = require("@game/ReplicatedStorage/Shared/Game/HouseLayout")
 local Television = require("./HouseTelevision")
+local Clocks = require("./HouseClocks")
 local Access = require("./HouseAccess")
 local Builder = {}
 local wood = Color3.fromRGB(75, 48, 32)
@@ -176,6 +177,7 @@ function Builder.build(parent: Instance): (MapBuilder.World, FeatureBuilder.Buil
 	end
 	Architecture.build(structure, props)
 	Television.build(props)
+	Clocks.build(props)
 	block(structure, "StairRoof", 10.5, 47, 38, 70, 1, 53, dark)
 	block(structure, "HouseRoof", 0, 48, -36, 94, 1, 106, dark)
 	for _, side in { -1, 1 } do

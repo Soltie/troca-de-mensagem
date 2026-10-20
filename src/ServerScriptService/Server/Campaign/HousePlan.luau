@@ -44,7 +44,8 @@ function Plan.create(seed: number, chapter: number, players: number, mode: strin
 		assert(room, "Unknown house room")
 		local solution = if objective.kind == "puzzle" then rng.shuffle({ 1, 2, 3, 4 }) else { 1 }
 		-- O relógio do escritório sempre marca 03:12 (o sorteio acima continua, para não mudar o resto do plano).
-		local fixed = if objective.kind == "puzzle" then PuzzleStyles.forTask(chapter, index, seed).fixed else nil
+		local style = if objective.kind == "puzzle" then PuzzleStyles.forTask(chapter, index, seed) else nil
+		local fixed = if style then style.fixed else nil
 		if fixed then
 			solution = table.clone(fixed)
 		end
@@ -83,6 +84,7 @@ function Plan.create(seed: number, chapter: number, players: number, mode: strin
 			item = objective.item,
 			event = objective.event,
 			house = true,
+			forgiving = if style and style.forgiving then true else nil,
 		})
 	end
 	return {

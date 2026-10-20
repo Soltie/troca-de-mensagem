@@ -70,6 +70,14 @@ return {
 							assert(not focus.CanCollide and focus.CanQuery, "Search query contract changed")
 							continue
 						end
+						-- Puzzles do cap. 1 (HouseMiniPuzzles): tábuas e banquinhos se mexem por desenho.
+						if target.handle then
+							assert(focus:HasTag(Tags.Interactable), "Missing mini puzzle interaction tag")
+							t.expect(focus:GetAttribute(Tags.Attr.InteractId)).toBe(id)
+							assert((focus:GetAttribute(Tags.Attr.InteractDistance) :: number) >= 12, "Mini reach")
+							assert(not focus.CanCollide and focus.CanQuery, "Mini puzzle query contract changed")
+							continue
+						end
 						local spec = states[target.taskId].spec
 						local count = if spec.kind == "puzzle" then 4 elseif spec.kind == "repair" then 3 else 1
 						local expected = Vector3.new(spec.x, spec.y or 0, spec.z)
@@ -97,7 +105,7 @@ return {
 					task.wait()
 					for _, target in built.targets do
 						local spec = states[target.taskId].spec
-						if target.search then
+						if target.search or target.handle then
 							-- Resolvida, nenhum móvel abre mais.
 							t.expect(target.focus:GetAttribute(Tags.Attr.InteractEnabled)).toBe(false)
 							continue

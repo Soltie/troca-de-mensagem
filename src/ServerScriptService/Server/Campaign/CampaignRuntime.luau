@@ -35,6 +35,8 @@ local StoreService = require("../Services/StoreService")
 local Builder = require("./ActivityBuilder")
 local Runaway = require("./RunawayStash")
 local Build = require("../World/Build")
+local PuzzleProps = require("../World/PuzzleProps")
+local Mini = require("./HouseMiniPuzzles")
 local Session = require("./CoopSession")
 
 local Endings = require("./Endings")
@@ -723,6 +725,26 @@ local function interact(player: Player, id: string, _action: string?): { accepte
 		if spec.kind == "explore" or spec.kind == "hide" or spec.kind == "breath" then
 			return response(false, "not_available")
 		end
+		-- Puzzles do cap. 1 (HouseMiniPuzzles): o alvo decide; "solve" segue para recolher o item.
+		local handle = (station :: any).handle
+		if handle then
+			if session.tasks[station.taskId].solved or (station :: any).locked then
+				return response(false, "not_available")
+			end
+			if not Session.taskReady(session, station.taskId) then
+				return response(false, "story_order")
+			end
+			local result, message = handle(player)
+			if result == "error" then
+				-- Erro chama o Tum Tum (no cap. 1 ele dorme: a casa só abre os Olhos no Veio).
+				CreatureService.makeNoise(focus.Position, 90)
+				Mini.eyes(focus.Position)
+			end
+			if result ~= "solve" then
+				publish()
+				return response(result == "ok", message)
+			end
+		end
 		-- Móvel de busca (HiddenStash): abrir faz barulho; vazio só avisa, o certo recolhe o item.
 		if station.search then
 			if station.opened or session.tasks[station.taskId].solved then
@@ -753,6 +775,11 @@ local function interact(player: Player, id: string, _action: string?): { accepte
 			-- Chute errado: estalo alto e o Tung Tung vem direto ver quem mexeu no enigma.
 			CreatureService.makeNoise(focus.Position, 90)
 			CreatureService.followScent(focus.Position)
+			-- Relógio e piano não zeram: badalam/desafinam alto (o castigo é ele chegando).
+			if spec.forgiving then
+				PuzzleProps.alarm(focus)
+				message = "puzzle_alarm"
+			end
 		end
 		if ok then
 			-- Gasolina espalhada faz barulho (galão batendo, líquido): o Tung Tung vem ver.

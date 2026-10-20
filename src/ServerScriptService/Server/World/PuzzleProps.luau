@@ -5,6 +5,9 @@
 	desligadas para não roubar a mira dos botões. Os jogadores usam o lado +Z (de frente para as placas).
 ]]
 
+local Debris = game:GetService("Debris")
+
+local Audio = require("@game/ReplicatedStorage/Shared/Game/Audio")
 local Build = require("./Build")
 
 local PuzzleProps = {}
@@ -233,7 +236,34 @@ function PuzzleProps.build(parent: Instance, p: Vector3, style: string)
 	end
 end
 
--- Tecla branca do piano: o botão do enigma vira a tecla (mais larga, cor de marfim).
+-- Chute errado num enigma que não zera (relógio e piano): o relógio badala três vezes e o piano desafina alto.
+-- O som é do servidor (todos ouvem, de longe); quem chama o Tum Tum é o CampaignRuntime.
+function PuzzleProps.alarm(focus: BasePart)
+	local model = focus.Parent
+	local style = model and model:GetAttribute("PuzzleStyle")
+	type Note = { speed: number, delay: number, volume: number }
+	local notes: { Note } = if style == "clock"
+		then {
+			{ speed = 0.38, delay = 0, volume = 2.4 },
+			{ speed = 0.38, delay = 0.8, volume = 2.4 },
+			{ speed = 0.38, delay = 1.6, volume = 2.4 },
+		}
+		else {
+			{ speed = 0.47, delay = 0, volume = 2.2 },
+			{ speed = 0.5, delay = 0, volume = 2.2 },
+			{ speed = 0.71, delay = 0.04, volume = 2 },
+		}
+	for _, note in notes do
+		task.delay(note.delay, function()
+			local sound = Build.sound(focus, "PuzzleAlarm", Audio.PianoKey.id, note.volume, note.speed)
+			sound.RollOffMaxDistance = 140
+			sound:Play()
+			Debris:AddItem(sound, 4)
+		end)
+	end
+end
+
+-- Tecla do piano: o botão do enigma vira a tecla (mais larga, com a cor do desenho).
 PuzzleProps.KEY_SIZE = Vector3.new(1.6, 0.45, 2.4)
 PuzzleProps.IVORY = ivory
 

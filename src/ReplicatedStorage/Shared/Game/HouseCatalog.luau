@@ -141,7 +141,7 @@ local House = {
 					"collect",
 					"clock",
 					nil,
-					"03:12. O mesmo horário gravado em todas as fitas."
+					"Parado. Os outros relógios da casa também pararam, todos na mesma hora."
 				),
 				objective(
 					"Attic",

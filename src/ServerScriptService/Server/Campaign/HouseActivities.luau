@@ -1,6 +1,9 @@
 --!strict
 -- Objetos de missão da casa, distintos das estações industriais preservadas para regressão.
 local CollectionService = game:GetService("CollectionService")
+local Debris = game:GetService("Debris")
+local Players = game:GetService("Players")
+local Audio = require("@game/ReplicatedStorage/Shared/Game/Audio")
 local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
 local Build = require("../World/Build")
 local Plan = require("./HousePlan")
@@ -12,10 +15,57 @@ local Progress = require("@game/ReplicatedStorage/Shared/Game/HouseProgression")
 local WormTunnel = require("@game/ReplicatedStorage/Shared/Game/WormTunnel")
 local PuzzleStyles = require("@game/ReplicatedStorage/Shared/Game/PuzzleStyles")
 local PuzzleProps = require("../World/PuzzleProps")
+local Mini = require("./HouseMiniPuzzles")
 local Activities = {}
 local repairSteps = { "ISOLAR O CIRCUITO", "ENCAIXAR OS FUSÍVEIS", "TESTAR A ENERGIA" }
 local gold = Color3.fromRGB(219, 171, 80)
 local symbols = { "LUA", "OLHO", "CHAMA", "PORTA" }
+-- No escuro, a Lia (o piano) toca sozinha o começo da música: a cada 9 s, se alguém está perto com a lanterna
+-- apagada, as duas primeiras teclas da ordem acendem e soam. O painel mostra a música inteira; a Lia confirma.
+local function liaEcho(model: Instance, keys: { BasePart }, order: { number })
+	task.spawn(function()
+		while model.Parent do
+			task.wait(9)
+			local first = keys[order[1]]
+			if not first or first:GetAttribute(Tags.Attr.InteractEnabled) ~= true then
+				continue
+			end
+			local listening = false
+			for _, player in Players:GetPlayers() do
+				local character = player.Character
+				local root = character and character:FindFirstChild("HumanoidRootPart")
+				if
+					root
+					and root:IsA("BasePart")
+					and (root.Position - first.Position).Magnitude < 22
+					and player:GetAttribute(Tags.Attr.Flashlight) ~= true
+				then
+					listening = true
+				end
+			end
+			if not listening then
+				continue
+			end
+			for step = 1, 2 do
+				local key = keys[order[step]]
+				local sound = Build.sound(key, "LiaNote", Audio.PianoKey.id, 1.2, PuzzleStyles.PIANO_PITCH[order[step]])
+				sound:Play()
+				Debris:AddItem(sound, 3)
+				local material = key.Material
+				key.Material = Enum.Material.Neon
+				task.wait(0.6)
+				key.Material = material
+				task.wait(0.25)
+			end
+		end
+	end)
+end
+
+-- Cor do desenho de uma tecla do piano (LUA, SOL, BASTÃO, ESTRELA).
+local function markColor(label: string): Color3
+	local rgb = PuzzleStyles.MARK_COLORS[label] or { 232, 224, 204 }
+	return Color3.fromRGB(rgb[1], rgb[2], rgb[3])
+end
 -- Clipe (Shared/Game/Audio) tocado no cliente ao apertar um botão de cada enigma.
 local PRESS_SOUNDS: { [string]: string } =
 	{ piano = "PianoKey", safe = "KeyTurn", clock = "KeyTurn", radio = "RadioStatic" }
@@ -172,7 +222,8 @@ function Activities.build(parent: Instance, plan: Generator.Plan, distance: numb
 	-- Só uma chave por capítulo foge (sorteada a cada partida): surpresa, não rotina.
 	local keys: { string } = {}
 	for _, spec in plan.activities do
-		if spec.kind == "collect" and string.find(spec.item or "", "key", 1, true) then
+		-- No cap. 1 as três chaves são puzzles do banco v2 (HouseMiniPuzzles); nenhuma foge.
+		if spec.kind == "collect" and string.find(spec.item or "", "key", 1, true) and plan.stage ~= 1 then
 			table.insert(keys, spec.id)
 		end
 	end
@@ -197,15 +248,40 @@ function Activities.build(parent: Instance, plan: Generator.Plan, distance: numb
 			gold,
 			{ collide = false, query = false, transparency = 1 }
 		)
+		-- Cap. 1 (banco v2): Tábua Oca (chave do Juca) e Banquinho que Foge (chave do Valdemar).
+		if plan.stage == 1 and (spec.item == "key_kitchen" or spec.item == "key_dining") then
+			local center = Stash.center(spec) or p
+			local function floorSpot(avoid: { Vector3 }): Vector3
+				return clearSpot(parent, center, avoid)
+			end
+			local made
+			if spec.item == "key_kitchen" then
+				made = Mini.planks(root, spec, floorSpot, distance)
+			else
+				local wall, facing = wallSpot(parent, center)
+				made = Mini.stools(root, spec, wall, facing or Vector3.zAxis, floorSpot, distance)
+			end
+			for id, target in made do
+				built.targets[id] = target
+			end
+			continue
+		end
 		-- Itens pequenos ficam escondidos em um de três móveis do cômodo (HiddenStash).
 		if Stash.hideable(plan.stage, spec) then
 			local center = Stash.center(spec) or p
+			-- Caixinha da Lia (cap. 1): seis móveis, e o certo toca a música do sahur.
+			local music = plan.stage == 1 and spec.item == "key_living"
 			for id, target in
 				Stash.build(root, spec, center, function(avoid)
 					return wallSpot(parent, center, avoid)
-				end, distance)
+				end, distance, if music then 6 else nil)
 			do
 				built.targets[id] = target
+				if music and not target.decoy then
+					Mini.musicBox(target.focus, function()
+						return target.opened
+					end, plan.seed)
+				end
 				-- Chave para continuar: o móvel certo cria perninhas e foge quando alguém chega perto.
 				if not target.decoy and spec.id == runawayId then
 					Runaway.attach(target, center)
@@ -284,6 +360,24 @@ function Activities.build(parent: Instance, plan: Generator.Plan, distance: numb
 				text,
 				{ textColor = gold, background = Color3.fromRGB(28, 21, 19), lit = true }
 			)
+			-- Painel do porão: a música do sahur pintada em bolinhas, da esquerda para a direita, nas cores das teclas.
+			if spec.item == "panel_clue" and target then
+				for slot, key in target.order do
+					local label = PuzzleStyles.forTask(plan.stage, solvedBy :: number, plan.seed).labels[key]
+					local rgb = PuzzleStyles.MARK_COLORS[label] or { 232, 224, 204 }
+					local dot = Build.cylinder(
+						model,
+						"NoteColor",
+						p + Vector3.new((slot - 2.5) * 1.7, 6.8, -0.45),
+						Vector3.zAxis,
+						0.15,
+						1.3,
+						Color3.fromRGB(rgb[1], rgb[2], rgb[3]),
+						{ material = Enum.Material.Neon, collide = false, query = false }
+					)
+					dot.CastShadow = false
+				end
+			end
 		end
 		if spec.kind == "collect" and spec.item and string.find(spec.item, "key") then
 			Build.cylinder(
@@ -311,7 +405,7 @@ function Activities.build(parent: Instance, plan: Generator.Plan, distance: numb
 					then PuzzleProps.KEY_SIZE
 					else Vector3.new(1.2, if spec.kind == "collect" then 1.6 else 0.8, 0.9),
 				0,
-				if piano then PuzzleProps.IVORY else gold,
+				if piano and style then markColor(style.labels[button]) else gold,
 				{ collide = false }
 			)
 			focus:SetAttribute(Tags.Attr.InteractId, id)
@@ -333,7 +427,13 @@ function Activities.build(parent: Instance, plan: Generator.Plan, distance: numb
 				)
 			end
 			CollectionService:AddTag(focus, Tags.Interactable)
-			built.targets[id] = { taskId = spec.id, button = button, focus = focus, piano = piano }
+			built.targets[id] = {
+				taskId = spec.id,
+				button = button,
+				focus = focus,
+				piano = piano,
+				color = if piano and style then markColor(style.labels[button]) else nil,
+			}
 			if count > 1 then
 				Build.sign(
 					model,
@@ -345,9 +445,16 @@ function Activities.build(parent: Instance, plan: Generator.Plan, distance: numb
 						then style.labels[button]
 						elseif spec.kind == "repair" then `{button} {repairSteps[button]}`
 						else `{button} {symbols[button]}`,
-					{ textColor = gold, lit = true }
+					{ textColor = if piano and style then markColor(style.labels[button]) else gold, lit = true }
 				)
 			end
+		end
+		if piano then
+			local pianoKeys: { BasePart } = {}
+			for button = 1, count do
+				table.insert(pianoKeys, built.targets[`{spec.id}_{button}`].focus)
+			end
+			liaEcho(model, pianoKeys, spec.order)
 		end
 		if spec.kind == "repair" or spec.kind == "puzzle" then
 			local status = Build.sign(
@@ -398,6 +505,14 @@ function Activities.refresh(built: any, tasks: any)
 	for _, target in built.targets do
 		local state = tasks[target.taskId]
 		if not state then
+			continue
+		end
+		-- Puzzles do cap. 1 (HouseMiniPuzzles): liberados com a tarefa; a chave da viga espera a pilha.
+		if target.handle then
+			target.focus:SetAttribute(
+				Tags.Attr.InteractEnabled,
+				ready[target.taskId] == true and not state.solved and not target.locked
+			)
 			continue
 		end
 		-- Móvel de busca (HiddenStash): abre uma vez, só quando a tarefa está liberada.
@@ -454,12 +569,13 @@ function Activities.refresh(built: any, tasks: any)
 				end
 			end
 		end
-		-- Teclas do piano continuam de marfim (apagadas enquanto bloqueadas, esverdeadas depois de resolvido).
+		-- Teclas do piano na cor da música (apagadas enquanto bloqueadas, clareadas depois de resolvido).
 		if target.piano then
+			local color: Color3 = target.color or PuzzleProps.IVORY
 			target.focus.Color = if state.solved
-				then Color3.fromRGB(196, 222, 196)
-				elseif enabled then PuzzleProps.IVORY
-				else Color3.fromRGB(150, 144, 130)
+				then color:Lerp(PuzzleProps.IVORY, 0.55)
+				elseif enabled then color
+				else color:Lerp(Color3.fromRGB(70, 66, 60), 0.6)
 			continue
 		end
 		target.focus.Color = if state.solved or (spec.kind == "repair" and target.button <= state.progress)
