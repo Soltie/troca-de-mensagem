@@ -1,4 +1,4 @@
-# Claude — testes de mecânicas em cópia local (PC Gabriel) — atualizado 19/10/2026 ~22:40 BRT
+# Claude — testes de mecânicas em cópia local (PC Gabriel) — atualizado 20/10/2026 (tarde)
 
 ## Identidade e origem
 
@@ -53,8 +53,20 @@ ponto do impacto; 413/413. **Arquivos compartilhados tocados (só na cópia):** 
 
 **Mãos (v2, 20/10):** a pedido do humano, a mão da lanterna (`FlashlightController`, da frente História/ambiente)
 foi refeita **só na cópia** com formas ovais (palma, dedos em dois gomos, polegar, pulso; `HAND_PARTS` atualizado;
-botão e LEDs menores). Item segurado aparece na mão esquerda em 1ª pessoa. Na cópia local, os 13 `MaterialVariant`
-foram guardados em `ServerStorage` porque as texturas (de outra conta) não carregam fora do place — não levar ao place.
+botão e LEDs menores). Item segurado aparece na mão esquerda em 1ª pessoa. (A mão oval e o braço realista do
+Creator Store foram trocados depois; ver abaixo. Os 13 `MaterialVariant` voltaram ao `MaterialService` da cópia.)
+
+**Braços, luz e itens (v2, 20/10 tarde, só na cópia):** a pedido do humano ("mão realista demais", "parece arma",
+"luz fora da realidade"):
+- Braços em 1ª pessoa clonados do próprio personagem R15 (`Client/Creature/ViewArm`, novo; cor do uniforme), no
+  `FlashlightController` e no `ThrowController`; lanterna mais curta, sem cabo de pistola.
+- `LightingProfile.Look` bem mais leve (o azul forte da "opção B" deixava tudo cinza-azulado); lanterna 5,6 → 3,8
+  com degradê maior; fonte do feixe à frente da lente em vez dos olhos (sombras visíveis).
+- Castiçal e panela PBR (cópias de `MansionProps`) no lugar da vela sem textura.
+- **Arquivos de outras frentes tocados só na cópia:** `FlashlightController`, `LightingProfile` (ambiente/luz). Ao
+  levar ao place, combinar com a frente dona; o `Look` frio foi escolha do humano antes, e esta é a revisão dele.
+- As texturas da casa já existiam no place; na cópia não carregavam por causa do login quebrado do Studio (agora ok).
+  `Tests.Run` 424/424. Detalhes: `MUDANCAS_TESTES.md` seção 10.
 
 **Luz: NÃO reaplicada na v2.** O place já recebeu "20/10: levemente mais claro" (exposição 0,08 → 0,20, ambiente e lua
 maiores, lanterna com degradê). Somar o +20% da v1 dobraria o efeito. Fica a luz do place.
@@ -77,7 +89,7 @@ v2 corrigi para 8 (alinhado ao ao vivo); com 6, `Specs.PvPMatch` "v6 data migrat
 
 Nenhuma no place. Na cópia local: `TungTungRig`, `TungTungClipsExtra` (novo), `CreatureVisualController`,
 `CreatureService`, `Config` (bateria), `ThrowableService` (novo), `ThrowController` (novo), `Remotes`, `Client/Main`,
-`Server/Main`.
+`Server/Main`, `ViewArm` (novo), `FlashlightController`, `LightingProfile`, `ServerStorage.Throwables`.
 
 ## Pendências
 
