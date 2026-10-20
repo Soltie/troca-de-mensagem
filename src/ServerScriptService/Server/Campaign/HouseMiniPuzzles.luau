@@ -106,18 +106,52 @@ function Mini.eyes(position: Vector3)
 	local folder = Instance.new("Model")
 	folder.Name = "EyesInTheGrain"
 	folder.Parent = workspace
-	for _, x in { -0.45, 0.45 } do
+	-- Acha a parede mais próxima (4 direções) e põe os olhos nela, à altura do rosto, virados para o cômodo. Sem parede
+	-- por perto, ficam no ar a 4 studs do erro.
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = { folder }
+	local origin = position + Vector3.new(0, 4.2, 0)
+	local best: RaycastResult? = nil
+	for _, dir in { Vector3.xAxis, -Vector3.xAxis, Vector3.zAxis, -Vector3.zAxis } do
+		local hit = workspace:Raycast(origin, dir * 14, params)
+		if hit and math.abs(hit.Normal.Y) < 0.3 and (not best or hit.Distance < best.Distance) then
+			best = hit
+		end
+	end
+	local spot = if best then best.Position + best.Normal * 0.15 else origin + Vector3.xAxis * 4
+	local normal = if best then best.Normal else -Vector3.xAxis
+	local right = normal:Cross(Vector3.yAxis).Unit
+	local first: BasePart? = nil
+	for _, x in { -0.55, 0.55 } do
 		local eye = Build.part(
 			folder,
 			"Eye",
-			Vector3.new(0.35, 0.18, 0.35),
-			CFrame.new(position + Vector3.new(x, 5.2, 0)),
+			Vector3.new(0.5, 0.26, 0.12),
+			CFrame.lookAt(spot + right * x, spot + right * x + normal),
 			Color3.fromRGB(255, 120, 40),
 			{ material = Enum.Material.Neon, collide = false, query = false }
 		)
 		eye.CastShadow = false
+		eye.Transparency = 1
+		local glow = Instance.new("PointLight")
+		glow.Color, glow.Range, glow.Brightness = Color3.fromRGB(255, 110, 40), 7, 0
+		glow.Parent = eye
+		TweenService:Create(eye, TweenInfo.new(0.35), { Transparency = 0 }):Play()
+		TweenService:Create(glow, TweenInfo.new(0.35), { Brightness = 1.6 }):Play()
+		first = first or eye
 	end
-	play(folder:GetChildren()[1] :: BasePart, "CreakWood", 1, 0.7)
+	if first then
+		play(first, "CreakWood", 1, 0.7, 70)
+	end
+	-- Pisca uma vez antes de sumir.
+	task.delay(2.6, function()
+		for _, eye in folder:GetChildren() do
+			if eye:IsA("BasePart") then
+				TweenService:Create(eye, TweenInfo.new(0.15), { Transparency = 1 }):Play()
+			end
+		end
+	end)
 	Debris:AddItem(folder, 3.5)
 end
 
@@ -393,6 +427,12 @@ function Mini.stools(
 						)
 					end
 					table.clear(placed)
+					keyTarget.locked = true
+					for _, each in targets do
+						if each ~= keyTarget then
+							each.locked = false
+						end
+					end
 					local away = stool.base * CFrame.new(rng:NextNumber(-6, 6), 0, rng:NextNumber(-6, 6))
 					moveStool(stool, away)
 					stool.base = away
@@ -403,7 +443,13 @@ function Mini.stools(
 				table.insert(placed, n)
 				moveStool(stool, slot * CFrame.new(0, (#placed - 1) * 2.1, 0))
 				play(seat, "CreakWood", 0.8, 1.2)
+				-- Banquinho já na marca: sem aviso de "levar" (a trava tira o [E] do HouseActivities.refresh).
+				targets[id].locked = true
 				if #placed >= 2 then
+					-- Pilha pronta: o terceiro banquinho também deixa de oferecer "levar".
+					for _, each in targets do
+						each.locked = each ~= keyTarget
+					end
 					keyTarget.locked = false
 					return "ok", "stool_stack"
 				end

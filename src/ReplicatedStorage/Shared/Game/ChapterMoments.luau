@@ -10,7 +10,7 @@
 	Puro: sem `game`; testado no Lune.
 ]]
 
-export type Moment = "blackout" | "shadow" | "tunnel" | "quake"
+export type Moment = "blackout" | "shadow" | "tunnel" | "quake" | "knocks" | "silhouette" | "nearmiss"
 
 local ChapterMoments = {}
 
@@ -26,6 +26,7 @@ ChapterMoments.Caption = table.freeze({
 	shadow = "Tinha alguém no fim do corredor.",
 	tunnel = "Ele está nas paredes. Saia de perto dos buracos!",
 	quake = "A casa sabe que vocês pegaram o coração. CORRAM!",
+	knocks = "Algo bate na parede do outro lado.",
 } :: { [string]: string })
 
 -- Duração da parte visual no cliente (s).
@@ -34,7 +35,21 @@ ChapterMoments.Duration = table.freeze({
 	shadow = 2.2,
 	tunnel = 3,
 	quake = 3.5,
+	knocks = 4,
+	silhouette = 2.4,
+	nearmiss = 3,
 } :: { [string]: number })
+
+-- Presença do Tum Tum no cap. 1 (ele dorme, mas a casa avisa que ele está perto). Disparados pela fase
+-- (ChapterMomentService) ou por zonas do level design (tag `TungPresenceZone` + atributo `Presence`).
+--   knocks: pancadas pesadas na parede, de um lado.
+--   silhouette: a silhueta dele cruza o fim do corredor (~20 studs) e some.
+--   nearmiss: uma pancada forte colada nas costas do jogador, poeira, a luz pisca.
+ChapterMoments.Presence = table.freeze({ "knocks", "silhouette", "nearmiss" })
+
+function ChapterMoments.isPresence(name: string): boolean
+	return table.find(ChapterMoments.Presence, name) ~= nil
+end
 
 function ChapterMoments.forTask(stage: number, index: number): Moment?
 	local entry = BY_TASK[stage]

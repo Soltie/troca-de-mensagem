@@ -65,6 +65,7 @@ local Text = {
 		gate_opening = "O PORTÃO ESTÁ ABRINDO!",
 		already_open = "JÁ ESTÁ ABERTO.",
 		door_opened = "",
+		door_swapped = "",
 		door_closed = "",
 		not_available = "NADA AQUI.",
 		too_far = "CHEGUE MAIS PERTO.",

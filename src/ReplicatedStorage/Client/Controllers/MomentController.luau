@@ -123,6 +123,79 @@ local function play(moment: string, at: Vector3)
 			task.wait(0.25)
 			figure:Destroy()
 		end)
+	elseif moment == "knocks" then
+		if not root then
+			return
+		end
+		-- Pancadas pesadas do outro lado da parede: do ponto pedido (se perto) ou de um lado do jogador.
+		local side = root.CFrame.RightVector * (if math.random() < 0.5 then 1 else -1)
+		local where = if at ~= Vector3.zero and (at - root.Position).Magnitude < 60
+			then at
+			else root.Position + side * 9 + root.CFrame.LookVector * 4
+		task.spawn(function()
+			for n, gap in { 0, 0.55, 0.45, 1.1, 0.4 } do
+				task.wait(gap)
+				AudioController.playAtPosition("DoorBang", where, 1, 0.5 + n * 0.03)
+				CameraController.addTrauma(0.12)
+				FearController.spike(0.1)
+			end
+		end)
+	elseif moment == "silhouette" then
+		if not root then
+			return
+		end
+		-- Fim do corredor (~20 studs): a silhueta cruza de um lado ao outro e some, sem piscar.
+		local spot = ahead(root, 20)
+		local face = (root.Position - spot) * Vector3.new(1, 0, 1)
+		local facing = if face.Magnitude > 0.1 then face.Unit else Vector3.zAxis
+		local figure = shadowFigure(spot, facing)
+		local sideways = facing:Cross(Vector3.yAxis).Unit
+		local from = figure:GetPivot()
+		FearController.spike(0.35)
+		AudioController.playAtPosition("Growl", spot, 0.45, 0.6)
+		task.spawn(function()
+			local start = os.clock()
+			local crossing = 1.1
+			while figure.Parent do
+				local t = (os.clock() - start) / crossing
+				if t >= 1 then
+					break
+				end
+				figure:PivotTo(from + sideways * ((t - 0.5) * 7))
+				task.wait()
+			end
+			figure:Destroy()
+		end)
+	elseif moment == "nearmiss" then
+		if not root then
+			return
+		end
+		-- Uma pancada forte colada nas costas, poeira e a luz pisca. Não machuca.
+		local behind = root.Position - root.CFrame.LookVector * 3
+		AudioController.playAtPosition("DoorBang", behind, 1.2, 0.45)
+		AudioController.playAtPosition("BeamCrack", behind, 0.8, 0.8)
+		CameraController.addTrauma(0.75)
+		FearController.spike(0.45)
+		WorldFxController.blackout(0.5)
+		local anchor = Instance.new("Part")
+		anchor.Anchored, anchor.CanCollide, anchor.CanQuery, anchor.CanTouch = true, false, false, false
+		anchor.Transparency = 1
+		anchor.Size = Vector3.one * 0.2
+		anchor.Position = behind + Vector3.new(0, 2, 0)
+		anchor.Parent = workspace
+		local dust = Instance.new("ParticleEmitter")
+		dust.Color = ColorSequence.new(Color3.fromRGB(196, 168, 120))
+		dust.Size = NumberSequence.new(0.5, 0.1)
+		dust.Speed = NumberRange.new(2, 5)
+		dust.Lifetime = NumberRange.new(1, 1.8)
+		dust.Acceleration = Vector3.new(0, -6, 0)
+		dust.SpreadAngle = Vector2.new(180, 180)
+		dust.Rate = 0
+		dust.Parent = anchor
+		dust:Emit(50)
+		task.delay(3, function()
+			anchor:Destroy()
+		end)
 	elseif moment == "tunnel" then
 		CameraController.addTrauma(0.35)
 		FearController.spike(0.25)
@@ -170,6 +243,19 @@ function MomentController.Start()
 		local at = campaign:GetAttribute("MomentAt")
 		if typeof(moment) == "string" then
 			play(moment, if typeof(at) == "Vector3" then at else Vector3.zero)
+		end
+	end)
+	-- Legendas dos sustos de cenário (RoomScareService): só texto curto.
+	local lastCaption = campaign:GetAttribute("CaptionSerial")
+	campaign:GetAttributeChangedSignal("CaptionSerial"):Connect(function()
+		local current = campaign:GetAttribute("CaptionSerial")
+		if current == lastCaption then
+			return
+		end
+		lastCaption = current
+		local text = campaign:GetAttribute("Caption")
+		if typeof(text) == "string" then
+			GameUiController.caption(text, 4)
 		end
 	end)
 end

@@ -116,11 +116,24 @@ local function moveChair(to: CFrame)
 	if not root then
 		return
 	end
+	-- Só a cadeira da Dona Cida (marcada no HouseProps). Se o place for antigo e não tiver a marca, usa a que está
+	-- na sala de estar (x -44 a -8, z -20 a 12); nunca pega as outras cadeiras de balanço do mapa.
+	local fallback: Model? = nil
 	for _, d in root:GetDescendants() do
 		if d:IsA("Model") and string.find(d.Name, "RockingChair", 1, true) then
-			d:PivotTo(to)
-			return
+			if d:GetAttribute("CidaChair") then
+				d:PivotTo(to)
+				return
+			end
+			local p = d:GetPivot().Position
+			if not fallback and p.X < -8 and p.X > -44 and p.Z > -20 and p.Z < 12 and p.Y > -1 and p.Y < 4 then
+				fallback = d
+			end
 		end
+	end
+	if fallback then
+		fallback:SetAttribute("CidaChair", true)
+		fallback:PivotTo(to)
 	end
 end
 

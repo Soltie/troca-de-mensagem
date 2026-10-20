@@ -250,7 +250,8 @@ function Controller.Start()
 	player:GetAttributeChangedSignal("CampaignFeedbackSerial"):Connect(function()
 		local key = tostring(player:GetAttribute("CampaignFeedback"))
 		-- Entrar/sair do armário: a dica do rodapé (NoirHud) já explica; nada no meio da tela.
-		if key == "hide_enter" or key == "hide_exit" then
+		-- Porta trocada: quem fala é a Dona Cida (DoorSwapController), sem aviso de "não dá" por cima.
+		if key == "hide_enter" or key == "hide_exit" or key == "door_swapped" then
 			return
 		end
 		ui.feedback.Text = messages[key] or "Isso não dá para fazer agora."

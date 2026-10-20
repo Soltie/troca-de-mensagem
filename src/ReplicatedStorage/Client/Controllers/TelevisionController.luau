@@ -13,6 +13,10 @@ function Controller.Start()
 	local elapsed = 0
 	-- A fita toca sozinha quando alguém chega perto da TV (uma vez por capítulo): chiado e a voz da Dona Cida.
 	local playedStage: number? = nil
+	local lastSpawnAt = os.clock()
+	Players.LocalPlayer.CharacterAdded:Connect(function()
+		lastSpawnAt = os.clock()
+	end)
 	local screens: { [BasePart]: boolean } = {}
 	local function track(inst: Instance)
 		if inst:IsA("BasePart") then
@@ -45,11 +49,18 @@ function Controller.Start()
 			if not screen.Parent or (camera.CFrame.Position - screen.Position).Magnitude > 55 then
 				continue
 			end
+			-- Quem conta é o corpo do jogador (não a câmera de carregamento) e só depois de uns segundos em jogo.
+			local character = Players.LocalPlayer.Character
+			local root = character and character:FindFirstChild("HumanoidRootPart")
+			local offset = if root and root:IsA("BasePart") then root.Position - screen.Position else nil
 			if
 				playedStage ~= stage
 				and state
 				and state:GetAttribute("Phase") == "Playing"
-				and (camera.CFrame.Position - screen.Position).Magnitude < 14
+				and offset
+				and os.clock() - lastSpawnAt > 4
+				and Vector3.new(offset.X, 0, offset.Z).Magnitude < 20
+				and math.abs(offset.Y) < 8
 			then
 				playedStage = stage
 				AudioController.play("RadioStatic", 0.8)

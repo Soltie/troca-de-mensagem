@@ -349,11 +349,12 @@ ROOMS.Living = function(folder, root, room)
 	-- Modelo do artista (CidaRockingChair_v2, ou a primeira versão) quando existe no place; senão, a cadeira de
 	-- balanço da biblioteca de props.
 	local chairPivot = CFrame.lookAt(chairAt, chairAt + V3(-1, 0, -0.15))
-	if
-		not HouseArt.place(folder, "CidaRockingChair_v2", chairPivot)
-		and not HouseArt.place(folder, "CidaRockingChair", chairPivot)
-	then
-		Props.place(folder, "RockingChair", chairAt, V3(-1, 0, -0.15), 1.05, "floor")
+	local cidaChair = HouseArt.place(folder, "CidaRockingChair_v2", chairPivot)
+		or HouseArt.place(folder, "CidaRockingChair", chairPivot)
+		or Props.place(folder, "RockingChair", chairAt, V3(-1, 0, -0.15), 1.05, "floor")
+	if cidaChair then
+		-- Marca a cadeira DELA: a troca de portas (DoorSwapService) move só esta, não as outras 4 do mapa.
+		cidaChair:SetAttribute("CidaChair", true)
 	end
 	local yarn = Build.part(
 		folder,
