@@ -24,6 +24,13 @@ local spec: TestKit.Spec = {
 			t.expect(ChapterMoments.forTask(5, 1)).toBeNil()
 			t.expect(ChapterMoments.forTask(7, 2)).toBeNil()
 		end)
+		t.it("presence moments have a duration and are not tied to a task", function()
+			for _, name in ChapterMoments.Presence do
+				t.expect(ChapterMoments.isPresence(name)).toBe(true)
+				t.expect(ChapterMoments.Duration[name] > 0).toBe(true)
+			end
+			t.expect(ChapterMoments.isPresence("blackout")).toBe(false)
+		end)
 	end,
 }
 
