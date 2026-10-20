@@ -1402,8 +1402,9 @@ function Mini.cidaChair(root: Instance, world: Instance, spec: any, distance: nu
 	)
 	-- O marcador da tarefa (Station do HouseActivities) acompanha a cadeira, não o ponto sorteado do plano.
 	local stationHost = root:FindFirstChild(spec.id)
-	local station = stationHost and stationHost:FindFirstChild("Station")
-	if station and station:IsA("BasePart") then
+	local stationPart = stationHost and stationHost:FindFirstChild("Station")
+	local station: BasePart? = if stationPart and stationPart:IsA("BasePart") then stationPart else nil
+	if station then
 		station.Position = focus.Position
 	end
 	local id = `cida_{spec.id}`
