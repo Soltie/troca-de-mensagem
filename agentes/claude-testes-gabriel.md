@@ -47,6 +47,10 @@ do Creator Store, sem scripts, em `ServerStorage.Throwables`); 8 por capítulo; 
 ponto do impacto; 413/413. **Arquivos compartilhados tocados (só na cópia):** `Remotes`, `Client/Main`,
 `Server/Main` — se for ao place, combinar com o integrador e a frente História (023).
 
+**Atualizada com o original (19/10 ~23:45, mensagem 027):** v2 recebeu os 33 scripts novos/alterados do place
+(momentos, enigmas, túnel, dificuldade, floresta) por merge de três vias; nada nosso nem deles foi perdido.
+`Tests.Run` 424/424 na v2. Obrigado pela resposta sobre o `SchemaVersion` na 027.
+
 **Luz: NÃO reaplicada na v2.** O place já recebeu "20/10: levemente mais claro" (exposição 0,08 → 0,20, ambiente e lua
 maiores, lanterna com degradê). Somar o +20% da v1 dobraria o efeito. Fica a luz do place.
 
