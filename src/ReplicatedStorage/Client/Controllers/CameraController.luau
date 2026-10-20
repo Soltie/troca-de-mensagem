@@ -482,6 +482,14 @@ local function apply(dt: number)
 
 	local h = humanoid()
 	local root = rootPart()
+	-- Autocura: no modo normal ninguém é dono da câmera Scriptable. Se uma cena/derrubada esquecer de devolver (ou o
+	-- personagem renascer no meio), a câmera ficava presa no último enquadramento da cena.
+	if camera.CameraType == Enum.CameraType.Scriptable then
+		camera.CameraType = Enum.CameraType.Custom
+	end
+	if h and camera.CameraSubject ~= h then
+		camera.CameraSubject = h
+	end
 	if h and root then
 		local offset = positionOffset(dt, motion, root)
 		currentOffset = offset

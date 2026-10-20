@@ -423,12 +423,19 @@ local function stage()
 			end
 		end
 		building = false
+		local releasedAt = workspace:GetServerTimeNow()
 		for _, player in Players:GetPlayers() do
 			local member = session.members[player.UserId]
 			freeze(player, not member or member.status ~= "Active")
+			if member and member.status == "Active" then
+				-- A carência conta a partir de agora: a do surgimento já passou durante a cena.
+				player:SetAttribute("CampaignGraceUntil", releasedAt + C.ChapterStartGrace)
+			end
 		end
-		if session.stage >= 3 then
+		if session.stage >= 2 then
+			-- Capítulo 2 em diante ele anda pela casa; no 1 (tutorial) só aparece como vulto.
 			CreatureService.activate(nil)
+			CreatureService.holdOff(if session.stage == 2 then C.ChapterTwoWakeHold else C.ChapterWakeHold)
 		end
 		CreatureService.setHunt(false)
 		publish()
@@ -577,9 +584,9 @@ local function capture(player: Player, cause: string?)
 	-- O cérebro legado termina em Capture; recolocar o Vigia permite continuar caçando a equipe.
 	local thisVersion = version
 	task.delay(C.CaptureRecovery, function()
+		-- Só a pegada do Tung deixa o cérebro em Capture; sopro e desabamento não teleportam ele.
 		if
-			cause ~= "lightning"
-			and cause ~= "fire"
+			(cause == nil or cause == "tung" or cause == "search")
 			and thisVersion == version
 			and (session.phase == "Playing" or session.phase == "Extracting")
 		then

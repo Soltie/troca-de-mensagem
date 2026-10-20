@@ -30,6 +30,12 @@ local Config = {
 		MedicReviveSeconds = 2.5,
 		ReviveGrace = 6,
 		SpawnGrace = 8,
+		-- Começo do capítulo (depois da cena): carência de quem joga e tempo parado do Tung antes de caçar. A carência
+		-- do surgimento (SpawnGrace) acabava durante a cena da história e ele pegava nos primeiros segundos.
+		ChapterStartGrace = 12,
+		ChapterWakeHold = 6,
+		-- Capítulo 2 ("Ele acordou"): ele já anda pela casa, mas fica parado mais tempo no começo.
+		ChapterTwoWakeHold = 20,
 		CaptureRecovery = 2,
 		ThreatInterval = 25,
 		BlackoutSeconds = 5,
