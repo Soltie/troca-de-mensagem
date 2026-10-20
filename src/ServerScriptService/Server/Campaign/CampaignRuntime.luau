@@ -184,6 +184,7 @@ local function publish()
 				id = spec.id,
 				room = spec.room,
 				kind = spec.kind,
+				event = spec.event,
 				title = spec.title,
 				solved = state.solved,
 				progress = state.progress,

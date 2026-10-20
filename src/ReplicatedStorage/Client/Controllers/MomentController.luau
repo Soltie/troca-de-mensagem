@@ -18,6 +18,7 @@ local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
 local AudioController = require("./AudioController")
 local CameraController = require("./CameraController")
 local FearController = require("./FearController")
+local FlashlightController = require("./FlashlightController")
 local GameUiController = require("./GameUiController")
 local WorldFxController = require("./WorldFxController")
 
@@ -48,11 +49,54 @@ local function ahead(root: BasePart, reach: number): Vector3
 	return root.Position + look.Unit * distance - Vector3.new(0, 3, 0)
 end
 
+-- Procura a direção (a partir de onde o jogador olha, abrindo até 110°) com o caminho mais livre até `reach` studs.
+local function clearDirection(root: BasePart, reach: number): Vector3
+	local base = root.CFrame.LookVector * Vector3.new(1, 0, 1)
+	if base.Magnitude < 1e-3 then
+		base = Vector3.new(0, 0, -1)
+	end
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Include
+	local world = workspace:FindFirstChild(Tags.WorldFolder)
+	params.FilterDescendantsInstances = if world then { world } else {}
+	local best, bestDistance = base.Unit, -1
+	for _, degrees in { 0, 25, -25, 50, -50, 80, -80, 110, -110 } do
+		local dir = (CFrame.Angles(0, math.rad(degrees), 0) * base.Unit)
+		local hit = workspace:Raycast(root.Position, dir * reach, params)
+		local distance = if hit then hit.Distance else reach
+		if distance >= reach * 0.85 then
+			return dir
+		end
+		if distance > bestDistance then
+			best, bestDistance = dir, distance
+		end
+	end
+	return best
+end
+
 -- Vulto: silhueta escura alta com dois olhos vermelhos (só neste cliente).
 local function shadowFigure(at: Vector3, face: Vector3): Model
+	-- Encaixe da Arte: um modelo `ReplicatedStorage.Assets.TungSilhouette` (pivô nos pés, frente no +Z) substitui o
+	-- vulto improvisado, com a animação própria dele. Peças são ancoradas; scripts do modelo não rodam.
+	local assets = ReplicatedStorage:FindFirstChild("Assets")
+	local custom = assets and assets:FindFirstChild("TungSilhouette")
+	if custom and custom:IsA("Model") then
+		local clone = custom:Clone()
+		clone.Name = "MomentShadow"
+		for _, d in clone:GetDescendants() do
+			if d:IsA("BasePart") then
+				d.Anchored, d.CanCollide, d.CanQuery, d.CanTouch = true, false, false, false
+			elseif d:IsA("Script") or d:IsA("LocalScript") then
+				d:Destroy()
+			end
+		end
+		clone:PivotTo(CFrame.lookAt(at, at + face))
+		clone.Parent = workspace
+		return clone
+	end
 	local model = Instance.new("Model")
 	model.Name = "MomentShadow"
-	local dark = Color3.fromRGB(6, 5, 5)
+	local dark = Color3.fromRGB(20, 18, 20)
 	local function part(name: string, size: Vector3, offset: Vector3, color: Color3, material: Enum.Material): Part
 		local p = Instance.new("Part")
 		p.Name = name
@@ -65,7 +109,11 @@ local function shadowFigure(at: Vector3, face: Vector3): Model
 		p.Parent = model
 		return p
 	end
-	part("Body", Vector3.new(2.6, 6.2, 1.4), Vector3.new(0, 3.1, 0), dark, Enum.Material.SmoothPlastic)
+	local body = part("Body", Vector3.new(2.6, 6.2, 1.4), Vector3.new(0, 3.1, 0), dark, Enum.Material.SmoothPlastic)
+	-- Luz fria atrás do vulto: sem ela ele some no escuro da casa.
+	local rim = Instance.new("PointLight")
+	rim.Color, rim.Range, rim.Brightness = Color3.fromRGB(150, 170, 230), 16, 1.6
+	rim.Parent = body
 	local head = part("Head", Vector3.new(2, 2.6, 1.6), Vector3.new(0, 7.4, 0), dark, Enum.Material.SmoothPlastic)
 	part("Bat", Vector3.new(0.5, 5, 0.5), Vector3.new(1.9, 3.4, 0.3), dark, Enum.Material.SmoothPlastic)
 	for _, side in { -0.45, 0.45 } do
@@ -144,8 +192,14 @@ local function play(moment: string, at: Vector3)
 		if not root then
 			return
 		end
-		-- Fim do corredor (~20 studs): a silhueta cruza de um lado ao outro e some, sem piscar.
-		local spot = ahead(root, 20)
+		-- 15 a 20 studs à frente (ou no ponto `at`, se perto): a silhueta cruza de um lado ao outro e some. Se a
+		-- lanterna a ilumina, ela se desfaz na hora.
+		local spot: Vector3
+		if at ~= Vector3.zero and (at - root.Position).Magnitude > 8 and (at - root.Position).Magnitude < 26 then
+			spot = Vector3.new(at.X, root.Position.Y - 3, at.Z)
+		else
+			spot = root.Position + clearDirection(root, 22) * 18 - Vector3.new(0, 3, 0)
+		end
 		local face = (root.Position - spot) * Vector3.new(1, 0, 1)
 		local facing = if face.Magnitude > 0.1 then face.Unit else Vector3.zAxis
 		local figure = shadowFigure(spot, facing)
@@ -155,13 +209,23 @@ local function play(moment: string, at: Vector3)
 		AudioController.playAtPosition("Growl", spot, 0.45, 0.6)
 		task.spawn(function()
 			local start = os.clock()
-			local crossing = 1.1
+			local crossing = 2.2
 			while figure.Parent do
 				local t = (os.clock() - start) / crossing
 				if t >= 1 then
 					break
 				end
-				figure:PivotTo(from + sideways * ((t - 0.5) * 7))
+				figure:PivotTo(from + sideways * ((t - 0.5) * 9))
+				local camera = workspace.CurrentCamera
+				if camera and FlashlightController.isOn() then
+					local toFigure = figure:GetPivot().Position + Vector3.new(0, 3, 0) - camera.CFrame.Position
+					local angle = math.deg(math.acos(math.clamp(camera.CFrame.LookVector:Dot(toFigure.Unit), -1, 1)))
+					if angle < 14 and toFigure.Magnitude < 26 then
+						-- Iluminado: some com um sibilo.
+						AudioController.playAtPosition("Whisper", figure:GetPivot().Position, 0.6, 1.3)
+						break
+					end
+				end
 				task.wait()
 			end
 			figure:Destroy()

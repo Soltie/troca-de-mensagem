@@ -8,6 +8,7 @@
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 
+local CameraController = require("./CameraController")
 local FurnitureMotionController = require("./FurnitureMotionController")
 local GameUiController = require("./GameUiController")
 
@@ -35,6 +36,25 @@ function DoorSwapController.Start()
 		veil.BackgroundTransparency = 0.05
 		task.delay(0.2, function()
 			TweenService:Create(veil, TweenInfo.new(0.5), { BackgroundTransparency = 1 }):Play()
+		end)
+		-- A câmera vira para a cadeira da Dona Cida (virada para a porta) por 2,4 s e devolve o controle.
+		task.delay(0.5, function()
+			local character = player.Character
+			local root = character and character:FindFirstChild("HumanoidRootPart")
+			local house = workspace:FindFirstChild("CursedHouse")
+			if not root or not root:IsA("BasePart") or not house then
+				return
+			end
+			for _, item in house:GetDescendants() do
+				if item:IsA("Model") and item:GetAttribute("CidaChair") then
+					local eye = root.Position + Vector3.new(0, 1.6, 0)
+					local target = item:GetPivot().Position + Vector3.new(0, 2.2, 0)
+					if CameraController.setCinema(CFrame.lookAt(eye, target), 62, target) then
+						task.delay(3, CameraController.endCinema)
+					end
+					return
+				end
+			end
 		end)
 		task.delay(1.2, function()
 			GameUiController.caption(LINE, 5)

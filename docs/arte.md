@@ -47,3 +47,8 @@ Outras cópias: jumpscare, perseguição e UI de itens usam `TungTungRig` (só `
 Medida offline (Blender, TungTung_MaoNova_v4 no osso Head): frente do rosto ~12,7 cm na altura do olho; profundidade da órbita não dá para fechar sem a escala do rig, então o valor é estimado.
 Aplicar: colar as 2 mudanças no `MenuStage` do place (Studio com o Level) e conferir o menu de lado. check ALL GREEN.
 Nota do place: o `MenuStage` do place era diferente do repo (z -1, bolinha 0,22); apliquei a mesma intenção: z -0,8 e Z da bolinha 0,11. Lido de volta por script. Falta o Crítico ver de lado.
+
+## Brilhos dos olhos removidos do menu (pedido do usuário, 20/10)
+`MenuStage`: `EYE_OFFSETS` agora vazio, então não nascem `Eye1/Eye2` (código do loop mantido; para voltar, repor as posições). Repo: check ALL GREEN.
+Place: NÃO aplicado ainda (Studio com o Código/Level). Aplicar: no `MenuStage` do place, `EYE_OFFSETS = {}` (hoje z -0,8 do ajuste anterior).
+Outros brilhos de olho no Tung (não mexi, modelo oficial): (1) `TungTungRig` cria um PointLight laranja (`eyeLight`, alcance 6) no emissor do corpo, usado em jogo, perseguição e jumpscare, com pisca em `CreatureVisualController` (menu já o desliga); (2) `TungTungRig` pinta de laranja qualquer peça Neon com "eye" no nome, se o modelo tiver.

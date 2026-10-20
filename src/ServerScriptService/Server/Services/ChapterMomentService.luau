@@ -81,6 +81,9 @@ end
 local ZONE_TAG = "TungPresenceZone"
 local REPEAT_AFTER = 30
 local zoneFired: { [BasePart]: number } = {}
+local keysSeen = 0
+local diningFired = false
+local DINING_DOOR = Vector3.new(-9, 0, -36)
 
 local function inside(zone: BasePart, position: Vector3): boolean
 	local relative = zone.CFrame:PointToObjectSpace(position)
@@ -98,9 +101,25 @@ local function watchZones()
 			-- Capítulo novo (ou saiu da partida): as zonas valem de novo.
 			stage = current
 			table.clear(zoneFired)
+			diningFired = false
 		end
 		if current ~= 1 then
 			continue
+		end
+		-- Depois da 2ª chave, a primeira vez que alguém chega a 10–18 studs da porta da sala de jantar, o vulto passa por ela.
+		if keysSeen >= 2 and not diningFired then
+			for _, player in Players:GetPlayers() do
+				local character = player.Character
+				local root = character and character:FindFirstChild("HumanoidRootPart")
+				if root and root:IsA("BasePart") then
+					local d = Vector3.new(root.Position.X - DINING_DOOR.X, 0, root.Position.Z - DINING_DOOR.Z).Magnitude
+					if d > 10 and d < 18 and math.abs(root.Position.Y - 3) < 6 then
+						diningFired = true
+						ChapterMomentService.presence("silhouette", DINING_DOOR)
+						break
+					end
+				end
+			end
 		end
 		for _, zone in CollectionService:GetTagged(ZONE_TAG) do
 			if not zone:IsA("BasePart") then
@@ -126,7 +145,6 @@ local function watchZones()
 	end
 end
 
-local keysSeen = 0
 local keysPlan: any = nil
 
 function ChapterMomentService.Start()

@@ -20,6 +20,24 @@ local SettingsController = require("./SettingsController")
 local WorldFxController = require("./WorldFxController")
 
 local player = Players.LocalPlayer
+-- Durante a tarefa da cadeira da Dona Cida (cap. 1) a casa deve ficar escura: sem dica de lanterna nem aviso de escuro.
+local function cidaTaskActive(): boolean
+	local state = game:GetService("ReplicatedStorage"):FindFirstChild("CampaignState")
+	local raw = state and state:GetAttribute("Tasks")
+	if typeof(raw) ~= "string" then
+		return false
+	end
+	local ok, tasks = pcall(game:GetService("HttpService").JSONDecode, game:GetService("HttpService"), raw)
+	if not ok or type(tasks) ~= "table" then
+		return false
+	end
+	for _, task in tasks do
+		if task.event == "cida_talk" and not task.solved then
+			return true
+		end
+	end
+	return false
+end
 
 local SanityController = {
 	Name = "SanityController",
@@ -142,7 +160,7 @@ local function update(dt: number)
 		CameraController.addTrauma(dt * 0.4 * loss * loss)
 	end
 	-- Primeira vez no escuro de verdade: uma frase explica o que fazer.
-	if not hinted and loss > 0.55 then
+	if not hinted and loss > 0.55 and not cidaTaskActive() then
 		hinted = true
 		-- Com a lanterna na mão (desligada), a dica manda ligá-la; "procure uma vela" só para quem não tem lanterna.
 		GameUi.caption(

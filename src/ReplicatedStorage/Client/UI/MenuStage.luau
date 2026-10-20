@@ -58,9 +58,9 @@ local LAMP_SWING = math.rad(4)
 local WALL_Z = 7
 local SHADOW_SCALE = 2
 local SHADOW_Z = 6.2
--- Brilho dos olhos: no espaço do osso da cabeça (medida do Animador na malha). z = -0,93 era a superfície do rosto, então a
--- bolinha saltava para fora de lado (Crítico 20/10); recuado 0,13 e achatado em Z para ficar dentro da órbita.
-local EYE_OFFSETS = { Vector3.new(-0.26, 0.45, -0.8), Vector3.new(0.26, 0.45, -0.8) }
+-- Brilho dos olhos: removido a pedido do usuário (20/10). Lista vazia = nenhuma bolinha; para voltar, repor posições no espaço do osso da
+-- cabeça (antes: x ±0,26, y 0,45, z -0,8).
+local EYE_OFFSETS: { Vector3 } = {}
 -- Amarelo quente da página. O LightingController deixa a cena do menu sem a correção fria (que esverdeava).
 local EYE_COLOR = Color3.fromRGB(255, 210, 122)
 
