@@ -7,6 +7,8 @@
 	- Saída: o buraco livre mais perto de quem está mais perto, mas nunca colado em alguém (MIN_EXIT_GAP): ele sai
 	  perto, não em cima. Avisos antes de sair (arranhado, poeira, olhos) ficam a cargo do serviço.
 	- Buraco pregado (tábua) não serve de entrada nem de saída até `boardedUntil`.
+	- Longe de qualquer buraco, ele cava o chão onde está (`burrow`) e sai pelo buraco perto de vocês: o túnel
+	  aparece de verdade, não só quando ele passa por acaso ao lado de uma boca.
 ]]
 
 export type Hole = { id: string, x: number, y: number, z: number, nx: number, from: number }
@@ -43,6 +45,26 @@ function WormTunnel.holes(stage: number): { Hole }
 		end
 	end
 	return out
+end
+
+WormTunnel.BURROW_ID = "Floor"
+
+-- Entrada improvisada: o buraco que ele cava no piso onde está (nx = 0: some reto para baixo).
+function WormTunnel.burrow(tung: Point): Hole
+	return { id = WormTunnel.BURROW_ID, x = tung.x, y = tung.y, z = tung.z, nx = 0, from = 0 }
+end
+
+-- Saída mais perto de um jogador só (momento roteirizado: ele sai perto de quem pegou o item).
+function WormTunnel.nearestTo(holes: { Hole }, player: Point, boarded: { [string]: number }, now: number): Hole?
+	local best, bestDistance = nil, math.huge
+	for _, hole in holes do
+		local mouth = { x = hole.x + hole.nx * 3, y = hole.y, z = hole.z }
+		local d = math.sqrt((mouth.x - player.x) ^ 2 + (mouth.y - player.y) ^ 2 + (mouth.z - player.z) ^ 2)
+		if (boarded[hole.id] or 0) <= now and d >= WormTunnel.MIN_EXIT_GAP and d < bestDistance then
+			best, bestDistance = hole, d
+		end
+	end
+	return best
 end
 
 -- Ponto do piso logo à frente do buraco (onde ele some e de onde sai).

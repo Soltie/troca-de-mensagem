@@ -58,6 +58,15 @@ function ForestFxController.Start()
 		local name = string.upper(player.DisplayName)
 		GameUiController.caption(string.format('Uma voz chama da mata: "%s... aqui..."', name), 5)
 	end)
+	-- A coisa do lago (ForestHazardService.stepLurker): aviso e puxão.
+	player:GetAttributeChangedSignal("LakeWarnAt"):Connect(function()
+		GameUiController.caption("Algo passou embaixo de você... SAIA DA ÁGUA!", 3)
+		CameraController.addTrauma(0.25)
+	end)
+	player:GetAttributeChangedSignal("LakeGrabAt"):Connect(function()
+		GameUiController.caption("Algo te puxou de volta! Use a jangada.", 4)
+		CameraController.addTrauma(0.8)
+	end)
 end
 
 return ForestFxController

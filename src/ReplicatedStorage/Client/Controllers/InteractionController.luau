@@ -145,6 +145,12 @@ local function interact(id: string, part: BasePart?, action: string?)
 		return -- rate limit / argumentos: silencioso
 	end
 	local data = result.data
+	-- Enigmas de verdade (PuzzleStyles): cada botão tem seu som (a nota do piano toca mesmo errando).
+	local press = if part then part:GetAttribute("PressSound") else nil
+	if part and typeof(press) == "string" and part.Parent then
+		local pitch = part:GetAttribute("PressPitch")
+		AudioController.playAt(press, part, 1, if typeof(pitch) == "number" then pitch else nil)
+	end
 	if data.accepted then
 		if data.note then
 			AudioController.play("Paper", 1, 0.8)

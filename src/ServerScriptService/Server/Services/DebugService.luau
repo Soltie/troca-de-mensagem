@@ -12,6 +12,7 @@
 		bridge:Invoke("freezeCreature", true)
 
 	Comandos: state | chapter(1..5) | awaken | freezeCreature(bool) | placeCreature(Vector3) | teleport(Vector3) | restart
+	| tunnel(force?) | moment(blackout|shadow|tunnel|quake)
 	          checkpoint | grant("fuses"|"insert"|"breakers"|"key") | setBattery(0..1) | fall(id) | holdOff(s)
 	          storeGrant(fichas, creditos) | endRound("Won"|"Lost") | tape | seasonXp(xp) | analytics
 ]]
@@ -80,6 +81,23 @@ local commands: { [string]: (...any) -> any } = {
 	end,
 	awaken = function()
 		CreatureService.activate(nil)
+		return "ok"
+	end,
+	-- Túnel do Tung: estado (viagens feitas, próxima em s) e mergulho forçado perto do primeiro jogador.
+	tunnel = function(force: boolean?)
+		local TunnelService = require("./TunnelService") :: any
+		if force then
+			local player = Players:GetPlayers()[1]
+			return player ~= nil and TunnelService.force(player)
+		end
+		return HttpService:JSONEncode(TunnelService.stats())
+	end,
+	-- Momento roteirizado (blackout | shadow | tunnel | quake) no primeiro jogador.
+	moment = function(name: string)
+		local player = Players:GetPlayers()[1]
+		local character = player and player.Character
+		local at = if character then character:GetPivot().Position else Vector3.zero;
+		(require("./ChapterMomentService") :: any).play(name, at)
 		return "ok"
 	end,
 	freezeCreature = function(value: boolean)

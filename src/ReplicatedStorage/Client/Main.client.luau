@@ -68,6 +68,7 @@ local controllers: { any } = {
 	require("./Controllers/TelevisionController"),
 	require("./Controllers/TrailerController"), -- só age no Studio (gravação do trailer)
 	require("./Controllers/UiFeedbackController"),
+	require("./Controllers/MomentController"),
 }
 
 local count = Loader.boot(controllers, { label = "Client" })

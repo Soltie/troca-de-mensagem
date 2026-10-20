@@ -1,7 +1,7 @@
 --!strict
 --[[
 	Dificuldade, modificadores e conquistas (opção E; regras em Shared/Game/Difficulty e Shared/Game/Achievements).
-	- Lobby: qualquer integrante liga/desliga um modificador (SetModifier); vale para a equipe toda e trava quando a
+	- Lobby: cada integrante vota nos modificadores (SetModifier); liga o que tem a maioria da equipe e trava quando a
 	  partida começa. Publica CampaignState.Modifiers e CampaignState.CoinBonus.
 	- Conquistas: TungTung/serviços chamam DifficultyService.unlock; este serviço também libera as de vitória (pela
 	  mudança de fase) e as de lugar (catacumba, ilha do rádio). Publica o jogador: Achievements (JSON com os ids) e
@@ -84,6 +84,26 @@ function DifficultyService.unlockAll(id: string)
 	end
 end
 
+-- Votos do lobby: cada jogador tem o próprio texto; o que tem maioria vira CampaignState.Modifiers.
+local votes: { [Player]: string } = {}
+
+local function recount()
+	local state = campaign()
+	if not state or state:GetAttribute("Phase") ~= "Lobby" then
+		return
+	end
+	local list = {}
+	for _, text in votes do
+		table.insert(list, text)
+	end
+	local players = #Players:GetPlayers()
+	local text, counts = Difficulty.tally(list, players)
+	state:SetAttribute("Modifiers", text)
+	state:SetAttribute("CoinBonus", Difficulty.factors(text).bonus)
+	state:SetAttribute("ModifierVotes", HttpService:JSONEncode(counts))
+	state:SetAttribute("ModifierNeeded", Difficulty.needed(players))
+end
+
 local function setModifier(player: Player, id: string): { accepted: boolean, message: string }
 	local state = campaign()
 	if not state or state:GetAttribute("Phase") ~= "Lobby" then
@@ -92,11 +112,12 @@ local function setModifier(player: Player, id: string): { accepted: boolean, mes
 	if not Difficulty.get(id) then
 		return { accepted = false, message = "unknown" }
 	end
-	local text = Difficulty.toggle(DifficultyService.modifiers(), id)
-	state:SetAttribute("Modifiers", text)
-	state:SetAttribute("CoinBonus", Difficulty.factors(text).bonus)
-	log.info("%s set modifiers to '%s'", player.Name, text)
-	return { accepted = true, message = text }
+	local mine = Difficulty.toggle(votes[player] or "", id)
+	votes[player] = mine
+	player:SetAttribute("ModifierVote", mine)
+	recount()
+	log.info("%s voted '%s' -> team '%s'", player.Name, mine, DifficultyService.modifiers())
+	return { accepted = true, message = DifficultyService.modifiers() }
 end
 
 -- Lugares que valem conquista (checados a cada segundo).
@@ -144,7 +165,14 @@ function DifficultyService.Start()
 			end
 		end)
 	end
-	Players.PlayerAdded:Connect(watch)
+	Players.PlayerAdded:Connect(function(player)
+		watch(player)
+		recount()
+	end)
+	Players.PlayerRemoving:Connect(function(player)
+		votes[player] = nil
+		task.defer(recount)
+	end)
 	for _, player in Players:GetPlayers() do
 		watch(player)
 	end
@@ -170,6 +198,9 @@ function DifficultyService.Start()
 			for _, id in Achievements.forWin(Difficulty.parse(DifficultyService.modifiers()), #Difficulty.List) do
 				DifficultyService.unlockAll(id)
 			end
+		end
+		if phase ~= lastPhase and phase == "Lobby" then
+			recount()
 		end
 		lastPhase = phase
 		local ok: boolean, err: any = pcall(places)

@@ -750,6 +750,9 @@ local function requestRestart(mode: "full" | "checkpoint")
 end
 
 -- Legenda temporária, com pequena entrada em 2 quadros.
+-- Quando a última legenda apareceu (o aviso da campanha some se uma legenda mais nova chega; veredito 20/10).
+local captionShownAt = 0
+
 local function showCaption(text: string, duration: number?)
 	if text == "" then
 		return
@@ -757,6 +760,7 @@ local function showCaption(text: string, duration: number?)
 	local ui = r()
 	captionToken += 1
 	local token = captionToken
+	captionShownAt = os.clock()
 	task.spawn(function()
 		ui.caption.Visible = true
 		ui.caption.Text = text
@@ -984,6 +988,16 @@ function GameUiController.setPrompt(text: string?)
 	if text then
 		ui.prompt.Text = text
 	end
+end
+
+-- Some com a legenda do rodapé (um aviso mais novo no meio da tela tomou o lugar).
+function GameUiController.hideCaption()
+	captionToken += 1
+	r().caption.Visible = false
+end
+
+function GameUiController.captionShownAt(): number
+	return captionShownAt
 end
 
 function GameUiController.caption(text: string, duration: number?)

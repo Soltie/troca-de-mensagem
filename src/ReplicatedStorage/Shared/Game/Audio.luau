@@ -103,6 +103,7 @@ local Audio: { [string]: Clip } = {
 	HammerNail = { id = "rbxassetid://9114755820", volume = 0.9 }, -- PSE Hammer Nail Into Wood 2
 	WallBurst = { id = "rbxassetid://9120832269", volume = 1 }, -- PSE Wood Creak Intense Cracking Splintering 1
 	SwingMiss = { id = "rbxassetid://9119707746", volume = 1, speed = 0.55 }, -- PSE Swish Sweetener 4 (grave: bastão no ar)
+	PianoKey = { id = "rbxasset://sounds/electronicpingshort.wav", volume = 0.7, speed = 1 }, -- Roblox (cliente): nota do piano velho (velocidade = tom)
 }
 
 return table.freeze(Audio)

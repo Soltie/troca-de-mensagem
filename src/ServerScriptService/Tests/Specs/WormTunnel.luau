@@ -37,6 +37,29 @@ local spec: TestKit.Spec = {
 			t.expect(boarded and boarded.id ~= "Kitchen").toBe(true)
 		end)
 
+		t.it("far from every hole he burrows into the floor and still comes out near you", function()
+			local holes = WormTunnel.holes(3)
+			local tung = { x = 0, y = 0, z = -60 }
+			t.expect(WormTunnel.entry(holes, tung, {}, 0)).toBe(nil)
+			local floor = WormTunnel.burrow(tung)
+			t.expect(floor.id).toBe(WormTunnel.BURROW_ID)
+			t.expect(WormTunnel.mouth(floor).x).toBe(0)
+			local exit = WormTunnel.exit(holes, floor, { { x = 20, y = 0, z = 2 } }, {}, 0)
+			t.expect(exit and exit.id).toBe("Kitchen")
+			local s = WormTunnel.travelSeconds(floor, exit :: any)
+			t.expect(s >= 4 and s <= 8).toBe(true)
+		end)
+
+		t.it("a scripted exit picks the open hole nearest to one player, not on top of them", function()
+			local holes = WormTunnel.holes(3)
+			local near = WormTunnel.nearestTo(holes, { x = 20, y = 0, z = 2 }, {}, 0)
+			t.expect(near and near.id).toBe("Kitchen")
+			local away = WormTunnel.nearestTo(holes, { x = 40, y = 0, z = 2 }, {}, 0)
+			t.expect(away and away.id ~= "Kitchen").toBe(true)
+			local boarded = WormTunnel.nearestTo(holes, { x = 20, y = 0, z = 2 }, { Kitchen = 50 }, 0)
+			t.expect(boarded and boarded.id ~= "Kitchen").toBe(true)
+		end)
+
 		t.it("the trip lasts long enough to warn and to run", function()
 			local holes = WormTunnel.holes(3)
 			for _, a in holes do

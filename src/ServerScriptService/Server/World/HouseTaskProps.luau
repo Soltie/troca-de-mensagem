@@ -77,6 +77,10 @@ end
 -- O renderer de campanha cria os alvos depois dos objetos. Só o visual deles é substituído:
 -- nome, CFrame, tamanho, query, tags, prompts e estado continuam nos alvos originais.
 local function finishControls(parent: Instance, kind: string)
+	-- Piano (PuzzleStyles): os botões já são as teclas brancas; nada de botão redondo por cima.
+	if parent:GetAttribute("PuzzleStyle") == "piano" then
+		return
+	end
 	if kind ~= "repair" and kind ~= "puzzle" then
 		return
 	end

@@ -2,7 +2,16 @@
 -- Metadados públicos; soluções e sorteio pertencem ao HousePlan no servidor.
 local TableUtil = require("../Util/TableUtil")
 export type Room = { id: string, title: string, x: number, y: number, z: number }
-export type Objective = { room: string, title: string, kind: string, item: string?, event: string?, revelation: string }
+export type Objective = {
+	room: string,
+	title: string,
+	kind: string,
+	item: string?,
+	event: string?,
+	revelation: string,
+	-- Cômodos possíveis (sorteados por partida, sem repetir no capítulo); `room` é o padrão.
+	pool: { string }?,
+}
 export type Chapter = { title: string, subtitle: string, objectives: { Objective } }
 local function objective(
 	room: string,
@@ -142,7 +151,7 @@ local House = {
 					nil,
 					"Uma máscara de madeira. Por dentro, alguém escreveu: PARA ELE NÃO ME RECONHECER."
 				),
-				objective("AtticBook", "Ler o livro de símbolos", "clue", "book", nil),
+				objective("AtticBook", "Ler o livro do relógio", "clue", "book", nil),
 				objective(
 					"AtticPhoto",
 					"Encontrar a fotografia",
@@ -153,7 +162,7 @@ local House = {
 				),
 				objective(
 					"Office",
-					"Reproduzir os símbolos do livro",
+					"Acertar o relógio do escritório na hora das fitas",
 					"puzzle",
 					nil,
 					"basement",
@@ -166,9 +175,9 @@ local House = {
 			subtitle = "O coração está trancado",
 			objectives = {
 				objective("Basement", "Inspecionar o painel do porão", "clue", "panel_clue", nil),
-				objective("Symbols", "Resolver os quatro símbolos", "puzzle", nil, nil),
+				objective("Symbols", "Tocar no piano a melodia do painel", "puzzle", nil, nil),
 				objective("Tunnel", "Encontrar a pista do código do cofre", "clue", "safe_clue", nil),
-				objective("Safe", "Abrir o cofre usando a pista", "puzzle", nil, nil),
+				objective("Safe", "Abrir o cofre com as duas metades do código", "puzzle", nil, nil),
 				objective(
 					"Safe",
 					"Recuperar o artefato",
@@ -219,6 +228,25 @@ local House = {
 		},
 	} :: { Chapter },
 }
+-- Itens que mudam de cômodo a cada partida (veredito 20/10: rejogar e procurar mais). Só cômodos já abertos
+-- naquele capítulo; o HousePlan sorteia sem repetir dentro do capítulo.
+local GROUND = { "Living", "Kitchen", "Dining", "Bath", "Library" }
+local UPSTAIRS = { "Attic", "AtticPhoto", "Bedroom", "Child" }
+local POOLS: { [string]: { string } } = {
+	fuse_1 = GROUND,
+	fuse_2 = GROUND,
+	fuse_3 = GROUND,
+	mask = UPSTAIRS,
+	photo = UPSTAIRS,
+	lighter = { "Kitchen", "Bath", "Bedroom", "Child" },
+}
+for _, chapter in House.Chapters do
+	for _, entry in chapter.objectives do
+		if entry.item and POOLS[entry.item] then
+			entry.pool = table.clone(POOLS[entry.item])
+		end
+	end
+end
 local Forest = require("./ForestCatalog")
 for _, chapter in Forest.Chapters do
 	table.insert(House.Chapters, chapter)

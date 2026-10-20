@@ -18,6 +18,9 @@ local CreatureService = require("../Services/CreatureService")
 local Runaway = {}
 
 local WAKE_RANGE = 7.5
+-- Também acorda quando alguém olha para ele de longe (veredito 20/10: quem chegava correndo abria antes do susto).
+local SEE_RANGE = 22
+local SEE_DOT = 0.8
 local CATCH_RANGE = 2.8
 local SPEED = 10
 local HOP_MIN, HOP_MAX = 6, 9
@@ -163,6 +166,35 @@ local function nearestPlayer(position: Vector3): (Vector3?, number)
 		end
 	end
 	return best, bestD
+end
+
+-- Alguém no mesmo andar olhando para o móvel, sem parede no meio?
+local function watched(runner: Runner): boolean
+	local position = runner.frame.Position
+	for _, player in Players:GetPlayers() do
+		local character = player.Character
+		local body = character and character:FindFirstChild("HumanoidRootPart")
+		if not body or not body:IsA("BasePart") or player:GetAttribute("CampaignStatus") ~= "Active" then
+			continue
+		end
+		local eye = body.Position + Vector3.new(0, 1.5, 0)
+		local offset = position + Vector3.new(0, 1.5, 0) - eye
+		local flat = Vector3.new(offset.X, 0, offset.Z)
+		if math.abs(body.Position.Y - 3 - position.Y) > 6 or flat.Magnitude > SEE_RANGE or flat.Magnitude < 0.5 then
+			continue
+		end
+		local look = body.CFrame.LookVector * Vector3.new(1, 0, 1)
+		if look.Magnitude < 1e-3 or look.Unit:Dot(flat.Unit) < SEE_DOT then
+			continue
+		end
+		local params = RaycastParams.new()
+		params.FilterType = Enum.RaycastFilterType.Exclude
+		params.FilterDescendantsInstances = { character :: Instance, runner.model }
+		if not workspace:Raycast(eye, offset * 0.9, params) then
+			return true
+		end
+	end
+	return false
 end
 
 -- Próximo pulo: para longe de quem está perto, sem atravessar parede nem móvel, sem sair do cômodo.
@@ -327,7 +359,7 @@ function Runaway.step(dt: number)
 		if runner.state == "asleep" then
 			if
 				threat
-				and distance <= WAKE_RANGE
+				and (distance <= WAKE_RANGE or watched(runner))
 				and runner.target.focus:GetAttribute(Tags.Attr.InteractEnabled) == true
 			then
 				wake(runner)

@@ -26,6 +26,28 @@ local function modifiers(): string
 	return if type(value) == "string" then value else ""
 end
 
+-- Votos da equipe (DifficultyService): quantos votaram em cada um, quantos precisa e o voto deste jogador.
+local function votes(): ({ [string]: number }, number, { string })
+	local state = ReplicatedStorage:FindFirstChild("CampaignState")
+	local counts: { [string]: number } = {}
+	local raw = state and state:GetAttribute("ModifierVotes")
+	if type(raw) == "string" then
+		local ok, decoded = pcall(HttpService.JSONDecode, HttpService, raw)
+		if ok and type(decoded) == "table" then
+			for id, n in decoded :: { [any]: any } do
+				if type(id) == "string" and type(n) == "number" then
+					counts[id] = n
+				end
+			end
+		end
+	end
+	local needed = state and state:GetAttribute("ModifierNeeded")
+	local mine = Players.LocalPlayer:GetAttribute("ModifierVote")
+	return counts,
+		if type(needed) == "number" then needed else 1,
+		Difficulty.parse(if type(mine) == "string" then mine else "")
+end
+
 local function unlocked(): { [string]: boolean }
 	local out: { [string]: boolean } = {}
 	local raw = Players.LocalPlayer:GetAttribute("Achievements")
@@ -85,7 +107,7 @@ function Panel.build(parent: Instance, order: number, columns: number): Frame
 		FontFace = Theme.FontBody,
 		TextSize = 12,
 		TextColor3 = Theme.TextSecondary,
-		Text = "Modificadores valem para a equipe toda e pagam mais Fichas.",
+		Text = "Cada um vota; liga o que tiver a maioria da equipe. Paga mais Fichas.",
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = header,
 	})
@@ -227,8 +249,10 @@ function Panel.build(parent: Instance, order: number, columns: number): Frame
 	end
 	local function refresh()
 		local active = Difficulty.parse(modifiers())
+		local counts, needed, mine = votes()
 		for id, button in buttons do
 			local on = table.find(active, id) ~= nil
+			local voted = table.find(mine, id) ~= nil
 			Components.setVariant(button, if on then "secondary" else "ghost")
 			local outline = button:FindFirstChild("Outline")
 			if outline and outline:IsA("UIStroke") then
@@ -238,7 +262,10 @@ function Panel.build(parent: Instance, order: number, columns: number): Frame
 			local state = button:FindFirstChild("State")
 			local m = Difficulty.get(id)
 			if state and state:IsA("TextLabel") and m then
-				state.Text = (if on then "LIGADO · " else "") .. `+{math.floor(m.bonus * 100 + 0.5)}% FICHAS`
+				local tally = `{counts[id] or 0}/{needed} VOTOS`
+				state.Text = (if on then "LIGADO · " elseif voted then "SEU VOTO · " else "")
+					.. tally
+					.. ` · +{math.floor(m.bonus * 100 + 0.5)}%`
 			end
 		end
 		local total = Difficulty.factors(modifiers()).bonus
@@ -260,8 +287,11 @@ function Panel.build(parent: Instance, order: number, columns: number): Frame
 	local state = ReplicatedStorage:FindFirstChild("CampaignState")
 	if state then
 		table.insert(connections, state:GetAttributeChangedSignal("Modifiers"):Connect(refresh))
+		table.insert(connections, state:GetAttributeChangedSignal("ModifierVotes"):Connect(refresh))
+		table.insert(connections, state:GetAttributeChangedSignal("ModifierNeeded"):Connect(refresh))
 	end
 	table.insert(connections, Players.LocalPlayer:GetAttributeChangedSignal("Achievements"):Connect(refresh))
+	table.insert(connections, Players.LocalPlayer:GetAttributeChangedSignal("ModifierVote"):Connect(refresh))
 	panel.Destroying:Connect(function()
 		for _, c in connections do
 			c:Disconnect()

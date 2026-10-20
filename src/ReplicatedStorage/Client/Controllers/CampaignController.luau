@@ -214,6 +214,7 @@ function Controller.Start()
 	decodeTasks()
 	decodeRoster()
 	local feedbackUntil = 0
+	local feedbackAt = 0
 	player:GetAttributeChangedSignal("CampaignFeedbackSerial"):Connect(function()
 		local key = tostring(player:GetAttribute("CampaignFeedback"))
 		-- Entrar/sair do armário: a dica do rodapé (NoirHud) já explica; nada no meio da tela.
@@ -222,6 +223,9 @@ function Controller.Start()
 		end
 		ui.feedback.Text = messages[key] or "Isso não dá para fazer agora."
 		feedbackUntil = os.clock() + 4
+		feedbackAt = os.clock()
+		-- Um texto por vez: o aviso novo tira a legenda velha do rodapé.
+		GameUi.hideCaption()
 		Juice.pop(ui.feedback, 0.25)
 	end)
 
@@ -718,7 +722,7 @@ function Controller.Start()
 				UserInputService.TouchEnabled
 			)
 		end
-		if os.clock() > feedbackUntil then
+		if os.clock() > feedbackUntil or GameUi.captionShownAt() > feedbackAt then
 			ui.feedback.Text = ""
 		end
 		local storyUi = player.PlayerGui:FindFirstChild("StoryUi")

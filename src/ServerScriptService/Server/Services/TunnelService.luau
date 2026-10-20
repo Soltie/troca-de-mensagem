@@ -29,7 +29,7 @@ local TunnelService = {
 local log = Logger.new("TunnelService")
 local rng = Random.new()
 local TICK = 0.5
-local FIRST_DIVE = 25
+local FIRST_DIVE = 20
 local FAR_ENOUGH = 30
 local WALK_SPEED = 12
 
@@ -37,6 +37,7 @@ local stage = -1
 local stageAt = 0
 local nextDiveAt = math.huge
 local busy = false
+local dives = 0
 local boarded: { [string]: number } = {}
 local models: { [string]: Model } = {}
 
@@ -257,89 +258,156 @@ local function eyes(id: string, on: boolean)
 	end
 end
 
--- A viagem inteira: anda até a boca, mergulha, arranha por dentro das paredes, avisa e sai do outro lado.
+-- Anda até a boca do buraco e mergulha de cabeça na parede.
+local function walkAndDive(entry: WormTunnel.Hole, from: Vector3)
+	local mouthIn = vector(WormTunnel.mouth(entry))
+	local look = (mouthIn - from) * Vector3.new(1, 0, 1)
+	local steps = math.max(1, math.floor(look.Magnitude / (WALK_SPEED * 0.05)))
+	for i = 1, steps do
+		CreatureService.scriptPlace(from:Lerp(mouthIn, i / steps), look)
+		task.wait(0.05)
+	end
+	local wall = Vector3.new(entry.x, entry.y, entry.z)
+	local entryModel = models[entry.id]
+	if entryModel and entryModel.PrimaryPart then
+		sound(entryModel.PrimaryPart, Audio.WallBurst, 0.9, 1.1)
+		local dust = entryModel.PrimaryPart:FindFirstChild("Dust")
+		if dust and dust:IsA("ParticleEmitter") then
+			dust:Emit(25)
+		end
+	end
+	for i = 1, 10 do
+		local k = i / 10
+		CreatureService.scriptPlace(mouthIn:Lerp(wall, k) - Vector3.new(0, k * 7, 0), -Vector3.new(entry.nx, 0, 0))
+		task.wait(0.05)
+	end
+end
+
+-- Longe de um buraco: cava o piso onde está e afunda girando. Fica uma cratera de tábuas quebradas por um tempo.
+local function burrowInto(at: Vector3)
+	local scar = Instance.new("Model")
+	scar.Name = "BurrowScar"
+	local hole = piece(
+		scar,
+		"Crater",
+		Vector3.new(0.2, 6.5, 6.5),
+		CFrame.new(at + Vector3.new(0, 0.07, 0)) * CFrame.Angles(0, 0, math.rad(90)),
+		Color3.fromRGB(12, 9, 8),
+		Enum.Material.SmoothPlastic
+	)
+	hole.Shape = Enum.PartType.Cylinder
+	for i = 1, 9 do
+		local angle = i / 9 * math.pi * 2
+		local radius = rng:NextNumber(3.1, 4.2)
+		piece(
+			scar,
+			"Splinter",
+			Vector3.new(rng:NextNumber(0.5, 1.6), rng:NextNumber(0.2, 0.45), rng:NextNumber(0.3, 0.6)),
+			CFrame.new(at + Vector3.new(math.cos(angle) * radius, 0.25, math.sin(angle) * radius))
+				* CFrame.Angles(rng:NextNumber(-0.5, 0.5), angle, rng:NextNumber(-0.4, 0.4)),
+			if i % 2 == 0 then Color3.fromRGB(96, 70, 46) else Color3.fromRGB(70, 52, 36),
+			Enum.Material.WoodPlanks
+		)
+	end
+	local dust = Instance.new("ParticleEmitter")
+	dust.Texture = "rbxasset://textures/particles/smoke_main.dds"
+	dust.Color = ColorSequence.new(Color3.fromRGB(150, 135, 115))
+	dust.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(1, 3.4) })
+	dust.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.35), NumberSequenceKeypoint.new(1, 1) })
+	dust.Lifetime = NumberRange.new(1.2, 2.4)
+	dust.Speed = NumberRange.new(3, 7)
+	dust.SpreadAngle = Vector2.new(70, 70)
+	dust.Acceleration = Vector3.new(0, -3, 0)
+	dust.Rate = 0
+	dust.Parent = hole
+	scar.Parent = folder()
+	sound(hole, Audio.WallBurst, 1.1, 0.75)
+	sound(hole, Audio.Growl, 0.7, 0.75)
+	dust:Emit(45)
+	for i = 1, 14 do
+		local k = i / 14
+		CreatureService.scriptPlace(at - Vector3.new(0, k * 8, 0), Vector3.new(math.cos(k * 7), 0, math.sin(k * 7)))
+		task.wait(0.05)
+	end
+	task.delay(30, function()
+		scar:Destroy()
+	end)
+end
+
+-- Arranhado andando por dentro das paredes até a saída.
+local function travelInside(wall: Vector3, entry: WormTunnel.Hole, exit: WormTunnel.Hole, mySerial: number)
+	local scurry = Instance.new("Part")
+	scurry.Name = "TunnelScurry"
+	scurry.Anchored, scurry.CanCollide, scurry.CanQuery, scurry.CanTouch = true, false, false, false
+	scurry.Transparency = 1
+	scurry.Size = Vector3.one
+	scurry.Position = wall + Vector3.new(0, 2, 0)
+	scurry.Parent = folder()
+	local loop = Instance.new("Sound")
+	loop.SoundId = Audio.WallScurry.id
+	loop.Volume = Audio.WallScurry.volume * 1.4
+	loop.PlaybackSpeed = 0.55
+	loop.Looped = true
+	loop.RollOffMode = Enum.RollOffMode.InverseTapered
+	loop.RollOffMinDistance = 6
+	loop.RollOffMaxDistance = 60
+	loop.Parent = scurry
+	loop:Play()
+	local travel = WormTunnel.travelSeconds(entry, exit)
+	local target = Vector3.new(exit.x, exit.y + 2, exit.z)
+	local t0 = os.clock()
+	while os.clock() - t0 < travel and stage == mySerial do
+		local k = (os.clock() - t0) / travel
+		scurry.Position = scurry.Position:Lerp(wall:Lerp(target, k) + Vector3.new(0, math.sin(k * 9) * 1.5, 0), 0.5)
+		task.wait(0.1)
+	end
+	scurry:Destroy()
+end
+
+-- Aviso na saída: poeira caindo e os olhos acesos no fundo. Devolve true se a boca foi pregada nesse meio tempo
+-- (ele bate na tábua e volta por onde veio).
+local function warnAndCheckBoard(entry: WormTunnel.Hole, exit: WormTunnel.Hole): boolean
+	local exitModel = models[exit.id]
+	if not exitModel or not exitModel.PrimaryPart then
+		return false
+	end
+	local mouth = exitModel.PrimaryPart
+	local dust = mouth:FindFirstChild("Dust")
+	if dust and dust:IsA("ParticleEmitter") then
+		dust:Emit(18)
+	end
+	sound(mouth, Audio.Growl, 0.8, 0.8)
+	eyes(exit.id, true)
+	task.wait(WormTunnel.WARN_SECONDS)
+	eyes(exit.id, false)
+	if (boarded[exit.id] or 0) > workspace:GetServerTimeNow() then
+		sound(mouth, Audio.DoorBang, 1.3, 0.7)
+		CreatureService.debugPlace(vector(WormTunnel.mouth(entry, 4)))
+		return true
+	end
+	sound(mouth, Audio.WallBurst, 1.2, 0.9)
+	if dust and dust:IsA("ParticleEmitter") then
+		dust:Emit(40)
+	end
+	return false
+end
+
+-- A viagem inteira: entra (buraco ou chão), arranha por dentro das paredes, avisa e sai do outro lado.
 local function dive(entry: WormTunnel.Hole, exit: WormTunnel.Hole)
 	busy = true
 	local mySerial = stage
 	CreatureService.setFrozen(true)
 	local ok: boolean, err: any = pcall(function()
-		local state = CreatureService.state()
-		local from = state.position :: Vector3
-		local mouthIn = vector(WormTunnel.mouth(entry))
-		local look = (mouthIn - from) * Vector3.new(1, 0, 1)
-		local steps = math.max(1, math.floor(look.Magnitude / (WALK_SPEED * 0.05)))
-		for i = 1, steps do
-			CreatureService.scriptPlace(from:Lerp(mouthIn, i / steps), look)
-			task.wait(0.05)
-		end
-		-- Mergulha de cabeça na parede.
-		local wall = Vector3.new(entry.x, entry.y, entry.z)
-		local entryModel = models[entry.id]
-		if entryModel and entryModel.PrimaryPart then
-			sound(entryModel.PrimaryPart, Audio.WallBurst, 0.9, 1.1)
-			local dust = entryModel.PrimaryPart:FindFirstChild("Dust")
-			if dust and dust:IsA("ParticleEmitter") then
-				dust:Emit(25)
-			end
-		end
-		for i = 1, 10 do
-			local k = i / 10
-			CreatureService.scriptPlace(mouthIn:Lerp(wall, k) - Vector3.new(0, k * 7, 0), -Vector3.new(entry.nx, 0, 0))
-			task.wait(0.05)
+		local from = CreatureService.state().position :: Vector3
+		if entry.id == WormTunnel.BURROW_ID then
+			burrowInto(from)
+		else
+			walkAndDive(entry, from)
 		end
 		CreatureService.debugPlace(Vector3.new(entry.x, entry.y - 60, entry.z))
-		-- Arranhado andando por dentro das paredes até a saída.
-		local scurry = Instance.new("Part")
-		scurry.Name = "TunnelScurry"
-		scurry.Anchored, scurry.CanCollide, scurry.CanQuery, scurry.CanTouch = true, false, false, false
-		scurry.Transparency = 1
-		scurry.Size = Vector3.one
-		scurry.Position = wall + Vector3.new(0, 2, 0)
-		scurry.Parent = folder()
-		local loop = Instance.new("Sound")
-		loop.SoundId = Audio.WallScurry.id
-		loop.Volume = Audio.WallScurry.volume * 1.4
-		loop.PlaybackSpeed = 0.55
-		loop.Looped = true
-		loop.RollOffMode = Enum.RollOffMode.InverseTapered
-		loop.RollOffMinDistance = 6
-		loop.RollOffMaxDistance = 60
-		loop.Parent = scurry
-		loop:Play()
-		local travel = WormTunnel.travelSeconds(entry, exit)
-		local target = Vector3.new(exit.x, exit.y + 2, exit.z)
-		local t0 = os.clock()
-		while os.clock() - t0 < travel and stage == mySerial do
-			local k = (os.clock() - t0) / travel
-			scurry.Position = scurry.Position:Lerp(wall:Lerp(target, k) + Vector3.new(0, math.sin(k * 9) * 1.5, 0), 0.5)
-			task.wait(0.1)
-		end
-		scurry:Destroy()
-		if stage ~= mySerial then
+		travelInside(Vector3.new(entry.x, entry.y, entry.z), entry, exit, mySerial)
+		if stage ~= mySerial or warnAndCheckBoard(entry, exit) then
 			return
-		end
-		-- Aviso na saída: poeira caindo e os olhos acesos no fundo.
-		local exitModel = models[exit.id]
-		if exitModel and exitModel.PrimaryPart then
-			local mouth = exitModel.PrimaryPart
-			local dust = mouth:FindFirstChild("Dust")
-			if dust and dust:IsA("ParticleEmitter") then
-				dust:Emit(18)
-			end
-			sound(mouth, Audio.Growl, 0.8, 0.8)
-			eyes(exit.id, true)
-			task.wait(WormTunnel.WARN_SECONDS)
-			eyes(exit.id, false)
-			-- Pregado durante o aviso: bate na tábua e volta pelo túnel (vai embora por um tempo).
-			if (boarded[exit.id] or 0) > workspace:GetServerTimeNow() then
-				sound(mouth, Audio.DoorBang, 1.3, 0.7)
-				CreatureService.debugPlace(vector(WormTunnel.mouth(entry, 4)))
-				return
-			end
-			sound(mouth, Audio.WallBurst, 1.2, 0.9)
-			if dust and dust:IsA("ParticleEmitter") then
-				dust:Emit(40)
-			end
 		end
 		local exitWall = Vector3.new(exit.x, exit.y, exit.z)
 		local mouthOut = vector(WormTunnel.mouth(exit))
@@ -349,6 +417,7 @@ local function dive(entry: WormTunnel.Hole, exit: WormTunnel.Hole)
 			CreatureService.scriptPlace(exitWall:Lerp(mouthOut, k) - Vector3.new(0, (1 - k) * 7, 0), outward)
 			task.wait(0.05)
 		end
+		dives += 1
 		log.info("tunnel %s -> %s", entry.id, exit.id)
 	end)
 	if not ok then
@@ -369,8 +438,12 @@ local function dive(entry: WormTunnel.Hole, exit: WormTunnel.Hole)
 			CreatureService.makeNoise(nearest, 40)
 		end
 	end
-	nextDiveAt = os.clock() + rng:NextNumber(35, 60)
+	nextDiveAt = os.clock() + rng:NextNumber(30, 50)
 	busy = false
+end
+
+local function onFloor(y: number): boolean
+	return math.abs(y - math.floor(y / 16 + 0.5) * 16) < 1.5
 end
 
 local function tick()
@@ -395,7 +468,8 @@ local function tick()
 	if state.frozen or (state.holdOff :: number) > 0 or state.seeing or state.mode == "Search" then
 		return
 	end
-	if not TensionDirector.allowsEvents() then
+	-- Na folga do diretor de tensão ele se afasta; nas outras fases o túnel é a forma de voltar até vocês.
+	if TensionDirector.phase() == "Relax" then
 		return
 	end
 	local tungAt = state.position :: Vector3
@@ -410,16 +484,50 @@ local function tick()
 	end
 	local now = workspace:GetServerTimeNow()
 	local entry = WormTunnel.entry(holes, tung, boarded, now)
+	if entry and not clearPath(tungAt, vector(WormTunnel.mouth(entry))) then
+		entry = nil
+	end
+	-- Sem buraco à mão: cava o chão onde está (no meio da escada, não).
 	if not entry then
+		if not onFloor(tungAt.Y) then
+			return
+		end
+		entry = WormTunnel.burrow(tung)
+	end
+	local exit = WormTunnel.exit(holes, entry :: WormTunnel.Hole, players, boarded, now)
+	if not exit then
 		return
 	end
-	local exit = WormTunnel.exit(holes, entry, players, boarded, now)
-	if not exit or not clearPath(tungAt, vector(WormTunnel.mouth(entry))) then
-		return
-	end
-	task.spawn(dive, entry, exit)
+	task.spawn(dive, entry :: WormTunnel.Hole, exit)
 end
 
+-- Momento roteirizado: ele cava o chão agora e sai no buraco mais perto de `player` (ignora o relógio).
+function TunnelService.force(player: Player): boolean
+	local holes = WormTunnel.holes(stage)
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if busy or #holes < 2 or not CreatureService.isActive() or not root or not root:IsA("BasePart") then
+		return false
+	end
+	local state = CreatureService.state()
+	if state.frozen then
+		return false
+	end
+	local now = workspace:GetServerTimeNow()
+	local feet = { x = root.Position.X, y = root.Position.Y - 3, z = root.Position.Z }
+	local exit = WormTunnel.nearestTo(holes, feet, boarded, now)
+	if not exit then
+		return false
+	end
+	local tungAt = state.position :: Vector3
+	task.spawn(dive, WormTunnel.burrow({ x = tungAt.X, y = tungAt.Y, z = tungAt.Z }), exit)
+	return true
+end
+
+-- Depuração: quantas viagens completas neste servidor e quando é a próxima.
+function TunnelService.stats(): { [string]: any }
+	return { dives = dives, busy = busy, nextIn = nextDiveAt - os.clock(), stage = stage }
+end
 -- Interação "tunnel_<id>": prega a tábua (faz barulho; ele ouve).
 function TunnelService.board(player: Player, id: string): { accepted: boolean, message: string }
 	local holeId = string.sub(id, 8)

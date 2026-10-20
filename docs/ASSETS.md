@@ -92,6 +92,7 @@ por isso o trecho dela é 0,47–0,82 s.
 | HammerNail | 9114755820 | Hammer Nail Into Wood 2 (SFX) | ProSoundEffects | pregar tábua no buraco do túnel |
 | WallBurst | 9120832269 | Wood Creak Intense Cracking Splintering 1 (SFX) | ProSoundEffects | o Tung saindo do buraco na parede |
 | SwingMiss | 9119707746 | Swish Sweetener 4 (SFX), tocado a 0,55 | ProSoundEffects | golpe do Tung que passa raspando |
+| PianoKey | (embutido) | electronicpingshort.wav do Roblox, velocidade = nota | Roblox | teclas do piano do porão (cap. 4) |
 
 Também do cliente Roblox: `StepFallback` (`rbxasset://sounds/action_footsteps_plastic.mp3`, trecho 0–0,26 s)
 e `Land` (`action_jump_land.mp3`). Os passos padrão do personagem são silenciados pelo `BodyAudioController`.

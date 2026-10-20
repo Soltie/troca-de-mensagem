@@ -10,10 +10,15 @@ local Stash = require("./HiddenStash")
 local Runaway = require("./RunawayStash")
 local Progress = require("@game/ReplicatedStorage/Shared/Game/HouseProgression")
 local WormTunnel = require("@game/ReplicatedStorage/Shared/Game/WormTunnel")
+local PuzzleStyles = require("@game/ReplicatedStorage/Shared/Game/PuzzleStyles")
+local PuzzleProps = require("../World/PuzzleProps")
 local Activities = {}
 local repairSteps = { "ISOLAR O CIRCUITO", "ENCAIXAR OS FUSÍVEIS", "TESTAR A ENERGIA" }
 local gold = Color3.fromRGB(219, 171, 80)
 local symbols = { "LUA", "OLHO", "CHAMA", "PORTA" }
+-- Clipe (Shared/Game/Audio) tocado no cliente ao apertar um botão de cada enigma.
+local PRESS_SOUNDS: { [string]: string } =
+	{ piano = "PianoKey", safe = "KeyTurn", clock = "KeyTurn", radio = "RadioStatic" }
 -- Gasolina: a pilha de madeira procura um pedaço livre do cômodo (sem móvel em cima) perto do ponto sorteado.
 local OFFSETS = {
 	{ 0, 0 },
@@ -163,7 +168,7 @@ function Activities.build(parent: Instance, plan: Generator.Plan, distance: numb
 		old:Destroy()
 	end
 	local root = Build.folder(parent, "CampaignActivities")
-	local built: any = { root = root, targets = {}, lamps = {}, labels = {}, meters = {}, plan = plan }
+	local built: any = { root = root, targets = {}, lamps = {}, labels = {}, meters = {}, styles = {}, plan = plan }
 	-- Só uma chave por capítulo foge (sorteada a cada partida): surpresa, não rotina.
 	local keys: { string } = {}
 	for _, spec in plan.activities do
@@ -234,25 +239,40 @@ function Activities.build(parent: Instance, plan: Generator.Plan, distance: numb
 				{ transparency = if fuel then 1 else 0, collide = not fuel, query = not fuel }
 			)
 		base.Material = Enum.Material.Wood
+		local style = if spec.kind == "puzzle" then PuzzleStyles.forTask(plan.stage, index, plan.seed) else nil
+		if style then
+			model:SetAttribute("PuzzleStyle", style.id)
+			built.styles[spec.id] = style
+		end
 		TaskProps.build(model, p, spec.item, spec.kind)
+		if style then
+			PuzzleProps.build(model, p, style.id)
+		end
 		if spec.kind == "clue" then
-			local solution: { number }? = nil
+			-- Qual enigma esta pista resolve (e, no painel do porão, a metade final do código do cofre).
+			local solvedBy: number? = nil
 			if plan.stage >= 6 then
-				for _, candidate in plan.activities do
+				for n, candidate in plan.activities do
 					if candidate.kind == "puzzle" then
-						solution = candidate.order
+						solvedBy = n
 						break
 					end
 				end
 			elseif spec.item == "book" then
-				solution = plan.activities[5].order
+				solvedBy = 5
 			elseif spec.item == "panel_clue" then
-				solution = plan.activities[2].order
+				solvedBy = 2
 			elseif spec.item == "safe_clue" then
-				solution = plan.activities[4].order
+				solvedBy = 4
 			end
-			local text = if solution
-				then `LUA=1 OLHO=2 CHAMA=3 PORTA=4\nORDEM: {table.concat(solution, " - ")}`
+			local target = if solvedBy then plan.activities[solvedBy] else nil
+			local extra = if spec.item == "panel_clue"
+					and plan.activities[4]
+					and plan.activities[4].kind == "puzzle"
+				then PuzzleStyles.answer(PuzzleStyles.forTask(plan.stage, 4, plan.seed), plan.activities[4].order)
+				else nil
+			local text = if target and solvedBy
+				then PuzzleStyles.clue(PuzzleStyles.forTask(plan.stage, solvedBy, plan.seed), target.order, extra)
 				elseif plan.stage >= 6 then "O ECO SOBREVIVEU À CASA.\nCHAMEM O RESGATE PELA TORRE."
 				else "ELE NÃO É O DONO.\nO CORAÇÃO ESTÁ SOB A CASA."
 			Build.sign(
@@ -280,37 +300,51 @@ function Activities.build(parent: Instance, plan: Generator.Plan, distance: numb
 			Build.light(base, "Street", Color3.fromRGB(255, 210, 139), 18, 0.9, true)
 		end
 		local count = if spec.kind == "puzzle" then 4 elseif spec.kind == "repair" then 3 else 1
+		local piano = style ~= nil and style.id == "piano"
 		for button = 1, count do
 			local id = `{spec.id}_{button}`
 			local focus = Build.block(
 				model,
 				id,
 				p + Vector3.new((button - (count + 1) / 2) * 1.8, 2, 0.5),
-				Vector3.new(1.2, if spec.kind == "collect" then 1.6 else 0.8, 0.9),
+				if piano
+					then PuzzleProps.KEY_SIZE
+					else Vector3.new(1.2, if spec.kind == "collect" then 1.6 else 0.8, 0.9),
 				0,
-				gold,
+				if piano then PuzzleProps.IVORY else gold,
 				{ collide = false }
 			)
 			focus:SetAttribute(Tags.Attr.InteractId, id)
 			focus:SetAttribute(
 				Tags.Attr.InteractPrompt,
-				if spec.kind == "puzzle"
-					then `PRESSIONAR {symbols[button]}`
+				if style
+					then `{style.prompt} {style.labels[button]}`
 					elseif spec.kind == "repair" then repairSteps[button]
 					else spec.title
 			)
 			focus:SetAttribute(Tags.Attr.InteractDistance, distance)
 			focus:SetAttribute(Tags.Attr.InteractEnabled, index == 1 and spec.kind ~= "hide" and spec.kind ~= "breath")
+			-- Som de cada botão no cliente que apertou (a nota do piano, o clique do cofre, o chiado do rádio).
+			if style and PRESS_SOUNDS[style.id] then
+				focus:SetAttribute("PressSound", PRESS_SOUNDS[style.id])
+				focus:SetAttribute(
+					"PressPitch",
+					if piano then PuzzleStyles.PIANO_PITCH[button] else 0.9 + button * 0.12
+				)
+			end
 			CollectionService:AddTag(focus, Tags.Interactable)
-			built.targets[id] = { taskId = spec.id, button = button, focus = focus }
+			built.targets[id] = { taskId = spec.id, button = button, focus = focus, piano = piano }
 			if count > 1 then
 				Build.sign(
 					model,
 					"Symbol",
-					focus.Position + Vector3.new(0, 1.5, 0),
+					focus.Position + Vector3.new(0, if piano then 1.1 else 1.5, if piano then 0.7 else 0),
 					Vector3.zAxis,
 					Vector2.new(1.7, 0.7),
-					if spec.kind == "repair" then `{button} {repairSteps[button]}` else `{button} {symbols[button]}`,
+					if style
+						then style.labels[button]
+						elseif spec.kind == "repair" then `{button} {repairSteps[button]}`
+						else `{button} {symbols[button]}`,
 					{ textColor = gold, lit = true }
 				)
 			end
@@ -330,7 +364,30 @@ function Activities.build(parent: Instance, plan: Generator.Plan, distance: numb
 	end
 	return built
 end
+local solvedListeners: { (plan: Generator.Plan, index: number) -> () } = {}
+
+-- Momentos roteirizados (ChapterMomentService): chamado uma vez por tarefa, quando ela acaba de ser resolvida.
+function Activities.onSolved(callback: (plan: Generator.Plan, index: number) -> ())
+	table.insert(solvedListeners, callback)
+end
+
 function Activities.refresh(built: any, tasks: any)
+	-- A primeira passada só anota o que já veio resolvido (checkpoint), sem disparar nada.
+	local first = built.seen == nil
+	if first then
+		built.seen = {}
+	end
+	for index, spec in built.plan.activities do
+		local state = tasks[spec.id]
+		if state and state.solved and not built.seen[spec.id] then
+			built.seen[spec.id] = true
+			if not first then
+				for _, callback in solvedListeners do
+					task.spawn(callback, built.plan, index)
+				end
+			end
+		end
+	end
 	local ready: { [string]: boolean } = {}
 	for index, spec in built.plan.activities do
 		ready[spec.id] = not tasks[spec.id].solved
@@ -357,6 +414,11 @@ function Activities.refresh(built: any, tasks: any)
 				then "CONCLUÍDO"
 				elseif not ready[spec.id] then "ENCONTRE AS PISTAS E OS ITENS NECESSÁRIOS"
 				elseif spec.kind == "repair" then `{state.progress}/3 · {repairSteps[state.progress + 1]}`
+				elseif built.styles[spec.id] then PuzzleStyles.progress(
+					built.styles[spec.id],
+					spec.order,
+					state.progress
+				)
 				else `{state.progress}/4 · CONSULTE A PISTA RECUPERADA`
 		end
 		local enabled = ready[target.taskId]
@@ -391,6 +453,14 @@ function Activities.refresh(built: any, tasks: any)
 					puddle.Transparency = if state.solved then 0.05 else 1
 				end
 			end
+		end
+		-- Teclas do piano continuam de marfim (apagadas enquanto bloqueadas, esverdeadas depois de resolvido).
+		if target.piano then
+			target.focus.Color = if state.solved
+				then Color3.fromRGB(196, 222, 196)
+				elseif enabled then PuzzleProps.IVORY
+				else Color3.fromRGB(150, 144, 130)
+			continue
 		end
 		target.focus.Color = if state.solved or (spec.kind == "repair" and target.button <= state.progress)
 			then Color3.fromRGB(63, 105, 76)

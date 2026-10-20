@@ -605,6 +605,119 @@ local function stepTower(forest: Instance, map: ForestMaps.Map, bodies: { Body }
 	end
 end
 
+-- Algo no lago (cap. 7; veredito 20/10: dava para nadar até a ilha e a jangada perdia a graça). Quem nada fora do
+-- banco de areia sente algo passar: bolhas e uma barbatana rodando (LakeWarnAt). Se continua nadando, um puxão
+-- (LakeGrabAt): splash, rugido embaixo d'água e volta para o cais de onde saiu. Não machuca.
+local LURK_WARN, LURK_GRAB = 1, 3.6
+local swimming: { [Player]: { since: number, from: Vector3, warned: boolean, fin: BasePart? } } = {}
+
+local function soundAt(at: Vector3, clip: { id: string, volume: number }, volume: number, speed: number)
+	local anchor = Instance.new("Part")
+	anchor.Name = "LakeSound"
+	anchor.Anchored, anchor.CanCollide, anchor.CanQuery, anchor.CanTouch = true, false, false, false
+	anchor.Transparency = 1
+	anchor.Size = Vector3.one
+	anchor.Position = at
+	anchor.Parent = workspace
+	sound(anchor, clip, volume, speed)
+	task.delay(7, function()
+		anchor:Destroy()
+	end)
+end
+
+local function finPart(at: Vector3): BasePart
+	local fin = Instance.new("WedgePart")
+	fin.Name = "LakeFin"
+	fin.Size = Vector3.new(0.35, 2.2, 3)
+	fin.Color = Color3.fromRGB(22, 26, 24)
+	fin.Material = Enum.Material.SmoothPlastic
+	fin.Anchored, fin.CanCollide, fin.CanQuery, fin.CanTouch = true, false, false, false
+	fin.CFrame = CFrame.new(at)
+	local bubbles = Instance.new("ParticleEmitter")
+	bubbles.Texture = "rbxasset://textures/particles/smoke_main.dds"
+	bubbles.Color = ColorSequence.new(Color3.fromRGB(200, 220, 220))
+	bubbles.Size = NumberSequence.new(0.4, 1.2)
+	bubbles.Transparency = NumberSequence.new(0.4, 1)
+	bubbles.Lifetime = NumberRange.new(0.6, 1)
+	bubbles.Speed = NumberRange.new(1, 2)
+	bubbles.Rate = 18
+	bubbles.Parent = fin
+	fin.Parent = workspace
+	return fin
+end
+
+local function stepLurker(map: ForestMaps.Map, bodies: { Body })
+	local lake = map.lake
+	if not lake then
+		return
+	end
+	local now = os.clock()
+	local seen: { [Player]: boolean } = {}
+	for _, b in bodies do
+		local character = b.player.Character
+		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+		local inWater = humanoid ~= nil
+			and humanoid:GetState() == Enum.HumanoidStateType.Swimming
+			and ForestMaps.inLake(map, b.at.X, b.at.Z)
+		if not inWater then
+			continue
+		end
+		seen[b.player] = true
+		local entry = swimming[b.player]
+		if not entry then
+			-- Volta para o cais mais perto de onde entrou na água.
+			local south = Vector3.new(lake.southDock.x, 0, lake.southDock.z)
+			local island = Vector3.new(lake.islandDock.x, 0, lake.islandDock.z)
+			local flat = Vector3.new(b.at.X, 0, b.at.Z)
+			entry = {
+				since = now,
+				from = if (flat - south).Magnitude <= (flat - island).Magnitude then south else island,
+				warned = false,
+			}
+			swimming[b.player] = entry
+		end
+		local age = now - entry.since
+		if age >= LURK_WARN and not entry.warned then
+			entry.warned = true
+			entry.fin = finPart(b.at)
+			b.player:SetAttribute("LakeWarnAt", workspace:GetServerTimeNow())
+			soundAt(b.at, Audio.Growl, 0.6, 0.5)
+		end
+		local fin = entry.fin
+		if fin then
+			local angle = age * 2.2
+			local radius = math.max(2.5, 9 - age * 2)
+			local at = Vector3.new(b.at.X + math.cos(angle) * radius, b.at.Y - 0.6, b.at.Z + math.sin(angle) * radius)
+			fin.CFrame = CFrame.lookAt(at, at + Vector3.new(-math.sin(angle), 0, math.cos(angle)))
+		end
+		if age >= LURK_GRAB then
+			swimming[b.player] = nil
+			if fin then
+				fin:Destroy()
+			end
+			soundAt(b.at, Audio.BigSplash, 1.2, 0.8)
+			soundAt(b.at, Audio.Roar, 0.7, 0.55)
+			b.player:SetAttribute("LakeGrabAt", workspace:GetServerTimeNow())
+			local root = character and character:FindFirstChild("HumanoidRootPart")
+			if root and root:IsA("BasePart") then
+				local landing = onGround(entry.from)
+				root.AssemblyLinearVelocity = Vector3.zero
+				root.CFrame = CFrame.new(landing + Vector3.new(0, 3.2, 0))
+			end
+			DifficultyService.unlock(b.player, "lago")
+			log.info("lake lurker pulled %s back", b.player.Name)
+		end
+	end
+	for player, entry in swimming do
+		if not seen[player] then
+			if entry.fin then
+				entry.fin:Destroy()
+			end
+			swimming[player] = nil
+		end
+	end
+end
+
 local function step()
 	local campaign = game:GetService("ReplicatedStorage"):FindFirstChild("CampaignState")
 	if not campaign or campaign:GetAttribute("Phase") == "Intermission" then
@@ -647,6 +760,7 @@ local function step()
 	stepBridge(forest, map)
 	stepRaft(forest, map)
 	stepVoice(forest, map, bodies)
+	stepLurker(map, bodies)
 	stepTower(forest, map, bodies)
 end
 

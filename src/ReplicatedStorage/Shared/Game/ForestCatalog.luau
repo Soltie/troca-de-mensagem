@@ -3,7 +3,15 @@
 local TableUtil = require("../Util/TableUtil")
 local ForestMaps = require("./ForestMaps")
 export type Room = { id: string, title: string, x: number, y: number, z: number }
-export type Objective = { room: string, title: string, kind: string, item: string?, event: string?, revelation: string }
+export type Objective = {
+	room: string,
+	title: string,
+	kind: string,
+	item: string?,
+	event: string?,
+	revelation: string,
+	pool: { string }?,
+}
 export type Chapter = { title: string, subtitle: string, objectives: { Objective } }
 local Forest = {
 	FirstChapter = 6,

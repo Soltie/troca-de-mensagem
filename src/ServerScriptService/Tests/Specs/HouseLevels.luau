@@ -21,6 +21,45 @@ return {
 				end
 			end
 		end)
+		t.it("fuses, mask, photo and lighter change rooms between runs but never share one", function()
+			local fuseRooms: { [string]: boolean } = {}
+			for seed = 1, 40 do
+				for _, chapter in { 2, 3, 5 } do
+					local plan = Plan.create(seed, chapter, 1, "Story")
+					t.expect((Plan.validate(plan))).toBe(true)
+					t.expect(Plan.create(seed, chapter, 1, "Story")).toEqual(plan)
+					local used: { [string]: boolean } = {}
+					for _, spec in plan.activities do
+						local pooled = spec.item == "mask"
+							or spec.item == "photo"
+							or spec.item == "lighter"
+							or string.find(spec.item or "", "fuse_", 1, true) ~= nil
+						if pooled then
+							t.expect(used[spec.room]).toBeNil()
+							used[spec.room] = true
+						end
+						if spec.item == "fuse_1" then
+							fuseRooms[spec.room] = true
+						end
+					end
+				end
+			end
+			local count = 0
+			for _ in fuseRooms do
+				count += 1
+			end
+			t.expect(count >= 3).toBe(true)
+			-- Fora da lista o plano é recusado.
+			local plan = Plan.create(1, 2, 1, "Story")
+			plan.activities[1].room = "Attic"
+			t.expect((Plan.validate(plan))).toBe(false)
+		end)
+		t.it("the office clock always asks for 03:12", function()
+			for seed = 1, 10 do
+				local plan = Plan.create(seed, 3, 1, "Story")
+				t.expect(table.concat(plan.activities[5].order, ",")).toBe("1,4,2,3")
+			end
+		end)
 		t.it("many seeds include a guaranteed outdoor level and reproducible passages/lookout", function()
 			local variants: { [string]: boolean } = {}
 			for seed = 1, 120 do

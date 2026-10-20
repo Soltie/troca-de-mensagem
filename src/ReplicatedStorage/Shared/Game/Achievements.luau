@@ -18,6 +18,7 @@ Achievements.List = table.freeze({
 	{ id = "ponte", title = "ADEUS, PONTE", description = "Ver o Tung Tung cair no rio." },
 	{ id = "jangada", title = "TRAVESSIA", description = "Chegar à ilha do rádio." },
 	{ id = "farol", title = "SINAL NO ESCURO", description = "Acender o farol da torre." },
+	{ id = "lago", title = "NÃO NADE", description = "Ser puxado de volta pela coisa do lago." },
 } :: { Achievement })
 
 local byId: { [string]: Achievement } = {}

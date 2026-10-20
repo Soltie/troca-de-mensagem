@@ -19,6 +19,9 @@ local rng = Random.new()
 local surgeUntil = 0
 local surgeOrigin: Vector3? = nil
 local surgeRadius = math.huge
+-- Apagão roteirizado (MomentController): as luzes da casa piscam, apagam e voltam piscando.
+local blackoutFrom = 0
+local blackoutUntil = 0
 local threatLevel = 0
 local threatOrigin = Vector3.zero
 local threatRadius = 0
@@ -130,6 +133,12 @@ local function step()
 						factor *= 1 - 0.6 * threatLevel
 					end
 				end
+				if now < blackoutUntil and architectural and kind ~= "Exit" then
+					local age, left = now - blackoutFrom, blackoutUntil - now
+					factor *= if age < 0.7 or left < 0.6
+						then (if rng:NextNumber() < 0.5 then rng:NextNumber(0, 0.15) else rng:NextNumber(0.6, 1))
+						else 0
+				end
 				if kind == "Beacon" then
 					local on = s ~= nil and s.powerOn and (not flashes or (now * 2.5) % 2 < 1)
 					instance.Transparency = if on then 0 else 0.6
@@ -174,6 +183,12 @@ function WorldFxController.threat(level: number, origin: Vector3, radius: number
 end
 
 -- Pico de falha nas luzes por `duration` segundos.
+-- Apaga as luzes da casa por `duration` s (piscando na entrada e na volta).
+function WorldFxController.blackout(duration: number)
+	local now = os.clock()
+	blackoutFrom, blackoutUntil = now, now + duration
+end
+
 function WorldFxController.surge(duration: number, origin: Vector3?, radius: number?)
 	surgeUntil = math.max(surgeUntil, os.clock() + duration)
 	surgeOrigin = origin

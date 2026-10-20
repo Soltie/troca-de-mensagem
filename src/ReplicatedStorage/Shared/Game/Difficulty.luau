@@ -123,6 +123,29 @@ function Difficulty.boost(fichas: number, text: string?): number
 	return math.max(fichas, math.floor(fichas * (1 + Difficulty.factors(text).bonus) + 0.5))
 end
 
+-- Voto no lobby (veredito 20/10: um jogador ligava o Pesadelo para todos). Cada voto é o texto dos modificadores
+-- de um jogador; liga o que tem a maioria (mais da metade de `players`). Devolve o texto ligado e a contagem.
+function Difficulty.tally(votes: { string }, players: number): (string, { [string]: number })
+	local counts: { [string]: number } = {}
+	for _, text in votes do
+		for _, id in Difficulty.parse(text) do
+			counts[id] = (counts[id] or 0) + 1
+		end
+	end
+	local on = {}
+	for id, count in counts do
+		if count * 2 > math.max(players, 1) then
+			table.insert(on, id)
+		end
+	end
+	return Difficulty.encode(on), counts
+end
+
+-- Votos que faltam para ligar `id` com `players` na equipe.
+function Difficulty.needed(players: number): number
+	return math.floor(math.max(players, 1) / 2) + 1
+end
+
 function Difficulty.get(id: string): Modifier?
 	return byId[id]
 end

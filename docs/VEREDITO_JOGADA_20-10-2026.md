@@ -47,3 +47,20 @@ Comparação só com os melhores do gênero (DOORS, The Mimic, Apeirophobia, Pig
 Floresta com três mapas diferentes e momentos marcantes (ponte, lago e A Voz, torre e árvores), casa que muda por
 capítulo, catacumba e capela, túnel do Tung, modificadores e conquistas, mão e lanterna novas, campanha estável do
 começo ao fim.
+
+## Depois do veredito (itens 2 a 5 do plano de melhoria)
+- **Túnel aparece de verdade (problema 5):** longe de um buraco, o Tung cava o chão onde está (cratera de tábuas,
+  poeira) e sai no buraco perto de vocês. Não espera mais a fase "Build" (só a folga segura o túnel); primeiro
+  mergulho aos 20 s, depois a cada 30–50 s. Testado: mergulhou sozinho no cap. 3 em ~20 s.
+- **Enigmas de verdade (problemas 2 e 3):** cap. 3 = relógio de pêndulo (acertar 03:12; o livro traz "03:1_", o relógio
+  do sótão a hora inteira); cap. 4 = piano (melodia do painel; cada tecla toca a nota) e cofre com o código espalhado
+  (metade na catacumba, metade riscada no painel); floresta = rádio com frequências. Regras em
+  `Shared/Game/PuzzleStyles`, móveis em `World/PuzzleProps`.
+- **Capítulos mais cheios (problema 1):** fusíveis, máscara, fotografia e isqueiro mudam de cômodo a cada partida
+  (`pool` no HouseCatalog) e um momento roteirizado por capítulo da casa (`Shared/Game/ChapterMoments`): apagão (1),
+  vulto no corredor (2), túnel forçado perto de quem pegou a máscara (3), tremor com luz vermelha (4).
+- **Ajustes rápidos:** móvel fujão acorda quando alguém olha para ele de até 22 studs (6); algo no lago puxa quem nada
+  de volta ao cais em ~3,6 s, com aviso aos 1 s (7); modificadores por voto da maioria (8); aviso novo da campanha
+  esconde a legenda velha e vice-versa (13).
+- Não feito: tarefas que exigem duas pessoas; capítulos ainda não chegam a 5–8 min só com isso (falta medir com
+  gente jogando).

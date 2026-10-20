@@ -9,6 +9,7 @@ return {
 		local CoinFinish = require("@game/ServerScriptService/Server/World/HouseCollectibleFinish")
 		local Activities = require("@game/ServerScriptService/Server/Campaign/HouseActivities")
 		local Plan = require("@game/ServerScriptService/Server/Campaign/HousePlan")
+		local PuzzleProps = require("@game/ServerScriptService/Server/World/PuzzleProps")
 		local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
 
 		t.it("recognizable small props stay nonphysical and within a bounded geometry budget", function()
@@ -74,7 +75,13 @@ return {
 						local expected = Vector3.new(spec.x, spec.y or 0, spec.z)
 							+ Vector3.new(
 								(target.button - (count + 1) / 2) * 1.8,
-								2 + (if spec.kind == "collect" then 0.8 else 0.4),
+								2
+									+ (
+										if target.piano
+											then PuzzleProps.KEY_SIZE.Y / 2
+											elseif spec.kind == "collect" then 0.8
+											else 0.4
+									),
 								0.5
 							)
 						assert((focus.Position - expected).Magnitude < 0.001, `Target moved: {chapter}/{id}`)
@@ -105,7 +112,8 @@ return {
 									t.expect(object.Transparency).toBe(1)
 								end
 							end
-						elseif spec.kind == "repair" or spec.kind == "puzzle" then
+						-- Teclas do piano (PuzzleStyles) ficam à mostra: são as teclas de verdade.
+						elseif (spec.kind == "repair" or spec.kind == "puzzle") and not target.piano then
 							t.expect(target.focus.Transparency).toBe(1)
 						end
 					end
