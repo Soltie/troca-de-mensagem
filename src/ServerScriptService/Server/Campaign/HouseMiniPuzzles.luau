@@ -186,15 +186,26 @@ function Mini.planks(root: Instance, spec: any, spot: ({ Vector3 }) -> Vector3, 
 	for n = 1, 6 do
 		local at = spot(taken)
 		table.insert(taken, at)
-		local yaw = if rng:NextNumber() < 0.5 then 0 else 90
-		local frame = CFrame.new(at + Vector3.new(0, 0.07, 0)) * CFrame.Angles(0, math.rad(yaw), 0)
-		local plank = part(model, `plank_{spec.id}_{n}`, Vector3.new(1.3, 0.14, 4.6), frame, LOOSE)
+		-- Irregulares (crítico, rodada 2): ângulo, comprimento e leve inclinação próprios.
+		local yaw = (if rng:NextNumber() < 0.5 then 0 else 90) + rng:NextNumber() * 50 - 25
+		local length = 3.6 + rng:NextNumber() * 1.8
+		local tilt = (rng:NextNumber() - 0.5) * math.rad(5)
+		local frame = CFrame.new(at + Vector3.new(0, 0.07, 0)) * CFrame.Angles(0, math.rad(yaw), tilt)
+		local plank =
+			part(model, `plank_{spec.id}_{n}`, Vector3.new(0.9 + rng:NextNumber() * 0.8, 0.14, length), frame, LOOSE)
 		-- Prego saltado: o sinal de tábua solta ensinado no hall.
-		Build.part(model, "LooseNail", Vector3.new(0.12, 0.3, 0.12), frame * CFrame.new(0.4, 0.14, 1.8), BRASS, {
-			material = Enum.Material.Metal,
-			collide = false,
-			query = false,
-		})
+		Build.part(
+			model,
+			"LooseNail",
+			Vector3.new(0.12, 0.3, 0.12),
+			frame * CFrame.new(0.3, 0.14, length / 2 - 0.5),
+			BRASS,
+			{
+				material = Enum.Material.Metal,
+				collide = false,
+				query = false,
+			}
+		)
 		local id = `plank_{spec.id}_{n}`
 		interactable(plank, id, "BATER NA TÁBUA", distance)
 		local knocked = false

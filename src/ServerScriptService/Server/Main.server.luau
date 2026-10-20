@@ -43,7 +43,6 @@ local services: { any } = {
 	require("./Services/TunnelService"),
 	require("./Services/ChapterMomentService"),
 	require("./Services/DoorSwapService"),
-	require("./Services/RoomScareService"),
 	require("./Services/DifficultyService"),
 	require("./Services/DebugService"), -- só age no Studio
 }

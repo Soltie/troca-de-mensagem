@@ -8,3 +8,8 @@ Presença do Tung (docs/codigo.md): gatilhos padrão cobrem o cap. 1 (1ª chave 
 Aplicado no place (backup ServerStorage.Backup_Cap1_Level): HouseCatalog (tarefa da cadeira da Cida), HouseProgression (ch1 com 8 tarefas), RoomScares, RoomScareService, linha no Main. Tests.Run = 439/0.
 NÃO feito: tábuas irregulares, placa da escada do porão, papel plano na biblioteca (precisam de posições/olho no Studio).
 Testar: História cap. 1; entrar em cada cômodo (legenda + efeito); 2ª chave → olhos no corredor; checar se panelas/cadeira do jantar mexem (nomes "Pan"/"Stove"/"Chair").
+
+## Atualização cap. 1 (final)
+Meu RoomScareService era duplicado: os sustos por cômodo e a placa do porão já existiam em `World/HouseDressing` (Dressing.scares / basementSign). Movi RoomScareService, RoomScares e o spec para `backup/` e tirei do Main e do place.
+Aplicado no place: HouseDressing (sustos + placa), HouseMiniPuzzles (tábuas irregulares: ângulo, comprimento, inclinação), HouseTaskProps (carta "message" = folha fosca, sem luz, selo como indicador). Tests.Run 439/0; RoomScares e BasementStairSign existem em CursedHouse.
+Testar: tábuas da cozinha desalinhadas; carta da biblioteca é uma folha lisa; entrar em cada cômodo dispara o susto (hall, cozinha, jantar, biblioteca, corredor). Push: fica com o usuário.
