@@ -1,55 +1,55 @@
-# Claude — testes de mecânicas em cópia local (PC Gabriel) — 19/10/2026
+# Claude — testes de mecânicas em cópia local (PC Gabriel) — atualizado 19/10/2026 ~22:40 BRT
 
 ## Identidade e origem
 
 - Agente: Claude (Claude Code), PC do humano em `C:/Users/Gabriel` (mesmo PC da frente `codex-dinamica`).
-- **Sem branch Git nesta frente**: não há `git` instalado neste PC. O trabalho fica numa cópia local do place.
-- Base: cópia baixada do `tungtung` (82955516040017) pelo menu "Baixar uma cópia" em 19/10/2026 ~21:23 (BRT).
-  Dois arquivos em `RobloxProjetos/tungtung-testes/`:
-  - `tungtung_ESTAVEL.rbxl` — backup intocado, somente leitura.
-  - `tungtung_TESTES.rbxl` — onde os testes são aplicados.
-- A cópia corresponde ao place atual: `Tests.Run` 412/412 (mesma contagem de `f4a112c`, mensagem 024), 328 scripts.
-- Pacote `Tungtung_PROJETO_INTEGRADO_2026-10-18.zip` conferido no disco: SHA-256 `328dbd49…0dcb`, igual ao README.
-  O place já passou bastante desse pacote (História, floresta, dinâmica, ambiente); a comparação é contra o place.
+- **Sem branch Git do jogo nesta frente.** O trabalho fica em cópias locais do place, em `RobloxProjetos/tungtung-testes/`.
+- **Cópia atual: `tungtung_TESTES_v2.rbxl`**, feita de `tungtung_ESTAVEL_v2.rbxl` ("Baixar uma cópia" do `tungtung`
+  em 19/10 ~22:24 BRT, somente leitura). A v1 (`tungtung_ESTAVEL.rbxl`, ~21:23) fica como histórico.
+- Receita das mudanças (trecho antes → depois): `tungtung-testes/MUDANCAS_TESTES.md`.
 
 ## Regras desta frente
 
-- **Não escrevo no place 82955516040017.** No place, só leitura via MCP (estado, contagem de instâncias).
-- **Sem Script Sync.** Nenhuma raiz conectada. Nada publicado no Roblox. Sem push no repositório do jogo.
-- Qualquer mudança aprovada aqui só vai para o place depois de combinar neste canal com quem tem a reserva do arquivo.
+- **Não escrevo no place 82955516040017.** No place, só leitura via MCP (contagens, somas de verificação).
+- **Sem Script Sync.** Nada publicado no Roblox. Sem push no repositório do jogo.
+- Mudança aprovada aqui só vai ao place depois de combinar neste canal com o dono do arquivo.
 
-## Alterações (só em `tungtung_TESTES.rbxl`, pedido do humano)
+## Alterações na v2 (só na cópia local)
 
-| Arquivo | Mudança | Motivo |
-| --- | --- | --- |
-| `Shared/Config` | `Battery.DrainPerSecond` 1/170 → 1/204 (+20% de duração) | humano: lanterna descarrega rápido |
-| `Shared/Game/LightingProfile` | `Profile.TestBrightBoost = 0.26` somado em `Profile.exposure` (≈ +20% de luz, log2(1,2)) | humano: jogo escuro demais |
+| Arquivo | Mudança |
+| --- | --- |
+| `Shared/Config` | `Battery.DrainPerSecond` 1/170 → 1/204 (+20% de lanterna) |
+| `Client/Creature/TungTungRig` | tipo `Overlay` e 4º parâmetro opcional em `step` (sem ele, igual a antes) |
+| `Client/Controllers/CreatureVisualController` | postura procedural do Tung Tung (só visual, cliente) |
 
-Testes na cópia: Play local, exposição 0,08 → 0,34, bateria 204 s; `Tests.Run` 412/412; console sem erro do jogo
-(só avisos UIBlox do Roblox).
+Postura: espreita curvada com cabeça varrendo e tiques; quando vê o jogador (≤45 studs, ±110°, sem parede) vira a
+cabeça devagar e encara; no início da perseguição a cabeça estala e os olhos acendem; na perseguição inclina 6–22°
+com a cabeça travada na vítima. Captura/dormente zeram a postura. **Não toquei em `JumpscareController`,
+captura, `CreatureService`/`CreatureBrain`, Root, velocidade ou visão do servidor.**
 
-**Conflito a combinar antes de levar ao place:** `LightingProfile` é da frente `claude-ambiente3d` (item 1, luz escura
-aprovada pelo humano em 19/10). `Config` está na reserva do integrador. Por isso as duas mudanças ficam só na cópia
-até o humano aprovar e os donos concordarem.
+**Luz: NÃO reaplicada na v2.** O place já recebeu "20/10: levemente mais claro" (exposição 0,08 → 0,20, ambiente e lua
+maiores, lanterna com degradê). Somar o +20% da v1 dobraria o efeito. Fica a luz do place.
 
-## Próxima frente: animações do Tung Tung (proposta, não iniciada)
+## Testes na v2
 
-Seguir a seleção aprovada pelo humano na mensagem 022: Zombie Idle (Upright Twitching), Mutant Walking (Brutal Walk),
-Running (Male Weighted Run), Looking Around (Idle Stand Looking Around, com pescoço menos esticado). Ataque atual mantido.
-Converter com `tools/tungtung/bake.js` (bind pose conferida contra `bones.json`).
+- `Tests.Run` **413/413** (Play local), console sem erro do jogo.
+- Bateria 204 s; `SchemaVersion` 8.
+- Postura: corpo virado 85° → cabeça vira devagar até o jogador (97° → 64° em 2 s, convergindo); 0 erros.
+- Na v1: cabeça encara com erro de 1–2°; perseguição parada com cabeça a 6–10° da câmera; perseguição real até a
+  captura sem erro. **Não medido:** inclinação durante a corrida real.
 
-- **Não mexo** em `JumpscareController` nem no fluxo de captura da História (pedido da mensagem 023).
-- Arquivos que eu tocaria, **só na cópia de TESTES**: `Client/Creature/TungTungClips`, `Client/Creature/TungTungRig`,
-  `Client/Controllers/CreatureVisualController`.
-- Bloqueio: nenhum FBX novo neste PC. Precisa download no Mixamo com o personagem certo (não a skin futura "tung tung
-  sahur archive", mensagem 022).
+## Achado para todos (ver mensagem 026)
 
-## Reservas atuais
+A cópia baixada do place às ~22:24 veio com `Config.Data.SchemaVersion = 6`, enquanto a sessão ao vivo tem **8**.
+Era a única diferença de script entre a cópia e o ao vivo (comparação por soma de verificação, 328 scripts). Na
+v2 corrigi para 8 (alinhado ao ao vivo); com 6, `Specs.PvPMatch` "v6 data migrates" falha (esperado 8, veio 6).
 
-Nenhuma no place. Na cópia local de testes, os três arquivos de animação acima (ainda sem edição).
+## Reservas
+
+Nenhuma no place. Na cópia local: `TungTungRig`, `CreatureVisualController`, `Config` (bateria).
 
 ## Pendências
 
-- Avaliação do humano jogando a cópia de TESTES (luz e bateria).
-- FBX do Mixamo para as animações aprovadas.
-- Envio deste registro ao GitHub: sem `git` neste PC.
+- Avaliação do humano jogando a v2 (bateria, postura; e se a luz nova do place basta).
+- Clipes do Mixamo aprovados na 022: falta baixar os FBX (login Adobe) para converter com `bake.js`.
+- A sessão da v2 tem mudanças não salvas em disco; o humano pode salvar com Ctrl+S na janela da v2 (arquivo local).
