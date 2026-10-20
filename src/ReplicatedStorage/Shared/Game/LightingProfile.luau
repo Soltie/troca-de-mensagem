@@ -8,7 +8,7 @@ export type Grade = { tint: RGB, contrast: number, saturation: number, brightnes
 -- Lua fria e pontos quentes: preserva as cores dos brinquedos sem iluminar todos os cantos.
 Profile.World = {
 	clock = 0.3,
-	brightness = 0.8, -- lua fraca: o exterior é lido pelas luzes da casa e pela lanterna (20/10: um pouco mais clara)
+	brightness = 0.75, -- lua fraca: o exterior é lido pelas luzes da casa e pela lanterna (20/10: levemente mais clara)
 	ambient = { 16, 18, 26 },
 	ambientPower = { 24, 25, 31 },
 	-- Sob o telhado a casa é escura (a lanterna é a fonte principal); com energia, só um pouco menos.
@@ -52,7 +52,7 @@ Profile.Forest = {
 	fog = { 17, 25, 33 },
 	fogStart = 14,
 	fogScale = 0.62,
-	exposure = 0.08,
+	exposure = 0.04,
 }
 Profile.ShadowBudget = 2 -- mais a lanterna própria; colegas nunca ganham sombras
 Profile.ShadowDistance = 60
@@ -91,8 +91,8 @@ end
 
 function Profile.exposure(indoor: number, power: number): number
 	-- Sem o reforço de exposição dentro de casa que deixava os cômodos claros; energia acrescenta pouco.
-	-- 20/10: base 0,3 (antes 0,08) a pedido do humano, "um pouco menos escuro".
-	return 0.3 + math.clamp(indoor, 0, 1) * 0.03 * math.clamp(power, 0, 1)
+	-- 20/10: base 0,2 (antes 0,08) a pedido do humano, "levemente mais claro".
+	return 0.2 + math.clamp(indoor, 0, 1) * 0.03 * math.clamp(power, 0, 1)
 end
 
 -- Luz decorativa não deve preencher salas vizinhas nem competir com a lanterna.
