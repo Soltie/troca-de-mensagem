@@ -1278,6 +1278,9 @@ function Runtime.Init()
 	end
 	PhysicsService:CollisionGroupSetCollidable("CampaignPlayers", "CampaignPlayers", false)
 	CreatureService.onCapture(capture)
+	CreatureService.onVisitCapture(function(player)
+		capture(player, "visit")
+	end)
 	-- Raio ao ar livre derruba pelo mesmo caminho da captura (resgate, segunda chance).
 	LightningService.onStrike(function(player)
 		capture(player, "lightning")

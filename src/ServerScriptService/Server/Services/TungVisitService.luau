@@ -263,6 +263,15 @@ function TungVisitService.reset()
 end
 
 function TungVisitService.Start()
+	-- Ponte de depuração (só no Studio): o `execute_luau` do MCP roda em outra VM; ServerStorage.TungVisitBridge:Invoke().
+	if RunService:IsStudio() then
+		local bridge = Instance.new("BindableFunction")
+		bridge.Name = "TungVisitBridge"
+		bridge.OnInvoke = function(options: any)
+			return TungVisitService.start(options)
+		end
+		bridge.Parent = game:GetService("ServerStorage")
+	end
 	-- Gatilho padrão: 25 s depois da 2ª chave do cap. 1.
 	Activities.onSolved(function(plan, index)
 		if plan.stage ~= 1 or plan.mode ~= "Story" then

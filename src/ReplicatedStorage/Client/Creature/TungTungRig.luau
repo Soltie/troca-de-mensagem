@@ -155,14 +155,15 @@ function TungTungRig.build(parent: Instance?): TungRig?
 			skin.Color = SKIN_TINT
 		end)
 	end
-	-- Peças Neon de olho que venham no modelo (versões do Artista 3D) seguem a mesma cor.
+	-- Sem brilho nos olhos (pedido do usuário, 20/10): peça Neon de olho que venha no modelo vira madeira escura fosca.
 	for _, part in model:GetDescendants() do
 		if
 			part:IsA("BasePart")
 			and part.Material == Enum.Material.Neon
 			and string.find(string.lower(part.Name), "eye")
 		then
-			part.Color = EYE_COLOR
+			part.Material = Enum.Material.SmoothPlastic
+			part.Color = Color3.fromRGB(28, 18, 12)
 		end
 	end
 	body.Anchored = true
@@ -179,13 +180,15 @@ function TungTungRig.build(parent: Instance?): TungRig?
 	local emitter = Instance.new("Attachment")
 	emitter.Name = "Emitter"
 	emitter.Parent = body
-	-- Olhos acesos: o Tung Tung aparece no escuro antes de chegar perto (justo para quem joga).
+	-- (Histórico) Olhos acesos: o Tung aparecia no escuro antes de chegar perto.
 	local light = Instance.new("PointLight")
 	light.Color = EYE_COLOR
 	-- Alcance curto: acende o rosto, não o corpo todo (senão ele vira um boneco laranja chapado).
 	light.Range = 6
 	light.Brightness = 1
 	light.Shadows = false
+	-- Desligada a pedido do usuário (20/10): o Tung não acende os olhos. Fica no rig porque outros controllers mexem em Brightness.
+	light.Enabled = false
 	light.Parent = emitter
 	-- Peça invisível que segue o osso da cabeça (alvo da câmera de captura e dos raycasts de visão).
 	local headPart = Instance.new("Part")

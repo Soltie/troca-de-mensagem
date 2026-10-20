@@ -37,3 +37,8 @@ Código do Codex que o place tem e o repo não (ver `backup_place_20261020_0715/
 
 ## Pergunta ao usuário
 Quais entrar no cap. 1? Candidatos que cabem: **Sopro** (liberar no cap. 1, se quiser um pico de medo; hoje é bloqueado por regra), **Armário com surpresa**, **Casa dinâmica**, **Revista do armário** (só se o Tung acordar no cap. 1). O resto fica para os outros capítulos.
+
+## Decisão (usuário: "você que decide", 20/10)
+Entram no cap. 1: **Sopro** (hoje `GustRules.allowed(stage)` = 2..4; precisa liberar o 1 e o teste `GustRules` espera false para 1), **Armário com surpresa** e **Revista do armário** (o Tung desce no cap. 1, ameaça aprovada). Fora do cap. 1: **Casa dinâmica** (briga com o DoorSwap), PvP/Caçador e Mansão (outros modos).
+Ligação dos sistemas fica com o agente Código (este arquivo é o pedido). Sugestão de ritmo: sopro só depois da 3ª chave (corredor aberto), sem passar dos 2 picos por capítulo / 40 s de calma da régua do Crítico, e nunca no mesmo minuto da revista do armário.
+Nada disso foi implementado por mim. Arte: sem brilho nos olhos do Tung (ver docs/arte.md).

@@ -872,9 +872,17 @@ function CreatureService.visitHide()
 	end
 end
 
--- Captura direta (a Visita viu o jogador): segue o mesmo caminho de um golpe do Tum Tum.
+-- Captura pela Visita (TungVisitService): mesmo caminho de queda/resgate, mas sem religar o cérebro de caça.
+local visitCaptureCallbacks: { (Player) -> () } = {}
+
+function CreatureService.onVisitCapture(callback: (Player) -> ())
+	table.insert(visitCaptureCallbacks, callback)
+end
+
 function CreatureService.forceCapture(player: Player)
-	fireCapture(player)
+	for _, callback in visitCaptureCallbacks do
+		task.spawn(callback, player)
+	end
 end
 
 return CreatureService

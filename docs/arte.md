@@ -52,3 +52,7 @@ Nota do place: o `MenuStage` do place era diferente do repo (z -1, bolinha 0,22)
 `MenuStage`: `EYE_OFFSETS` agora vazio, então não nascem `Eye1/Eye2` (código do loop mantido; para voltar, repor as posições). Repo: check ALL GREEN.
 Place: NÃO aplicado ainda (Studio com o Código/Level). Aplicar: no `MenuStage` do place, `EYE_OFFSETS = {}` (hoje z -0,8 do ajuste anterior).
 Outros brilhos de olho no Tung (não mexi, modelo oficial): (1) `TungTungRig` cria um PointLight laranja (`eyeLight`, alcance 6) no emissor do corpo, usado em jogo, perseguição e jumpscare, com pisca em `CreatureVisualController` (menu já o desliga); (2) `TungTungRig` pinta de laranja qualquer peça Neon com "eye" no nome, se o modelo tiver.
+
+## Olhos do Tung sem brilho também no jogo (decisão 20/10, repo; place pendente)
+`Creature/TungTungRig.luau`: `eyeLight` nasce com `Enabled = false` (continua no rig: Jumpscare/Perseguição/Trailer só mexem em Brightness/Range) e peças Neon com "eye" viram plástico escuro fosco. Menu: `EYE_OFFSETS = {}`. Modelo/textura intocados. check ALL GREEN.
+Aplicar no place com o Studio livre: `TungTungRig` (as 2 mudanças acima) e `MenuStage` (`EYE_OFFSETS = {}`); o place tem `MenuStage` e `TungTungRig` diferentes do repo, então aplicar por trecho, não colar o arquivo. Conferir jumpscare/perseguição sem luz laranja no rosto.
