@@ -385,6 +385,28 @@ local function updateHidden(camera: Camera, dt: number)
 	glow.Range = 8 + 22 * peekAmount
 end
 
+-- De onde a captura olha o Tung: um pouco recuado e acima da cabeça dele, sem atravessar parede. Antes era o olho
+-- de quem caiu (no chão): colada no tapete/parede, a tela de derrota mostrava um "quadrado verde" na cintura dele.
+local function captureSpot(from: Vector3, target: Vector3): Vector3
+	local away = (from - target) * Vector3.new(1, 0, 1)
+	away = if away.Magnitude > 0.1 then away.Unit else Vector3.zAxis
+	local want = target + away * 6.5 + Vector3.new(0, 0.8, 0)
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	local ignore: { Instance } = {}
+	for _, item in { player.Character, workspace:FindFirstChild("VigiaVisual"), workspace:FindFirstChild("Vigia") } do
+		if item then
+			table.insert(ignore, item)
+		end
+	end
+	params.FilterDescendantsInstances = ignore
+	local hit = workspace:Raycast(target, want - target, params)
+	if hit then
+		want = target + (want - target).Unit * math.max(1.5, (hit.Position - target).Magnitude - 1)
+	end
+	return want
+end
+
 local function updateCapture(camera: Camera, now: number, dt: number)
 	camera.CameraType = Enum.CameraType.Scriptable
 	local from = captureFrom or camera.CFrame
@@ -397,7 +419,7 @@ local function updateCapture(camera: Camera, now: number, dt: number)
 	end
 	local targetFn = captureTarget
 	local target = if targetFn then targetFn() else nil
-	local look = if target then CFrame.lookAt(from.Position, target) else from
+	local look = if target then CFrame.lookAt(captureSpot(from.Position, target), target) else from
 	local t = math.clamp((elapsed - HIT_STOP) / 0.22, 0, 1)
 	local eased = 1 - (1 - t) ^ 3
 	local base = from:Lerp(look, eased)

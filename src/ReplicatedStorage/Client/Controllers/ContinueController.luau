@@ -22,6 +22,10 @@ local Create = require("../UI/Create")
 local Juice = require("../UI/Juice")
 local Noir = require("../UI/NoirHud")
 local AudioController = require("./AudioController")
+local CameraController = require("./CameraController")
+local GameUiController = require("./GameUiController")
+local JumpscareController = require("./JumpscareController")
+local ThreatFeedbackController = require("./ThreatFeedbackController")
 
 local player = Players.LocalPlayer
 
@@ -192,11 +196,23 @@ function Controller.Start()
 				shownAt = os.clock()
 				mouseWas = UserInputService.MouseIconEnabled
 				Juice.appear(p)
+				-- Sem legenda velha por cima do texto da derrota.
+				GameUiController.muteCaptions(true)
 			else
 				UserInputService.MouseIconEnabled = mouseWas
+				GameUiController.muteCaptions(false)
+				if CameraController.isCapturing() then
+					CameraController.reset()
+				end
 			end
 		end
 		if visible then
+			-- Olha o Tung de pé, de um ponto sem parede no meio (caído, a câmera ficava no tapete: o "quadrado
+			-- verde"). A captura normal acaba em ~1,5 s e devolve a câmera ao chão; aqui ela volta a olhar. O susto 3D
+			-- tem a câmera dele.
+			if not CameraController.isCapturing() and not JumpscareController.recent(2.6) then
+				CameraController.capture(ThreatFeedbackController.creatureHead)
+			end
 			UserInputService.MouseBehavior = Enum.MouseBehavior.Default
 			UserInputService.MouseIconEnabled = true
 			local remaining = math.max(0, math.ceil(Config.Campaign.IntermissionSeconds - (os.clock() - shownAt)))

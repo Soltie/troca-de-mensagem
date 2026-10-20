@@ -752,9 +752,11 @@ end
 -- Legenda temporária, com pequena entrada em 2 quadros.
 -- Quando a última legenda apareceu (o aviso da campanha some se uma legenda mais nova chega; veredito 20/10).
 local captionShownAt = 0
+-- Tela de derrota aberta: nenhuma legenda por cima dela (ContinueController).
+local captionsMuted = false
 
 local function showCaption(text: string, duration: number?)
-	if text == "" then
+	if text == "" or captionsMuted then
 		return
 	end
 	local ui = r()
@@ -994,6 +996,13 @@ end
 function GameUiController.hideCaption()
 	captionToken += 1
 	r().caption.Visible = false
+end
+
+function GameUiController.muteCaptions(on: boolean)
+	captionsMuted = on
+	if on then
+		GameUiController.hideCaption()
+	end
 end
 
 function GameUiController.captionShownAt(): number

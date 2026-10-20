@@ -23,6 +23,11 @@ local chaseCount = 0
 local function target(): Vector3?
 	local visual = workspace:FindFirstChild("VigiaVisual")
 	local head = visual and visual:FindFirstChild("Head", true)
+	-- Malha única (Body): a cabeça fica no alto dela, não na raiz (+2 caía na cintura).
+	local body = visual and visual:FindFirstChild("Body")
+	if not head and body and body:IsA("BasePart") then
+		return body.Position + Vector3.new(0, body.Size.Y * 0.32, 0)
+	end
 	if head and head:IsA("BasePart") then
 		return head.Position
 	end
@@ -32,6 +37,9 @@ local function target(): Vector3?
 end
 
 local Controller = { Name = "ThreatFeedbackController" }
+
+-- Ponto da cabeça do Tung (a tela de derrota usa a mesma câmera de captura).
+Controller.creatureHead = target
 
 function Controller.debugState(): { [string]: any }
 	return { captures = captureCount, chases = chaseCount, mode = previousMode, capturing = captureUntil > 0 }
