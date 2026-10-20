@@ -82,6 +82,8 @@ local ZONE_TAG = "TungPresenceZone"
 local REPEAT_AFTER = 30
 local zoneFired: { [BasePart]: number } = {}
 local keysSeen = 0
+-- Lembretes de presença já tocados neste capítulo (zera quando o plano muda).
+local reminders = 0
 local diningFired = false
 local DINING_DOOR = Vector3.new(-9, 0, -36)
 
@@ -149,12 +151,13 @@ local keysPlan: any = nil
 
 function ChapterMomentService.Start()
 	task.spawn(watchZones)
-	-- Presença contínua no cap. 1: depois da 1ª chave, a cada 35 a 60 s ele bate nas paredes de novo (ou passa o vulto
+	-- Presença no cap. 1: depois da 1ª chave, no máximo 2 lembretes por partida, a cada 80 a 120 s (antes 35–60 s sem
+	-- limite: picos demais em 5 min, regra de 2 picos com calma). Ele bate nas paredes de novo (ou passa o vulto
 	-- depois da 2ª chave). Ele dorme, mas a casa não deixa o jogador esquecer dele.
 	task.spawn(function()
 		local rng = Random.new()
 		while true do
-			task.wait(rng:NextNumber(35, 60))
+			task.wait(rng:NextNumber(80, 120))
 			local campaign = ReplicatedStorage:FindFirstChild("CampaignState")
 			if
 				campaign
@@ -162,7 +165,9 @@ function ChapterMomentService.Start()
 				and campaign:GetAttribute("GameMode") == "Story"
 				and campaign:GetAttribute("Phase") == "Playing"
 				and keysSeen >= 1
+				and reminders < 2
 			then
+				reminders += 1
 				ChapterMomentService.presence(
 					if keysSeen >= 2 and rng:NextNumber() < 0.5 then "silhouette" else "knocks"
 				)
@@ -176,6 +181,7 @@ function ChapterMomentService.Start()
 			if keysPlan ~= plan then
 				keysPlan = plan
 				keysSeen = 0
+				reminders = 0
 			end
 			local spec = plan.activities[index]
 			if spec and type(spec.item) == "string" and string.find(spec.item, "key_", 1, true) then

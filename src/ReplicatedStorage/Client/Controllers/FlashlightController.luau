@@ -841,7 +841,8 @@ function FlashlightController.Start()
 
 	player:GetAttributeChangedSignal(Tags.Attr.Flashlight):Connect(function()
 		applyVisible()
-		if wanted and not serverOn() and charge() <= 0.001 and phase == "Playing" then
+		-- A carga é publicada em passos de 0,5% e pode chegar depois do apagão: basta estar abaixo do mínimo para ligar.
+		if wanted and not serverOn() and charge() <= Config.Battery.MinToTurnOn + 0.01 and phase == "Playing" then
 			-- Apagou sozinha: o próximo F liga (antes o primeiro F só "desligava" o pedido antigo).
 			wanted = false
 			hint("battery_dead")

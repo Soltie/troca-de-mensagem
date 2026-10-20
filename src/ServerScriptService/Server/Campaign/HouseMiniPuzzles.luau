@@ -232,6 +232,30 @@ function Mini.planks(root: Instance, spec: any, spot: ({ Vector3 }) -> Vector3, 
 				query = false,
 			}
 		)
+		-- Sinal da oca (anotação do usuário 20/10: sem pista, as tortas pareciam bagunça): serragem fina em volta e
+		-- uma fresta escura numa ponta, de quem já levantou essa tábua antes.
+		if n == hollow then
+			for _ = 1, 9 do
+				local angle = rng:NextNumber() * math.pi * 2
+				local reach = rng:NextNumber(0.6, 1.3)
+				Build.part(
+					model,
+					"Sawdust",
+					Vector3.new(rng:NextNumber(0.15, 0.35), 0.03, rng:NextNumber(0.15, 0.35)),
+					frame * CFrame.new(math.cos(angle) * reach, -0.05, math.sin(angle) * (length / 2 + 0.2)),
+					Color3.fromRGB(196, 168, 120),
+					{ material = Enum.Material.Sand, collide = false, query = false }
+				)
+			end
+			Build.part(
+				model,
+				"PlankGap",
+				Vector3.new(0.95, 0.02, 0.18),
+				frame * CFrame.new(0, -0.05, length / 2 + 0.06),
+				Color3.fromRGB(8, 6, 5),
+				{ material = Enum.Material.SmoothPlastic, collide = false, query = false }
+			)
+		end
 		local id = `plank_{spec.id}_{n}`
 		interactable(plank, id, "BATER NA TÁBUA", distance)
 		local knocked = false
@@ -280,7 +304,8 @@ function Mini.planks(root: Instance, spec: any, spot: ({ Vector3 }) -> Vector3, 
 					else
 						play(plank, "HammerNail", 0.8, 1.25, 60)
 					end
-					return "ok", "plank_knock"
+					-- Legenda diferente para cada som (anotação do usuário 20/10: sem som não dava para achar).
+					return "ok", if n == hollow then "plank_hollow" else "plank_solid"
 				end
 				if n ~= hollow then
 					play(plank, "WoodSplinter", 1.2, 1, 90)
@@ -302,6 +327,30 @@ function Mini.planks(root: Instance, spec: any, spot: ({ Vector3 }) -> Vector3, 
 				return "solve", "solved"
 			end,
 		}
+	end
+	-- Bilhete do Juca no chão, ao lado das tábuas: a regra do puzzle sem dar a resposta.
+	if #taken > 0 then
+		local middle = Vector3.zero
+		for _, at in taken do
+			middle += at
+		end
+		middle /= #taken
+		Build.sign(
+			model,
+			"JucaNote",
+			middle + Vector3.new(0, 0.12, 2.2),
+			Vector3.new(0, 1, 0.12).Unit,
+			Vector2.new(2.8, 1.7),
+			"ESCONDO MINHAS COISAS EMBAIXO\nDA TÁBUA QUE SOA OCA.\nBATA E ESCUTE. — JUCA",
+			{
+				textColor = Color3.fromRGB(46, 31, 22),
+				background = Color3.fromRGB(150, 132, 104),
+				lit = false,
+				font = Enum.Font.Merriweather,
+				pixelsPerStud = 90,
+				thickness = 0.04,
+			}
+		)
 	end
 	return targets
 end
@@ -433,6 +482,39 @@ function Mini.stools(
 					}
 				)
 			)
+		end
+		-- Banquinho e boné do artista (House_Stool, House_TinyCap) por cima dos blocos: os blocos ficam invisíveis (o
+		-- assento continua sendo o alvo) e as peças do modelo andam junto. Sem o modelo, ficam os blocos.
+		local art = HouseArt.place(model, "House_Stool", base)
+		if art then
+			for _, piece in parts do
+				if piece.Name ~= "TinyCap" then
+					piece.Transparency = 1
+					if piece ~= seat then
+						piece.CanCollide = false
+					end
+				end
+			end
+			for _, d in art:GetDescendants() do
+				if d:IsA("BasePart") then
+					table.insert(parts, d)
+				end
+			end
+			local cap = if n == person
+				then HouseArt.place(model, "House_TinyCap", base * CFrame.new(0.1, 2.2, 0))
+				else nil
+			if cap then
+				for _, piece in parts do
+					if piece.Name == "TinyCap" then
+						piece.Transparency = 1
+					end
+				end
+				for _, d in cap:GetDescendants() do
+					if d:IsA("BasePart") then
+						table.insert(parts, d)
+					end
+				end
+			end
 		end
 		local stool: Stool = { base = base, current = base, parts = parts, focus = seat }
 		table.insert(stools, stool)

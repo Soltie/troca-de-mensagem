@@ -151,10 +151,10 @@ local Config = {
 	Battery = {
 		StartCharge = 0.85,
 		-- Carga cheia dura 1/DrainPerSecond segundos de luz contínua.
-		DrainPerSecond = 1 / 340,
+		DrainPerSecond = 1 / 420,
 		-- Desligada, a pilha "descansa" e recupera devagar até RechargeCap (a missão nunca trava).
-		RechargePerSecond = 1 / 40,
-		RechargeCap = 0.6,
+		RechargePerSecond = 1 / 30,
+		RechargeCap = 0.75,
 		MinToTurnOn = 0.04,
 		LowLevel = 0.2,
 		PickupAmount = 0.6,

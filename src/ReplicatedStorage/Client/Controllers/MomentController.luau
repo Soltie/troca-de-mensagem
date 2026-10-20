@@ -11,10 +11,12 @@
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local ChapterMoments = require("@game/ReplicatedStorage/Shared/Game/ChapterMoments")
 local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
+local TungTungRig = require("../Creature/TungTungRig")
 local AudioController = require("./AudioController")
 local CameraController = require("./CameraController")
 local FearController = require("./FearController")
@@ -74,8 +76,8 @@ local function clearDirection(root: BasePart, reach: number): Vector3
 	return best
 end
 
--- Vulto: silhueta escura alta com dois olhos vermelhos (só neste cliente).
-local function shadowFigure(at: Vector3, face: Vector3): Model
+-- Vulto do Tung (só neste cliente): a silhueta da Arte, o Tung de verdade escurecido ou, sem modelo, blocos.
+local function shadowFigure(at: Vector3, face: Vector3, walking: boolean?): Model
 	-- Encaixe da Arte: um modelo `ReplicatedStorage.Assets.TungSilhouette` (pivô nos pés, frente no +Z) substitui o
 	-- vulto improvisado, com a animação própria dele. Peças são ancoradas; scripts do modelo não rodam.
 	local assets = ReplicatedStorage:FindFirstChild("Assets")
@@ -93,6 +95,48 @@ local function shadowFigure(at: Vector3, face: Vector3): Model
 		clone:PivotTo(CFrame.lookAt(at, at + face))
 		clone.Parent = workspace
 		return clone
+	end
+	-- Sem a silhueta própria: o Tung de verdade (Assets.TungTung), todo escuro, sem textura nem olho aceso, com a
+	-- animação andando ou parado (anotação do usuário 20/10: o boneco de blocos de olho vermelho parecia outro bicho).
+	local rig = TungTungRig.build(nil)
+	if rig then
+		local tung = rig.model
+		-- O build chama de "VigiaVisual" (nome que medo, tensão e captura procuram): o vulto não é o Tung de verdade.
+		tung.Name = "MomentShadow"
+		for _, d in tung:GetDescendants() do
+			if d:IsA("BasePart") then
+				d.Anchored, d.CanCollide, d.CanQuery, d.CanTouch = true, false, false, false
+				d.Color = Color3.fromRGB(12, 10, 11)
+				d.Material = Enum.Material.SmoothPlastic
+				d.CastShadow = false
+			elseif
+				d:IsA("SurfaceAppearance")
+				or d:IsA("Decal")
+				or d:IsA("Texture")
+				or d:IsA("Script")
+				or d:IsA("LocalScript")
+			then
+				d:Destroy()
+			elseif d:IsA("Light") then
+				d.Enabled = false
+			end
+		end
+		-- Luz fria atrás do vulto: só o contorno dele aparece contra o fundo.
+		local rimLight = Instance.new("PointLight")
+		rimLight.Color, rimLight.Range, rimLight.Brightness = Color3.fromRGB(150, 170, 230), 14, 1.2
+		rimLight.Parent = rig.body
+		TungTungRig.place(rig, CFrame.lookAt(at, at + face))
+		TungTungRig.play(rig, if walking then "walk" else "idle", 0)
+		tung.Parent = workspace
+		local animate = RunService.RenderStepped:Connect(function(dt)
+			if tung.Parent then
+				TungTungRig.step(rig, dt)
+			end
+		end)
+		tung.Destroying:Connect(function()
+			animate:Disconnect()
+		end)
+		return tung
 	end
 	local model = Instance.new("Model")
 	model.Name = "MomentShadow"
@@ -202,7 +246,7 @@ local function play(moment: string, at: Vector3)
 		end
 		local face = (root.Position - spot) * Vector3.new(1, 0, 1)
 		local facing = if face.Magnitude > 0.1 then face.Unit else Vector3.zAxis
-		local figure = shadowFigure(spot, facing)
+		local figure = shadowFigure(spot, facing, true)
 		local sideways = facing:Cross(Vector3.yAxis).Unit
 		local from = figure:GetPivot()
 		FearController.spike(0.35)

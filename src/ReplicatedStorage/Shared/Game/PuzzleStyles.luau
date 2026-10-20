@@ -94,7 +94,8 @@ function PuzzleStyles.forTask(stage: number, index: number, seed: number): Style
 			fixed = SahurMelody.second(seed),
 		}
 	elseif stage == 4 and index == 4 then
-		return { id = "safe", labels = PuzzleStyles.safeDigits(seed), prompt = "DIGITAR" }
+		-- Cofre também perdoa (banco v2: erro chama o Tum Tum e não zera).
+		return { id = "safe", labels = PuzzleStyles.safeDigits(seed), prompt = "DIGITAR", forgiving = true }
 	elseif stage >= 6 then
 		return PuzzleStyles.RADIO
 	end

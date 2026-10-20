@@ -1,6 +1,7 @@
 --!strict
 -- Silhuetas reconhecíveis para pistas/objetos. Detalhes não roubam o raycast do alvo.
 local Build = require("./Build")
+local HouseArt = require("./HouseArt")
 local Props = {}
 local V3 = Vector3.new
 local brass = Color3.fromRGB(190, 153, 78)
@@ -379,6 +380,36 @@ function Props.build(parent: Instance, p: Vector3, item: string?, kind: string)
 			tail.Color = ribbon.Color
 		end)
 		mirrorTarget(parent, ribbon)
+		-- Livro aberto com a carta do artista (House_OpenBookLetter): troca a capa e as páginas de bloco. A fita
+		-- marcadora fica (mostra o estado da pista). A placa com o texto deita em cima da carta (HouseActivities).
+		local art = HouseArt.place(
+			parent,
+			"House_OpenBookLetter",
+			CFrame.lookAt(center + V3(0, -0.15, 0), center + V3(0, -0.15, 1))
+		)
+		if art then
+			-- Enfeite de pista: sem colisão (como as peças que ele substitui).
+			for _, d in art:GetDescendants() do
+				if d:IsA("BasePart") then
+					d.CanCollide = false
+				end
+			end
+			for _, child in parent:GetChildren() do
+				if
+					child:IsA("BasePart")
+					and (
+						child.Name == "BookCover"
+						or child.Name == "OpenBookPage"
+						or child.Name == "BookInk"
+						-- A fita de bloco passava por cima da carta; o livro do artista tem a fita dele.
+						or child.Name == "BookRibbon"
+						or child.Name == "BookRibbonTail"
+					)
+				then
+					child.Transparency = 1
+				end
+			end
+		end
 	elseif item == "artifact" then
 		local gem = part(parent, "HouseHeart", center + V3(0, 0.6, 0), V3(2, 2, 2), Color3.fromRGB(137, 63, 70))
 		gem.CFrame *= CFrame.Angles(0, 0, math.rad(45))

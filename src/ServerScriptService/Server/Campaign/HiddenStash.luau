@@ -12,6 +12,7 @@ local House = require("@game/ReplicatedStorage/Shared/Game/HouseCatalog")
 local Tags = require("@game/ReplicatedStorage/Shared/Game/Tags")
 local Build = require("../World/Build")
 local TaskProps = require("../World/HouseTaskProps")
+local HouseArt = require("../World/HouseArt")
 
 local Stash = {}
 
@@ -173,6 +174,43 @@ local function vary(model: Model, frame: CFrame, top: number)
 	end
 end
 
+-- Modelo do artista (House_StashChest / House_Dresser) no lugar das peças primitivas (veredito: blocos e repetição,
+-- B9). Só as primitivas somem (os enfeites "Decor" ficam); a tampa ou a gaveta do modelo viram as peças que se mexem.
+-- Sem o modelo (Lune, build do Rojo) ficam os blocos. Devolve a altura do topo do modelo (nil sem modelo).
+local function useArt(model: Model, frame: CFrame, moving: { BasePart }, chest: boolean): number?
+	local art = HouseArt.place(model, if chest then "House_StashChest" else "House_Dresser", frame)
+	if not art then
+		return nil
+	end
+	for _, part in model:GetChildren() do
+		if part:IsA("BasePart") and string.sub(part.Name, 1, 5) ~= "Decor" then
+			part:Destroy()
+		end
+	end
+	table.clear(moving)
+	for _, d in art:GetDescendants() do
+		if d:IsA("BasePart") then
+			local moves = if chest then string.find(d.Name, "Lid", 1, true) else string.find(d.Name, "Drawer", 1, true)
+			if moves then
+				table.insert(moving, d)
+			end
+			d.CanCollide = true
+		end
+	end
+	local cf, size = art:GetBoundingBox()
+	local top = frame:PointToObjectSpace(cf.Position).Y + size.Y / 2
+	-- Enfeites em cima acompanham a altura do modelo.
+	for _, part in model:GetChildren() do
+		if part:IsA("BasePart") and string.sub(part.Name, 1, 5) == "Decor" then
+			part.CFrame += Vector3.new(0, top - (if chest then 1.95 else 3.17), 0)
+			if chest then
+				table.insert(moving, part)
+			end
+		end
+	end
+	return top
+end
+
 local function build(
 	root: Instance,
 	name: string,
@@ -242,8 +280,10 @@ local function build(
 			Enum.Material.Metal
 		)
 		table.insert(moving, handle)
-		local hinge = frame * CFrame.new(0, 1.6, 1.05)
 		vary(model, frame, 1.95)
+		local top = useArt(model, frame, moving, true)
+		-- Dobradiça no alto da traseira (no modelo do artista a tampa é mais alta que a dos blocos).
+		local hinge = frame * CFrame.new(0, if top then top - 0.3 else 1.6, 1.05)
 		return model, frame, moving, hinge, nil, (frame * CFrame.new(0, 1.05, 0)).Position
 	end
 	-- Cômoda: três gavetas; a de cima desliza para fora.
@@ -289,6 +329,7 @@ local function build(
 		table.insert(moving, part)
 	end
 	vary(model, frame, 3.17)
+	useArt(model, frame, moving, false)
 	return model, frame, moving, nil, CFrame.new(frame.LookVector * 1.4), (frame * CFrame.new(0, 2.75, -0.1)).Position
 end
 

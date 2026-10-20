@@ -7,6 +7,7 @@
 	  com uma chave de mensagem; o cliente só mostra o resultado.
 ]]
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -137,6 +138,9 @@ local function interact(id: string, part: BasePart?, action: string?)
 	local token = generation
 	-- A coleta remove a peça no servidor; guardar a origem antes do pedido.
 	local origin = if part then part.Position else Vector3.zero
+	-- Pista lida (carta da biblioteca etc.): o servidor publica o texto em CampaignState.LastClue; quem leu vê grande.
+	local state = ReplicatedStorage:FindFirstChild("CampaignState")
+	local clueBefore = if state then state:GetAttribute("LastClue") else nil
 	local ok, response = pcall(function()
 		return Remotes.clientFunction("Interact", 5):InvokeServer(id, action)
 	end)
@@ -167,6 +171,15 @@ local function interact(id: string, part: BasePart?, action: string?)
 			FlashlightController.showPickup(data.kind :: string, origin)
 		elseif data.kind == "Unlock" then
 			FlashlightController.playKeyUnlock()
+		elseif
+			campaign
+			and data.message == "solved"
+			and state
+			and typeof(state:GetAttribute("LastClue")) == "string"
+			and state:GetAttribute("LastClue") ~= clueBefore
+		then
+			AudioController.play("Paper", 1, 0.8)
+			GameUiController.showText(state:GetAttribute("LastClue") :: string)
 		elseif data.kind == "BreakerSolved" or (campaign and data.message == "solved") then
 			ScreenFxController.pulse(Color3.fromRGB(70, 170, 95))
 			AudioController.play("Switch", 0.6, 1.3)

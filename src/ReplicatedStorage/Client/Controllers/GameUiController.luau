@@ -1035,6 +1035,25 @@ function GameUiController.showNote(id: string)
 	player:SetAttribute("NoteOpen", true)
 end
 
+-- Abre um texto pronto na janela de bilhete (a carta da biblioteca e outras pistas, grandes para ler).
+function GameUiController.showText(text: string)
+	if text == "" then
+		return
+	end
+	local ui = r()
+	ui.noteText.Text = text
+	ui.note.Visible = true
+	local reading = ui.note:FindFirstChild("Reading") :: ScrollingFrame
+	reading.CanvasPosition = Vector2.zero
+	if SettingsController.motionEnabled() then
+		local target = UDim2.fromScale(0.5, 0.5)
+		ui.note.Position = target + UDim2.fromOffset(0, 12)
+		TweenService:Create(ui.note, TweenInfo.new(0.18), { Position = target }):Play()
+	end
+	noteOpen = true
+	player:SetAttribute("NoteOpen", true)
+end
+
 function GameUiController.isNoteOpen(): boolean
 	return noteOpen
 end

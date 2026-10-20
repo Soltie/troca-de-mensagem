@@ -57,7 +57,7 @@ local House = {
 	} :: { Room },
 	Chapters = {
 		{
-			title = "01 · A ENTRADA",
+			title = "01 · A CASA DE MADEIRA",
 			subtitle = "Uma casa que não quer visitas",
 			objectives = {
 				objective("Hall", "Entrar na casa", "explore", nil, "entry"),

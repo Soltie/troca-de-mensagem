@@ -458,12 +458,22 @@ function Activities.build(parent: Instance, plan: Generator.Plan, distance: numb
 			-- Papel de pista em fonte com acento (B7). Na casa ele fica deitado em cima do móvel, como uma carta
 			-- largada (crítico, bug 7: o papel branco boiando e claro no escuro); o painel do porão e a mata ficam em pé.
 			local standing = spec.item == "panel_clue" or plan.stage >= 6
+			-- Deitada: reta em cima da carta do livro do artista, ou da página da direita (sem atravessar o livro;
+			-- anotação do usuário 20/10). Quase plana, só um pouco virada para quem chega pela frente.
+			local book = model:FindFirstChild("House_OpenBookLetter")
+			local letter = book and book:FindFirstChild("OpenBookLetter_Letter", true)
+			local lyingAt = if letter and letter:IsA("BasePart")
+				then letter.Position + Vector3.new(0, letter.Size.Y / 2 + 0.03, 0)
+				else p + Vector3.new(0.86, 1.98, 0)
+			local lyingSize = if letter and letter:IsA("BasePart")
+				then Vector2.new(math.max(letter.Size.X, 1.3), math.max(letter.Size.Z, 1.8))
+				else Vector2.new(1.55, 2.2)
 			Build.sign(
 				model,
 				"Clue",
-				if standing then p + Vector3.new(0, 4.2, -0.4) else p + Vector3.new(0, 1.78, 0.1),
-				if standing then Vector3.zAxis else Vector3.new(0, 1, 0.35).Unit,
-				if standing then Vector2.new(5, 1.7) else Vector2.new(2.6, 1.6),
+				if standing then p + Vector3.new(0, 4.2, -0.4) else lyingAt,
+				if standing then Vector3.zAxis else Vector3.new(0, 1, 0.12).Unit,
+				if standing then Vector2.new(5, 1.7) else lyingSize,
 				text,
 				{
 					textColor = Color3.fromRGB(46, 31, 22),
@@ -471,6 +481,8 @@ function Activities.build(parent: Instance, plan: Generator.Plan, distance: numb
 					lit = false,
 					font = Enum.Font.Merriweather,
 					pixelsPerStud = 90,
+					-- Deitada é uma folha fina (não um bloco atravessando o livro).
+					thickness = if standing then nil else 0.04,
 				}
 			)
 			-- Painel do porão (Dueto da Lia): os quatro desenhos das teclas; tocar num deles canta a nota baixinho.

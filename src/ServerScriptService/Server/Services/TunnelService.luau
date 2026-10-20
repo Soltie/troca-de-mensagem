@@ -29,7 +29,8 @@ local TunnelService = {
 local log = Logger.new("TunnelService")
 local rng = Random.new()
 local TICK = 0.5
-local FIRST_DIVE = 20
+-- Primeiro mergulho só 60 s depois de o capítulo começar (B2: ele não chega no spawn logo de cara).
+local FIRST_DIVE = 60
 local FAR_ENOUGH = 30
 local WALK_SPEED = 12
 
@@ -137,15 +138,16 @@ local function buildHole(hole: WormTunnel.Hole, parent: Folder): Model
 			Enum.Material.SmoothPlastic
 		)
 	end
-	-- Olhos lá no fundo (apagados até ele estar para sair).
+	-- Olhos lá no fundo (escondidos até ele estar para sair). Pretos e foscos, sem brilho: pedido do usuário 20/10, nenhum
+	-- olho aceso no jogo; o aviso fica com a poeira e o rosnado.
 	for _, side in { -0.55, 0.55 } do
 		local eye = piece(
 			model,
 			"Eye",
 			Vector3.new(0.35, 0.35, 0.35),
 			CFrame.new(wall + inward * 0.25 + Vector3.new(0, 1.9, side)),
-			Color3.fromRGB(255, 40, 30),
-			Enum.Material.Neon
+			Color3.fromRGB(14, 11, 10),
+			Enum.Material.SmoothPlastic
 		)
 		eye.Shape = Enum.PartType.Ball
 		eye.Transparency = 1
@@ -252,7 +254,7 @@ local function eyes(id: string, on: boolean)
 			p.Transparency = if on then 0 else 1
 			local glow = p:FindFirstChildOfClass("PointLight")
 			if glow then
-				glow.Enabled = on
+				glow.Enabled = false
 			end
 		end
 	end

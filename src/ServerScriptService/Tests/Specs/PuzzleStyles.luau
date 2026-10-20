@@ -60,7 +60,7 @@ local spec: TestKit.Spec = {
 				t.expect(style.forgiving).toBe(true)
 			end
 			t.expect(PuzzleStyles.CLOCK.forgiving).toBe(true)
-			t.expect(PuzzleStyles.forTask(4, 4, 1).forgiving).toBeNil()
+			t.expect(PuzzleStyles.forTask(4, 4, 1).forgiving).toBe(true)
 		end)
 
 		t.it("piano pitches rise", function()
