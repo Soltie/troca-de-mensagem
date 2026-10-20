@@ -28,21 +28,69 @@ return {
 				end
 			end
 		end)
-		t.it("the house stays darker than the night outside so the flashlight matters", function()
-			local outside = P.ambient(0, 0, 0)
+		t.it("the dark house stays readable without the flashlight but never bright", function()
 			local dark = P.ambient(1, 0, 0)
 			local powered = P.ambient(1, 1, 0)
 			local forest = P.ambient(1, 1, 1)
+			-- Piso de leitura: abaixo de ~38 a madeira escura vira preto; acima de ~60 a lanterna perde o papel.
+			t.expect(P.luma(dark) >= 38 and P.luma(dark) <= 50).toBe(true)
+			t.expect(P.luma(powered) > P.luma(dark)).toBe(true)
+			t.expect(P.luma(powered) <= 60).toBe(true)
+			-- Sem energia o interior é frio (luar); com energia, mais neutro.
+			t.expect(dark[3] > dark[1]).toBe(true)
 			for i = 1, 3 do
-				t.expect(dark[i] <= outside[i]).toBe(true)
-				t.expect(dark[i] <= 12).toBe(true)
-				t.expect(powered[i] > dark[i]).toBe(true)
-				t.expect(powered[i] <= 32).toBe(true)
 				t.expect(forest[i]).toBeCloseTo(P.Forest.ambient[i])
 			end
 			t.expect(P.ambient(0, 0, 0)[3]).toBe(P.World.ambient[3])
 			-- Sem energia, entrar na casa não aumenta a exposição.
 			t.expect(P.exposure(1, 0)).toBe(P.exposure(0, 0))
+		end)
+		t.it("chapters get colder and foggier without changing brightness", function()
+			local previous = P.chapter(1)
+			t.expect(P.chapter(0)).toBe(P.chapter(1))
+			t.expect(P.chapter(99)).toBe(P.chapter(#P.Chapters))
+			for stage = 2, #P.Chapters do
+				local look = P.chapter(stage)
+				t.expect(look.cold >= previous.cold).toBe(true)
+				t.expect(look.fog <= previous.fog and look.fog >= 0.6).toBe(true)
+				t.expect(look.saturation <= previous.saturation and look.saturation >= -0.2).toBe(true)
+				previous = look
+			end
+			for _, indoor in { 0, 1 } do
+				for _, power in { 0, 1 } do
+					local warm = P.ambient(indoor, power, 0, 0)
+					local chilled = P.ambient(indoor, power, 0, 1)
+					-- Mesma luminância: esfriar não escurece o caminho nem dá salto de brilho.
+					t.expect(P.luma(chilled)).toBeCloseTo(P.luma(warm))
+					-- Dentro de casa o capítulo tardio puxa para o azul do luar (a noite lá fora já é azul).
+					if indoor == 1 then
+						t.expect(chilled[3] / chilled[1] > warm[3] / warm[1] - 1e-6).toBe(true)
+					end
+				end
+			end
+		end)
+		t.it("presence fill lights the house only, yields to the flashlight and cutscenes", function()
+			t.expect(P.fill(0, false, false)).toBe(0)
+			t.expect(P.fill(1, false, false)).toBe(P.Fill.brightness)
+			t.expect(P.fill(1, true, false) < P.fill(1, false, false)).toBe(true)
+			t.expect(P.fill(1, false, true)).toBe(0)
+			t.expect(P.fill(0.5, false, false)).toBeCloseTo(P.Fill.brightness / 2)
+			-- Nunca revela o Tung a 15 studs, e se apaga quando ele chega perto.
+			t.expect(P.Fill.range < 15).toBe(true)
+			t.expect(P.fill(1, false, false, 40)).toBe(P.Fill.brightness)
+			t.expect(P.fill(1, false, false, 4)).toBeCloseTo(P.Fill.brightness * P.Fill.nearShare)
+			t.expect(P.fill(1, false, false, 12) < P.fill(1, false, false, 20)).toBe(true)
+		end)
+		t.it("flashlight dims smoothly on close surfaces and keeps full reach far away", function()
+			t.expect(P.nearDim(0)).toBe(P.FlashlightNear.floor)
+			t.expect(P.nearDim(P.FlashlightNear.full)).toBe(1)
+			t.expect(P.nearDim(40)).toBe(1)
+			local last = 0
+			for d = 0, 14, 0.5 do
+				local k = P.nearDim(d)
+				t.expect(k >= last).toBe(true)
+				last = k
+			end
 		end)
 		t.it("fog recovers fully and never extends a shorter existing visibility cap", function()
 			t.expect(P.fogEnd(142, 0)).toBe(142)

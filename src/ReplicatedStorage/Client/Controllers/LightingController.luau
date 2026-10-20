@@ -2,6 +2,7 @@
 -- Compositor único do pós artístico/exposição/névoa. Filtros equipáveis usam outra camada.
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Profile = require("@game/ReplicatedStorage/Shared/Game/LightingProfile")
 local StoreCatalog = require("@game/ReplicatedStorage/Shared/Game/StoreCatalog")
@@ -23,6 +24,14 @@ local rayClock = 1
 local elapsed = 0
 local treatment = 1
 local forest = 0
+-- Perfil do capítulo, suavizado (troca de capítulo não dá salto).
+local cold = 0
+local chapterFog = 1
+local chapterSaturation = 0
+local fillPart: BasePart? = nil
+local fillLight: PointLight? = nil
+local fillLevel = 0
+local cellar = 0
 local controller = { Name = "LightingController" }
 
 local function rgb(values: { number }): Color3
@@ -74,6 +83,8 @@ function controller.debugState(): { [string]: any }
 		quality = Settings.visualBudget().name,
 		shaders = Settings.shadersEnabled(),
 		forest = forest,
+		cold = cold,
+		chapterFog = chapterFog,
 	}
 end
 
@@ -103,6 +114,25 @@ function controller.Init()
 	dof.Enabled = false
 	dof.Parent = Lighting
 	depth = dof
+	-- Luz de presença (ver `Profile.Fill`): peça invisível que segue a câmera.
+	local anchor = Instance.new("Part")
+	anchor.Name = "PresenceFill"
+	anchor.Anchored = true
+	anchor.CanCollide = false
+	anchor.CanQuery = false
+	anchor.CanTouch = false
+	anchor.CastShadow = false
+	anchor.Transparency = 1
+	anchor.Size = Vector3.new(0.2, 0.2, 0.2)
+	local light = Instance.new("PointLight")
+	light.Color = rgb(Profile.Moon)
+	light.Range = Profile.Fill.range
+	light.Brightness = 0
+	light.Shadows = false
+	light.Parent = anchor
+	anchor.Parent = workspace
+	fillPart = anchor
+	fillLight = light
 end
 
 function controller.Start()
@@ -116,7 +146,24 @@ function controller.Start()
 	fog = baseFog
 	power = if Lighting:GetAttribute("S9PowerOn") == true then 1 else 0
 	Lighting:GetAttributeChangedSignal("BaseFogEnd"):Connect(syncBase)
+	-- Placas de caminho: menos brilho próprio, para não serem o ponto mais claro do cômodo.
+	local function tameSign(item: Instance)
+		if item:IsA("SurfaceGui") and item.Parent and item.Parent.Name == "Wayfinding" then
+			item.LightInfluence = math.max(item.LightInfluence, Profile.Signs.lightInfluence)
+			item.Brightness = math.min(item.Brightness, Profile.Signs.brightness)
+		end
+	end
+	for _, item in workspace:GetDescendants() do
+		tameSign(item)
+	end
+	workspace.DescendantAdded:Connect(tameSign)
 	RunService.RenderStepped:Connect(function(dt)
+		-- A luz de presença acompanha a câmera a cada quadro (o resto do compositor roda a 20 Hz).
+		local holder = fillPart
+		local view = workspace.CurrentCamera
+		if holder and view then
+			holder.CFrame = view.CFrame
+		end
 		elapsed += dt
 		rayClock += dt
 		if elapsed < 1 / 20 then
@@ -136,19 +183,33 @@ function controller.Start()
 		power = Profile.approach(power, if Lighting:GetAttribute("S9PowerOn") == true then 1 else 0, delta)
 		local world = workspace:FindFirstChild(Tags.WorldFolder)
 		forest = Profile.approach(forest, if world and world:GetAttribute("ForestActive") == true then 1 else 0, delta)
+		local state = ReplicatedStorage:FindFirstChild("CampaignState")
+		local stage = state and state:GetAttribute("Stage")
+		local look = Profile.chapter(if type(stage) == "number" then stage else 1)
+		cold = Profile.approach(cold, look.cold, delta)
+		chapterFog = Profile.approach(chapterFog, look.fog, delta)
+		chapterSaturation = Profile.approach(chapterSaturation, look.saturation, delta)
+		local below = indoor > 0.5 and camera.CFrame.Position.Y < Profile.Basement.below
+		cellar = Profile.approach(cellar, if below then 1 else 0, delta)
 		-- A mesma composição governa luz funcional e profundidade, inclusive com Shaders OFF.
-		Lighting.Ambient = rgb(Profile.ambient(indoor, power, forest))
+		Lighting.Ambient = rgb(Profile.ambient(indoor, power, forest, cold)):Lerp(rgb(Profile.Basement.ambient), cellar)
 		Lighting.OutdoorAmbient = rgb(Profile.World.outdoor):Lerp(rgb(Profile.Forest.outdoor), forest)
 		Lighting.FogColor =
 			rgb(Profile.World.fog):Lerp(rgb(Profile.World.fogPower), power):Lerp(rgb(Profile.Forest.fog), forest)
 		Lighting.FogStart = Profile.World.fogStart + (Profile.Forest.fogStart - Profile.World.fogStart) * forest
-		local values = Profile.grade(indoor, power)
+		local values = Profile.grade(indoor, power, cold, chapterSaturation)
 		local budget = Settings.visualBudget()
 		treatment = Profile.approach(treatment, if Settings.shadersEnabled() then 1 else 0, delta)
 		if grade then
-			grade.TintColor = Color3.new(1, 1, 1):Lerp(rgb(values.tint), treatment)
-			grade.Contrast = values.contrast * treatment
-			grade.Saturation = values.saturation * treatment
+			local cave = Profile.Basement
+			local tint = rgb(values.tint)
+			tint = tint:Lerp(
+				Color3.new(tint.R * cave.tint[1] / 255, tint.G * cave.tint[2] / 255, tint.B * cave.tint[3] / 255),
+				cellar
+			)
+			grade.TintColor = Color3.new(1, 1, 1):Lerp(tint, treatment)
+			grade.Contrast = (values.contrast + cave.contrast * cellar) * treatment
+			grade.Saturation = (values.saturation + cave.saturation * cellar) * treatment
 			grade.Brightness = values.brightness * treatment
 		end
 		if bloom then
@@ -166,10 +227,33 @@ function controller.Start()
 		Lighting.FogColor = Lighting.FogColor:Lerp(rgb(Profile.FogBank.color), Profile.fogBank(os.clock()) * outside)
 		fog = Profile.approach(
 			fog,
-			Profile.fogEnd(baseFog * (1 + (Profile.Forest.fogScale - 1) * forest) * bank, danger),
+			Profile.fogEnd(
+				baseFog * (1 + (Profile.Forest.fogScale - 1) * forest) * (1 + (chapterFog - 1) * (1 - forest)) * bank,
+				danger
+			),
 			delta
 		)
 		Lighting.FogEnd = fog
+		local presence = fillLight
+		if presence then
+			local creature = workspace:FindFirstChild(Tags.CreatureModel)
+			local root = creature and creature:FindFirstChild(Tags.CreatureRoot)
+			local away = if root
+					and root:IsA("BasePart")
+					and root:GetAttribute(Tags.Attr.CreatureActive)
+				then (root.Position - camera.CFrame.Position).Magnitude
+				else math.huge
+			local target = Profile.fill(
+				indoor * (1 - forest),
+				player:GetAttribute("Flashlight") == true,
+				player:GetAttribute("CinematicActive") == true,
+				away
+			)
+			fillLevel = Profile.approach(fillLevel, target, delta)
+			presence.Brightness = fillLevel * (1 + (Profile.Basement.fill - 1) * cellar)
+			presence.Color = rgb(Profile.Moon):Lerp(rgb(Profile.Basement.fillColor), cellar)
+			presence.Enabled = fillLevel > 0.01
+		end
 		local cinema = budget.depth and player:GetAttribute("CinematicActive") == true and Settings.motionEnabled()
 		if depth then
 			-- Jogo: profundidade de campo bem leve (o fundo distante perde um pouco o foco); cenas: um pouco mais.

@@ -125,8 +125,10 @@ local function update(dt: number)
 	if g then
 		g.Enabled = loss > 0.03
 		g.Saturation = -0.65 * loss
-		g.Contrast = 0.18 * loss
-		g.Brightness = -0.06 * loss
+		-- 20/10: sem escurecer tanto (antes -0,06 e 0,18): no escuro somava com o grade da cena e virava preto.
+		-- A perda de sanidade se lê pela cor lavada e pelo embaçamento, não por apagar o caminho.
+		g.Contrast = 0.08 * loss
+		g.Brightness = -0.02 * loss
 		g.TintColor = Color3.new(1, 1, 1):Lerp(Color3.fromRGB(200, 214, 235), loss * 0.5)
 	end
 	local now = os.clock()

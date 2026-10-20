@@ -51,6 +51,13 @@ local smoothed: CFrame? = nil
 local fearLevel = 0
 local flickerClock = 0
 local flickerFactor = 1
+-- Escurece o feixe quando bate perto (teto/parede): evita o branco estourado. Raio a 15 Hz, suavizado.
+local nearFactor = 1
+local nearTarget = 1
+local nearClock = 0
+local nearParams = RaycastParams.new()
+nearParams.FilterType = Enum.RaycastFilterType.Exclude
+nearParams.RespectCanCollide = true
 local forcedFlickerUntil = 0
 local restoreAfterHide = false
 local hintCallbacks: { (string) -> () } = {}
@@ -830,7 +837,19 @@ function FlashlightController.Start()
 				then rng:NextNumber(0, 0.4)
 				else 1
 		end
-		local brightness = BASE_BRIGHTNESS * BatteryModel.brightness(charge()) * flickerFactor
+		nearClock += dt
+		if nearClock >= 1 / 15 then
+			nearClock = 0
+			nearParams.FilterDescendantsInstances = { camera, part, player.Character :: Instance }
+			local hit = workspace:Raycast(
+				part.Position,
+				part.CFrame.LookVector * LightingProfile.FlashlightNear.full,
+				nearParams
+			)
+			nearTarget = if hit then LightingProfile.nearDim(hit.Distance) else 1
+		end
+		nearFactor += (nearTarget - nearFactor) * math.min(1, dt * 10)
+		local brightness = BASE_BRIGHTNESS * BatteryModel.brightness(charge()) * flickerFactor * nearFactor
 		if spot then
 			spot.Brightness = brightness
 			spot.Range = LightingProfile.Flashlight.range * (0.6 + 0.4 * BatteryModel.brightness(charge()))

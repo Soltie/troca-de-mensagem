@@ -11,9 +11,11 @@ Profile.World = {
 	brightness = 0.75, -- lua fraca: o exterior é lido pelas luzes da casa e pela lanterna (20/10: levemente mais clara)
 	ambient = { 16, 18, 26 },
 	ambientPower = { 24, 25, 31 },
-	-- Sob o telhado a casa é escura (a lanterna é a fonte principal); com energia, só um pouco menos.
-	ambientIndoor = { 12, 11, 12 },
-	ambientIndoorPower = { 30, 27, 24 },
+	-- Sob o telhado a casa é escura (a lanterna é a fonte principal), mas nunca preta: um piso frio de luar
+	-- deixa ler portas e caminho a ~10 studs sem lanterna (critério do crítico, 20/10). Abaixo de ~40 o
+	-- Future + contraste zeram a madeira escura. Com energia, um pouco mais e mais neutro.
+	ambientIndoor = { 40, 42, 54 },
+	ambientIndoorPower = { 54, 51, 52 },
 	outdoor = { 36, 42, 58 },
 	fog = { 30, 36, 51 },
 	fogPower = { 35, 40, 53 },
@@ -43,9 +45,84 @@ Profile.Flashlight = {
 		{ angle = 90, share = 0.04, reach = 0.42 },
 	},
 }
+-- Luz de presença (estilo DOORS): luar fraco, sem sombra, preso à câmera, só dentro de casa. No Future o
+-- Ambient sozinho não levanta a madeira escura (medido em 20/10: Ambient 66 ainda deixa o hall preto); esta
+-- luz garante ler paredes, portas e piso a ~10 studs e deixa o fundo do corredor no escuro. Com a lanterna
+-- ligada ela cai para `flashlight` (a lanterna vira a fonte principal); em cena cinematográfica, desliga.
+-- Só existe no cliente (cada jogador vê a sua; ninguém ilumina a sala dos outros). Alcance curto (14): o Tung a
+-- 15 studs nunca é revelado por ela; e quando ele chega perto (`near`..`far` studs) ela se apaga, para a silhueta
+-- dele vir só da lanterna e dos olhos (pedido do crítico, 20/10).
+Profile.Fill = { brightness = 2.6, range = 14, flashlight = 0.35, near = 6, far = 22, nearShare = 0.1 }
+function Profile.fill(indoor: number, flashlightOn: boolean, cinematic: boolean, creature: number?): number
+	if cinematic then
+		return 0
+	end
+	local fill = Profile.Fill
+	local base = fill.brightness * math.clamp(indoor, 0, 1)
+	local k = math.clamp(((creature or math.huge) - fill.near) / (fill.far - fill.near), 0, 1)
+	base *= fill.nearShare + (1 - fill.nearShare) * k
+	return if flashlightOn then base * fill.flashlight else base
+end
+-- Porão (abaixo de `below` em Y): sem luar, terra e madeira úmida. Mais quente, mais sujo e mais escuro que a
+-- casa (o crítico achou o porão cinza-azulado e limpo). A luz de presença cai e fica âmbar suja.
+Profile.Basement = {
+	below = -2,
+	ambient = { 30, 24, 19 },
+	fillColor = { 176, 138, 96 },
+	fill = 0.75,
+	tint = { 255, 232, 205 },
+	saturation = 0.12, -- soma ao grade: recupera o marrom
+	contrast = 0.04, -- cantos mais fundos
+}
+-- Placas de caminho (SurfaceGui das plaquinhas "SALA DE ESTAR", "COZINHA"...): eram o ponto mais claro do hall.
+Profile.Signs = { lightInfluence = 0.75, brightness = 0.6 }
+-- Feixe perto de uma superfície (teto, parede) estourava em branco: abaixo de `full` studs o brilho cai até
+-- `floor` (a 2 studs). Longe nada muda, então o alcance de leitura das pistas fica igual.
+Profile.FlashlightNear = { full = 12, close = 2, floor = 0.4 }
+function Profile.nearDim(distance: number): number
+	local near = Profile.FlashlightNear
+	local t = math.clamp((distance - near.close) / (near.full - near.close), 0, 1)
+	-- Curva suave (smoothstep): sem degrau perceptível ao aproximar.
+	t = t * t * (3 - 2 * t)
+	return near.floor + (1 - near.floor) * t
+end
 -- Filtro de cor "frio" (opção B, escolhida pelo humano): azulado, menos saturado e mais contraste, por cima do tom
 -- de cada ambiente.
-Profile.Look = { tint = { 196, 218, 255 }, saturation = -0.25, contrast = 0.14, brightness = 0.02 }
+-- 20/10: contraste 0,14 -> 0,08; somado ao do interior esmagava os pretos e apagava a madeira escura.
+Profile.Look = { tint = { 196, 218, 255 }, saturation = -0.25, contrast = 0.08, brightness = 0.02 }
+-- Progressão por capítulo (a casa piora a cada um): mais fria, mais névoa, um pouco menos de cor (no máximo -0,05:
+-- o âmbar dos interativos, o piano e os fusíveis precisam continuar se destacando). A exposição e o piso de
+-- leitura não mudam, para não haver salto de brilho nem escuro ilegível. 6+ é a mata (perfil `Forest`).
+-- `cold` puxa o ambiente para o luar (#8FA3C8) mantendo a luminância; `fog` multiplica o alcance da névoa.
+export type ChapterLook = { cold: number, fog: number, saturation: number }
+Profile.Moon = { 143, 163, 200 }
+Profile.Chapters = {
+	{ cold = 0, fog = 1, saturation = 0 }, -- 1: casa velha comum
+	{ cold = 0.15, fog = 0.92, saturation = -0.02 }, -- 2: tábuas incham
+	{ cold = 0.3, fog = 0.84, saturation = -0.03 }, -- 3: seiva e musgo
+	{ cold = 0.45, fog = 0.76, saturation = -0.04 }, -- 4: porão de raízes
+	{ cold = 0.55, fog = 0.7, saturation = -0.05 }, -- 5: a casa se levanta (o fogo tem grade próprio)
+} :: { ChapterLook }
+
+function Profile.chapter(stage: number): ChapterLook
+	local index = math.clamp(math.floor(stage), 1, #Profile.Chapters)
+	return Profile.Chapters[index]
+end
+
+function Profile.luma(c: RGB): number
+	return 0.2126 * c[1] + 0.7152 * c[2] + 0.0722 * c[3]
+end
+
+-- Esfria uma cor rumo ao luar sem mudar a luminância (o jogador não sente salto de brilho).
+function Profile.chill(color: RGB, cold: number): RGB
+	local k = math.clamp(cold, 0, 1)
+	local scale = Profile.luma(color) / Profile.luma(Profile.Moon)
+	local out = {}
+	for i = 1, 3 do
+		out[i] = color[i] + (Profile.Moon[i] * scale - color[i]) * k
+	end
+	return out
+end
 Profile.Forest = {
 	ambient = { 28, 36, 46 },
 	outdoor = { 58, 74, 94 },
@@ -58,33 +135,38 @@ Profile.ShadowBudget = 2 -- mais a lanterna própria; colegas nunca ganham sombr
 Profile.ShadowDistance = 60
 Profile.TransitionRate = 1.8
 
-function Profile.grade(indoor: number, power: number): Grade
+function Profile.grade(indoor: number, power: number, cold: number?, chapterSaturation: number?): Grade
 	local inside = math.clamp(indoor, 0, 1)
 	local on = math.clamp(power, 0, 1)
-	-- Cor local continua reconhecível; energia aquece só o interior.
-	local base = { 240 + inside * on * 12, 246 + inside * on * 2, 255 - inside * on * 18 }
+	local chill = math.clamp(cold or 0, 0, 1)
+	-- Cor local continua reconhecível; energia aquece só o interior; capítulos tardios esfriam um pouco.
+	local base = { (240 + inside * on * 12) * (1 - 0.06 * chill), 246 + inside * on * 2, 255 - inside * on * 18 }
 	local look = Profile.Look
 	return {
 		tint = { base[1] * look.tint[1] / 255, base[2] * look.tint[2] / 255, base[3] * look.tint[3] / 255 },
 		-- Dentro de casa: mais contraste e cor mais lavada (pretos fundos, luz quente só onde bate).
 		contrast = 0.08 + inside * 0.04 + look.contrast,
-		saturation = -0.04 - inside * 0.06 + look.saturation,
+		saturation = -0.04 - inside * 0.06 + look.saturation + math.clamp(chapterSaturation or 0, -0.2, 0),
 		brightness = 0.005 + look.brightness,
 	}
 end
 
 -- Ambiente final: noite fria lá fora, preenchimento quente dentro de casa, mata por cima de tudo.
-function Profile.ambient(indoor: number, power: number, forest: number): RGB
+function Profile.ambient(indoor: number, power: number, forest: number, cold: number?): RGB
 	local inside = math.clamp(indoor, 0, 1)
 	local on = math.clamp(power, 0, 1)
 	local wild = math.clamp(forest, 0, 1)
-	local out = {}
+	local base = {}
 	for i = 1, 3 do
 		local night = Profile.World.ambient[i] + (Profile.World.ambientPower[i] - Profile.World.ambient[i]) * on
 		local house = Profile.World.ambientIndoor[i]
 			+ (Profile.World.ambientIndoorPower[i] - Profile.World.ambientIndoor[i]) * on
-		local base = night + (house - night) * inside
-		out[i] = base + (Profile.Forest.ambient[i] - base) * wild
+		base[i] = night + (house - night) * inside
+	end
+	local chilled = Profile.chill(base, cold or 0)
+	local out = {}
+	for i = 1, 3 do
+		out[i] = chilled[i] + (Profile.Forest.ambient[i] - chilled[i]) * wild
 	end
 	return out
 end
