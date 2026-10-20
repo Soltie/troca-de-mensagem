@@ -840,4 +840,41 @@ function CreatureService.debugPlace(position: Vector3)
 	arrived = true
 end
 
+-- Visita roteirizada (TungVisitService, cap. 1): usa o corpo real dele sem ligar o cérebro. `visitShow` acorda o
+-- visual (o cliente o desenha e anima pelo modo), `visitMove` o conduz, `visitHide` o devolve ao canto onde dormia.
+local visitHome: CFrame? = nil
+
+function CreatureService.visitShow(position: Vector3, look: Vector3)
+	if active then
+		return
+	end
+	local r = getRoot()
+	if not visitHome then
+		visitHome = r.CFrame
+	end
+	placeAt(position, look)
+	setAttributes("Patrol")
+	r:SetAttribute(Tags.Attr.CreatureActive, true)
+end
+
+function CreatureService.visitMove(position: Vector3, look: Vector3)
+	placeAt(position, look)
+end
+
+function CreatureService.visitHide()
+	local r = getRoot()
+	if visitHome then
+		r.CFrame = visitHome
+		visitHome = nil
+	end
+	if not active then
+		setAttributes("Dormant")
+	end
+end
+
+-- Captura direta (a Visita viu o jogador): segue o mesmo caminho de um golpe do Tum Tum.
+function CreatureService.forceCapture(player: Player)
+	fireCapture(player)
+end
+
 return CreatureService

@@ -72,6 +72,7 @@ local controllers: { any } = {
 	require("./Controllers/MomentController"),
 	require("./Controllers/DarkClueController"),
 	require("./Controllers/DoorSwapController"),
+	require("./Controllers/TungVisitController"),
 	require("./Controllers/FurnitureMotionController"),
 }
 

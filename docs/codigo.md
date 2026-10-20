@@ -48,3 +48,15 @@ Backup: `ServerStorage.Backup_Code_Cap1_c`. Play ok, testes 439/439, `moment kno
 - Prompt vs legenda: prompt sobe acima da caixa inteira da legenda (`GameUiController`).
 - Legenda da chave da cozinha atualizada (`HouseCatalog`).
 - Luz: 4 lampiões (hall, cozinha, jantar, biblioteca; luz 0,7 alcance 20); lanterna menos azul já no place (filtro incandescente).
+
+## Rodada 4 (cap. 1 → nota 9)
+No repo (aplicar ao place; `Backup_Code_Cap1_*` guarda as versões anteriores):
+- Vulto: `clearDirection` acha o caminho livre; corpo mais claro + luz fria atrás (era invisível no escuro); some quando a lanterna o ilumina (<14°, <26 st). Segundo aparecimento: ao chegar a 10–18 st da porta do jantar após a 2ª chave (`ChapterMomentService`). **Encaixe da Arte:** modelo `ReplicatedStorage.Assets.TungSilhouette` (pivô nos pés, frente +Z) substitui o vulto improvisado.
+- Porta que Troca: câmera (cinema 3 s) olha a cadeira da Cida na chegada (`DoorSwapController`).
+- Dica "Está escuro demais / Ligue a lanterna" suprimida durante a tarefa `cida_talk` (`SanityController`; `Tasks` agora leva `event`).
+- Prompt `[E]` fica ≥ 44 px acima da legenda (`GameUiController`).
+- **Visita do Tung** (ameaça jogável): `Shared/Game/TungVisit` (regras puras + spec), `TungVisitService` (servidor), `TungVisitController` (cliente), `CreatureService.visitShow/visitMove/visitHide/forceCapture`.
+  - Aviso 20 s (10 s com `early`): pancadas e rangidos da escada, luz pisca, legendas da Cida. Depois ele aparece em (8,0,20), passa pelo hall, entra no cômodo com mais jogadores (Sala/Cozinha/Jantar), pausa 3 s no meio, 2 s diante do armário e volta.
+  - Visto = capturado (mesmo caminho do golpe: cai/rasteja ou derrota no solo): fora do armário a ≤10 st; com lanterna ≤34 st; correndo ≤22 st; escondido só é visto com lanterna acesa a ≤7 st dele parado no armário. 1,5 s de graça ao aparecer.
+  - Gatilho padrão: 25 s após a 2ª chave. **API do Level:** `TungVisitService.start({ early = true?, room = "Living"|"Kitchen"|"Dining"? })` (Melodia errada → `early = true`). Estado em `CampaignState.VisitPhase/VisitEndsAt/VisitRoom/VisitSerial`. Uma vez por capítulo; zera ao reiniciar.
+  - Rotas e armários: ver docs/level.md. O corpo é o real (`Assets.TungTung` desenhado pelo `CreatureVisualController`), cérebro desligado.
