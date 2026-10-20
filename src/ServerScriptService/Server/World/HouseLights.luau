@@ -124,6 +124,8 @@ end
 local DIM_LAMPS: { { name: string, at: Vector3 } } = {
 	{ name = "OilLampHall", at = Vector3.new(0, 5.6, -20) },
 	{ name = "OilLampKitchen", at = Vector3.new(26, 5.6, -4) },
+	{ name = "OilLampDining", at = Vector3.new(-26, 5.6, -36) },
+	{ name = "OilLampLibrary", at = Vector3.new(-26, 5.6, -68) },
 }
 local LAMP_COLOR = Color3.fromRGB(255, 170, 90)
 
@@ -149,7 +151,7 @@ function Lights.dimLamps(root: Instance)
 		local frame = CFrame.lookAt(best.Position + normal * 0.45, best.Position + normal * 2)
 		local body = Instance.new("Part")
 		body.Name = spec.name
-		body.Size = Vector3.new(0.5, 0.8, 0.5)
+		body.Size = Vector3.new(0.7, 1.1, 0.7)
 		body.CFrame = frame
 		body.Anchored, body.CanCollide, body.CanQuery, body.CanTouch = true, false, false, false
 		body.Material, body.Color = Enum.Material.Metal, Color3.fromRGB(58, 44, 34)
@@ -157,7 +159,7 @@ function Lights.dimLamps(root: Instance)
 		body.Parent = folder
 		local glass = Instance.new("Part")
 		glass.Name = "LampGlass"
-		glass.Size = Vector3.new(0.34, 0.44, 0.34)
+		glass.Size = Vector3.new(0.5, 0.62, 0.5)
 		glass.CFrame = frame * CFrame.new(0, 0.05, 0.02)
 		glass.Anchored, glass.CanCollide, glass.CanQuery, glass.CanTouch = true, false, false, false
 		glass.Material, glass.Color = Enum.Material.Neon, LAMP_COLOR
@@ -165,7 +167,7 @@ function Lights.dimLamps(root: Instance)
 		glass.CastShadow = false
 		glass.Parent = folder
 		local light = Instance.new("PointLight")
-		light.Color, light.Range, light.Brightness = LAMP_COLOR, 15, 0.45
+		light.Color, light.Range, light.Brightness = LAMP_COLOR, 20, 0.7
 		light.Shadows = false
 		light.Parent = body
 		body:SetAttribute(Tags.Attr.Flicker, true)

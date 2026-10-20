@@ -92,7 +92,7 @@ local House = {
 					"collect",
 					"key_kitchen",
 					nil,
-					"A mesa está posta. Na poeira, só há marcas recentes de um bastão."
+					"A chave estava sob a tábua oca. Na poeira da cozinha, só há marcas recentes de um bastão."
 				),
 				objective(
 					"Dining",

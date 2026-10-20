@@ -38,3 +38,13 @@ Backups em `ServerStorage.Backup_Code_Cap1` e `Backup_Code_Cap1_b`.
 - `FurnitureMotionController` criado e registrado em `Client/Main`; `GameUiController` com o aviso acima da legenda.
 - Lampiões fracos (`HouseLights.dimLamps`): hall/corredor (7, 5.6, -20) e cozinha (26, 5.6, -19), luz 0,45, alcance 15.
 - Não aplicado: `MainMenuController` (menu; place tem o código do PvP, mesclar à parte). Play ok, 62 controllers, testes 439/439.
+
+## Rodada 3 (crítico v3 = 6,0) — aplicada ao place
+Backup: `ServerStorage.Backup_Code_Cap1_c`. Play ok, testes 439/439, `moment knocks` publica em CampaignState.
+- C1 caixinha no sofá: `FurnitureColliders` entram no sorteio como obstáculo (HouseActivities) e `hasSight`/`visible` atravessam `FurnitureCollider` e `Sheet*` (CampaignRuntime, InteractionController).
+- Porta que Troca: ao chegar a 7 st da porta armada ela bate de novo (serragem, 3 s trancada) e os 20 s recomeçam; sem ninguém perto, só desfaz após 120 s.
+- Tung: além das batidas (1ª chave) e vulto (2ª), a cada 35–60 s do cap. 1 (depois da 1ª chave) repete batidas/vulto (`ChapterMomentService`).
+- "Está escuro demais": com lanterna na mão manda ligar (F); a de "procurar vela" só sem lanterna.
+- Prompt vs legenda: prompt sobe acima da caixa inteira da legenda (`GameUiController`).
+- Legenda da chave da cozinha atualizada (`HouseCatalog`).
+- Luz: 4 lampiões (hall, cozinha, jantar, biblioteca; luz 0,7 alcance 20); lanterna menos azul já no place (filtro incandescente).

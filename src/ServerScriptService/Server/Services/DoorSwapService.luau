@@ -55,8 +55,17 @@ local DESTINATION: { [string]: string } = { Living = "Dining", Kitchen = "Living
 local WARNING = 3
 local CARRY = 3
 local UNDO = 20
+local FAR_UNDO = 120
 
-type Swap = { doorId: string, from: string, to: string, armedAt: number, openUntil: number?, triggered: boolean }
+type Swap = {
+	doorId: string,
+	from: string,
+	to: string,
+	armedAt: number,
+	openUntil: number?,
+	triggered: boolean,
+	nearDone: boolean?,
+}
 local current: Swap? = nil
 local keysThisChapter: { [string]: boolean } = {}
 local keysPlan: any = nil
@@ -248,20 +257,22 @@ function DoorSwapService.Start()
 				finish("missing")
 				continue
 			end
-			if not swap.triggered then
-				-- Gatilho: alguém do lado de dentro chega a 5 studs da porta.
+			-- Chegando perto da porta armada (7 studs) ela bate de novo, solta serragem e a contagem de 20 s recomeça:
+			-- o susto acontece diante do jogador, não só quando a chave sai do cômodo.
+			if not swap.nearDone and not swap.openUntil then
 				for _, player in Players:GetPlayers() do
 					local character = player.Character
 					local root = character and character:FindFirstChild("HumanoidRootPart")
-					if root and root:IsA("BasePart") and (root.Position - door.center).Magnitude < 5 then
-						swap.triggered = true
+					if root and root:IsA("BasePart") and (root.Position - door.center).Magnitude < 7 then
+						swap.nearDone = true
 						swap.armedAt = os.clock()
 						WorldService.slamDoor(swap.doorId)
 						sawdustAndKnocks(door.center + Vector3.new(0, 4, 0))
 						break
 					end
 				end
-			elseif not swap.openUntil and os.clock() - swap.armedAt > UNDO then
+			end
+			if not swap.openUntil and os.clock() - swap.armedAt > (if swap.nearDone then UNDO else FAR_UNDO) then
 				-- Ninguém abriu: a troca se desfaz com um rangido (no cap. 1, sem castigo).
 				local creak = Build.sound(door.panel, "SwapUndo", Audio.CreakWood.id, 0.8, 0.6)
 				creak:Play()

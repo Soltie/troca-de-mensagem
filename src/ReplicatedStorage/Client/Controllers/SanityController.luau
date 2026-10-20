@@ -144,7 +144,13 @@ local function update(dt: number)
 	-- Primeira vez no escuro de verdade: uma frase explica o que fazer.
 	if not hinted and loss > 0.55 then
 		hinted = true
-		GameUi.caption("Está escuro demais. Procure uma vela, uma lamparina ou uma lâmpada acesa.", 6)
+		-- Com a lanterna na mão (desligada), a dica manda ligá-la; "procure uma vela" só para quem não tem lanterna.
+		GameUi.caption(
+			if player:GetAttribute("HasFlashlight") == true
+				then "Está escuro demais. Ligue a lanterna (F) ou fique perto de uma chama."
+				else "Está escuro demais. Procure uma vela, uma lamparina ou uma lâmpada acesa.",
+			6
+		)
 	end
 	-- Alucinações com a sanidade no fim.
 	if loss > 0.85 and now >= nextHallucinationAt then

@@ -131,6 +131,26 @@ local keysPlan: any = nil
 
 function ChapterMomentService.Start()
 	task.spawn(watchZones)
+	-- Presença contínua no cap. 1: depois da 1ª chave, a cada 35 a 60 s ele bate nas paredes de novo (ou passa o vulto
+	-- depois da 2ª chave). Ele dorme, mas a casa não deixa o jogador esquecer dele.
+	task.spawn(function()
+		local rng = Random.new()
+		while true do
+			task.wait(rng:NextNumber(35, 60))
+			local campaign = ReplicatedStorage:FindFirstChild("CampaignState")
+			if
+				campaign
+				and campaign:GetAttribute("Stage") == 1
+				and campaign:GetAttribute("GameMode") == "Story"
+				and campaign:GetAttribute("Phase") == "Playing"
+				and keysSeen >= 1
+			then
+				ChapterMomentService.presence(
+					if keysSeen >= 2 and rng:NextNumber() < 0.5 then "silhouette" else "knocks"
+				)
+			end
+		end
+	end)
 	-- Cap. 1, gatilhos padrão: 1ª chave = batidas na parede; 2ª chave = silhueta no fim do corredor;
 	-- 4ª tarefa resolvida = um quase-acerto.
 	Activities.onSolved(function(plan, index)

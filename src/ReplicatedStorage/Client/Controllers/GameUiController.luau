@@ -880,7 +880,7 @@ function GameUiController.Init()
 		-- O aviso de ação nunca cobre a legenda: com legenda na tela, ele sobe acima da altura real dela.
 		local caption = ui.caption
 		if caption.Visible and caption.Text ~= "" then
-			promptY = math.min(promptY, -100 - caption.TextBounds.Y - 14)
+			promptY = math.min(promptY, -100 - math.max(caption.AbsoluteSize.Y, caption.TextBounds.Y) - 16)
 		end
 		ui.prompt.Position = UDim2.new(0.5, 0, 1, promptY)
 	end)
