@@ -254,7 +254,7 @@ function Dressing.living(root: Instance)
 	end
 	-- Cesto de tricô e bilhete ao lado da cadeira de balanço da Dona Cida.
 	local chair = find(root, "RockingChair", -44, -8, -20, 12, -1, 4)
-	local chairAt = if chair then chair:GetPivot().Position else V3(-17.4, 0, 6.5)
+	local chairAt = if chair then chair:GetPivot().Position else V3(-22.5, 0, 4.5)
 	local basketArt = HouseArt.place(folder, "Living_KnitBasket", CFrame.new(chairAt + V3(-1.8, 0, 1.6)))
 	local basket = if basketArt
 		then nil
@@ -435,6 +435,15 @@ function Dressing.floorboards(parent: Instance, x0: number, x1: number, z0: numb
 end
 
 -- Um susto de cenário por cômodo (cap. 1), uma vez por partida do capítulo, quando alguém entra no cômodo.
+-- Legenda curta de cada susto (o MomentController mostra CampaignState.Caption), para o jogador notar o que viu.
+local SCARE_CAPTIONS: { [string]: string } = {
+	hall = "Alguém bate lá em cima.",
+	kitchen = "As panelas balançam sozinhas.",
+	dining = "A cadeira virou para você.",
+	library = "Um livro caiu da estante.",
+	corridor = "O entalhe na parede abriu os olhos.",
+}
+local captionSerial = 0
 type Scare = { name: string, x0: number, x1: number, z0: number, z1: number, y: number, run: () -> () }
 local function scareLoop(scares: { Scare })
 	task.spawn(function()
@@ -470,6 +479,11 @@ local function scareLoop(scares: { Scare })
 						then
 							done[scare.name] = true
 							task.spawn(scare.run)
+							if campaign and SCARE_CAPTIONS[scare.name] then
+								captionSerial += 1
+								campaign:SetAttribute("Caption", SCARE_CAPTIONS[scare.name])
+								campaign:SetAttribute("CaptionSerial", captionSerial)
+							end
 							break
 						end
 					end

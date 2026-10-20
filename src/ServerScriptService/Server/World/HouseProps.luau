@@ -345,7 +345,7 @@ ROOMS.Living = function(folder, root, room)
 	against(folder, room, "Sofa", "facade", -1.5, 1.05 * SOFA)
 	-- A cadeira de balanço da Dona Cida (roteiro "A Casa de Madeira"), com o novelo de tricô pendurado no braço: é a
 	-- pista que liga o fusível enrolado em tricô (cap. 2) ao encaixe da CADEIRA no quadro de luz.
-	local chairAt = at(-8.6, 10.5, 0)
+	local chairAt = at(-3.5, 8.5, 0)
 	-- Modelo do artista (CidaRockingChair_v2, ou a primeira versão) quando existe no place; senão, a cadeira de
 	-- balanço da biblioteca de props.
 	local chairPivot = CFrame.lookAt(chairAt, chairAt + V3(-1, 0, -0.15))
@@ -360,7 +360,7 @@ ROOMS.Living = function(folder, root, room)
 		folder,
 		"KnittingYarn",
 		V3(0.9, 0.9, 0.9),
-		CFrame.new(at(-8.6, 10.5, 0) + V3(0.9, 2.1, 0.9)),
+		CFrame.new(chairAt + V3(0.9, 2.1, 0.9)),
 		rgb(176, 44, 52),
 		{ material = Enum.Material.Fabric, collide = false, query = false }
 	);
@@ -369,7 +369,7 @@ ROOMS.Living = function(folder, root, room)
 		folder,
 		"KnittingNeedle",
 		V3(0.08, 0.08, 1.4),
-		CFrame.new(at(-8.6, 10.5, 0) + V3(0.9, 2.3, 0.9)) * CFrame.Angles(math.rad(30), 0, math.rad(20)),
+		CFrame.new(chairAt + V3(0.9, 2.3, 0.9)) * CFrame.Angles(math.rad(30), 0, math.rad(20)),
 		rgb(200, 190, 170),
 		{ material = Enum.Material.Wood, collide = false, query = false }
 	)

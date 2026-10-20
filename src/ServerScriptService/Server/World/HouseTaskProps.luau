@@ -354,26 +354,6 @@ function Props.build(parent: Instance, p: Vector3, item: string?, kind: string)
 		if mouth:IsA("Part") then
 			mouth.Shape = Enum.PartType.Ball
 		end
-	elseif item == "message" then
-		-- Carta da Lia (crítico, rodada 2): uma folha lisa e fosca sobre a mesa, sem luz e sem cara de livro.
-		local sheet = part(parent, "LetterSheet", center + V3(0, 0.02, 0), V3(1.9, 0.03, 2.5), paper)
-		sheet.Material = Enum.Material.Fabric
-		sheet.CFrame *= CFrame.Angles(0, math.rad(-9), 0)
-		for line = 1, 7 do
-			local ink = part(
-				parent,
-				"LetterInk",
-				center + V3(0, 0.045, -1 + line * 0.28),
-				V3(1.3 - (line % 3) * 0.2, 0.01, 0.03),
-				Color3.fromRGB(70, 56, 42)
-			)
-			ink.Material = Enum.Material.Fabric
-			ink.CFrame = sheet.CFrame * CFrame.new(0, 0.025, -1 + line * 0.28)
-		end
-		local seal =
-			part(parent, "LetterSeal", center + V3(0.6, 0.06, 0.9), V3(0.35, 0.05, 0.35), Color3.fromRGB(96, 30, 28))
-		seal.Material = Enum.Material.Fabric
-		mirrorTarget(parent, seal)
 	elseif kind == "clue" then
 		local cover = part(parent, "BookCover", center + V3(0, -0.09, 0), V3(3.5, 0.12, 2.5), dark)
 		cover.Material, cover.Color = Enum.Material.Leather, Color3.fromRGB(57, 27, 25)

@@ -13,3 +13,10 @@ Testar: HistÃ³ria cap. 1; entrar em cada cÃ´modo (legenda + efeito); 2Âª chave â
 Meu RoomScareService era duplicado: os sustos por cÃ´modo e a placa do porÃ£o jÃ¡ existiam em `World/HouseDressing` (Dressing.scares / basementSign). Movi RoomScareService, RoomScares e o spec para `backup/` e tirei do Main e do place.
 Aplicado no place: HouseDressing (sustos + placa), HouseMiniPuzzles (tÃ¡buas irregulares: Ã¢ngulo, comprimento, inclinaÃ§Ã£o), HouseTaskProps (carta "message" = folha fosca, sem luz, selo como indicador). Tests.Run 439/0; RoomScares e BasementStairSign existem em CursedHouse.
 Testar: tÃ¡buas da cozinha desalinhadas; carta da biblioteca Ã© uma folha lisa; entrar em cada cÃ´modo dispara o susto (hall, cozinha, jantar, biblioteca, corredor). Push: fica com o usuÃ¡rio.
+
+## Rodada 2 do crítico (cap. 1 v3, nota 6,0): correções
+- Place estava velho (HouseActivities sem a cadeira da Cida): sincronizados HouseActivities, HouseMiniPuzzles, HouseProps, HouseDressing, HouseTaskProps (backup *_v2/_v3 em ServerStorage.Backup_Cap1_Level).
+- 1 Cadeira da Cida: marcador da tarefa (Station) segue a cadeira. 2 Canto: cadeira e cesto movidos para (-22,5; 0; 4,5), longe da lareira/porta (pathfinding ok).
+- 3 Sustos: legenda curta em cada um (hall, cozinha, jantar, biblioteca, corredor), via CampaignState.Caption.
+- 4 Carta: só o papel deitado, fundo mais escuro (removi minha folha duplicada). 5 Caixinha de música visível ao abrir o móvel certo.
+- Tests.Run 439/0. Não revi o jogo a olho em todos os cômodos.

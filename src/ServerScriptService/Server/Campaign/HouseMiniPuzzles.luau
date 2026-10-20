@@ -158,6 +158,31 @@ end
 -- Caixinha da Lia: liga a música no móvel certo (já montado pelo HiddenStash) até ele ser aberto.
 function Mini.musicBox(focus: BasePart, isOpen: () -> boolean, seed: number)
 	local notes = SahurMelody.full(seed)
+	-- Ao abrir o móvel certo, a caixinha de música aparece ao lado da chave (crítico: "sem caixinha visível").
+	local box = Build.part(
+		focus,
+		"MusicBoxVisible",
+		Vector3.new(1, 0.6, 0.7),
+		focus.CFrame * CFrame.new(0.9, 0, 0),
+		Color3.fromRGB(104, 66, 40),
+		{ material = Enum.Material.Wood, collide = false, query = false, transparency = 1 }
+	)
+	local crank = Build.part(
+		box,
+		"MusicBoxCrank",
+		Vector3.new(0.12, 0.12, 0.45),
+		box.CFrame * CFrame.new(0.55, 0.1, 0),
+		Color3.fromRGB(190, 150, 70),
+		{ material = Enum.Material.Metal, collide = false, query = false, transparency = 1 }
+	)
+	task.spawn(function()
+		while focus.Parent and not isOpen() do
+			task.wait(0.3)
+		end
+		box.Transparency, crank.Transparency = 0, 0
+		task.wait(3)
+		box.Transparency, crank.Transparency = 1, 1
+	end)
 	task.spawn(function()
 		while focus.Parent and not isOpen() do
 			if flashlightNear(focus.Position, 26) then
@@ -1374,7 +1399,7 @@ end
 -- A cadeira da Dona Cida (cap. 1): ela é gente e tem medo de luz. Quem chega com a lanterna acesa a 9 studs faz a
 -- cadeira deslizar rangendo para outro canto da sala. Com a luz apagada, apertar E nela dá a dica da caixinha.
 local CHAIR_SPOTS = {
-	Vector3.new(-17.4, 0, 6.5),
+	Vector3.new(-22.5, 0, 4.5),
 	Vector3.new(-38, 0, 6),
 	Vector3.new(-37, 0, -12),
 	Vector3.new(-18, 0, -13),

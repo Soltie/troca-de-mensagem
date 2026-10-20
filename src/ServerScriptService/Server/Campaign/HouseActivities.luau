@@ -455,7 +455,7 @@ function Activities.build(parent: Instance, plan: Generator.Plan, distance: numb
 				text,
 				{
 					textColor = Color3.fromRGB(46, 31, 22),
-					background = Color3.fromRGB(176, 160, 128),
+					background = Color3.fromRGB(128, 112, 88),
 					lit = false,
 					font = Enum.Font.Merriweather,
 					pixelsPerStud = 90,
