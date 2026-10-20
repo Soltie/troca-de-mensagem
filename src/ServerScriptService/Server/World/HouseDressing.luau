@@ -190,9 +190,9 @@ function Dressing.living(root: Instance)
 	-- Modelos do artista (Assets.HouseArt) quando existem; senão, as peças primitivas.
 	type Carving = { name: string, at: Vector3, facing: Vector3, pose: number }
 	local carvings: { Carving } = {
-		{ name = "Living_CarvingWalk", at = V3(-8.7, 5.2, 2.6), facing = -Vector3.xAxis, pose = 1 },
-		{ name = "Living_CarvingDrum", at = V3(-43.3, 5, 6), facing = Vector3.xAxis, pose = 2 },
-		{ name = "Living_CarvingNight", at = V3(-38, 5, -19.3), facing = Vector3.zAxis, pose = 3 },
+		{ name = "Living_CarvingDoorFrame", at = V3(-8.7, 5.2, 2.6), facing = -Vector3.xAxis, pose = 1 },
+		{ name = "Living_CarvingWallDrum", at = V3(-43.3, 5, 6), facing = Vector3.xAxis, pose = 2 },
+		{ name = "Living_CarvingWallNight", at = V3(-38, 5, -19.3), facing = Vector3.zAxis, pose = 3 },
 	}
 	for _, c in carvings do
 		if not HouseArt.place(folder, c.name, CFrame.lookAt(c.at, c.at - c.facing)) then
@@ -365,7 +365,7 @@ function Dressing.safeDoor(root: Instance)
 		if
 			not HouseArt.place(
 				folder,
-				"Living_CarvingWalk",
+				"Living_CarvingDoorFrame",
 				CFrame.lookAt(at - V3(0, 1, 0), at - V3(0, 1, 0) - Vector3.zAxis)
 			)
 		then
