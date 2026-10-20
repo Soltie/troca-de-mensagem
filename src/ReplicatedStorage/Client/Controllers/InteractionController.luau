@@ -87,11 +87,19 @@ local function visible(camera: Camera, part: BasePart): boolean
 		table.insert(exclude, player.Character)
 	end
 	params.FilterDescendantsInstances = exclude
-	local hit = workspace:Raycast(origin, part.Position - origin, params)
-	if hit == nil or hit.Instance == part then
-		return true
+	for _ = 1, 4 do
+		local hit = workspace:Raycast(origin, part.Position - origin, params)
+		if hit == nil or hit.Instance == part or (hit.Position - part.Position).Magnitude <= 1.5 then
+			return true
+		end
+		-- Colisor invisível de móvel e lençol não escondem o alvo.
+		if hit.Instance.Name ~= "FurnitureCollider" and not string.find(hit.Instance.Name, "Sheet", 1, true) then
+			return false
+		end
+		exclude[#exclude + 1] = hit.Instance
+		params.FilterDescendantsInstances = exclude
 	end
-	return (hit.Position - part.Position).Magnitude <= 1.5
+	return false
 end
 
 local function findTarget(camera: Camera): BasePart?

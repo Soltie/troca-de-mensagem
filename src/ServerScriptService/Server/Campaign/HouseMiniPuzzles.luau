@@ -1400,6 +1400,12 @@ function Mini.cidaChair(root: Instance, world: Instance, spec: any, distance: nu
 		WOOD,
 		{ collide = false, transparency = 1 }
 	)
+	-- O marcador da tarefa (Station do HouseActivities) acompanha a cadeira, não o ponto sorteado do plano.
+	local stationHost = root:FindFirstChild(spec.id)
+	local station = stationHost and stationHost:FindFirstChild("Station")
+	if station and station:IsA("BasePart") then
+		station.Position = focus.Position
+	end
 	local id = `cida_{spec.id}`
 	interactable(focus, id, "FALAR COM A CADEIRA (NO ESCURO)", distance)
 	local spot = 1
@@ -1419,6 +1425,9 @@ function Mini.cidaChair(root: Instance, world: Instance, spec: any, distance: nu
 		for t = 1, 25 do
 			chair:PivotTo(from:Lerp(to, t / 25))
 			focus.Position = chair:GetPivot().Position + Vector3.new(0, 2, 0)
+			if station then
+				station.Position = focus.Position
+			end
 			task.wait(1 / 25)
 		end
 		busy = false

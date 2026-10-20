@@ -95,8 +95,17 @@ local OFFSETS = {
 	{ 0, 10 },
 	{ 0, -10 },
 }
-local OBSTACLES =
-	{ "Furniture", "Props", "Furnishings", "Dressing", "Architecture", "Finish", "PrimitiveFinish", "Doors" }
+local OBSTACLES = {
+	"Furniture",
+	"Props",
+	"Furnishings",
+	"Dressing",
+	"Architecture",
+	"Finish",
+	"PrimitiveFinish",
+	"Doors",
+	"FurnitureColliders",
+}
 -- Móveis não respondem a consultas de física (CanQuery desligado); confere as caixas na mão, só por perto.
 local function obstacles(world: Instance, p: Vector3, radius: number): { BasePart }
 	local nearby: { BasePart } = {}
@@ -108,7 +117,7 @@ local function obstacles(world: Instance, p: Vector3, radius: number): { BasePar
 		for _, part in folder:GetDescendants() do
 			if
 				part:IsA("BasePart")
-				and part.Transparency < 1
+				and (part.Transparency < 1 or part.Name == "FurnitureCollider")
 				and (part.Position - p).Magnitude < radius
 				and math.max(part.Size.X, part.Size.Z) > 0.6
 			then

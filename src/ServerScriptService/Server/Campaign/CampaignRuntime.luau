@@ -473,8 +473,19 @@ local function hasSight(player: Player, focus: BasePart, range: number): boolean
 	params.FilterDescendantsInstances = exclude
 	local head = character:FindFirstChild("Head")
 	local origin = if head and head:IsA("BasePart") then head.Position else root.Position + Vector3.yAxis * 1.5
-	local hit = workspace:Raycast(origin, focus.Position - origin, params)
-	return hit == nil or hit.Instance == focus or (hit.Position - focus.Position).Magnitude < 1.5
+	-- Colisores invisíveis de móvel e lençóis não escondem o alvo (o baú encostado no sofá ficava sem [E]).
+	for _ = 1, 4 do
+		local hit = workspace:Raycast(origin, focus.Position - origin, params)
+		if hit == nil or hit.Instance == focus or (hit.Position - focus.Position).Magnitude < 1.5 then
+			return true
+		end
+		if hit.Instance.Name ~= "FurnitureCollider" and not string.find(hit.Instance.Name, "Sheet", 1, true) then
+			return false
+		end
+		exclude[#exclude + 1] = hit.Instance
+		params.FilterDescendantsInstances = exclude
+	end
+	return false
 end
 
 -- Consumível Segunda Chance (PerkService): levanta sem ajudante, com a mesma carência do resgate.
