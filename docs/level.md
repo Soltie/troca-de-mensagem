@@ -28,3 +28,16 @@ Antes de fugir da luz a cadeira agora treme por 1,2 s com rangido e legenda "A c
 - Cadeira da Cida: ao deslizar, legenda "A cadeira recuou da luz…" + som de arrasto (CreakMetal grave + CreakWood).
 - Jantar: relógio de parede parado (marco) e retrato que despenca (WoodSplinter). Corredor: porta bate lá no fundo (DoorBang) antes dos olhos, e retrato virado para a parede (marco).
 - Coordenadas dos marcos são estimadas (parede oeste x≈-42,7; corredor x=-7,6): conferir em Play que não estão dentro da parede.
+
+## Cap. 1 nota 9: esconderijos e rota do Tung (para o Código)
+Armários existentes (`hide_<Cômodo>`, frente para +Z, entrada ~4 studs à frente): Sala `hide_Living` (-41,4; 0; 8,6); Cozinha `hide_Kitchen` (41,4; 0; 8,6); Jantar `hide_Dining` (-41,4; 0; -23,4); Biblioteca `hide_Library` (-41,4; 0; -55,4). Frente de cada um: z + 4.
+Escada do térreo para cima: boca em (0..16; 0; 23). Ele aparece no pé da escada (8; 0; 20) e segue pelo hall (0; 0; 2).
+Portas do hall: Sala (-8; 0; -4), Cozinha (8; 0; -4), Jantar (-8; 0; -36).
+Rota por cômodo (offset de entrada → meio → armário → saída):
+- Sala: (-9;-4) → (-26;-4) → (-41,4; 12,6) → volta (-9;-4).
+- Cozinha: (9;-4) → (26;-4) → (41,4; 12,6) → volta (9;-4).
+- Jantar: (-9;-36) → (-26;-36) → (-41,4; -23,4) → volta (-9;-36).
+Tempos: aviso 20 s; 3 s parado no meio; 2 s diante do armário; depois sai. Jogador escondido e sem lanterna não é visto.
+Dois armários por rota perto: Sala e Jantar têm só um, então o jogador deve decidir antes (aviso mostra o caminho pelo som).
+Puzzle "Melodia do Corredor" e erro com consequência: ver docs/roteiro.md. Precisa de 3 teclas no corredor (x 0, z -49) e notas da caixinha (SahurMelody).
+Não aplicado ao place; depende do sistema do Código.
