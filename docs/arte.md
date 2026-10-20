@@ -23,7 +23,9 @@ KnitBasket, PhotoFamily, PhotoKidsTumTum, PhotoValdemar, KeroseneLamp. Escala do
 Problemas: (1) SheetArmchair e os 3 entalhes (Carving*) NÃO aparecem no jogo: o código do place é mais antigo que o repo (sem as linhas de
 entalhe/poltrona); precisa sincronizar `HouseDressing`. (2) No print o sofá parece de couro com almofadas, sem lençol visível: conferir se a
 textura do lençol carregou. (3) Prints seguintes saíram pretos (só poeira), provável efeito de luz/cena do jogo; sem prova em lanterna.
-Nota: não rodei Crítico.
+Atualização: place sincronizado (só faltava o rename dos entalhes; o resto do HouseDressing já era igual ao repo). Play confirma os 3 entalhes
+no jogo. SheetArmchair não é usado por nenhum código (precisa de posição na sala, falta definir). Sofá sem lençol visível segue em aberto.
+Nota: não rodei Crítico (a prova em jogo é dele).
 
 ## Bloqueio (resolvido)
 - Importar GLB no Studio exige a UI (Home → Import 3D). Computer use é negado neste thread e a fila `pedidos_tela` foi aposentada.
