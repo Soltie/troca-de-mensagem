@@ -221,7 +221,9 @@ function RoomScareService.Start()
 		while true do
 			task.wait(0.5)
 			local campaign = ReplicatedStorage:FindFirstChild("CampaignState")
-			if not campaign or campaign:GetAttribute("Stage") ~= 1 or keysPlan == nil then
+			if not campaign or campaign:GetAttribute("Stage") ~= 1 then
+				-- Fora do cap. 1 (menu, outro capítulo): o próximo cap. 1 recomeça os sustos.
+				table.clear(done)
 				continue
 			end
 			for _, player in Players:GetPlayers() do
