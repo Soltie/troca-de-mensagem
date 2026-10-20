@@ -40,6 +40,13 @@ Brutal Walk, Idle Stand Looking Around), baixadas no Y Bot e **redirecionadas** 
 Tung Tung). Ficam em `Client/Creature/TungTungClipsExtra` (novo). Corrida só na perseguição. Jumpscare e captura
 intocados. Male Weighted Run ainda não baixada. Detalhes: `MUDANCAS_TESTES.md` seção 6.
 
+**Pegar e arremessar itens (v2):** `Server/Services/ThrowableService` e `Client/Controllers/ThrowController` (novos),
+remote novo `ThrowItem` em `Shared/Net/Remotes`, uma linha em cada `Main`. Vela, livro, jarra e garrafa (MeshParts
+do Creator Store, sem scripts, em `ServerStorage.Throwables`); 8 por capítulo; tecla G. O impacto chama
+`CreatureService.makeNoise` (madeira raio 55, vidro 90 e estilhaça). Testado: Tung Tung foi Investigate → Search no
+ponto do impacto; 413/413. **Arquivos compartilhados tocados (só na cópia):** `Remotes`, `Client/Main`,
+`Server/Main` — se for ao place, combinar com o integrador e a frente História (023).
+
 **Luz: NÃO reaplicada na v2.** O place já recebeu "20/10: levemente mais claro" (exposição 0,08 → 0,20, ambiente e lua
 maiores, lanterna com degradê). Somar o +20% da v1 dobraria o efeito. Fica a luz do place.
 
@@ -60,7 +67,8 @@ v2 corrigi para 8 (alinhado ao ao vivo); com 6, `Specs.PvPMatch` "v6 data migrat
 ## Reservas
 
 Nenhuma no place. Na cópia local: `TungTungRig`, `TungTungClipsExtra` (novo), `CreatureVisualController`,
-`CreatureService`, `Config` (bateria).
+`CreatureService`, `Config` (bateria), `ThrowableService` (novo), `ThrowController` (novo), `Remotes`, `Client/Main`,
+`Server/Main`.
 
 ## Pendências
 
