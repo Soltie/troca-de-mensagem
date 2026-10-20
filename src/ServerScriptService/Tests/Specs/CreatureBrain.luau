@@ -91,14 +91,46 @@ local spec: TestKit.Spec = {
 			local blocked = CreatureBrain.step(brain, perception({ distance = 2, lineOfSight = false }))
 			t.expect(blocked.mode ~= "Capture").toBe(true)
 			t.expect(blocked.event).toBeNil()
-			local caught =
+			-- A primeira pegada erra (golpe no ar) e ele fica parado se recuperando.
+			local missed =
 				CreatureBrain.step(brain, perception({ distance = C.CaptureRange - 0.1, lineOfSight = true }))
+			t.expect(missed.event).toBe("miss")
+			t.expect(missed.speed).toBe(0)
+			local recovering = CreatureBrain.step(
+				brain,
+				perception({ now = C.MissRecover * 0.5, distance = 1, lineOfSight = true, canSee = true })
+			)
+			t.expect(recovering.mode ~= "Capture").toBe(true)
+			t.expect(recovering.speed).toBe(0)
+			local caught = CreatureBrain.step(
+				brain,
+				perception({ now = C.MissRecover + 0.1, distance = C.CaptureRange - 0.1, lineOfSight = true })
+			)
 			t.expect(caught.mode).toBe("Capture")
 			t.expect(caught.event).toBe("capture")
 			local after = CreatureBrain.step(brain, perception({ canSee = true, lineOfSight = true, distance = 1 }))
 			t.expect(after.mode).toBe("Capture")
 			t.expect(after.event).toBeNil() -- não dispara a captura de novo
 			t.expect(after.speed).toBe(0)
+		end)
+
+		t.it("misses again only after the cooldown, so a long chase still ends", function()
+			local brain = awake()
+			local close = { distance = 1, lineOfSight = true, canSee = true }
+			local first = CreatureBrain.step(brain, perception(close))
+			t.expect(first.event).toBe("miss")
+			-- Escapou e voltou a ser alcançado antes do cooldown: agora pega.
+			brain.mode = "Chase"
+			local second =
+				CreatureBrain.step(brain, perception({ now = C.MissRecover + 1, distance = 1, lineOfSight = true }))
+			t.expect(second.event).toBe("capture")
+			-- Outra perseguição, muito depois: erra de novo.
+			local later = CreatureBrain.new()
+			CreatureBrain.activate(later)
+			later.lastMissAt = 0
+			local again =
+				CreatureBrain.step(later, perception({ now = C.MissCooldown + 1, distance = 1, lineOfSight = true }))
+			t.expect(again.event).toBe("miss")
 		end)
 
 		t.it("hunts without seeing once the power is back", function()

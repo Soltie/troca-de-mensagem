@@ -102,6 +102,7 @@ local Audio: { [string]: Clip } = {
 	WallScurry = { id = "rbxassetid://9118048522", volume = 1 }, -- PSE Rat Footsteps 1 (tocado lento: algo grande na parede)
 	HammerNail = { id = "rbxassetid://9114755820", volume = 0.9 }, -- PSE Hammer Nail Into Wood 2
 	WallBurst = { id = "rbxassetid://9120832269", volume = 1 }, -- PSE Wood Creak Intense Cracking Splintering 1
+	SwingMiss = { id = "rbxassetid://9119707746", volume = 1, speed = 0.55 }, -- PSE Swish Sweetener 4 (grave: bastão no ar)
 }
 
 return table.freeze(Audio)

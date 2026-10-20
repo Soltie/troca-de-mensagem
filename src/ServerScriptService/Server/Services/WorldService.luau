@@ -720,6 +720,8 @@ function WorldService.useDoor(id: string): (boolean, DoorState)
 	end
 	local nextState: DoorState = if doorStates[id] == "open" then "closed" else "open"
 	animateDoor(door, nextState)
+	-- Fechada por alguém agora: se o Tung Tung chegar logo, ele bate antes de arrombar (CreatureService).
+	door.panel:SetAttribute("ClosedAt", if nextState == "closed" then workspace:GetServerTimeNow() else nil)
 	return true, nextState
 end
 

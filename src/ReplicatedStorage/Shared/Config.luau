@@ -284,10 +284,11 @@ local Config = {
 		SightFov = 100,
 		-- Abaixo desta distância ele percebe o jogador mesmo de costas (se houver linha de visão).
 		CloseSenseRange = 7,
-		-- Perde o rastro após este tempo (s) sem ver; segue a última posição por GraceTime (s).
-		LoseSightTime = 5,
+		-- Perde o rastro após este tempo (s) sem ver; segue a última posição por GraceTime (s). Quebrar a linha de
+		-- visão agora despista mais rápido (3,5 s) e ele procura por mais tempo (5 s).
+		LoseSightTime = 3.5,
 		GraceTime = 1.5,
-		SearchTime = 4,
+		SearchTime = 5,
 		CaptureRange = 3.6,
 		-- Com 2+ fusíveis, a cada StalkInterval (s) ele "fareja" a posição aproximada do jogador.
 		StalkFromFuses = 2,
@@ -296,6 +297,13 @@ local Config = {
 		RepathInterval = 0.5,
 		DoorOpenRange = 5,
 		DoorOpenPause = 0.6,
+		-- Perseguição com "quase": a primeira pegada erra (golpe no ar) e ele fica MissRecover s se recuperando;
+		-- só erra de novo depois de MissCooldown s. Porta fechada na cara dele há menos de DoorSlamWindow s segura
+		-- DoorSlamPause s (ele bate antes de arrombar).
+		MissCooldown = 20,
+		MissRecover = 1.3,
+		DoorSlamWindow = 8,
+		DoorSlamPause = 2.4,
 	},
 
 	Visual = {

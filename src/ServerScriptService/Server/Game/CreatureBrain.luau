@@ -37,7 +37,7 @@ export type Command = {
 	mode: Mode,
 	target: any?,
 	speed: number,
-	-- Evento para efeitos/legendas: "spotted" | "lost" | "capture" | nil
+	-- Evento para efeitos/legendas: "spotted" | "lost" | "miss" | "capture" | nil
 	event: string?,
 }
 
@@ -48,6 +48,9 @@ export type Brain = {
 	lastSeenAt: number,
 	investigatePos: any?,
 	searchUntil: number,
+	-- Golpe que erra: hora do último erro e fim da recuperação (parado depois do golpe).
+	lastMissAt: number,
+	recoverUntil: number,
 }
 
 local C = Config.Creature
@@ -62,6 +65,8 @@ function CreatureBrain.new(): Brain
 		lastSeenAt = -math.huge,
 		investigatePos = nil,
 		searchUntil = 0,
+		lastMissAt = -math.huge,
+		recoverUntil = 0,
 	}
 end
 
@@ -99,8 +104,24 @@ function CreatureBrain.step(brain: Brain, p: Perception): Command
 		return command(brain, nil, p.hunt, nil)
 	end
 
-	-- Captura: perto o bastante e sem parede no meio.
+	-- Recuperando do golpe que errou: parado, olhando para onde viu o jogador pela última vez.
+	if p.now < brain.recoverUntil then
+		return { mode = brain.mode, target = brain.lastKnownPos, speed = 0, event = nil }
+	end
+
+	-- Captura: perto o bastante e sem parede no meio. A primeira pegada (e depois uma a cada MissCooldown s) erra:
+	-- o golpe passa raspando, ele se recupera por MissRecover s e o jogador tem a chance de escapar por pouco.
 	if p.distance and p.distance <= C.CaptureRange and p.lineOfSight then
+		if p.now - brain.lastMissAt >= C.MissCooldown then
+			brain.lastMissAt = p.now
+			brain.recoverUntil = p.now + C.MissRecover
+			brain.mode = "Chase"
+			if p.targetPos ~= nil then
+				brain.lastKnownPos = p.targetPos
+			end
+			brain.lastSeenAt = p.now
+			return { mode = "Chase", target = brain.lastKnownPos, speed = 0, event = "miss" }
+		end
 		brain.mode = "Capture"
 		return command(brain, nil, p.hunt, "capture")
 	end

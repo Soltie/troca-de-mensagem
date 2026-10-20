@@ -50,6 +50,7 @@ local phase: GameState.Phase = "Loading"
 local rng = Random.new()
 local reaction = ""
 local reactionUntil = 0
+local lastMiss: any = nil
 
 local function serverRoot(): BasePart?
 	local model = workspace:FindFirstChild(Tags.CreatureModel)
@@ -348,6 +349,26 @@ local function update(dt: number)
 	if currentMode ~= mode then
 		onModeChanged(mode, currentMode)
 		mode = currentMode
+	end
+	-- Golpe que passou raspando (CreatureBrain "miss"): bastão no ar, som e tranco só em quem escapou.
+	local miss = tonumber(root:GetAttribute("MissSerial")) or 0
+	if lastMiss == nil then
+		-- Primeiro quadro (ou entrou no meio da partida): só marca, não toca golpe antigo.
+		lastMiss = miss
+	end
+	if miss ~= lastMiss then
+		lastMiss = miss
+		do
+			reaction, reactionUntil = "Lunge", os.clock() + 0.9
+			if tung then
+				TungTungRig.play(tung, "slash", 0.05, 1.5)
+			end
+			carry(AudioController.playAt("SwingMiss", emitter(), 1.8), 10, 90)
+			if root:GetAttribute("MissTarget") == Players.LocalPlayer.UserId then
+				CameraController.addTrauma(0.55)
+				CameraController.punch(1.4)
+			end
+		end
 	end
 
 	if tung then

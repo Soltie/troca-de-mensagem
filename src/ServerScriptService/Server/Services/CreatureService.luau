@@ -405,6 +405,14 @@ local function brainTick()
 		fireCapture(target.player)
 		return
 	end
+	if command.event == "miss" and target then
+		-- Golpe que passou raspando: o cliente anima o bastão e dá o tranco em quem escapou.
+		local r = getRoot()
+		r:SetAttribute("MissTarget", target.player.UserId)
+		r:SetAttribute("MissSerial", ((r:GetAttribute("MissSerial") :: number?) or 0) + 1)
+		stopMoving()
+		log.info("missed %s", target.player.Name)
+	end
 	if command.event then
 		log.debug("event %s", command.event)
 	end
@@ -455,11 +463,30 @@ local function move(dt: number)
 		pauseUntil = now + 1.2
 	end
 
-	-- Arromba portas fechadas no caminho.
+	-- Arromba portas fechadas no caminho. Porta fechada na cara dele há pouco (ClosedAt): bate antes e demora mais.
 	local door = WorldService.closedDoorNear(feet(), C.DoorOpenRange)
-	if door and (currentMode == "Chase" or currentMode == "Investigate" or currentMode == "Patrol") then
-		WorldService.forceOpenDoor(door)
-		pauseUntil = now + C.DoorOpenPause
+	if
+		door
+		and now >= pauseUntil
+		and (currentMode == "Chase" or currentMode == "Investigate" or currentMode == "Patrol")
+	then
+		local closedAt = door.panel:GetAttribute("ClosedAt")
+		local slammed = type(closedAt) == "number" and workspace:GetServerTimeNow() - closedAt < C.DoorSlamWindow
+		if slammed then
+			door.panel:SetAttribute("ClosedAt", nil)
+			WorldService.bangDoor(door)
+			pauseUntil = now + C.DoorSlamPause
+			local held = door
+			task.delay(C.DoorSlamPause * 0.55, function()
+				WorldService.bangDoor(held)
+			end)
+			task.delay(C.DoorSlamPause - 0.3, function()
+				WorldService.forceOpenDoor(held)
+			end)
+		else
+			WorldService.forceOpenDoor(door)
+			pauseUntil = now + C.DoorOpenPause
+		end
 	end
 	if now < pauseUntil then
 		return

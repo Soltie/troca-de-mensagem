@@ -91,6 +91,7 @@ por isso o trecho dela é 0,47–0,82 s.
 | WallScurry | 9118048522 | Rat Footsteps 1 (SFX) | ProSoundEffects | arranhado do Tung andando dentro da parede (tocado lento) |
 | HammerNail | 9114755820 | Hammer Nail Into Wood 2 (SFX) | ProSoundEffects | pregar tábua no buraco do túnel |
 | WallBurst | 9120832269 | Wood Creak Intense Cracking Splintering 1 (SFX) | ProSoundEffects | o Tung saindo do buraco na parede |
+| SwingMiss | 9119707746 | Swish Sweetener 4 (SFX), tocado a 0,55 | ProSoundEffects | golpe do Tung que passa raspando |
 
 Também do cliente Roblox: `StepFallback` (`rbxasset://sounds/action_footsteps_plastic.mp3`, trecho 0–0,26 s)
 e `Land` (`action_jump_land.mp3`). Os passos padrão do personagem são silenciados pelo `BodyAudioController`.
