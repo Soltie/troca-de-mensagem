@@ -33,9 +33,10 @@ Piggy, Apeirophobia).
 
 ## Problemas encontrados hoje (do mais grave ao menos)
 1. **Curto demais** (continua o maior problema). A floresta é a pior: 69 s no cap. 6.
-2. **Porta aberta com parede invisível:** a colisão da porta aberta é uma placa de 9 studs atravessada no meio do vão
-   (a folha visível tem 5; a outra folha fica 10 studs para o lado). O vão vira duas passagens de ~4 studs e o
-   pathfinding manda andar pelo meio. Jogador real esbarra no "nada".
+2. (corrigido) **Porta aberta com parede invisível:** a colisão era o painel invisível de 9 studs de uma folha só;
+   aberta, ela passava 4 studs da folha visível (parede invisível dentro do cômodo) e o lado da outra folha não
+   colidia. Agora a colisão é das duas folhas (`HouseFinish.doubleDoor`), cada uma com o marcador de porta do
+   pathfinding. Testado: passa pelo vão, bloqueia na folha e na porta fechada; o bot fez o cap. 1 em 45 s sem emperrar.
 3. **Escada do porão:** o bot ficou ~90 s preso em (-22, 4, 13) tentando descer. Pode ser só o pathfinding do bot, mas
    vale um jogador de verdade conferir.
 4. **Folga do Tung longa demais:** na fase "Relax" (35 s) ele ignorou o jogador a 4 studs por 50 s seguidos.
@@ -50,8 +51,7 @@ Piggy, Apeirophobia).
 1. **Capítulos de 5–8 min:** mais 4–6 tarefas por capítulo usando as alas que já existem (Jardim de Inverno, Estufa,
    Pavilhão, Oficina, Pátio do Relógio, Fonte), tarefas de várias etapas (juntar 3 peças antes do enigma) e voltar a
    cômodos que mudaram. Na floresta, espaçar as tarefas e pôr perigo no caminho. Medir com o bot até passar de 5 min.
-2. **Consertar a porta aberta:** colisão do tamanho e no lugar da folha aberta (ou sem colisão quando aberta) e a
-   folha B no lugar certo. É o sistema de portas compartilhado com o Codex: combinar antes de mexer.
+2. ~~Consertar a porta aberta~~ (feito em 20/10).
 3. **Folga do Tung:** encurtar a fase Relax para ~20 s e deixar ele atacar quem está a menos de 6 studs e à vista.
 4. **Mansão no cap. 1:** ligar as travas só depois de o Tung acordar (cap. 2), ou explicar na primeira vez.
 5. **Conferir a escada do porão** com jogador de verdade; se prender, alargar degraus/colisão.

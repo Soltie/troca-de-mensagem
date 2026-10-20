@@ -87,8 +87,8 @@ end
 	Porta dupla (Assets/MansionProps/DoorLeaf, modelo Hyper3D escolhido pelo usuário em 19/10): o vão de 10 studs
 	recebe duas folhas de 5 × 11,5, cada uma girando na sua ombreira; a folha B gira
 	espelhada na outra ombreira, no mesmo ângulo do painel, e as duas abrem para o mesmo lado. Cada folha mostra a
-	maçaneta numa face, junto ao encontro das duas. O painel fica invisível, mas continua sendo a colisão, o prompt,
-	o som e o PathfindingModifier. Sem a folha na biblioteca, cai na porta de uma folha abaixo.
+	maçaneta numa face, junto ao encontro das duas. O painel fica invisível e sem colisão (a colisão é das folhas), mas
+	continua sendo o prompt, o som e o PathfindingModifier. Sem a folha na biblioteca, cai na porta de uma folha abaixo.
 ]]
 local function doubleDoor(panel: BasePart): boolean
 	local assets = ReplicatedStorage:FindFirstChild("Assets")
@@ -125,6 +125,15 @@ local function doubleDoor(panel: BasePart): boolean
 	end
 	hang("DoorLeafA", -1)
 	hang("DoorLeafB", 1)
+	-- A colisão fica nas folhas (avaliação 20/10/2026): aberto, o painel de 9 studs de uma folha só passava 4 studs da
+	-- folha visível (parede invisível dentro do cômodo) e o lado da outra folha não colidia. O painel continua sendo
+	-- prompt, som e marcador; cada folha leva o próprio marcador de porta (o Tung atravessa e arromba como antes).
+	for _, item in leaves do
+		item.part.CanCollide = true
+		local passage = Instance.new("PathfindingModifier")
+		passage.Label, passage.PassThrough, passage.Parent = "Door", true, item.part
+	end
+	panel.CanCollide = false
 	local _, yaw0 = panel.CFrame:ToEulerAnglesYXZ()
 	-- O WorldService gira o painel em passos; as folhas seguem o ângulo com uma interpolação curta.
 	local angle = Instance.new("NumberValue")
