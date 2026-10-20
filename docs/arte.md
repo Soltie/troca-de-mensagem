@@ -25,6 +25,10 @@ entalhe/poltrona); precisa sincronizar `HouseDressing`. (2) No print o sofá par
 textura do lençol carregou. (3) Prints seguintes saíram pretos (só poeira), provável efeito de luz/cena do jogo; sem prova em lanterna.
 Atualização: place sincronizado (só faltava o rename dos entalhes; o resto do HouseDressing já era igual ao repo). Play confirma os 3 entalhes
 no jogo. SheetArmchair não é usado por nenhum código (precisa de posição na sala, falta definir). Sofá sem lençol visível segue em aberto.
+Correção do lençol: o sofá original (11,8 studs) engolia o lençol do artista (8,3). `HouseDressing` agora esconde o original
+(`hideOriginal`, mantém colisão) quando o modelo do artista existe; mesma regra para a poltrona da sala (-36,5; -15,5) com `Living_SheetArmchair`.
+Aplicado no repo e no place; `lune run scripts/check` ALL GREEN. Conferido por números no Play (originais com Transparency 1, lençóis nas
+mesmas posições); print visual não consegui (capturas saem pretas), então a conferência visual fica com o Crítico.
 Nota: não rodei Crítico (a prova em jogo é dele).
 
 ## Bloqueio (resolvido)

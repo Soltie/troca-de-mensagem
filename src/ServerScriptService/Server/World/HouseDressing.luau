@@ -46,6 +46,15 @@ local function deco(
 end
 
 -- Primeiro modelo/peça com `name` no nome dentro da caixa (x0..x1, z0..z1) e altura y0..y1.
+-- Esconde o modelo original que o lençol do artista cobre (continua com colisão).
+local function hideOriginal(model: Model)
+	for _, d in model:GetDescendants() do
+		if d:IsA("BasePart") then
+			d.Transparency = 1
+		end
+	end
+end
+
 local function find(
 	root: Instance,
 	name: string,
@@ -234,7 +243,14 @@ function Dressing.living(root: Instance)
 	local sofa = find(root, "Sofa", -44, -8, -20, 12, -1, 4)
 	if sofa then
 		-- Só o lençol do artista: uma caixa por cima do sofá lia como colchão, então sem ele o sofá fica à mostra.
-		HouseArt.place(folder, "Living_SheetSofa", sofa:GetPivot())
+		if HouseArt.place(folder, "Living_SheetSofa", sofa:GetPivot()) then
+			hideOriginal(sofa)
+		end
+	end
+	-- Poltrona da sala também coberta (o lençol do artista substitui o modelo original).
+	local armchair = find(root, "Armchair", -44, -8, -20, 12, -1, 4)
+	if armchair and HouseArt.place(folder, "Living_SheetArmchair", armchair:GetPivot()) then
+		hideOriginal(armchair)
 	end
 	-- Cesto de tricô e bilhete ao lado da cadeira de balanço da Dona Cida.
 	local chair = find(root, "RockingChair", -44, -8, -20, 12, -1, 4)
