@@ -46,3 +46,4 @@ Correção (repo e place, 20/10 17:10) (`UI/MenuStage.luau`): z -0,8 (recuado 0,
 Outras cópias: jumpscare, perseguição e UI de itens usam `TungTungRig` (só `eyeLight` + peças Neon do modelo), sem bolinha; nada a mudar.
 Medida offline (Blender, TungTung_MaoNova_v4 no osso Head): frente do rosto ~12,7 cm na altura do olho; profundidade da órbita não dá para fechar sem a escala do rig, então o valor é estimado.
 Aplicar: colar as 2 mudanças no `MenuStage` do place (Studio com o Level) e conferir o menu de lado. check ALL GREEN.
+Nota do place: o `MenuStage` do place era diferente do repo (z -1, bolinha 0,22); apliquei a mesma intenção: z -0,8 e Z da bolinha 0,11. Lido de volta por script. Falta o Crítico ver de lado.
