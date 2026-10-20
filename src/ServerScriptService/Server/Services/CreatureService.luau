@@ -367,6 +367,20 @@ local function brainTick()
 	end
 	local target = findTarget()
 	local perception = perceive(target, now)
+	-- Na folga/saída falsa ele não ignora quem está colado: perto e com linha de visão conta como visto.
+	if
+		feintUntil > now
+		and not perception.canSee
+		and perception.lineOfSight
+		and perception.targetPos ~= nil
+		and (perception.distance or math.huge) <= C.RetreatAttackRange
+	then
+		perception.canSee = true
+		lastSeenAt = now
+		if target then
+			seenPlayers[target.player.UserId] = now
+		end
+	end
 	if
 		brain.mode == "Search"
 		and now >= brain.searchUntil
@@ -386,7 +400,12 @@ local function brainTick()
 	)
 	-- Modificadores da partida (Pesadelo, Pernas Longas): mais rápido, nunca mais que a corrida do jogador.
 	command.speed = Difficulty.creatureSpeed(command.speed, DifficultyService.modifiers(), Config.Player.SprintSpeed)
-	if feintUntil > now and not perception.canSee and not perception.noisePos then
+	local striking = command.event == "capture"
+		or command.event == "miss"
+		or command.event == "windup"
+		or now < brain.recoverUntil
+		or brain.windupUntil > 0
+	if feintUntil > now and not perception.canSee and not perception.noisePos and not striking then
 		command = { mode = "Investigate", target = feintDestination, speed = 5 }
 	else
 		feintUntil = 0
@@ -412,6 +431,14 @@ local function brainTick()
 		r:SetAttribute("MissSerial", ((r:GetAttribute("MissSerial") :: number?) or 0) + 1)
 		stopMoving()
 		log.info("missed %s", target.player.Name)
+	end
+	if command.event == "windup" and target then
+		-- Ergue o bastão antes da pegada: o cliente anima e toca o aviso (CaptureWindup s para reagir).
+		local r = getRoot()
+		r:SetAttribute("WindupTarget", target.player.UserId)
+		r:SetAttribute("WindupSerial", ((r:GetAttribute("WindupSerial") :: number?) or 0) + 1)
+		stopMoving()
+		placeAt(feet(), target.root.Position - feet())
 	end
 	if command.event then
 		log.debug("event %s", command.event)

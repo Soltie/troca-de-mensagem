@@ -102,9 +102,31 @@ local spec: TestKit.Spec = {
 			)
 			t.expect(recovering.mode ~= "Capture").toBe(true)
 			t.expect(recovering.speed).toBe(0)
-			local caught = CreatureBrain.step(
+			-- Antes da pegada ele ergue o bastão (aviso de corpo) e fica parado.
+			local windup = CreatureBrain.step(
 				brain,
 				perception({ now = C.MissRecover + 0.1, distance = C.CaptureRange - 0.1, lineOfSight = true })
+			)
+			t.expect(windup.event).toBe("windup")
+			t.expect(windup.mode).toBe("Chase")
+			t.expect(windup.speed).toBe(0)
+			local raising = CreatureBrain.step(
+				brain,
+				perception({
+					now = C.MissRecover + 0.1 + C.CaptureWindup * 0.5,
+					distance = C.CaptureRange - 0.1,
+					lineOfSight = true,
+				})
+			)
+			t.expect(raising.mode ~= "Capture").toBe(true)
+			t.expect(raising.event).toBeNil()
+			local caught = CreatureBrain.step(
+				brain,
+				perception({
+					now = C.MissRecover + 0.1 + C.CaptureWindup + 0.01,
+					distance = C.CaptureRange - 0.1,
+					lineOfSight = true,
+				})
 			)
 			t.expect(caught.mode).toBe("Capture")
 			t.expect(caught.event).toBe("capture")
@@ -123,7 +145,12 @@ local spec: TestKit.Spec = {
 			brain.mode = "Chase"
 			local second =
 				CreatureBrain.step(brain, perception({ now = C.MissRecover + 1, distance = 1, lineOfSight = true }))
-			t.expect(second.event).toBe("capture")
+			t.expect(second.event).toBe("windup")
+			local caught = CreatureBrain.step(
+				brain,
+				perception({ now = C.MissRecover + 1 + C.CaptureWindup, distance = 1, lineOfSight = true })
+			)
+			t.expect(caught.event).toBe("capture")
 			-- Outra perseguição, muito depois: erra de novo.
 			local later = CreatureBrain.new()
 			CreatureBrain.activate(later)
@@ -131,6 +158,26 @@ local spec: TestKit.Spec = {
 			local again =
 				CreatureBrain.step(later, perception({ now = C.MissCooldown + 1, distance = 1, lineOfSight = true }))
 			t.expect(again.event).toBe("miss")
+		end)
+
+		t.it("lets the player escape during the windup", function()
+			local brain = awake()
+			brain.lastMissAt = 0
+			local close = { now = 1, distance = 1, lineOfSight = true, canSee = true }
+			t.expect(CreatureBrain.step(brain, perception(close)).event).toBe("windup")
+			-- Saiu do alcance enquanto ele erguia o bastão: volta a perseguir, sem captura.
+			local away = CreatureBrain.step(
+				brain,
+				perception({ now = 1 + C.CaptureWindup + 0.1, distance = 8, lineOfSight = true, canSee = true })
+			)
+			t.expect(away.mode).toBe("Chase")
+			t.expect(away.event).toBeNil()
+			-- Alcançado de novo: o aviso recomeça em vez de pegar na hora.
+			local again = CreatureBrain.step(
+				brain,
+				perception({ now = 2 + C.CaptureWindup, distance = 1, lineOfSight = true, canSee = true })
+			)
+			t.expect(again.event).toBe("windup")
 		end)
 
 		t.it("hunts without seeing once the power is back", function()

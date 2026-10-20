@@ -302,6 +302,10 @@ local Config = {
 		-- DoorSlamPause s (ele bate antes de arrombar).
 		MissCooldown = 20,
 		MissRecover = 1.3,
+		-- Aviso de corpo antes da pegada de verdade: ergue o bastão por CaptureWindup s. Quem sai do alcance escapa.
+		CaptureWindup = 0.6,
+		-- Na folga do diretor de tensão ele ainda ataca quem está a menos disto e à vista.
+		RetreatAttackRange = 6,
 		DoorSlamWindow = 8,
 		DoorSlamPause = 2.4,
 	},

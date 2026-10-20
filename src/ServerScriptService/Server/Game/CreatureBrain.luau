@@ -37,7 +37,7 @@ export type Command = {
 	mode: Mode,
 	target: any?,
 	speed: number,
-	-- Evento para efeitos/legendas: "spotted" | "lost" | "miss" | "capture" | nil
+	-- Evento para efeitos/legendas: "spotted" | "lost" | "miss" | "windup" | "capture" | nil
 	event: string?,
 }
 
@@ -51,6 +51,8 @@ export type Brain = {
 	-- Golpe que erra: hora do último erro e fim da recuperação (parado depois do golpe).
 	lastMissAt: number,
 	recoverUntil: number,
+	-- Erguendo o bastão para a pegada (0 = não está): a captura só sai quando passa deste instante.
+	windupUntil: number,
 }
 
 local C = Config.Creature
@@ -67,6 +69,7 @@ function CreatureBrain.new(): Brain
 		searchUntil = 0,
 		lastMissAt = -math.huge,
 		recoverUntil = 0,
+		windupUntil = 0,
 	}
 end
 
@@ -122,9 +125,25 @@ function CreatureBrain.step(brain: Brain, p: Perception): Command
 			brain.lastSeenAt = p.now
 			return { mode = "Chase", target = brain.lastKnownPos, speed = 0, event = "miss" }
 		end
+		-- Aviso de corpo: ergue o bastão por CaptureWindup s antes de pegar (dá tempo de reagir).
+		if brain.windupUntil == 0 then
+			brain.windupUntil = p.now + C.CaptureWindup
+			brain.mode = "Chase"
+			if p.targetPos ~= nil then
+				brain.lastKnownPos = p.targetPos
+			end
+			brain.lastSeenAt = p.now
+			return { mode = "Chase", target = brain.lastKnownPos, speed = 0, event = "windup" }
+		end
+		if p.now < brain.windupUntil then
+			return { mode = "Chase", target = brain.lastKnownPos, speed = 0, event = nil }
+		end
+		brain.windupUntil = 0
 		brain.mode = "Capture"
 		return command(brain, nil, p.hunt, "capture")
 	end
+	-- Saiu do alcance enquanto ele erguia o bastão: escapou, o aviso recomeça na próxima.
+	brain.windupUntil = 0
 
 	-- Viu (ou a energia voltou e ele caça): persegue.
 	if (p.canSee or p.hunt) and p.targetPos ~= nil then

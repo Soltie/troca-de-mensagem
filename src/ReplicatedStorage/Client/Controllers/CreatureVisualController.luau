@@ -51,6 +51,7 @@ local rng = Random.new()
 local reaction = ""
 local reactionUntil = 0
 local lastMiss: any = nil
+local lastWindup: any = nil
 
 local function serverRoot(): BasePart?
 	local model = workspace:FindFirstChild(Tags.CreatureModel)
@@ -368,6 +369,23 @@ local function update(dt: number)
 				CameraController.addTrauma(0.55)
 				CameraController.punch(1.4)
 			end
+		end
+	end
+
+	-- Aviso antes da pegada (CreatureBrain "windup"): ergue o bastão devagar e rosna; a pegada continua o golpe.
+	local windup = tonumber(root:GetAttribute("WindupSerial")) or 0
+	if lastWindup == nil then
+		lastWindup = windup
+	end
+	if windup ~= lastWindup then
+		lastWindup = windup
+		reaction, reactionUntil = "Lunge", os.clock() + Config.Creature.CaptureWindup
+		if tung then
+			TungTungRig.play(tung, "slash", 0.05, 0.8)
+		end
+		carry(AudioController.playAt("Growl", emitter(), 1.8, 0.7), 16, 90)
+		if root:GetAttribute("WindupTarget") == Players.LocalPlayer.UserId then
+			CameraController.addTrauma(0.25)
 		end
 	end
 
