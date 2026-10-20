@@ -328,6 +328,18 @@ function Activities.build(parent: Instance, plan: Generator.Plan, distance: numb
 			end
 			continue
 		end
+		-- Cap. 1 (nota 9): Melodia do Corredor. Nota errada chama o Tum Tum antes (Visita com aviso curto).
+		if plan.stage == 1 and plan.mode == "Story" and spec.event == "corridor" then
+			for id, target in
+				Mini.melodyLock(root, spec, p, distance, function()
+					local visit = require("../Services/TungVisitService") :: any
+					visit.start({ early = true, room = "Living" })
+				end)
+			do
+				built.targets[id] = target
+			end
+			continue
+		end
 		-- Cap. 1: a cadeira da Dona Cida, que foge da lanterna; com a luz apagada ela dá a dica da caixinha.
 		if plan.stage == 1 and spec.item == "cida_talk" then
 			for id, target in Mini.cidaChair(root, parent, spec, distance) do

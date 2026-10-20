@@ -1510,4 +1510,53 @@ function Mini.cidaChair(root: Instance, world: Instance, spec: any, distance: nu
 	}
 end
 
+-- A Melodia do Corredor (cap. 1, nota 9): quatro teclas na parede do hall. A ordem certa são as três primeiras notas
+-- da música da caixinha da Lia (sala). Nota errada: pancada forte e `onWrong` (o Tum Tum desce antes, com aviso curto).
+-- Acertar as três em sequência destranca o corredor sem o Tum Tum.
+function Mini.melodyLock(
+	root: Instance,
+	spec: any,
+	at: Vector3,
+	distance: number,
+	onWrong: () -> ()
+): { [string]: Target }
+	local model = Build.model(root, `melody_{spec.id}`)
+	local order = { SahurMelody.FIRST[1], SahurMelody.FIRST[2], SahurMelody.FIRST[3] }
+	local step = 0
+	local targets: { [string]: Target } = {}
+	for n, label in PuzzleStyles.PIANO.labels do
+		local rgb = PuzzleStyles.MARK_COLORS[label] or { 232, 224, 204 }
+		local key = Build.part(
+			model,
+			`melodykey_{spec.id}_{n}`,
+			Vector3.new(0.3, 1.3, 1.3),
+			CFrame.new(-7.3, 3.4, at.Z + (n - 2.5) * 1.8),
+			Color3.fromRGB(rgb[1], rgb[2], rgb[3]):Lerp(Color3.fromRGB(60, 44, 32), 0.3),
+			{ material = Enum.Material.Wood, collide = false, query = true }
+		)
+		local id = `melodykey_{spec.id}_{n}`
+		interactable(key, id, `TOCAR A TECLA DA {label}`, distance)
+		targets[id] = {
+			taskId = spec.id,
+			button = 1,
+			focus = key,
+			handle = function(_player: Player): (Result, string)
+				play(key, "PianoKey", 0.9, PuzzleStyles.PIANO_PITCH[n], 60)
+				if n ~= order[step + 1] then
+					step = 0
+					play(key, "BreakerFail", 1, 0.8, 90)
+					task.spawn(onWrong)
+					return "error", "melody_wrong"
+				end
+				step += 1
+				if step >= #order then
+					return "solve", "melody_solved"
+				end
+				return "ok", "melody_note"
+			end,
+		}
+	end
+	return targets
+end
+
 return Mini

@@ -41,3 +41,6 @@ Tempos: aviso 20 s; 3 s parado no meio; 2 s diante do armário; depois sai. Joga
 Dois armários por rota perto: Sala e Jantar têm só um, então o jogador deve decidir antes (aviso mostra o caminho pelo som).
 Puzzle "Melodia do Corredor" e erro com consequência: ver docs/roteiro.md. Precisa de 3 teclas no corredor (x 0, z -49) e notas da caixinha (SahurMelody).
 Não aplicado ao place; depende do sistema do Código.
+
+## Aplicado no place (cap. 1, nota 9)
+Aviso/arrasto da cadeira, rel�gio parado + retrato que cai no jantar (retrato em (-43,3; 8,4; -37)), porta que bate + retrato virado no corredor (-7,3; 6,5; -36), Melodia do Corredor (4 teclas na parede do hall em x=-7,3, ordem = 3 primeiras notas da caixinha; erro chama TungVisitService.start{early=true, room="Living"}). Paredes conferidas por raycast (fachada x=-43,5; DoorWall x=-7,5). Tests.Run 443/0. Backups *_v4 em ServerStorage.Backup_Cap1_Level.

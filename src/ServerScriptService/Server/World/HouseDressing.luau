@@ -552,11 +552,11 @@ function Dressing.scares(root: Instance)
 		folder,
 		"DiningPortrait",
 		V3(0.2, 3, 2.2),
-		CFrame.new(-42.8, 8.4, -44) * CFrame.Angles(math.rad(6), 0, 0),
+		CFrame.new(-43.3, 8.4, -37) * CFrame.Angles(math.rad(6), 0, 0),
 		rgb(58, 40, 28)
 	)
 	-- Marco do corredor: retrato da família virado para a parede, só o verso à mostra.
-	deco(folder, "CorridorTurnedPortrait", V3(0.2, 3.4, 2.6), CFrame.new(-7.6, 6.5, -30), rgb(52, 36, 26))
+	deco(folder, "CorridorTurnedPortrait", V3(0.2, 3.4, 2.6), CFrame.new(-7.3, 6.5, -36), rgb(52, 36, 26))
 	local scares: { Scare } = {
 		{
 			-- Hall: três pancadas no andar de cima e poeira caindo do teto.
