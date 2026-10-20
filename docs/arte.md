@@ -40,9 +40,9 @@ Nota: não rodei Crítico (a prova em jogo é dele).
 ## Crítico
 Não rodado (nenhuma mudança visível no jogo ainda).
 
-## Olho do Tung no menu (Crítico 6,0, rodada 1) — preparado, NÃO aplicado ao place
+## Olho do Tung no menu (Crítico 6,0, rodada 1) — aplicado no place
 Causa: o brilho do olho (`MenuStage` `Eye1/Eye2`, bolinha Neon 0,2) ficava em z = -0,93 no osso da cabeça = superfície do rosto; de lado metade salta para fora.
-Correção só no repo (`UI/MenuStage.luau`): z -0,8 (recuado 0,13) e bolinha achatada 0,2 x 0,2 x 0,1. Modelo e textura do Tung intocados (Assets.TungTung).
+Correção (repo e place, 20/10 17:10) (`UI/MenuStage.luau`): z -0,8 (recuado 0,13) e bolinha achatada 0,2 x 0,2 x 0,1. Modelo e textura do Tung intocados (Assets.TungTung).
 Outras cópias: jumpscare, perseguição e UI de itens usam `TungTungRig` (só `eyeLight` + peças Neon do modelo), sem bolinha; nada a mudar.
 Medida offline (Blender, TungTung_MaoNova_v4 no osso Head): frente do rosto ~12,7 cm na altura do olho; profundidade da órbita não dá para fechar sem a escala do rig, então o valor é estimado.
 Aplicar: colar as 2 mudanças no `MenuStage` do place (Studio com o Level) e conferir o menu de lado. check ALL GREEN.
