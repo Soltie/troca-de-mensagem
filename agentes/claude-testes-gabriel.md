@@ -27,6 +27,13 @@ cabeça devagar e encara; no início da perseguição a cabeça estala e os olho
 com a cabeça travada na vítima. Captura/dormente zeram a postura. **Não toquei em `JumpscareController`,
 captura, `CreatureService`/`CreatureBrain`, Root, velocidade ou visão do servidor.**
 
+**Tipos de aproximação (v2, `CreatureService`, autorizado pelo humano):** camada por cima do `CreatureBrain`
+(sem editá-lo), atributo `Approach` na Root. Encarar (para 0,9–1,4 s ao te ver a 8–24 studs), arrancada (2,4 s a
+1,28×, teto `SprintSpeed - 0,5`) e espreita (de longe anda a 4,5 e congela quando você olha). Visual e sons de cada
+fase no `CreatureVisualController`. Testado no Play: sequências completas, 0 erros, `Tests.Run` 413/413. Detalhes em
+`tungtung-testes/MUDANCAS_TESTES.md` (seção 5). **Conflito potencial:** `CreatureService` é arquivo compartilhado
+(História mexe nele; mensagem 023). Nada disso vai ao place sem combinar.
+
 **Luz: NÃO reaplicada na v2.** O place já recebeu "20/10: levemente mais claro" (exposição 0,08 → 0,20, ambiente e lua
 maiores, lanterna com degradê). Somar o +20% da v1 dobraria o efeito. Fica a luz do place.
 
@@ -46,7 +53,7 @@ v2 corrigi para 8 (alinhado ao ao vivo); com 6, `Specs.PvPMatch` "v6 data migrat
 
 ## Reservas
 
-Nenhuma no place. Na cópia local: `TungTungRig`, `CreatureVisualController`, `Config` (bateria).
+Nenhuma no place. Na cópia local: `TungTungRig`, `CreatureVisualController`, `CreatureService`, `Config` (bateria).
 
 ## Pendências
 
