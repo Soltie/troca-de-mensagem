@@ -27,6 +27,9 @@ local Config = {
 		CrawlSpeed = 3,
 		-- Primeira pancada no capítulo: tempo rastejando até levantar sozinho.
 		CrawlSeconds = 8,
+		-- Pancadas por capítulo que levantam sozinho antes da captura de verdade: solo 2 (3ª derruba de vez), grupo 1.
+		SoloWounds = 2,
+		GroupWounds = 1,
 		MedicReviveSeconds = 2.5,
 		-- Depois de levantar (sozinho ou resgatado): carência e o Tung se afasta (CampaignRuntime).
 		ReviveGrace = 10,

@@ -72,8 +72,9 @@ local playerAdapter: any = nil
 local channels: { [number]: { target: number, endsAt: number } } = {}
 local nextActionAt: { [number]: number } = {}
 local rescueParts: { [number]: BasePart } = {}
--- Quem já levou a primeira pancada neste capítulo (versão da etapa): a próxima é captura de verdade.
-local wounded: { [number]: number } = {}
+-- Pancadas que levantam sozinho neste capítulo (versão da etapa e quantas já levou). Solo: 2 (sem ninguém para
+-- resgatar, a terceira é a derrota); em grupo: 1 (os colegas resgatam).
+local wounded: { [number]: { version: number, count: number } } = {}
 local modeVotes: Modes.Votes = {}
 local selectedMode: Modes.Id? = nil
 local sceneSerial = 0
@@ -530,11 +531,18 @@ local function capture(player: Player, cause: string?)
 	end
 	local captureVersion = version
 	-- Primeira pancada do Tung Tung no capítulo: cai e rasteja por CrawlSeconds e levanta sozinho (colegas podem
-	-- resgatar antes). A segunda pancada no mesmo capítulo é captura de verdade. Raio e fogo não dão essa chance.
-	local wound = cause ~= "lightning" and cause ~= "fire" and wounded[player.UserId] ~= captureVersion
+	-- resgatar antes). Depois de SoloWounds/GroupWounds pancadas no capítulo, é captura de verdade. Raio e fogo não
+	-- dão essa chance.
+	local previousRecord = wounded[player.UserId]
+	local record = if previousRecord and previousRecord.version == captureVersion
+		then previousRecord
+		else { version = captureVersion, count = 0 }
+	wounded[player.UserId] = record
+	local allowed = if Session.count(session) <= 1 then C.SoloWounds else C.GroupWounds
+	local wound = cause ~= "lightning" and cause ~= "fire" and record.count < allowed
 	local rising = false
 	if wound then
-		wounded[player.UserId] = captureVersion
+		record.count += 1
 		task.delay(C.CrawlSeconds, function()
 			selfRevive(player, captureVersion, "crawl_up")
 		end)
