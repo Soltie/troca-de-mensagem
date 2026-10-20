@@ -530,6 +530,33 @@ function Dressing.scares(root: Instance)
 	-- Biblioteca: um livro na beira da estante do fundo que cai sozinho.
 	local book =
 		deco(folder, "FallingBook", V3(0.5, 1.4, 1), CFrame.new(-40, 7.2, -82.6), rgb(90, 36, 30), Enum.Material.Fabric)
+	-- Marco da sala de jantar: relógio de parede parado (hora do desaparecimento) e um retrato torto que cai no susto.
+	local clock = deco(folder, "DiningClock", V3(1.1, 5.5, 2.2), CFrame.new(-42.7, 5.2, -26), rgb(46, 30, 22))
+	deco(
+		folder,
+		"DiningClockFace",
+		V3(0.1, 1.5, 1.5),
+		CFrame.new(-42.05, 6.8, -26),
+		rgb(214, 198, 160),
+		Enum.Material.Fabric
+	)
+	deco(
+		folder,
+		"DiningClockHand",
+		V3(0.06, 0.9, 0.08),
+		CFrame.new(-41.95, 7, -26) * CFrame.Angles(math.rad(35), 0, 0),
+		rgb(30, 22, 18)
+	)
+	clock:SetAttribute("Landmark", "dining")
+	local portrait = deco(
+		folder,
+		"DiningPortrait",
+		V3(0.2, 3, 2.2),
+		CFrame.new(-42.8, 8.4, -44) * CFrame.Angles(math.rad(6), 0, 0),
+		rgb(58, 40, 28)
+	)
+	-- Marco do corredor: retrato da família virado para a parede, só o verso à mostra.
+	deco(folder, "CorridorTurnedPortrait", V3(0.2, 3.4, 2.6), CFrame.new(-7.6, 6.5, -30), rgb(52, 36, 26))
 	local scares: { Scare } = {
 		{
 			-- Hall: três pancadas no andar de cima e poeira caindo do teto.
@@ -588,6 +615,15 @@ function Dressing.scares(root: Instance)
 			z1 = -20,
 			y = 0,
 			run = function()
+				-- O retrato da parede despenca no chão, com estrondo de moldura.
+				task.delay(2.2, function()
+					local from = portrait.CFrame
+					for t = 1, 14 do
+						portrait.CFrame = from * CFrame.new(0, -t * 0.5, 0) * CFrame.Angles(math.rad(t * 4), 0, 0)
+						task.wait(1 / 30)
+					end
+					play(portrait, "WoodSplinter", 0.9, 0.9)
+				end)
 				local chair = find(root, "Chair", -44, -8, -52, -20, -1, 4)
 				local target = Players:GetPlayers()[1]
 				local character = target and target.Character
@@ -634,6 +670,10 @@ function Dressing.scares(root: Instance)
 			z1 = -20,
 			y = 0,
 			run = function()
+				-- Uma porta lá no fundo do corredor bate sozinha antes de os olhos acenderem.
+				local slam = anchor(V3(0, 4, -51))
+				play(slam, "DoorBang", 1, 0.6)
+				task.wait(0.9)
 				local eyes: { BasePart } = {}
 				for _, x in { -9.85, -9.35, 9.35, 9.85 } do
 					local eye = deco(

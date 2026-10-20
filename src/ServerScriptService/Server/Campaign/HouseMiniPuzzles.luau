@@ -1460,7 +1460,13 @@ function Mini.cidaChair(root: Instance, world: Instance, spec: any, distance: nu
 			task.wait(0.05)
 		end
 		chair:PivotTo(from)
+		if campaign then
+			campaign:SetAttribute("Caption", "A cadeira recuou da luz…")
+			campaign:SetAttribute("CaptionSerial", (campaign:GetAttribute("CaptionSerial") or 0) + 1)
+		end
 		if any then
+			-- Arrasto: madeira pesada raspando o piso enquanto ela desliza.
+			play(any, "CreakMetal", 1, 0.55, 60)
 			play(any, "CreakWood", 1, 0.9, 60)
 		end
 		for t = 1, 25 do

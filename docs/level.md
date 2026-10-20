@@ -23,3 +23,8 @@ Testar: tábuas da cozinha desalinhadas; carta da biblioteca é uma folha lisa; 
 
 ## Polimento final cap. 1: aviso da cadeira da Cida
 Antes de fugir da luz a cadeira agora treme por 1,2 s com rangido e legenda "A cadeira range e treme... ela tem medo da luz.", depois desliza. No repo (HouseMiniPuzzles.cidaChair); falta aplicar no place quando o Studio liberar.
+
+## Nota 9 do cap. 1 (preparado no repo, falta aplicar no place)
+- Cadeira da Cida: ao deslizar, legenda "A cadeira recuou da luz…" + som de arrasto (CreakMetal grave + CreakWood).
+- Jantar: relógio de parede parado (marco) e retrato que despenca (WoodSplinter). Corredor: porta bate lá no fundo (DoorBang) antes dos olhos, e retrato virado para a parede (marco).
+- Coordenadas dos marcos são estimadas (parede oeste x≈-42,7; corredor x=-7,6): conferir em Play que não estão dentro da parede.
